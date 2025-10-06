@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Fetch Gold Price</title>
+  <title>Gold Price</title>
 </head>
 <body>
   <pre id="output">Loading...</pre>
@@ -13,7 +13,7 @@
     fetch(proxyUrl)
       .then(res => res.text())
       .then(data => {
-        document.getElementById("output").textContent = data;
+        document.getElementById("output").textContent = data.slice(0, 1000);
       })
       .catch(err => {
         document.getElementById("output").textContent = "Error: " + err;
