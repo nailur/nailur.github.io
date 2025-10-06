@@ -29,6 +29,7 @@
     <h1>Harga Emas Logam Mulia</h1>
     <div id="price" class="price">Loading...</div>
     <small id="update"></small>
+	<span id="html"></span>
   </div>
 
   <script>
@@ -38,6 +39,8 @@
     async function fetchPrice() {
       try {
         const res = await fetch(API_URL);
+		document.getElementById("html").innerHTML(res);
+		/*
         const data = await res.json();
         if (data.price) {
           document.getElementById("price").textContent =
@@ -47,6 +50,7 @@
         } else {
           document.getElementById("price").textContent = "Gagal memuat harga 😢";
         }
+		  */
       } catch (err) {
         document.getElementById("price").textContent = "Error mengambil harga";
         console.error(err);
