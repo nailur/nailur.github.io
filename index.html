@@ -1,23 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <meta charset="utf-8">
-  <title>Gold Price</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Harga Emas Logam Mulia</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9fafb;
+      color: #333;
+      text-align: center;
+      padding: 40px;
+    }
+    .card {
+      background: white;
+      display: inline-block;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #b8860b; }
+    .price { font-size: 2em; margin-top: 10px; }
+    small { color: #777; }
+  </style>
 </head>
 <body>
-  <pre id="output">Loading...</pre>
+  <div class="card">
+    <h1>Harga Emas Logam Mulia</h1>
+    <div id="price" class="price">Loading...</div>
+    <small id="update"></small>
+  </div>
 
   <script>
-    const proxyUrl = "https://dwmbtrelkerwhvvjbfm.functions.supabase.co/proxy";
+    const API_URL =
+      "https://dwmbrtelkerewhvvjbfm.supabase.co/functions/v1/proxy";
 
-    fetch(proxyUrl)
-      .then(res => res.text())
-      .then(data => {
-        document.getElementById("output").textContent = data.slice(0, 1000);
-      })
-      .catch(err => {
-        document.getElementById("output").textContent = "Error: " + err;
-      });
+    async function fetchPrice() {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        if (data.price) {
+          document.getElementById("price").textContent =
+            `Rp ${data.price.toLocaleString()} / ${data.unit}`;
+          document.getElementById("update").textContent =
+            `Diperbarui: ${new Date(data.updated).toLocaleString("id-ID")}`;
+        } else {
+          document.getElementById("price").textContent = "Gagal memuat harga 😢";
+        }
+      } catch (err) {
+        document.getElementById("price").textContent = "Error mengambil harga";
+        console.error(err);
+      }
+    }
+
+    fetchPrice();
   </script>
 </body>
 </html>
