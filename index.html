@@ -1,28 +1,24 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-	<head>
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-	</head>
-	<body>
-	
-		<span id="mySpan"></span>
-	
-	</body>
-	<script>
-		fetch("https://api.allorigins.win/raw?url=https://www.logammulia.com/id/harga-emas-hari-ini")
-			.then(res => res.text())
-			.then(html => {
-			
-			document.body.innerHTML = html;
-		})
-		.catch(
-			fetch("https://cors-anywhere.herokuapp.com/https://www.logammulia.com/id/harga-emas-hari-ini")
-				.then(res => res.text())
-				.then(html => {
-			
-				document.body.innerHTML = html;
-			})
-			
-			err => console.error(err));
-	</script>
+<head><meta charset="utf-8"><title>Proxy test</title></head>
+<body>
+  <pre id="out">loading...</pre>
+  <script>
+    const funcUrl = "https://dwmbtrelkerewhvvjbfm.supabase.co/functions/v1/bright-api";
+    const target = encodeURIComponent("https://www.logammulia.com/id/harga-emas-hari-ini");
+
+    fetch(funcUrl + "?url=" + target)
+      .then(res => {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.text();
+      })
+      .then(html => {
+        document.getElementById("out").textContent = html.slice(0, 1000); // show beginning
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById("out").textContent = "Error: " + err;
+      });
+  </script>
+</body>
 </html>
