@@ -10,12 +10,19 @@
 	</body>
 	<script>
 		fetch("https://api.allorigins.win/raw?url=https://www.logammulia.com/id/harga-emas-hari-ini")
-		  .then(res => res.text())
-		  .then(html => {
-			console.log(html);
-			// You can parse it if needed
+			.then(res => res.text())
+			.then(html => {
+			
 			document.body.innerHTML = html;
-		  })
-		  .catch(err => console.error(err));
+		})
+		.catch(
+			fetch("https://cors-anywhere.herokuapp.com/https://www.logammulia.com/id/harga-emas-hari-ini")
+				.then(res => res.text())
+				.then(html => {
+			
+				document.body.innerHTML = html;
+			})
+			
+			err => console.error(err));
 	</script>
 </html>
