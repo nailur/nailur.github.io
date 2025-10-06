@@ -1,3 +1,31 @@
+<!DOCTYPE html>
 <html>
-  <h1>Hello world!</h1>
+	<head>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	</head>
+	<body>
+	
+		<span id="mySpan"></span>
+	
+	</body>
+	<script>
+		function updateSpanWithAjax() {
+		    fetch('https://www.logammulia.com/id/harga-emas-hari-ini') // Replace with your actual API endpoint
+		        .then(response => {
+		            if (!response.ok) {
+		                throw new Error('Network response was not ok');
+		            }
+		            return response.text(); // Or .json() if your API returns JSON
+		        })
+		        .then(data => {
+		            document.getElementById('mySpan').textContent = data; // Update the span's text
+		        })
+		        .catch(error => {
+		            console.error('There was a problem with the fetch operation:', error);
+		        });
+		}
+		
+		// Call the function to update the span (e.g., on page load or a button click)
+		updateSpanWithAjax(); 
+	</script>
 </html>
