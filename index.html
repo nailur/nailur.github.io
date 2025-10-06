@@ -1,23 +1,22 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>Proxy test</title></head>
+<head>
+  <meta charset="utf-8">
+  <title>Fetch Gold Price</title>
+</head>
 <body>
-  <pre id="out">loading...</pre>
-  <script>
-    const funcUrl = "https://dwmbtrelkerwhvvjbfm.supabase.co/functions/v1/proxy";
-    const target = encodeURIComponent("https://www.logammulia.com/id/harga-emas-hari-ini");
+  <pre id="output">Loading...</pre>
 
-    fetch(funcUrl + "?url=" + target)
-      .then(res => {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.text();
-      })
-      .then(html => {
-        document.getElementById("out").textContent = html.slice(0, 1000); // show beginning
+  <script>
+    const proxyUrl = "https://dwmbtrelkerwhvvjbfm.supabase.co/functions/v1/proxy";
+
+    fetch(proxyUrl)
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("output").textContent = data;
       })
       .catch(err => {
-        console.error(err);
-        document.getElementById("out").textContent = "Error: " + err;
+        document.getElementById("output").textContent = "Error: " + err;
       });
   </script>
 </body>
