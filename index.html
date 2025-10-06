@@ -9,23 +9,13 @@
 	
 	</body>
 	<script>
-		function updateSpanWithAjax() {
-		    fetch('https://www.logammulia.com/id/harga-emas-hari-ini') // Replace with your actual API endpoint
-		        .then(response => {
-		            if (!response.ok) {
-		                throw new Error('Network response was not ok');
-		            }
-		            return response.text(); // Or .json() if your API returns JSON
-		        })
-		        .then(data => {
-		            document.getElementById('mySpan').textContent = data; // Update the span's text
-		        })
-		        .catch(error => {
-		            console.error('There was a problem with the fetch operation:', error);
-		        });
-		}
-		
-		// Call the function to update the span (e.g., on page load or a button click)
-		updateSpanWithAjax(); 
+		fetch("https://api.allorigins.win/raw?url=https://www.logammulia.com/id/harga-emas-hari-ini")
+		  .then(res => res.text())
+		  .then(html => {
+			console.log(html);
+			// You can parse it if needed
+			document.body.innerHTML = html;
+		  })
+		  .catch(err => console.error(err));
 	</script>
 </html>
