@@ -97,9 +97,9 @@ function parseLotusArchi(html) {
 	const nodes = [];
 
 	// Get Buyback Price
-	const walker = document.createTreeWalker(
+	const walker = doc.createTreeWalker(
 		doc.body,
-		NodeFilter.SHOW_TEXT,
+		4,
 		null,
 		false
 	);
