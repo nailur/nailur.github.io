@@ -113,7 +113,8 @@ function parseLotusArchi(html) {
 
 	console.log(nodes);
 
-	const buyback = nodes[0].match(/Buyback Price\s*:\s*Rp\s*([\d.]+)/i)?.[1].replace(/\D/g, '');
+	// const buyback = nodes[0].match(/Buyback Price\s*:\s*Rp\s*([\d.]+)/i)?.[1].replace(/\D/g, '');
+	const buyback = 0;
 
 	const data = [];
 
