@@ -90,23 +90,44 @@ function parseSampoerna(html) {
    LOTUSARCHI PARSER
 ========================= */
 function parseLotusArchi(html) {
-  const { JSDOM } = require("jsdom");
-  const dom = new JSDOM(html);
-  const doc = dom.window.document;
+	const { JSDOM } = require("jsdom");
+	const dom = new JSDOM(html);
+	const doc = dom.window.document;
 
-  const data = [];
+	const nodes = [];
 
-  doc.querySelectorAll("table tr").forEach(row => {
-    const cols = row.querySelectorAll("td");
-    if (cols.length >= 3) {
-      data.push({
-        category: "LOTUS ARCHI",
-        gram: cols[0].textContent.trim(),
-        jual: cols[1].textContent.trim(),
-        buyback: 0
-      });
-    }
-  });
+	// Get Buyback Price
+	const walker = doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT,null,false);
 
-  return data;
+	let nodeq;
+	while (nodeq = walker.nextNode()) {
+		if (nodeq.nodeValue.includes("Buyback Price : Rp")) {
+			nodes.push(nodeq.nodeValue.trim());
+		}
+	}
+
+	const buyback = nodeq[0].match(/Buyback Price\s*:\s*Rp\s*([\d.]+)/i)?.[1].replace(/\D/g, '');
+
+	const data = [];
+
+	doc.querySelectorAll("table tr").forEach(row => {
+		const cols = row.querySelectorAll("td");
+		if (cols.length >= 2) {
+			data.push({
+				category: "LOTUS ARCHI",
+				gram: cols[0].textContent.trim(),
+				jual: cols[1].textContent.trim(),
+				buyback: buyback * cols[0].textContent.trim()
+			});
+		}
+		data.shift(); // Removing first row
+
+		// Removing 4 last row
+		data.pop();
+		data.pop();
+		data.pop();
+		data.pop();
+	});
+
+  	return data;
 }
