@@ -15,32 +15,25 @@ async function fetchHTML(url) {
 function parseGaleri24(doc) {
 	const result = [];
 
-	const list = ["GALERI 24","ANTAM","ANTAM MULIA RETRO","ANTAM NON PEGADAIAN","UBS","LOTUS ARCHI"];
+	const categories = document.querySelectorAll('#GALERI\\ 24, #DINAR\\ G24, #BABY\\ GALERI\\ 24, #ANTAM, #UBS');
 
+	categories.forEach(categoryEl => {
+		const category = categoryEl.id;
 
-	for (const item of list) {
-		const container = doc.getElementById(item).children[0].children[2];
-		console.log(container);
+		const rows = categoryEl.querySelectorAll('.grid.grid-cols-5.divide-x.lg\\:hover\\:bg-neutral-50');
 
-		container.forEach(el => {
-			const text = el.innerText;
-
-			const gram =
-				text.match(/(\d+(?:[.,]\d+)?)\s*gram/i)?.[1];
-
-			const prices =
-				text.match(/Rp[\s\d.]+/g) || [];
-
-			if (!gram || prices.length < 2) return;
+		rows.forEach(row => {
+			const cols = row.querySelectorAll('div');
+			if (cols.length < 3) return;
 
 			result.push({
 				category,
-				gram: gram.replace(",", "."),
-				jual: prices[0],
-				buyback: prices[1]
+				gram: cols[0].innerText.trim(),
+				harga_jual: cols[1].innerText.trim(),
+				harga_buyback: cols[2].innerText.trim()
 			});
 		});
-	}
+	});
 
 	return result
 }
