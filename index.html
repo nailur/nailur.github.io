@@ -15,43 +15,32 @@ async function fetchHTML(url) {
 function parseGaleri24(doc) {
 	const result = [];
 
-	const CATEGORY_MAP = {
-		GALERY24: "GALERI 24",
-		ANTAM: "ANTAM",
-		ANTAM_RETRO: "ANTAM MULIA RETRO",
-		ANTAM_NON_PEGADAIAN: "ANTAM NON PEGADAIAN",
-		UBS: "UBS",
-		LOTUS_ARCHI: "LOTUS ARCHI"
-	};
+	const list = ["GALERI 24","ANTAM","ANTAM MULIA RETRO","ANTAM NON PEGADAIAN","UBS","LOTUS ARCHI"];
 
 
-	for (const [category, domId] of Object.entries(CATEGORY_MAP)) {
-	const container =
-	doc.getElementById(domId)?.children?.[0]?.children?.[2];
+	for (const item in list) {
+		const container = doc.getElementById(item).children[0].children[2];
 
-	if (!container) continue;
+		container.forEach(el => {
+			const text = el.innerText;
 
-	[...container.children].forEach(el => {
-		const text = el.innerText;
+			const gram =
+				text.match(/(\d+(?:[.,]\d+)?)\s*gram/i)?.[1];
 
-		const gram =
-			text.match(/(\d+(?:[.,]\d+)?)\s*gram/i)?.[1];
+			const prices =
+				text.match(/Rp[\s\d.]+/g) || [];
 
-		const prices =
-			text.match(/Rp[\s\d.]+/g) || [];
+			if (!gram || prices.length < 2) return;
 
-		if (!gram || prices.length < 2) return;
-
-		result.push({
-			category,
-			gram: gram.replace(",", "."),
-			jual: prices[0],
-			buyback: prices[1]
+			result.push({
+				category,
+				gram: gram.replace(",", "."),
+				jual: prices[0],
+				buyback: prices[1]
+			});
 		});
-	});
-}
+	}
 
-	// Remove duplicates
 	return result
 }
 
