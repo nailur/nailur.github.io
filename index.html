@@ -53,6 +53,7 @@ function parseTable(doc) {
 	const cols = row.querySelectorAll("td");
 	if (cols.length >= 3) {
 		data.push({
+		category: "SAMPOERNA",
 		gram: cols[0].innerText.trim(),
 		jual: cols[1].innerText.trim(),
 		buyback: cols[2].innerText.trim()
