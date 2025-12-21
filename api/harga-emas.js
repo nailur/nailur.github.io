@@ -1,18 +1,21 @@
 export default async function handler(req, res) {
   try {
-    const [galeriHTML, sampoernaHTML] = await Promise.all([
+    const [galeriHTML, sampoernaHTML, lotusarchiHTML] = await Promise.all([
       fetch("https://galeri24.co.id/harga-emas").then(r => r.text()),
-      fetch("https://sampoernagold.com/").then(r => r.text())
+      fetch("https://sampoernagold.com/").then(r => r.text()),
+	  fetch("https://lotusarchi.com/pricing/").then(r => r.text())
     ]);
 
     const galeri24 = parseGaleri24(galeriHTML);
     const sampoerna = parseSampoerna(sampoernaHTML);
+	const lotusarchi = parseLotusArchi(lotusarchiHTML);
+	
 
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader("Access-Control-Allow-Methods", "GET");
     res.status(200).json({
-      data: [...sampoerna, ...galeri24]
+      data: [...galeri24, ...sampoerna, ...lotusarchi]
     });
   } catch (err) {
     res.status(500).json({
@@ -32,7 +35,8 @@ function parseGaleri24(html) {
   const result = [];
 
   const categories = doc.querySelectorAll(
-    '#GALERI\\ 24, #ANTAM, #UBS, #ANTAM\\ MULIA\\ RETRO, #ANTAM\\ NON\\ PEGADAIAN, #LOTUS\\ ARCHI'
+    // '#GALERI\\ 24, #ANTAM, #UBS, #ANTAM\\ MULIA\\ RETRO, #ANTAM\\ NON\\ PEGADAIAN, #LOTUS\\ ARCHI'
+	'#ANTAM, #ANTAM\\ MULIA\\ RETRO, #GALERI\\ 24, #UBS'
   );
 
   categories.forEach(categoryEl => {
@@ -76,6 +80,31 @@ function parseSampoerna(html) {
         gram: cols[0].textContent.trim(),
         jual: cols[1].textContent.trim(),
         buyback: cols[2].textContent.trim()
+      });
+    }
+  });
+
+  return data;
+}
+
+/* =========================
+   LOTUSARCHI PARSER
+========================= */
+function parseLotusArchi(html) {
+  const { JSDOM } = require("jsdom");
+  const dom = new JSDOM(html);
+  const doc = dom.window.document;
+
+  const data = [];
+
+  doc.querySelectorAll("table tr").forEach(row => {
+    const cols = row.querySelectorAll("td");
+    if (cols.length >= 3) {
+      data.push({
+        category: "LOTUS ARCHI",
+        gram: cols[0].textContent.trim(),
+        jual: cols[1].textContent.trim(),
+        buyback: 0
       });
     }
   });
