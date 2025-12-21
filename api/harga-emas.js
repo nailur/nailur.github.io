@@ -65,25 +65,25 @@ function parseGaleri24(html) {
    SAMPOERNA PARSER
 ========================= */
 function parseSampoerna(html) {
-  const { JSDOM } = require("jsdom");
-  const dom = new JSDOM(html);
-  const doc = dom.window.document;
+	const { JSDOM } = require("jsdom");
+	const dom = new JSDOM(html);
+	const doc = dom.window.document;
 
-  const data = [];
+	const data = [];
 
-  doc.querySelectorAll("table tr").forEach(row => {
-    const cols = row.querySelectorAll("td");
-    if (cols.length >= 3) {
-      data.push({
-        category: "SAMPOERNA",
-        gram: cols[0].textContent.trim(),
-        jual: cols[1].textContent.trim(),
-        buyback: cols[2].textContent.trim()
-      });
-    }
-  });
+	doc.querySelectorAll("table tr").forEach(row => {
+		const cols = row.querySelectorAll("td");
+		if (cols.length >= 3) {
+			data.push({
+				category: "SAMPOERNA",
+				gram: cols[0].textContent.trim(),
+				jual: cols[1].textContent.trim(),
+				buyback: cols[2].textContent.trim()
+			});
+		}
+	});
 
-  return data;
+	return data;
 }
 
 /* =========================
