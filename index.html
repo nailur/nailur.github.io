@@ -1,120 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Harga Emas</title>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Harga Emas</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0b1220;
-      color: #e5e7eb;
-      padding: 20px;
-    }
+	<style>
+		body {
+		margin: 0;
+		font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+		background: #0b1220;
+		color: #e5e7eb;
+		}
 
-    h1 {
-      margin-bottom: 6px;
-    }
+		header {
+		padding: 16px;
+		background: #020617;
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		border-bottom: 1px solid #1e293b;
+		}
 
-    p {
-      color: #94a3b8;
-      margin-bottom: 16px;
-    }
+		h1 {
+		font-size: 18px;
+		margin: 0;
+		}
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #020617;
-    }
+		.updated {
+		font-size: 12px;
+		color: #94a3b8;
+		margin-top: 4px;
+		}
 
-    th, td {
-      border: 1px solid #334155;
-      padding: 8px 10px;
-      text-align: left;
-      font-size: 14px;
-    }
+		.container {
+		padding: 12px;
+		}
 
-    th {
-      background: #1e293b;
-      position: sticky;
-      top: 0;
-    }
+		.card {
+		background: #020617;
+		border: 1px solid #1e293b;
+		border-radius: 10px;
+		padding: 12px;
+		margin-bottom: 10px;
+		}
 
-    tr:nth-child(even) {
-      background: #020617;
-    }
+		.top {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 6px;
+		}
 
-    tr:hover {
-      background: #1e293b;
-    }
+		.category {
+		font-weight: 600;
+		font-size: 14px;
+		}
 
-    .loading {
-      color: #94a3b8;
-    }
+		.gram {
+		font-size: 13px;
+		color: #94a3b8;
+		}
 
-    .error {
-      color: #f87171;
-    }
-  </style>
+		.prices {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+		}
+
+		.price-box {
+		background: #020617;
+		border: 1px solid #334155;
+		border-radius: 8px;
+		padding: 8px;
+		}
+
+		.label {
+		font-size: 11px;
+		color: #94a3b8;
+		}
+
+		.value {
+		font-size: 14px;
+		font-weight: 600;
+		margin-top: 2px;
+		}
+
+		.loading,
+		.error {
+		text-align: center;
+		padding: 20px;
+		color: #94a3b8;
+		}
+	</style>
 </head>
 <body>
 
-<h1>Harga Emas</h1>
-<p>Source: Galeri24 & Sampoerna Gold</p>
+<header>
+	<h1>Harga Emas</h1>
+	<div class="updated" id="updated">Loading…</div>
+</header>
 
-<table>
-  <thead>
-    <tr>
-      <th>Category</th>
-      <th>Gram</th>
-      <th>Jual</th>
-      <th>Buyback</th>
-    </tr>
-  </thead>
-  <tbody id="tbody">
-    <tr>
-      <td colspan="4" class="loading">Loading...</td>
-    </tr>
-  </tbody>
-</table>
+<div class="container" id="list">
+	<div class="loading">Loading data…</div>
+</div>
 
 <script>
-const API_URL = "https://nailur.vercel.app/api/harga-emas";
+	const API_URL = "https://nailur.vercel.app/api/harga-emas";
 
-async function loadData() {
-  const tbody = document.getElementById("tbody");
+	async function loadData() {
+		const list = document.getElementById("list");
+		const updated = document.getElementById("updated");
 
-  try {
-    const res = await fetch(API_URL);
-    const json = await res.json();
+		try {
+			const res = await fetch(API_URL);
+			const json = await res.json();
 
-    tbody.innerHTML = "";
+			updated.textContent =
+			"Updated: " + new Date(json.updated_at).toLocaleString();
 
-    json.data.forEach(item => {
-      const tr = document.createElement("tr");
+			list.innerHTML = "";
 
-      tr.innerHTML = `
-        <td>${item.category}</td>
-        <td>${item.gram}</td>
-        <td>${item.jual}</td>
-        <td>${item.buyback}</td>
-      `;
+			json.data.forEach(item => {
+			const card = document.createElement("div");
+			card.className = "card";
 
-      tbody.appendChild(tr);
-    });
+			card.innerHTML = `
+				<div class="top">
+				<div class="category">${item.category}</div>
+				<div class="gram">${item.gram}</div>
+				</div>
 
-  } catch (err) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" class="error">
-          Failed to load data
-        </td>
-      </tr>
-    `;
-  }
-}
+				<div class="prices">
+				<div class="price-box">
+					<div class="label">Jual</div>
+					<div class="value">${item.jual}</div>
+				</div>
 
-loadData();
+				<div class="price-box">
+					<div class="label">Buyback</div>
+					<div class="value">${item.buyback}</div>
+				</div>
+				</div>
+			`;
+
+			list.appendChild(card);
+			});
+
+		} catch (err) {
+			list.innerHTML = `
+			<div class="error">
+				Failed to load data
+			</div>
+			`;
+		}
+	}
+
+	loadData();
 </script>
 
 </body>
