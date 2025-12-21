@@ -13,13 +13,12 @@ async function fetchHTML(url) {
 }
 
 function parseGaleri24(doc) {
-	console.log(doc);
 	const result = [];
 
 	const list = ["GALERI 24","ANTAM","ANTAM MULIA RETRO","ANTAM NON PEGADAIAN","UBS","LOTUS ARCHI"];
 
 
-	for (const item in list) {
+	for (const item of list) {
 		const container = doc.getElementById(item).children[0].children[2];
 		console.log(container);
 
