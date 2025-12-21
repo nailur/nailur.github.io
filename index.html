@@ -1,197 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Gold Price Monitor (Galeri24 + Sampoerna)</title>
+  <meta charset="UTF-8">
+  <title>Galeri24 Price API (Client Only)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f5f5;
+      background: #f4f4f4;
       padding: 20px;
     }
-    h1 { margin-bottom: 5px; }
-    h2 { margin-top: 30px; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      margin-top: 10px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-    }
-    th {
-      background: #222;
-      color: #fff;
-    }
-    .status {
-      color: #555;
-      font-style: italic;
+    pre {
+      background: #111;
+      color: #0f0;
+      padding: 15px;
+      overflow: auto;
+      max-height: 80vh;
     }
   </style>
 </head>
 <body>
 
-<h1>Gold Prices</h1>
-<p class="status" id="status">Loading data...</p>
-
-<div id="output"></div>
+<h1>Galeri24 JSON API (via AllOrigins)</h1>
+<p id="status">Loading…</p>
+<pre id="output"></pre>
 
 <script>
-/* ======================================================
-   GALERI24 — DOM BASED (YOUR EXACT STRUCTURE)
-====================================================== */
+const GALERI24_URL =
+  "https://api.allorigins.win/raw?url=" +
+  encodeURIComponent("https://galeri24.co.id/harga-emas");
 
-const GALERI24_CATEGORIES = {
-  GALERY24: () =>
-    document.getElementById("GALERI 24")?.children?.[0]?.children?.[2],
+/* ===============================
+   FETCH FULL GALERI24 HTML
+================================ */
 
-  ANTAM: () =>
-    document.getElementById("ANTAM")?.children?.[0]?.children?.[2],
+async function fetchGaleri24HTML() {
+  const res = await fetch(GALERI24_URL);
+  if (!res.ok) throw new Error("Failed to fetch Galeri24");
+  return await res.text();
+}
 
-  ANTAM_RETRO: () =>
-    document.getElementById("ANTAM MULIA RETRO")?.children?.[0]?.children?.[2],
+/* ===============================
+   PARSE HTML INTO DOM
+================================ */
 
-  ANTAM_NON_PEGADAIAN: () =>
-    document.getElementById("ANTAM NON PEGADAIAN")?.children?.[0]?.children?.[2],
+function parseHTML(html) {
+  return new DOMParser().parseFromString(html, "text/html");
+}
 
-  UBS: () =>
-    document.getElementById("UBS")?.children?.[0]?.children?.[2],
+/* ===============================
+   CATEGORY RESOLVERS (YOUR PATHS)
+================================ */
 
-  LOTUS_ARCHI: () =>
-    document.getElementById("LOTUS ARCHI")?.children?.[0]?.children?.[2],
-};
+function getCategories(doc) {
+  return {
+    GALERY24:
+      doc.getElementById("GALERI 24")?.children?.[0]?.children?.[2],
 
-function extractGaleri24(container) {
+    ANTAM:
+      doc.getElementById("ANTAM")?.children?.[0]?.children?.[2],
+
+    ANTAM_RETRO:
+      doc.getElementById("ANTAM MULIA RETRO")?.children?.[0]?.children?.[2],
+
+    ANTAM_NON_PEGADAIAN:
+      doc.getElementById("ANTAM NON PEGADAIAN")?.children?.[0]?.children?.[2],
+
+    UBS:
+      doc.getElementById("UBS")?.children?.[0]?.children?.[2],
+
+    LOTUS_ARCHI:
+      doc.getElementById("LOTUS ARCHI")?.children?.[0]?.children?.[2],
+  };
+}
+
+/* ===============================
+   EXTRACT ITEMS FROM CATEGORY
+================================ */
+
+function extractItems(container) {
   if (!container) return [];
 
   return [...container.children].map(el => {
-    const text = el.innerText;
+    const text = el.innerText || "";
+
     return {
-      product: el.querySelector("h3, h4")?.innerText || "-",
-      weight: text.match(/(\d+(?:\.\d+)?)\s*gram/i)?.[1] || "-",
-      price: text.match(/Rp[\s\d.,]+/)?.[0] || "-"
+      name: el.querySelector("h3, h4")?.innerText?.trim() || "-",
+      price: text.match(/Rp[\s\d.,]+/)?.[0] || "-",
+      raw: text.trim()
     };
   });
 }
 
-function getGaleri24Data() {
-  const data = {};
-  for (const [cat, fn] of Object.entries(GALERI24_CATEGORIES)) {
-    data[cat] = extractGaleri24(fn());
-  }
-  return data;
-}
+/* ===============================
+   BUILD JSON API RESPONSE
+================================ */
 
-/* ======================================================
-   SAMPOERNA — FETCH + PARSE
-====================================================== */
+function buildJSON(doc) {
+  const categories = getCategories(doc);
+  const result = {};
 
-async function getSampoernaData() {
-  const res = await fetch("https://sampoernagold.com/");
-  const html = await res.text();
-
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const rows = doc.querySelectorAll("table tbody tr");
-
-  return [...rows].map(row => {
-    const cols = row.querySelectorAll("td");
-    return {
-      product: cols[0]?.innerText.trim(),
-      weight: cols[1]?.innerText.trim(),
-      price: cols[2]?.innerText.trim()
-    };
-  });
-}
-
-/* ======================================================
-   RENDER
-====================================================== */
-
-function renderSection(title, items) {
-  const out = document.getElementById("output");
-
-  const h2 = document.createElement("h2");
-  h2.textContent = title;
-  out.appendChild(h2);
-
-  if (!items.length) {
-    out.appendChild(document.createTextNode("No data"));
-    return;
+  for (const [key, container] of Object.entries(categories)) {
+    result[key] = extractItems(container);
   }
 
-  const table = document.createElement("table");
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Weight</th>
-        <th>Price</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  `;
-
-  const tbody = table.querySelector("tbody");
-
-  items.forEach(item => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${item.product}</td>
-      <td>${item.weight}</td>
-      <td>${item.price}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  out.appendChild(table);
+  return result;
 }
 
-/* ======================================================
-   WAIT FOR GALERI24 DOM
-====================================================== */
-
-function waitForGaleri24(callback, timeout = 10000) {
-  const start = Date.now();
-  const timer = setInterval(() => {
-    const ready =
-      document.getElementById("GALERI 24")?.children?.length > 0;
-
-    if (ready) {
-      clearInterval(timer);
-      callback();
-    }
-
-    if (Date.now() - start > timeout) {
-      clearInterval(timer);
-      document.getElementById("status").innerText =
-        "Galeri24 timeout.";
-    }
-  }, 300);
-}
-
-/* ======================================================
+/* ===============================
    INIT
-====================================================== */
+================================ */
 
 (async function init() {
-  // SAMPOERNA
   try {
-    const sampoerna = await getSampoernaData();
-    renderSection("SAMPOERNA GOLD", sampoerna);
-  } catch (e) {
-    console.error("Sampoerna error", e);
-  }
+    const html = await fetchGaleri24HTML();
+    const doc = parseHTML(html);
+    const data = buildJSON(doc);
 
-  // GALERI24
-  waitForGaleri24(() => {
-    const g24 = getGaleri24Data();
-    for (const [cat, items] of Object.entries(g24)) {
-      renderSection("GALERI24 - " + cat.replace(/_/g, " "), items);
-    }
-    document.getElementById("status").innerText = "All data loaded";
-  });
+    document.getElementById("status").innerText = "Loaded successfully";
+    document.getElementById("output").innerText =
+      JSON.stringify(data, null, 2);
+
+    // Optional: expose globally
+    window.GALERI24_API = data;
+
+  } catch (err) {
+    document.getElementById("status").innerText = "Error";
+    document.getElementById("output").innerText = err.message;
+    console.error(err);
+  }
 })();
 </script>
 
