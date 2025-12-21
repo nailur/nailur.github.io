@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Harga Emas</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0b1220;
+      color: #e5e7eb;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 6px;
+    }
+
+    p {
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #020617;
+    }
+
+    th, td {
+      border: 1px solid #334155;
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: #1e293b;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:nth-child(even) {
+      background: #020617;
+    }
+
+    tr:hover {
+      background: #1e293b;
+    }
+
+    .loading {
+      color: #94a3b8;
+    }
+
+    .error {
+      color: #f87171;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Harga Emas</h1>
+<p>Source: Galeri24 & Sampoerna Gold</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Gram</th>
+      <th>Jual</th>
+      <th>Buyback</th>
+    </tr>
+  </thead>
+  <tbody id="tbody">
+    <tr>
+      <td colspan="4" class="loading">Loading...</td>
+    </tr>
+  </tbody>
+</table>
+
+<script>
+const API_URL = "https://nailur.vercel.app/api/harga-emas";
+
+async function loadData() {
+  const tbody = document.getElementById("tbody");
+
+  try {
+    const res = await fetch(API_URL);
+    const json = await res.json();
+
+    tbody.innerHTML = "";
+
+    json.data.forEach(item => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${item.category}</td>
+        <td>${item.gram}</td>
+        <td>${item.jual}</td>
+        <td>${item.buyback}</td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+  } catch (err) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="error">
+          Failed to load data
+        </td>
+      </tr>
+    `;
+  }
+}
+
+loadData();
+</script>
+
+</body>
+</html>

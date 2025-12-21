@@ -10,7 +10,6 @@ export default async function handler(req, res) {
 
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
     res.status(200).json({
-      updated_at: new Date().toISOString(),
       data: [...sampoerna, ...galeri24]
     });
   } catch (err) {
