@@ -2,110 +2,197 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Harga Emas (Galeri24 & Sampoerna)</title>
+  <title>Gold Price Monitor (Galeri24 + Sampoerna)</title>
   <style>
     body {
-      font-family: monospace;
-      background: #f4f4f4;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
       padding: 20px;
     }
-    pre {
+    h1 { margin-bottom: 5px; }
+    h2 { margin-top: 30px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
       background: #fff;
-      padding: 15px;
-      border-radius: 6px;
-      overflow-x: auto;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th {
+      background: #222;
+      color: #fff;
+    }
+    .status {
+      color: #555;
+      font-style: italic;
     }
   </style>
 </head>
 <body>
 
-<h1>Harga Emas</h1>
+<h1>Gold Prices</h1>
+<p class="status" id="status">Loading data...</p>
 
-<h2>Galeri24</h2>
-<pre id="galeri24">Loading...</pre>
-
-<h2>Sampoerna Gold</h2>
-<pre id="sampoerna">Loading...</pre>
+<div id="output"></div>
 
 <script>
-  const CORS_PROXY = "https://api.allorigins.win/raw?url=";
+/* ======================================================
+   GALERI24 — DOM BASED (YOUR EXACT STRUCTURE)
+====================================================== */
 
-  async function fetchHTML(url) {
-    const res = await fetch(CORS_PROXY + encodeURIComponent(url));
-    return res.text();
+const GALERI24_CATEGORIES = {
+  GALERY24: () =>
+    document.getElementById("GALERI 24")?.children?.[0]?.children?.[2],
+
+  ANTAM: () =>
+    document.getElementById("ANTAM")?.children?.[0]?.children?.[2],
+
+  ANTAM_RETRO: () =>
+    document.getElementById("ANTAM MULIA RETRO")?.children?.[0]?.children?.[2],
+
+  ANTAM_NON_PEGADAIAN: () =>
+    document.getElementById("ANTAM NON PEGADAIAN")?.children?.[0]?.children?.[2],
+
+  UBS: () =>
+    document.getElementById("UBS")?.children?.[0]?.children?.[2],
+
+  LOTUS_ARCHI: () =>
+    document.getElementById("LOTUS ARCHI")?.children?.[0]?.children?.[2],
+};
+
+function extractGaleri24(container) {
+  if (!container) return [];
+
+  return [...container.children].map(el => {
+    const text = el.innerText;
+    return {
+      product: el.querySelector("h3, h4")?.innerText || "-",
+      weight: text.match(/(\d+(?:\.\d+)?)\s*gram/i)?.[1] || "-",
+      price: text.match(/Rp[\s\d.,]+/)?.[0] || "-"
+    };
+  });
+}
+
+function getGaleri24Data() {
+  const data = {};
+  for (const [cat, fn] of Object.entries(GALERI24_CATEGORIES)) {
+    data[cat] = extractGaleri24(fn());
+  }
+  return data;
+}
+
+/* ======================================================
+   SAMPOERNA — FETCH + PARSE
+====================================================== */
+
+async function getSampoernaData() {
+  const res = await fetch("https://sampoernagold.com/");
+  const html = await res.text();
+
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const rows = doc.querySelectorAll("table tbody tr");
+
+  return [...rows].map(row => {
+    const cols = row.querySelectorAll("td");
+    return {
+      product: cols[0]?.innerText.trim(),
+      weight: cols[1]?.innerText.trim(),
+      price: cols[2]?.innerText.trim()
+    };
+  });
+}
+
+/* ======================================================
+   RENDER
+====================================================== */
+
+function renderSection(title, items) {
+  const out = document.getElementById("output");
+
+  const h2 = document.createElement("h2");
+  h2.textContent = title;
+  out.appendChild(h2);
+
+  if (!items.length) {
+    out.appendChild(document.createTextNode("No data"));
+    return;
   }
 
-  /* =========================
-     GALERI24 PARSER (DIV BASED)
-     ========================= */
-  function parseGaleri24(doc) {
-    const result = [];
+  const table = document.createElement("table");
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Weight</th>
+        <th>Price</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
 
-    // Each gold item is inside a card-like container
-    const items = doc.querySelectorAll("div");
+  const tbody = table.querySelector("tbody");
 
-    items.forEach(el => {
-      const text = el.innerText || "";
+  items.forEach(item => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.product}</td>
+      <td>${item.weight}</td>
+      <td>${item.price}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 
-      // Detect gram pattern
-      const gramMatch = text.match(/(\d+(\.\d+)?)\s*Gram/i);
-      const jualMatch = text.match(/Jual\s*Rp[\s.:]*([\d.,]+)/i);
-      const buyMatch = text.match(/Buyback\s*Rp[\s.:]*([\d.,]+)/i);
+  out.appendChild(table);
+}
 
-      if (gramMatch && jualMatch) {
-        result.push({
-          gram: gramMatch[0],
-          jual: "Rp " + jualMatch[1],
-          buyback: buyMatch ? "Rp " + buyMatch[1] : null
-        });
-      }
-    });
+/* ======================================================
+   WAIT FOR GALERI24 DOM
+====================================================== */
 
-    // Remove duplicates
-    return result.filter(
-      (v, i, a) =>
-        a.findIndex(t => t.gram === v.gram) === i
-    );
+function waitForGaleri24(callback, timeout = 10000) {
+  const start = Date.now();
+  const timer = setInterval(() => {
+    const ready =
+      document.getElementById("GALERI 24")?.children?.length > 0;
+
+    if (ready) {
+      clearInterval(timer);
+      callback();
+    }
+
+    if (Date.now() - start > timeout) {
+      clearInterval(timer);
+      document.getElementById("status").innerText =
+        "Galeri24 timeout.";
+    }
+  }, 300);
+}
+
+/* ======================================================
+   INIT
+====================================================== */
+
+(async function init() {
+  // SAMPOERNA
+  try {
+    const sampoerna = await getSampoernaData();
+    renderSection("SAMPOERNA GOLD", sampoerna);
+  } catch (e) {
+    console.error("Sampoerna error", e);
   }
 
-  /* =========================
-     SAMPOERNA PARSER (TABLE)
-     ========================= */
-  function parseTable(doc) {
-    const data = [];
-    doc.querySelectorAll("table tr").forEach(row => {
-      const cols = row.querySelectorAll("td");
-      if (cols.length >= 3) {
-        data.push({
-          gram: cols[0].innerText.trim(),
-          jual: cols[1].innerText.trim(),
-          buyback: cols[2].innerText.trim()
-        });
-      }
-    });
-    return data;
-  }
-
-  async function loadGaleri24() {
-    const html = await fetchHTML("https://galeri24.co.id/harga-emas");
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const data = parseGaleri24(doc);
-
-    document.getElementById("galeri24").textContent =
-      JSON.stringify(data, null, 2);
-  }
-
-  async function loadSampoerna() {
-    const html = await fetchHTML("https://sampoernagold.com/");
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const data = parseTable(doc);
-
-    document.getElementById("sampoerna").textContent =
-      JSON.stringify(data, null, 2);
-  }
-
-  loadGaleri24();
-  loadSampoerna();
+  // GALERI24
+  waitForGaleri24(() => {
+    const g24 = getGaleri24Data();
+    for (const [cat, items] of Object.entries(g24)) {
+      renderSection("GALERI24 - " + cat.replace(/_/g, " "), items);
+    }
+    document.getElementById("status").innerText = "All data loaded";
+  });
+})();
 </script>
 
 </body>
