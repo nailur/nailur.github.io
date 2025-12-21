@@ -1,21 +1,112 @@
-const result = [];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Harga Emas – Galeri24 & Sampoerna</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      padding: 20px;
+    }
 
-  for (const [category, domId] of Object.entries(CATEGORY_MAP)) {
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: #020617;
+    }
+
+    th, td {
+      border: 1px solid #334155;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #1e293b;
+    }
+
+    tr:nth-child(even) {
+      background: #020617;
+    }
+
+    tr:hover {
+      background: #1e293b;
+    }
+
+    .error {
+      color: #f87171;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Harga Emas</h1>
+<p>Source: Galeri24 & Sampoerna Gold</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Gram</th>
+      <th>Jual</th>
+      <th>Buyback</th>
+    </tr>
+  </thead>
+  <tbody id="table-body">
+    <tr><td colspan="4">Loading...</td></tr>
+  </tbody>
+</table>
+
+<div id="error" class="error"></div>
+
+<script>
+/* ===========================
+   GALERI24 CONFIG
+=========================== */
+const GALERI24_CATEGORY_MAP = {
+  GALERI24: "GALERI 24",
+  ANTAM: "ANTAM",
+  ANTAM_RETRO: "ANTAM MULIA RETRO",
+  ANTAM_NON_PEGADAIAN: "ANTAM NON PEGADAIAN",
+  UBS: "UBS",
+  LOTUS_ARCHI: "LOTUS ARCHI"
+};
+
+/* ===========================
+   FETCH GALERI24
+=========================== */
+async function loadGaleri24() {
+  const url =
+    "https://api.allorigins.win/raw?url=https://galeri24.co.id/harga-emas";
+
+  const html = await fetch(url).then(r => r.text());
+  const doc = new DOMParser().parseFromString(html, "text/html");
+
+  const result = [];
+
+  for (const [category, domId] of Object.entries(GALERI24_CATEGORY_MAP)) {
     const container =
       doc.getElementById(domId)?.children?.[0]?.children?.[2];
 
     if (!container) continue;
 
     [...container.children].forEach(el => {
-      const text = el.innerText;
+      const text = el.innerText.replace(/\s+/g, " ");
 
       const gram =
         text.match(/(\d+(?:[.,]\d+)?)\s*gram/i)?.[1];
 
-      const prices =
-        text.match(/Rp[\s\d.]+/g) || [];
+      const prices = text.match(/Rp[\s\d.]+/g);
 
-      if (!gram || prices.length < 2) return;
+      if (!gram || !prices || prices.length < 2) return;
 
       result.push({
         category,
@@ -24,3 +115,74 @@ const result = [];
         buyback: prices[1]
       });
     });
+  }
+
+  return result;
+}
+
+/* ===========================
+   FETCH SAMPOERNA
+=========================== */
+async function loadSampoerna() {
+  const url =
+    "https://api.allorigins.win/raw?url=https://sampoernagold.com/api/harga-emas";
+
+  const data = await fetch(url).then(r => r.json());
+
+  return data.map(item => ({
+    category: "SAMPOERNA",
+    gram: item.gram,
+    jual: item.jual,
+    buyback: item.buyback
+  }));
+}
+
+/* ===========================
+   RENDER TABLE
+=========================== */
+function renderTable(data) {
+  const tbody = document.getElementById("table-body");
+  tbody.innerHTML = "";
+
+  if (!data.length) {
+    tbody.innerHTML =
+      "<tr><td colspan='4'>No data</td></tr>";
+    return;
+  }
+
+  data.forEach(item => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${item.category}</td>
+      <td>${item.gram}</td>
+      <td>${item.jual}</td>
+      <td>${item.buyback}</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+/* ===========================
+   MAIN
+=========================== */
+async function loadAll() {
+  try {
+    const [galeri24, sampoerna] = await Promise.all([
+      loadGaleri24(),
+      loadSampoerna()
+    ]);
+
+    renderTable([...sampoerna, ...galeri24]);
+  } catch (err) {
+    document.getElementById("error").textContent =
+      "Failed to load data: " + err.message;
+  }
+}
+
+loadAll();
+</script>
+
+</body>
+</html>
