@@ -16,6 +16,25 @@ export default async function handler(req, res) {
   }
 }
 
+function normalizeToArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "object" && value !== null)
+    return Object.values(value);
+  return [];
+}
+
+function toNum(v) {
+  if (!v) return null;
+  return Number(String(v).replace(/[^\d]/g, ""));
+}
+
+function normalizeToArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "object" && value !== null)
+    return Object.values(value);
+  return [];
+}
+
 /* ======================
    GALERI24
 ====================== */
@@ -31,25 +50,28 @@ async function fetchGaleri24() {
   );
 
   const json = await res.json();
+  const result = [];
 
-  /*
-    Expected structure (example):
-    {
-      "GALERI 24": [...],
-      "DINAR G24": [...],
-      "BABY GALERI 24": [...],
-      "ANTAM": [...]
+  for (const category in json) {
+    const rawItems = normalizeToArray(json[category]?.data || json[category]);
+
+    const items = rawItems
+      .map(item => ({
+        gram: item.weight || item.gram || null,
+        jual: toNum(item.sell_price || item.sell),
+        buyback: toNum(item.buyback_price || item.buyback)
+      }))
+      .filter(i => i.gram && i.jual);
+
+    if (items.length) {
+      result.push({
+        category,
+        items
+      });
     }
-  */
+  }
 
-  return Object.keys(json).map(category => ({
-    category,
-    items: json[category].map(item => ({
-      gram: item.weight,
-      jual: item.sell_price,
-      buyback: item.buyback_price
-    }))
-  }));
+  return result;
 }
 
 /* ======================
