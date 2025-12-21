@@ -18,33 +18,38 @@ export default async function handler(req, res) {
 
 /* ======================
    GALERI24
-   ====================== */
+====================== */
 async function fetchGaleri24() {
-  const html = await fetch(
-    "https://galeri24.co.id/harga-emas",
-    { headers: { "User-Agent": "Mozilla/5.0" } }
-  ).then(r => r.text());
-
-  const result = [];
-  const blocks = html.split("Gram");
-
-  blocks.forEach(block => {
-    const gram = block.match(/(\d+(?:\.\d+)?)/);
-    const jual = block.match(/Jual\s*Rp[\s.:]*([\d.,]+)/i);
-    const buy = block.match(/Buyback\s*Rp[\s.:]*([\d.,]+)/i);
-
-    if (gram && jual) {
-      result.push({
-        gram: `${gram[1]} Gram`,
-        jual: Number(jual[1].replace(/[^\d]/g, "")),
-        buyback: buy
-          ? Number(buy[1].replace(/[^\d]/g, ""))
-          : null
-      });
+  const res = await fetch(
+    "https://galeri24.co.id/api/v1/gold-price",
+    {
+      headers: {
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0"
+      }
     }
-  });
+  );
 
-  return unique(result, "gram");
+  const json = await res.json();
+
+  /*
+    Expected structure (example):
+    {
+      "GALERI 24": [...],
+      "DINAR G24": [...],
+      "BABY GALERI 24": [...],
+      "ANTAM": [...]
+    }
+  */
+
+  return Object.keys(json).map(category => ({
+    category,
+    items: json[category].map(item => ({
+      gram: item.weight,
+      jual: item.sell_price,
+      buyback: item.buyback_price
+    }))
+  }));
 }
 
 /* ======================
