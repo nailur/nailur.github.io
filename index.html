@@ -15,7 +15,7 @@ async function fetchHTML(url) {
 function parseGaleri24(doc) {
 	const result = [];
 
-	const categories = doc.querySelectorAll('#GALERI\\ 24, #DINAR\\ G24, #BABY\\ GALERI\\ 24, #ANTAM, #UBS');
+	const categories = doc.querySelectorAll('#GALERI\\ 24, #ANTAM, #UBS, #ANTAM\\ MULIA\\ RETRO, #ANTAM\\ NON\\ PEGADAIAN, #LOTUS\\ ARCHI');
 
 	categories.forEach(categoryEl => {
 		const category = categoryEl.id;
