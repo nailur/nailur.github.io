@@ -1,28 +1,81 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Harga Emas Logam Mulia</title>
+  <title>Harga Emas API (Frontend Only)</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #f7f7f7;
+    }
+    pre {
+      background: #fff;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+  </style>
 </head>
 <body>
-	<span id="html"></span>
-  </div>
 
-  <script>
-    const API_URL = "https://dwmbtrelkerewhvvjbfm.supabase.co/functions/v1/proxy";
+<h1>Harga Emas</h1>
 
-    async function fetchWeb() {
-      try {
-        const res = await fetch(API_URL);
-		document.getElementById("html").innerHTML = res;
-		
-      } catch (err) {
-        console.error(err);
+<h2>Galeri24</h2>
+<pre id="galeri24">Loading...</pre>
+
+<h2>Sampoerna Gold</h2>
+<pre id="sampoerna">Loading...</pre>
+
+<script>
+  const CORS_PROXY = "https://api.allorigins.win/raw?url=";
+
+  async function fetchHTML(url) {
+    const response = await fetch(
+      CORS_PROXY + encodeURIComponent(url)
+    );
+    return response.text();
+  }
+
+  function parseTable(doc) {
+    const data = [];
+    const rows = doc.querySelectorAll("table tr");
+
+    rows.forEach(row => {
+      const cols = row.querySelectorAll("td");
+      if (cols.length >= 3) {
+        data.push({
+          gram: cols[0].innerText.trim(),
+          jual: cols[1].innerText.trim(),
+          buyback: cols[2].innerText.trim()
+        });
       }
-    }
+    });
 
-    fetchWeb();
-  </script>
+    return data;
+  }
+
+  async function loadGaleri24() {
+    const html = await fetchHTML("https://galeri24.co.id/harga-emas");
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const data = parseTable(doc);
+
+    document.getElementById("galeri24").textContent =
+      JSON.stringify(data, null, 2);
+  }
+
+  async function loadSampoerna() {
+    const html = await fetchHTML("https://sampoernagold.com/");
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const data = parseTable(doc);
+
+    document.getElementById("sampoerna").textContent =
+      JSON.stringify(data, null, 2);
+  }
+
+  loadGaleri24();
+  loadSampoerna();
+</script>
+
 </body>
 </html>
