@@ -9,7 +9,6 @@ export default async function handler(req, res) {
     const galeri24 = parseGaleri24(galeriHTML);
     const sampoerna = parseSampoerna(sampoernaHTML);
 	const lotusarchi = parseLotusArchi(lotusarchiHTML);
-	
 
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
 	res.setHeader("Access-Control-Allow-Origin", "*");
