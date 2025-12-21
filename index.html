@@ -9,7 +9,7 @@
 <pre id="out">Loading...</pre>
 
 <script>
-fetch("/api/harga-emas")
+fetch("/api/index")
   .then(r => r.json())
   .then(data => {
     document.getElementById("out").textContent =
