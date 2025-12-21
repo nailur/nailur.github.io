@@ -2,195 +2,110 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Harga Emas</title>
-
+  <title>Harga Emas (Galeri24 & Sampoerna)</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #0b1220;
-      color: #e5e7eb;
+      font-family: monospace;
+      background: #f4f4f4;
       padding: 20px;
     }
-
-    h1 {
-      margin-bottom: 5px;
-    }
-
-    p {
-      color: #94a3b8;
-      margin-bottom: 15px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #020617;
-    }
-
-    th, td {
-      border: 1px solid #334155;
-      padding: 8px 10px;
-    }
-
-    th {
-      background: #1e293b;
-    }
-
-    tr:nth-child(even) {
-      background: #020617;
-    }
-
-    tr:hover {
-      background: #1e293b;
-    }
-
-    .error {
-      color: #f87171;
-      margin-top: 10px;
+    pre {
+      background: #fff;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
     }
   </style>
 </head>
 <body>
 
 <h1>Harga Emas</h1>
-<p>Source: Galeri24 & Sampoerna Gold</p>
 
-<table>
-  <thead>
-    <tr>
-      <th>Category</th>
-      <th>Gram</th>
-      <th>Jual</th>
-      <th>Buyback</th>
-    </tr>
-  </thead>
-  <tbody id="table-body">
-    <tr>
-      <td colspan="4">Loading...</td>
-    </tr>
-  </tbody>
-</table>
+<h2>Galeri24</h2>
+<pre id="galeri24">Loading...</pre>
 
-<div id="error" class="error"></div>
+<h2>Sampoerna Gold</h2>
+<pre id="sampoerna">Loading...</pre>
 
 <script>
-/* =========================
-   GALERI24 CONFIG
-========================= */
-const GALERI24_CATEGORY_MAP = {
-  GALERI24: "GALERI 24",
-  ANTAM: "ANTAM",
-  ANTAM_RETRO: "ANTAM MULIA RETRO",
-  ANTAM_NON_PEGADAIAN: "ANTAM NON PEGADAIAN",
-  UBS: "UBS",
-  LOTUS_ARCHI: "LOTUS ARCHI"
-};
+  const CORS_PROXY = "https://api.allorigins.win/raw?url=";
 
-/* =========================
-   LOAD GALERI24 (HTML)
-========================= */
-async function loadGaleri24() {
-  const url =
-    "https://api.allorigins.win/raw?url=https://galeri24.co.id/harga-emas";
+  async function fetchHTML(url) {
+    const res = await fetch(CORS_PROXY + encodeURIComponent(url));
+    return res.text();
+  }
 
-  const response = await fetch(url);
-  const html = await response.text(); // ✅ HTML, NOT JSON
+  /* =========================
+     GALERI24 PARSER (DIV BASED)
+     ========================= */
+  function parseGaleri24(doc) {
+    const result = [];
 
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const result = [];
+    // Each gold item is inside a card-like container
+    const items = doc.querySelectorAll("div");
 
-  for (const [category, domId] of Object.entries(GALERI24_CATEGORY_MAP)) {
-    const container =
-      doc.getElementById(domId)?.children?.[0]?.children?.[2];
+    items.forEach(el => {
+      const text = el.innerText || "";
 
-    if (!container) continue;
+      // Detect gram pattern
+      const gramMatch = text.match(/(\d+(\.\d+)?)\s*Gram/i);
+      const jualMatch = text.match(/Jual\s*Rp[\s.:]*([\d.,]+)/i);
+      const buyMatch = text.match(/Buyback\s*Rp[\s.:]*([\d.,]+)/i);
 
-    [...container.children].forEach(el => {
-      const text = el.innerText.replace(/\s+/g, " ");
-
-      const gram =
-        text.match(/(\d+(?:[.,]\d+)?)\s*gram/i)?.[1];
-
-      const prices =
-        text.match(/Rp[\s\d.]+/g);
-
-      if (!gram || !prices || prices.length < 2) return;
-
-      result.push({
-        category,
-        gram: gram.replace(",", "."),
-        jual: prices[0],
-        buyback: prices[1]
-      });
+      if (gramMatch && jualMatch) {
+        result.push({
+          gram: gramMatch[0],
+          jual: "Rp " + jualMatch[1],
+          buyback: buyMatch ? "Rp " + buyMatch[1] : null
+        });
+      }
     });
+
+    // Remove duplicates
+    return result.filter(
+      (v, i, a) =>
+        a.findIndex(t => t.gram === v.gram) === i
+    );
   }
 
-  return result;
-}
-
-/* =========================
-   LOAD SAMPOERNA (JSON)
-========================= */
-async function loadSampoerna() {
-  const url =
-    "https://api.allorigins.win/raw?url=https://sampoernagold.com/";
-
-  const response = await fetch(url);
-  const data = await response.json(); // ✅ JSON
-
-  return data.map(item => ({
-    category: "SAMPOERNA",
-    gram: item.gram,
-    jual: item.jual,
-    buyback: item.buyback
-  }));
-}
-
-/* =========================
-   RENDER TABLE
-========================= */
-function renderTable(data) {
-  const tbody = document.getElementById("table-body");
-  tbody.innerHTML = "";
-
-  if (!data.length) {
-    tbody.innerHTML =
-      "<tr><td colspan='4'>No data</td></tr>";
-    return;
+  /* =========================
+     SAMPOERNA PARSER (TABLE)
+     ========================= */
+  function parseTable(doc) {
+    const data = [];
+    doc.querySelectorAll("table tr").forEach(row => {
+      const cols = row.querySelectorAll("td");
+      if (cols.length >= 3) {
+        data.push({
+          gram: cols[0].innerText.trim(),
+          jual: cols[1].innerText.trim(),
+          buyback: cols[2].innerText.trim()
+        });
+      }
+    });
+    return data;
   }
 
-  data.forEach(item => {
-    const tr = document.createElement("tr");
+  async function loadGaleri24() {
+    const html = await fetchHTML("https://galeri24.co.id/harga-emas");
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const data = parseGaleri24(doc);
 
-    tr.innerHTML = `
-      <td>${item.category}</td>
-      <td>${item.gram}</td>
-      <td>${item.jual}</td>
-      <td>${item.buyback}</td>
-    `;
-
-    tbody.appendChild(tr);
-  });
-}
-
-/* =========================
-   MAIN
-========================= */
-async function loadAll() {
-  try {
-    const [galeri24, sampoerna] = await Promise.all([
-      loadGaleri24(),
-      loadSampoerna()
-    ]);
-
-    renderTable([...sampoerna, ...galeri24]);
-  } catch (err) {
-    document.getElementById("error").textContent =
-      "Failed to load data: " + err.message;
+    document.getElementById("galeri24").textContent =
+      JSON.stringify(data, null, 2);
   }
-}
 
-loadAll();
+  async function loadSampoerna() {
+    const html = await fetchHTML("https://sampoernagold.com/");
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const data = parseTable(doc);
+
+    document.getElementById("sampoerna").textContent =
+      JSON.stringify(data, null, 2);
+  }
+
+  loadGaleri24();
+  loadSampoerna();
 </script>
 
 </body>
