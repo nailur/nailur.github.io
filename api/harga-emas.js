@@ -128,14 +128,12 @@ function parseLotusArchi(html) {
 				buyback: buyback * cols[0].textContent.trim()
 			});
 		}
-		data.shift(); // Removing first row
-
-		// Removing 4 last row
-		data.pop();
-		data.pop();
-		data.pop();
-		data.pop();
 	});
+
+	 // remove header row
+	if (data.length > 0) data.shift();
+	// remove last 4 footer rows
+	if (data.length > 4) data.splice(-4);
 
   	return data;
 }
