@@ -35,7 +35,7 @@ function parseGaleri24(html) {
 
   const categories = doc.querySelectorAll(
     // '#GALERI\\ 24, #ANTAM, #UBS, #ANTAM\\ MULIA\\ RETRO, #ANTAM\\ NON\\ PEGADAIAN, #LOTUS\\ ARCHI'
-	'#ANTAM, #ANTAM\\ MULIA\\ RETRO, #GALERI\\ 24, #UBS'
+	'#ANTAM, #GALERI\\ 24, #UBS'
   );
 
   categories.forEach(categoryEl => {
@@ -94,6 +94,10 @@ function parseLotusArchi(html) {
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
 
+	console.log(html);
+	console.log(dom);
+	console.log(doc);
+
 	const nodes = [];
 
 	// Get Buyback Price
@@ -123,7 +127,7 @@ function parseLotusArchi(html) {
 				category: "LOTUS ARCHI",
 				gram: cols[0].textContent.trim(),
 				jual: cols[1].textContent.trim(),
-				buyback: 0
+				buyback: buyback * cols[0].textContent.trim()
 			});
 		}
 	});
