@@ -17,9 +17,6 @@ export default async function handler(req, res) {
       data: [...galeri24, ...sampoerna, ...lotusarchi]
     });
 
-	console.log(lotusarchiHTML);
-	console.log("hello");
-
   } catch (err) {
     res.status(500).json({
       error: err.message
