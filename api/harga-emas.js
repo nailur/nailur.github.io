@@ -123,7 +123,7 @@ function parseLotusArchi(html) {
 				category: "LOTUS ARCHI",
 				gram: cols[0].textContent.trim(),
 				jual: cols[1].textContent.trim(),
-				buyback: 0;
+				buyback: 0
 			});
 		}
 	});
