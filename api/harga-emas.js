@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader("Access-Control-Allow-Methods", "GET");
     res.status(200).json({
-      data: [...galeri24, ...sampoerna, ...lotusarchi]
+      data: [...galeri24, ...sampoerna]
     });
   } catch (err) {
     res.status(500).json({
