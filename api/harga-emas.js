@@ -17,7 +17,9 @@ export default async function handler(req, res) {
       data: [...galeri24, ...sampoerna, ...lotusarchi]
     });
 
-	console.log(res);
+	console.log(lotusarchiHTML);
+	console.log("hello");
+
   } catch (err) {
     res.status(500).json({
       error: err.message
@@ -95,10 +97,6 @@ function parseLotusArchi(html) {
 	const { JSDOM } = require("jsdom");
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
-
-	console.log(html);
-	console.log(dom);
-	console.log(doc);
 
 	const nodes = [];
 
