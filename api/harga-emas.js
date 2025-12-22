@@ -10,14 +10,14 @@ export default async function handler(req, res) {
     const sampoerna = parseSampoerna(sampoernaHTML);
 	const lotusarchi = parseLotusArchi(lotusarchiHTML);
 
-	console.log(lotusarchi);
-
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader("Access-Control-Allow-Methods", "GET");
     res.status(200).json({
       data: [...galeri24, ...sampoerna, ...lotusarchi]
     });
+
+	console.log(res);
   } catch (err) {
     res.status(500).json({
       error: err.message
