@@ -111,8 +111,6 @@ function parseLotusArchi(html) {
 		}
 	}
 
-	console.log(nodes);
-
 	// const buyback = nodes[0].match(/Buyback Price\s*:\s*Rp\s*([\d.]+)/i)?.[1].replace(/\D/g, '');
 	const buyback = 0;
 
@@ -125,12 +123,12 @@ function parseLotusArchi(html) {
 				category: "LOTUS ARCHI",
 				gram: cols[0].textContent.trim(),
 				jual: cols[1].textContent.trim(),
-				buyback: buyback * cols[0].textContent.trim()
+				buyback: 0;
 			});
 		}
 	});
 
-	 // remove header row
+	// remove header row
 	if (data.length > 0) data.shift();
 	// remove last 4 footer rows
 	if (data.length > 4) data.splice(-4);
