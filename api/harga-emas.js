@@ -1,14 +1,19 @@
 export default async function handler(req, res) {
   try {
-    const [galeriHTML, sampoernaHTML, lotusarchiHTML] = await Promise.all([
+    const [galeriHTML, sampoernaHTML] = await Promise.all([
       fetch("https://galeri24.co.id/harga-emas").then(r => r.text()),
-      fetch("https://sampoernagold.com/").then(r => r.text()),
-	  fetch("https://lotusarchi.com/pricing/").then(r => r.text())
+      fetch("https://sampoernagold.com/").then(r => r.text())
     ]);
+
+	const resLotus = await fetch("https://lotusarchi.com/pricing/");
+	console.log("LOTUS STATUS:", resLotus.status);
+	const lotusarchiHTML = await resLotus.text();
+	console.log("LOTUS HTML LENGTH:", lotusarchiHTML.length);
+
 
     const galeri24 = parseGaleri24(galeriHTML);
     const sampoerna = parseSampoerna(sampoernaHTML);
-	const lotusarchi = parseLotusArchi(lotusarchiHTML);
+	// const lotusarchi = parseLotusArchi(lotusarchiHTML);
 
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
 	res.setHeader("Access-Control-Allow-Origin", "*");
