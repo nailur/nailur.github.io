@@ -1,9 +1,9 @@
 export default async function handler(req, res) {
   try {
-    const [galeriHTML, sampoernaHTML, lotusarchiHTML] = await Promise.all([
+    const [galeriHTML, sampoernaHTML, lotusJSON] = await Promise.all([
       fetch("https://galeri24.co.id/harga-emas").then(r => r.text()),
       fetch("https://sampoernagold.com/").then(r => r.text()),
-	  fetch("https://lotusarchi.com/pricing/").then(r => r.text())
+	  fetch("https://lotusarchi.com/api/pricing").then(r => r.text())
     ]);
 
     const galeri24 = parseGaleri24(galeriHTML);
@@ -90,7 +90,15 @@ function parseSampoerna(html) {
 /* =========================
    LOTUSARCHI PARSER
 ========================= */
-function parseLotusArchi(html) {
+function parseLotusArchi(json) {
+  return json.products.map(p => ({
+    category: "LOTUS ARCHI",
+    gram: p.weight,
+    jual: p.price.toString(),
+    buyback: json.buyback.toString()
+  }));
+}
+/* function parseLotusArchi(html) {
 	const { JSDOM } = require("jsdom");
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
@@ -135,4 +143,4 @@ function parseLotusArchi(html) {
 	if (data.length > 4) data.splice(-4);
 
   	return data;
-}
+}*/
