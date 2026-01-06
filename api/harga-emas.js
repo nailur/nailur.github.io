@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     const [galeriHTML, sampoernaHTML, lotusarchiHTML] = await Promise.all([
       fetch("https://galeri24.co.id/harga-emas").then(r => r.text()),
       fetch("https://sampoernagold.com/").then(r => r.text()),
-	  fetch("https://lotusarchi.com/api/pricing").then(r => r.text())
+	  fetch("https://lotusarchi.com/pricing/").then(r => r.text())
     ]);
 
     const galeri24 = parseGaleri24(galeriHTML);
@@ -90,18 +90,12 @@ function parseSampoerna(html) {
 /* =========================
    LOTUSARCHI PARSER
 ========================= */
-function parseLotusArchi(json) {
-  return json.products.map(p => ({
-    category: "LOTUSARCHI",
-    gram: p.weight,
-    jual: p.price.toString(),
-    buyback: json.buyback.toString()
-  }));
-}
-/* function parseLotusArchi(html) {
+function parseLotusArchi(html) {
 	const { JSDOM } = require("jsdom");
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
+
+	console.log(dom);
 
 	const nodes = [];
 
@@ -137,10 +131,12 @@ function parseLotusArchi(json) {
 		}
 	});
 
+	console.log(data);
+
 	// remove header row
 	if (data.length > 0) data.shift();
 	// remove last 4 footer rows
 	if (data.length > 4) data.splice(-4);
 
   	return data;
-}*/
+}
