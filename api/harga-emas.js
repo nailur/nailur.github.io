@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   try {
-    const [galeriHTML, sampoernaHTML, lotusJSON] = await Promise.all([
+    const [galeriHTML, sampoernaHTML, lotusarchiHTML] = await Promise.all([
       fetch("https://galeri24.co.id/harga-emas").then(r => r.text()),
       fetch("https://sampoernagold.com/").then(r => r.text()),
 	  fetch("https://lotusarchi.com/api/pricing").then(r => r.text())
@@ -92,7 +92,7 @@ function parseSampoerna(html) {
 ========================= */
 function parseLotusArchi(json) {
   return json.products.map(p => ({
-    category: "LOTUS ARCHI",
+    category: "LOTUSARCHI",
     gram: p.weight,
     jual: p.price.toString(),
     buyback: json.buyback.toString()
