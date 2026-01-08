@@ -47,8 +47,8 @@ function parseGaleri24(html) {
 
       result.push({
         category: category + "_GALERI24",
-        gram: cols[0].textContent.trim(),
-        jual: cols[1].textContent.trim()
+        gram: cols[0].textContent.trim().replace("/[^\d]/g", ""),
+        jual: cols[1].textContent.trim().replace("/[^\d]/g", "")
       });
     });
   });
@@ -73,8 +73,8 @@ function parseBullion(html) {
 		if (cols.length >= 3) {
 			data.push({
 				category: "ANTAM",
-				gram: cols[0].textContent.trim(),
-				jual: cols[1].textContent.trim()
+				gram: cols[0].textContent.trim().replace("/[^\d]/g", ""),
+				jual: cols[1].textContent.trim().replace("/[^\d]/g", "")
 			});
 		}
 	});
@@ -84,8 +84,8 @@ function parseBullion(html) {
 		if (cols.length >= 3) {
 			data.push({
 				category: "GALERI",
-				gram: cols[0].textContent.trim(),
-				jual: cols[1].textContent.trim()
+				gram: cols[0].textContent.trim().replace("/[^\d]/g", ""),
+				jual: cols[1].textContent.trim().replace("/[^\d]/g", "")
 			});
 		}
 	});
@@ -95,8 +95,8 @@ function parseBullion(html) {
 		if (cols.length >= 3) {
 			data.push({
 				category: "LOTUS",
-				gram: cols[0].textContent.trim(),
-				jual: cols[1].textContent.trim()
+				gram: cols[0].textContent.trim().replace("/[^\d]/g", ""),
+				jual: cols[1].textContent.trim().replace("/[^\d]/g", "")
 			});
 		}
 	});
@@ -106,8 +106,8 @@ function parseBullion(html) {
 		if (cols.length >= 3) {
 			data.push({
 				category: "SAMPOERNA",
-				gram: cols[0].textContent.trim(),
-				jual: cols[1].textContent.trim()
+				gram: cols[0].textContent.trim().replace("/[^\d]/g", ""),
+				jual: cols[1].textContent.trim().replace("/[^\d]/g", "")
 			});
 		}
 	});
