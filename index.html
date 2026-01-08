@@ -3,45 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <title>Gold Price Indonesia</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{
-  margin:0;
-  background:#0b0f14;
-  color:#e6edf3;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
-}
-header{
-  position:sticky;top:0;
-  background:#0d1117;
-  padding:14px;
-  font-weight:600;
-  font-size:18px;
-  border-bottom:1px solid #222;
-}
+body{margin:0;background:#0b0f14;color:#e6edf3;font-family:system-ui}
+header{position:sticky;top:0;background:#0d1117;padding:14px;font-size:18px;font-weight:600;border-bottom:1px solid #222}
 .container{padding:12px}
-.card{
-  background:#161b22;
-  border-radius:18px;
-  padding:14px;
-  margin-bottom:10px;
-}
+.card{background:#161b22;border-radius:18px;padding:14px;margin-bottom:10px}
 .good{color:#3fb950}
-select{
-  width:100%;
-  padding:10px;
-  border-radius:10px;
-  border:1px solid #333;
-  background:#0d1117;
-  color:#fff;
-}
+select{width:100%;padding:10px;border-radius:10px;background:#0d1117;color:#fff;border:1px solid #333}
 table{width:100%;font-size:14px}
 th,td{padding:8px}
 th{color:#8b949e}
 tr{border-bottom:1px solid #222}
-.brand{font-weight:600;font-size:15px}
-.price{font-size:17px;font-weight:700}
-.small{color:#8b949e;font-size:12px}
 </style>
 </head>
 <body>
@@ -52,54 +25,48 @@ tr{border-bottom:1px solid #222}
 <div id="summary"></div>
 
 <div class="card">
-  <select id="filter" onchange="renderFull()"></select>
-  <div class="small" style="margin-top:6px">Full price list</div>
-  <table>
-    <thead>
-      <tr><th>Brand</th><th>Gram</th><th>Price</th></tr>
-    </thead>
-    <tbody id="fullTable"></tbody>
-  </table>
+<select id="filter" onchange="renderFull()"></select>
+<table>
+<thead><tr><th>Brand</th><th>Gram</th><th>Price</th></tr></thead>
+<tbody id="fullTable"></tbody>
+</table>
 </div>
 
 </div>
 
 <script>
-const API = "https://nailur.vercel.app/api/harga-emas";
+const API="https://nailur.vercel.app/api/harga-emas";
 let rawData=[];
 
 async function load(){
-  const r = await fetch(API);
-  const j = await r.json();
-  rawData = j.data;
-
+  const r=await fetch(API);
+  const j=await r.json();
+  rawData=j.data;
   buildSummary();
   buildFilter();
   renderFull();
 }
 
+function cleanNum(txt){
+  return Number(String(txt).replace(/[^\d]/g,""));
+}
+
 function buildSummary(){
-  const g1 = rawData.filter(r=>r.gram==="1");
+  const g1=rawData.filter(r=>r.gram==="1");
   const map={};
   g1.forEach(r=>{
     if(!map[r.category]) map[r.category]=[];
-    map[r.category].push(parseInt(r.jual));
+    map[r.category].push(cleanNum(r.jual));
   });
 
-  const list = Object.keys(map).map(k=>{
-    return {brand:k, price:Math.min(...map[k])};
-  }).sort((a,b)=>a.price-b.price);
+  const list=Object.keys(map).map(k=>({brand:k,price:Math.min(...map[k])}))
+    .sort((a,b)=>a.price-b.price);
 
-  let html="";
-  list.forEach((b,i)=>{
-    html+=`
+  document.getElementById("summary").innerHTML=list.map((b,i)=>`
     <div class="card">
-      <div class="brand">${b.brand}</div>
-      <div class="price ${i===0?'good':''}">Rp ${b.price.toLocaleString("id-ID")}</div>
-      ${i===0?'<div class="small good">Cheapest today</div>':''}
-    </div>`;
-  });
-  document.getElementById("summary").innerHTML=html;
+      <b>${b.brand}</b>
+      <div class="${i===0?'good':''}">Rp ${b.price.toLocaleString("id-ID")}</div>
+    </div>`).join("");
 }
 
 function buildFilter(){
@@ -112,19 +79,15 @@ function buildFilter(){
 
 function renderFull(){
   const f=document.getElementById("filter").value;
-  let rows = f==="ALL"?rawData:rawData.filter(r=>r.category===f);
+  let rows=f==="ALL"?rawData:rawData.filter(r=>r.category===f);
   rows.sort((a,b)=>a.category.localeCompare(b.category));
 
-  let html="";
-  rows.forEach(r=>{
-    html+=`
+  document.getElementById("fullTable").innerHTML=rows.map(r=>`
     <tr>
       <td>${r.category}</td>
       <td>${r.gram}</td>
-      <td>Rp ${r.jual.toLocaleString("id-ID")}</td>
-    </tr>`;
-  });
-  document.getElementById("fullTable").innerHTML=html;
+      <td>Rp ${cleanNum(r.jual).toLocaleString("id-ID")}</td>
+    </tr>`).join("");
 }
 
 load();
