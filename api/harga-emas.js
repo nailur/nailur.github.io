@@ -1,20 +1,22 @@
 export default async function handler(req, res) {
   try {
-    const [galeriHTML, sampoernaHTML, lotusarchiHTML] = await Promise.all([
+    const [galeriHTML, sampoernaHTML, lotusarchiHTML, bullionHTML] = await Promise.all([
       fetch("https://galeri24.co.id/harga-emas").then(r => r.text()),
       fetch("https://sampoernagold.com/").then(r => r.text()),
-	  fetch("https://lotusarchi.com/pricing/").then(r => r.text())
+	  fetch("https://lotusarchi.com/pricing/").then(r => r.text()),
+	  fetch("https://idbullion.com/").then(r => r.text()),
     ]);
 
     const galeri24 = parseGaleri24(galeriHTML);
     const sampoerna = parseSampoerna(sampoernaHTML);
 	const lotusarchi = parseLotusArchi(lotusarchiHTML);
+	const bullion = parseBullion(bullionHTML);
 
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader("Access-Control-Allow-Methods", "GET");
     res.status(200).json({
-      data: [...galeri24, ...sampoerna, ...lotusarchi]
+      data: [...galeri24, ...sampoerna, ...lotusarchi, ...bullion]
     });
 
   } catch (err) {
@@ -139,4 +141,12 @@ function parseLotusArchi(html) {
 	if (data.length > 4) data.splice(-4);
 
   	return data;
+}
+
+function parseBullion(html) {
+	const { JSDOM } = require("jsdom");
+	const dom = new JSDOM(html);
+	const doc = dom.window.document;
+
+	console.log(doc);	
 }
