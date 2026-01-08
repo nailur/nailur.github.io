@@ -4,7 +4,7 @@ export default async function handler(req, res) {
       fetch("https://galeri24.co.id/harga-emas").then(r => r.text()),
       fetch("https://sampoernagold.com/").then(r => r.text()),
 	  fetch("https://lotusarchi.com/pricing/").then(r => r.text()),
-	  fetch("https://idbullion.com/").then(r => r.text()),
+	  fetch("https://idbullion.com/").then(r => r.text())
     ]);
 
     const galeri24 = parseGaleri24(galeriHTML);
@@ -148,5 +148,5 @@ function parseBullion(html) {
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
 
-	console.log(doc);	
+	console.log(doc);
 }
