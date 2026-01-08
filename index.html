@@ -2,45 +2,66 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Indonesia Gold Price Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gold Price Indonesia</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <style>
-body{font-family:system-ui;background:#0d1117;color:#e6edf3;margin:0;padding:20px}
-h2{margin-bottom:6px}
-.card{background:#161b22;border-radius:14px;padding:16px;margin-bottom:12px}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{padding:8px;text-align:left;border-bottom:1px solid #30363d}
+body{
+  margin:0;
+  background:#0b0f14;
+  color:#e6edf3;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+}
+header{
+  position:sticky;top:0;
+  background:#0d1117;
+  padding:14px;
+  font-weight:600;
+  font-size:18px;
+  border-bottom:1px solid #222;
+}
+.container{padding:12px}
+.card{
+  background:#161b22;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:10px;
+}
+.good{color:#3fb950}
+select{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #333;
+  background:#0d1117;
+  color:#fff;
+}
+table{width:100%;font-size:14px}
+th,td{padding:8px}
 th{color:#8b949e}
-tr:hover{background:#21262d}
-.good{color:#3fb950;font-weight:bold}
-small{color:#8b949e}
-.full{margin-top:20px}
-select{background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:6px}
+tr{border-bottom:1px solid #222}
+.brand{font-weight:600;font-size:15px}
+.price{font-size:17px;font-weight:700}
+.small{color:#8b949e;font-size:12px}
 </style>
 </head>
 <body>
 
-<h2>Live Indonesia Gold Prices</h2>
-<small>Source: nailur.vercel.app/api/harga-emas</small>
+<header>Indonesia Gold Price</header>
+<div class="container">
 
 <div id="summary"></div>
 
-<div class="card full">
-<h3>Full Price Table</h3>
-<select id="filter" onchange="renderFull()">
-<option value="ALL">All Brands</option>
-</select>
-<table>
-<thead>
-<tr>
-<th>Brand</th>
-<th>Gram</th>
-<th>Sell Price</th>
-<th>Price / Gram</th>
-</tr>
-</thead>
-<tbody id="fullTable"></tbody>
-</table>
+<div class="card">
+  <select id="filter" onchange="renderFull()"></select>
+  <div class="small" style="margin-top:6px">Full price list</div>
+  <table>
+    <thead>
+      <tr><th>Brand</th><th>Gram</th><th>Price</th></tr>
+    </thead>
+    <tbody id="fullTable"></tbody>
+  </table>
+</div>
+
 </div>
 
 <script>
@@ -48,9 +69,9 @@ const API = "https://nailur.vercel.app/api/harga-emas";
 let rawData=[];
 
 async function load(){
-  const res = await fetch(API);
-  const json = await res.json();
-  rawData = json.data;
+  const r = await fetch(API);
+  const j = await r.json();
+  rawData = j.data;
 
   buildSummary();
   buildFilter();
@@ -58,63 +79,52 @@ async function load(){
 }
 
 function buildSummary(){
-  const oneGram = rawData.filter(r=>r.gram==="1");
-  const grouped={};
-
-  oneGram.forEach(r=>{
-    if(!grouped[r.category]) grouped[r.category]=[];
-    grouped[r.category].push(parseInt(r.jual));
+  const g1 = rawData.filter(r=>r.gram==="1");
+  const map={};
+  g1.forEach(r=>{
+    if(!map[r.category]) map[r.category]=[];
+    map[r.category].push(parseInt(r.jual));
   });
 
-  const brands = Object.keys(grouped).map(k=>{
-    return {brand:k, price:Math.min(...grouped[k])};
+  const list = Object.keys(map).map(k=>{
+    return {brand:k, price:Math.min(...map[k])};
   }).sort((a,b)=>a.price-b.price);
 
   let html="";
-  brands.forEach((b,i)=>{
+  list.forEach((b,i)=>{
     html+=`
-      <div class="card">
-        <h3>${b.brand} ${i===0?'<span class="good">(CHEAPEST)</span>':''}</h3>
-        <div class="${i===0?'good':''}">Rp ${b.price.toLocaleString("id-ID")} / gram</div>
-      </div>`;
+    <div class="card">
+      <div class="brand">${b.brand}</div>
+      <div class="price ${i===0?'good':''}">Rp ${b.price.toLocaleString("id-ID")}</div>
+      ${i===0?'<div class="small good">Cheapest today</div>':''}
+    </div>`;
   });
-
-  document.getElementById("summary").innerHTML = html;
+  document.getElementById("summary").innerHTML=html;
 }
 
 function buildFilter(){
-  const select=document.getElementById("filter");
-  [...new Set(rawData.map(r=>r.category))].forEach(b=>{
-    const o=document.createElement("option");
-    o.value=b;o.textContent=b;
-    select.appendChild(o);
+  const sel=document.getElementById("filter");
+  sel.innerHTML='<option value="ALL">All Brands</option>';
+  [...new Set(rawData.map(r=>r.category))].sort().forEach(b=>{
+    sel.innerHTML+=`<option value="${b}">${b}</option>`;
   });
 }
 
 function renderFull(){
-  const f = document.getElementById("filter").value;
-
-  let rows = f==="ALL" ? rawData : rawData.filter(r=>r.category===f);
-
-  // SORT BY CATEGORY NAME A → Z
-  rows = rows.sort((a,b)=>{
-    return a.category.localeCompare(b.category);
-  });
+  const f=document.getElementById("filter").value;
+  let rows = f==="ALL"?rawData:rawData.filter(r=>r.category===f);
+  rows.sort((a,b)=>a.category.localeCompare(b.category));
 
   let html="";
   rows.forEach(r=>{
-    const price = parseInt(r.jual);
-    const gram = parseFloat(r.gram);
-
     html+=`
     <tr>
       <td>${r.category}</td>
-      <td>${r.gram}</td>
-      <td>Rp ${price.toLocaleString("id-ID")}</td>
+      <td>${r.gram}g</td>
+      <td>Rp ${parseInt(r.jual).toLocaleString("id-ID")}</td>
     </tr>`;
   });
-
-  document.getElementById("fullTable").innerHTML = html;
+  document.getElementById("fullTable").innerHTML=html;
 }
 
 load();
