@@ -8,13 +8,14 @@
 body{font-family:system-ui;background:#0d1117;color:#e6edf3;margin:0;padding:20px}
 h2{margin-bottom:6px}
 .card{background:#161b22;border-radius:14px;padding:16px;margin-bottom:12px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:8px;text-align:left}
-th{color:#8b949e;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px;text-align:left;border-bottom:1px solid #30363d}
+th{color:#8b949e}
 tr:hover{background:#21262d}
 .good{color:#3fb950;font-weight:bold}
-.bad{color:#f85149}
 small{color:#8b949e}
+.full{margin-top:20px}
+select{background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:6px}
 </style>
 </head>
 <body>
@@ -22,25 +23,51 @@ small{color:#8b949e}
 <h2>Live Indonesia Gold Prices</h2>
 <small>Source: nailur.vercel.app/api/harga-emas</small>
 
-<div id="app"></div>
+<div id="summary"></div>
+
+<div class="card full">
+<h3>Full Price Table</h3>
+<select id="filter" onchange="renderFull()">
+<option value="ALL">All Brands</option>
+</select>
+<table>
+<thead>
+<tr>
+<th>Brand</th>
+<th>Gram</th>
+<th>Sell Price</th>
+<th>Price / Gram</th>
+</tr>
+</thead>
+<tbody id="fullTable"></tbody>
+</table>
+</div>
 
 <script>
 const API = "https://nailur.vercel.app/api/harga-emas";
+let rawData=[];
 
 async function load(){
   const res = await fetch(API);
   const json = await res.json();
-  const rows = json.data.filter(r=>r.gram==="1");
+  rawData = json.data;
 
-  const grouped = {};
-  rows.forEach(r=>{
+  buildSummary();
+  buildFilter();
+  renderFull();
+}
+
+function buildSummary(){
+  const oneGram = rawData.filter(r=>r.gram==="1");
+  const grouped={};
+
+  oneGram.forEach(r=>{
     if(!grouped[r.category]) grouped[r.category]=[];
     grouped[r.category].push(parseInt(r.jual));
   });
 
   const brands = Object.keys(grouped).map(k=>{
-    const avg = Math.min(...grouped[k]);
-    return {brand:k, price:avg};
+    return {brand:k, price:Math.min(...grouped[k])};
   }).sort((a,b)=>a.price-b.price);
 
   let html="";
@@ -48,18 +75,46 @@ async function load(){
     html+=`
       <div class="card">
         <h3>${b.brand} ${i===0?'<span class="good">(CHEAPEST)</span>':''}</h3>
-        <table>
-          <tr><th>1 Gram Price</th><td class="${i===0?'good':'bad'}">Rp ${b.price.toLocaleString("id-ID")}</td></tr>
-        </table>
-      </div>
-    `;
+        <div class="${i===0?'good':''}">Rp ${b.price.toLocaleString("id-ID")} / gram</div>
+      </div>`;
   });
 
-  document.getElementById("app").innerHTML = html;
+  document.getElementById("summary").innerHTML = html;
+}
+
+function buildFilter(){
+  const select=document.getElementById("filter");
+  [...new Set(rawData.map(r=>r.category))].forEach(b=>{
+    const o=document.createElement("option");
+    o.value=b;o.textContent=b;
+    select.appendChild(o);
+  });
+}
+
+function renderFull(){
+  const f=document.getElementById("filter").value;
+  const rows = f==="ALL"?rawData:rawData.filter(r=>r.category===f);
+
+  let html="";
+  rows.forEach(r=>{
+    const price = parseInt(r.jual);
+    const gram = parseFloat(r.gram);
+    const perGram = Math.round(price/gram);
+
+    html+=`
+    <tr>
+      <td>${r.category}</td>
+      <td>${r.gram}</td>
+      <td>Rp ${price.toLocaleString("id-ID")}</td>
+      <td>${perGram.toLocaleString("id-ID")}</td>
+    </tr>`;
+  });
+
+  document.getElementById("fullTable").innerHTML = html;
 }
 
 load();
-setInterval(load, 600000); // refresh every 10 min
+setInterval(load,600000);
 </script>
 
 </body>
