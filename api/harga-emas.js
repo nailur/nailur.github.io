@@ -1,20 +1,18 @@
 export default async function handler(req, res) {
   try {
-    const [galeriHTML, sampoernaHTML, bullionHTML] = await Promise.all([
+    const [galeriHTML, bullionHTML] = await Promise.all([
       fetch("https://galeri24.co.id/harga-emas").then(r => r.text()),
-      fetch("https://sampoernagold.com/").then(r => r.text()),
 	  fetch("https://idbullion.com/").then(r => r.text())
     ]);
 
     const galeri24 = parseGaleri24(galeriHTML);
-    const sampoerna = parseSampoerna(sampoernaHTML);
 	const idbullion = parseBullion(bullionHTML);
 
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader("Access-Control-Allow-Methods", "GET");
     res.status(200).json({
-      data: [...galeri24, ...sampoerna, ...idbullion]
+      data: [...galeri24, ...idbullion]
     });
 
   } catch (err) {
@@ -48,7 +46,7 @@ function parseGaleri24(html) {
       if (cols.length < 3) return;
 
       result.push({
-        category,
+        category: category + "_GALERI24",
         gram: cols[0].textContent.trim(),
         jual: cols[1].textContent.trim()
       });
@@ -58,27 +56,6 @@ function parseGaleri24(html) {
   return result;
 }
 
-function parseSampoerna(html) {
-	const { JSDOM } = require("jsdom");
-	const dom = new JSDOM(html);
-	const doc = dom.window.document;
-
-	const data = [];
-
-	doc.querySelectorAll("table tr").forEach(row => {
-		const cols = row.querySelectorAll("td");
-		if (cols.length >= 3) {
-			data.push({
-				category: "SAMPOERNA",
-				gram: cols[0].textContent.trim(),
-				jual: cols[1].textContent.trim()
-			});
-		}
-	});
-
-	return data;
-}
-
 function parseBullion(html) {
 	const { JSDOM } = require("jsdom");
 	const dom = new JSDOM(html);
@@ -86,13 +63,49 @@ function parseBullion(html) {
 
 	const data = [];
 
+	const tblAntam = doc.getElementById("modalAntam");
+	const tblGaleri = doc.getElementById("modalGaleri24");
 	const tblLotus = doc.getElementById("modalLotus");
+	const tblSampoerna = doc.getElementById("modalSampoerna");
+	
+	tblAntam.querySelectorAll("table tr").forEach(row => {
+		const cols = row.querySelectorAll("td");
+		if (cols.length >= 3) {
+			data.push({
+				category: "ANTAM",
+				gram: cols[0].textContent.trim(),
+				jual: cols[1].textContent.trim()
+			});
+		}
+	});
+
+	tblGaleri.querySelectorAll("table tr").forEach(row => {
+		const cols = row.querySelectorAll("td");
+		if (cols.length >= 3) {
+			data.push({
+				category: "GALERI",
+				gram: cols[0].textContent.trim(),
+				jual: cols[1].textContent.trim()
+			});
+		}
+	});
 
 	tblLotus.querySelectorAll("table tr").forEach(row => {
 		const cols = row.querySelectorAll("td");
 		if (cols.length >= 3) {
 			data.push({
 				category: "LOTUS",
+				gram: cols[0].textContent.trim(),
+				jual: cols[1].textContent.trim()
+			});
+		}
+	});
+
+	tblSampoerna.querySelectorAll("table tr").forEach(row => {
+		const cols = row.querySelectorAll("td");
+		if (cols.length >= 3) {
+			data.push({
+				category: "SAMPOERNA",
 				gram: cols[0].textContent.trim(),
 				jual: cols[1].textContent.trim()
 			});
