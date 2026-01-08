@@ -31,7 +31,7 @@ function parseGaleri24(html) {
 
   const categories = doc.querySelectorAll(
     // '#GALERI\\ 24, #ANTAM, #UBS, #ANTAM\\ MULIA\\ RETRO, #ANTAM\\ NON\\ PEGADAIAN, #LOTUS\\ ARCHI'
-	'#ANTAM, #GALERI\\ 24, #UBS'
+	'#ANTAM, #UBS, #LOTUS\\ ARCHI'
   );
 
   categories.forEach(categoryEl => {
@@ -83,7 +83,7 @@ function parseBullion(html) {
 		const cols = row.querySelectorAll("td");
 		if (cols.length >= 3) {
 			data.push({
-				category: "GALERI",
+				category: "GALERI24",
 				gram: cols[0].textContent.trim().replace("/[^\d]/g", ""),
 				jual: cols[1].textContent.trim().replace("/[^\d]/g", "")
 			});
