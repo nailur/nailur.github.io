@@ -149,4 +149,7 @@ function parseBullion(html) {
 	const doc = dom.window.document;
 
 	console.log(doc);
+	const data = [];
+
+	return data;
 }
