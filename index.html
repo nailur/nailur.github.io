@@ -120,8 +120,8 @@ function renderFull(){
     html+=`
     <tr>
       <td>${r.category}</td>
-      <td>${r.gram}g</td>
-      <td>Rp ${parseInt(r.jual).toLocaleString("id-ID")}</td>
+      <td>${r.gram}</td>
+      <td>Rp ${r.jual.toLocaleString("id-ID")}</td>
     </tr>`;
   });
   document.getElementById("fullTable").innerHTML=html;
