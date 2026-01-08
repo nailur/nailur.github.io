@@ -21,77 +21,74 @@
 
 <header>Indonesia Gold Price</header>
 <div class="container">
-
-<div id="summary"></div>
-
-<div class="card">
-<select id="filter" onchange="renderFull()"></select>
-<table>
-<thead><tr><th>Brand</th><th>Gram</th><th>Price</th></tr></thead>
-<tbody id="fullTable"></tbody>
-</table>
-</div>
-
+	<div id="summary"></div>
+	<div class="card">
+		<select id="filter" onchange="renderFull()"></select>
+		<table>
+			<thead><tr><th>Brand</th><th>Gram</th><th>Price</th></tr></thead>
+			<tbody id="fullTable"></tbody>
+		</table>
+	</div>
 </div>
 
 <script>
-const API="https://nailur.vercel.app/api/harga-emas";
-let rawData=[];
+	const API="https://nailur.vercel.app/api/harga-emas";
+	let rawData=[];
 
-async function load(){
-  const r=await fetch(API);
-  const j=await r.json();
-  rawData=j.data;
-  buildSummary();
-  buildFilter();
-  renderFull();
-}
+	async function load(){
+		const r=await fetch(API);
+		const j=await r.json();
+		rawData=j.data;
+		buildSummary();
+		buildFilter();
+		renderFull();
+	}
 
-function cleanNum(txt){
-  return Number(String(txt).replace(/[^\d]/g,""));
-}
+	function cleanNum(txt){
+		return Number(String(txt).replace(/[^\d]/g,""));
+	}
 
-function buildSummary(){
-  const g1=rawData.filter(r=>r.gram==="1");
-  const map={};
-  g1.forEach(r=>{
-    if(!map[r.category]) map[r.category]=[];
-    map[r.category].push(cleanNum(r.jual));
-  });
+	function buildSummary(){
+		const g1=rawData.filter(r=>r.gram==="1");
+		const map={};
+		g1.forEach(r=>{
+			if(!map[r.category]) map[r.category]=[];
+			map[r.category].push(cleanNum(r.jual));
+		});
 
-  const list=Object.keys(map).map(k=>({brand:k,price:Math.min(...map[k])}))
-    .sort((a,b)=>a.price-b.price);
+		const list=Object.keys(map).map(k=>({brand:k,price:Math.min(...map[k])}))
+			.sort((a,b)=>a.price-b.price);
 
-  document.getElementById("summary").innerHTML=list.map((b,i)=>`
-    <div class="card">
-      <b>${b.brand}</b>
-      <div class="${i===0?'good':''}">Rp ${b.price.toLocaleString("id-ID")}</div>
-    </div>`).join("");
-}
+		document.getElementById("summary").innerHTML=list.map((b,i)=>`
+		<div class="card">
+			<b>${b.brand}</b>
+			<div class="${i===0?'good':''}">Rp ${b.price.toLocaleString("id-ID")}</div>
+		</div>`).join("");
+	}
 
-function buildFilter(){
-  const sel=document.getElementById("filter");
-  sel.innerHTML='<option value="ALL">All Brands</option>';
-  [...new Set(rawData.map(r=>r.category))].sort().forEach(b=>{
-    sel.innerHTML+=`<option value="${b}">${b}</option>`;
-  });
-}
+	function buildFilter(){
+		const sel=document.getElementById("filter");
+		sel.innerHTML='<option value="ALL">All Brands</option>';
+		[...new Set(rawData.map(r=>r.category))].sort().forEach(b=>{
+			sel.innerHTML+=`<option value="${b}">${b}</option>`;
+		});
+	}
 
-function renderFull(){
-  const f=document.getElementById("filter").value;
-  let rows=f==="ALL"?rawData:rawData.filter(r=>r.category===f);
-  rows.sort((a,b)=>a.category.localeCompare(b.category));
+	function renderFull(){
+		const f=document.getElementById("filter").value;
+		let rows=f==="ALL"?rawData:rawData.filter(r=>r.category===f);
+		rows.sort((a,b)=>a.category.localeCompare(b.category));
 
-  document.getElementById("fullTable").innerHTML=rows.map(r=>`
-    <tr>
-      <td>${r.category}</td>
-      <td>${r.gram}</td>
-      <td>Rp ${cleanNum(r.jual).toLocaleString("id-ID")}</td>
-    </tr>`).join("");
-}
+		document.getElementById("fullTable").innerHTML=rows.map(r=>`
+			<tr>
+				<td>${r.category}</td>
+				<td>${r.gram}</td>
+				<td>Rp ${cleanNum(r.jual).toLocaleString("id-ID")}</td>
+			</tr>`).join("");
+	}
 
-load();
-setInterval(load,600000);
+	load();
+	setInterval(load,600000);
 </script>
 
 </body>
