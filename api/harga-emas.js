@@ -1,22 +1,20 @@
 export default async function handler(req, res) {
   try {
-    const [galeriHTML, sampoernaHTML, lotusarchiHTML, bullionHTML] = await Promise.all([
+    const [galeriHTML, sampoernaHTML, bullionHTML] = await Promise.all([
       fetch("https://galeri24.co.id/harga-emas").then(r => r.text()),
       fetch("https://sampoernagold.com/").then(r => r.text()),
-	  fetch("https://lotusarchi.com/pricing/").then(r => r.text()),
 	  fetch("https://idbullion.com/").then(r => r.text())
     ]);
 
     const galeri24 = parseGaleri24(galeriHTML);
     const sampoerna = parseSampoerna(sampoernaHTML);
-	const lotusarchi = parseLotusArchi(lotusarchiHTML);
 	const idbullion = parseBullion(bullionHTML);
 
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader("Access-Control-Allow-Methods", "GET");
     res.status(200).json({
-      data: [...galeri24, ...sampoerna, ...lotusarchi, ...idbullion]
+      data: [...galeri24, ...sampoerna, ...idbullion]
     });
 
   } catch (err) {
@@ -52,8 +50,7 @@ function parseGaleri24(html) {
       result.push({
         category,
         gram: cols[0].textContent.trim(),
-        jual: cols[1].textContent.trim(),
-        buyback: cols[2].textContent.trim()
+        jual: cols[1].textContent.trim()
       });
     });
   });
@@ -74,64 +71,12 @@ function parseSampoerna(html) {
 			data.push({
 				category: "SAMPOERNA",
 				gram: cols[0].textContent.trim(),
-				jual: cols[1].textContent.trim(),
-				buyback: cols[2].textContent.trim()
+				jual: cols[1].textContent.trim()
 			});
 		}
 	});
 
 	return data;
-}
-
-function parseLotusArchi(html) {
-	const { JSDOM } = require("jsdom");
-	const dom = new JSDOM(html);
-	const doc = dom.window.document;
-
-	console.log(dom);
-
-	const nodes = [];
-
-	// Get Buyback Price
-	const walker = doc.createTreeWalker(
-		doc.body,
-		dom.window.NodeFilter.SHOW_TEXT,
-		null,
-		false
-	);
-
-	let nodeq;
-	while (nodeq = walker.nextNode()) {
-		if (nodeq.nodeValue.includes("Buyback Price : Rp")) {
-			nodes.push(nodeq.nodeValue.trim());
-		}
-	}
-
-	// const buyback = nodes[0].match(/Buyback Price\s*:\s*Rp\s*([\d.]+)/i)?.[1].replace(/\D/g, '');
-	const buyback = 0;
-
-	const data = [];
-
-	doc.querySelectorAll("table tr").forEach(row => {
-		const cols = row.querySelectorAll("td");
-		if (cols.length >= 2) {
-			data.push({
-				category: "LOTUS ARCHI",
-				gram: cols[0].textContent.trim(),
-				jual: cols[1].textContent.trim(),
-				buyback: buyback * cols[0].textContent.trim()
-			});
-		}
-	});
-
-	console.log(data);
-
-	// remove header row
-	if (data.length > 0) data.shift();
-	// remove last 4 footer rows
-	if (data.length > 4) data.splice(-4);
-
-  	return data;
 }
 
 function parseBullion(html) {
@@ -141,7 +86,7 @@ function parseBullion(html) {
 
 	const data = [];
 
-	const tblLotus = doc.getElementById("modalLotus").children[1].children[0].children[0].children[1];
+	const tblLotus = doc.getElementById("modalLotus");
 
 	tblLotus.querySelectorAll("table tr").forEach(row => {
 		const cols = row.querySelectorAll("td");
@@ -149,8 +94,7 @@ function parseBullion(html) {
 			data.push({
 				category: "LOTUS",
 				gram: cols[0].textContent.trim(),
-				jual: cols[1].textContent.trim(),
-				buyback: cols[2].textContent.trim()
+				jual: cols[1].textContent.trim()
 			});
 		}
 	});
