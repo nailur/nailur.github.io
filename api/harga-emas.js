@@ -10,13 +10,13 @@ export default async function handler(req, res) {
     const galeri24 = parseGaleri24(galeriHTML);
     const sampoerna = parseSampoerna(sampoernaHTML);
 	const lotusarchi = parseLotusArchi(lotusarchiHTML);
-	const bullion = parseBullion(bullionHTML);
+	const idbullion = parseBullion(bullionHTML);
 
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader("Access-Control-Allow-Methods", "GET");
     res.status(200).json({
-      data: [...galeri24, ...sampoerna, ...lotusarchi, ...bullion]
+      data: [...galeri24, ...sampoerna, ...lotusarchi, ...idbullion]
     });
 
   } catch (err) {
