@@ -26,9 +26,6 @@ export default async function handler(req, res) {
   }
 }
 
-/* =========================
-   GALERI24 PARSER
-========================= */
 function parseGaleri24(html) {
   const { JSDOM } = require("jsdom");
   const dom = new JSDOM(html);
@@ -64,9 +61,6 @@ function parseGaleri24(html) {
   return result;
 }
 
-/* =========================
-   SAMPOERNA PARSER
-========================= */
 function parseSampoerna(html) {
 	const { JSDOM } = require("jsdom");
 	const dom = new JSDOM(html);
@@ -89,9 +83,6 @@ function parseSampoerna(html) {
 	return data;
 }
 
-/* =========================
-   LOTUSARCHI PARSER
-========================= */
 function parseLotusArchi(html) {
 	const { JSDOM } = require("jsdom");
 	const dom = new JSDOM(html);
@@ -148,8 +139,21 @@ function parseBullion(html) {
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
 
-	console.log(doc);
 	const data = [];
+
+	const tblLotus = doc.getElementById("modalLotus").children[1].children[0].children[0].children[1];
+
+	tblLotus.querySelectorAll("table tr").forEach(row => {
+		const cols = row.querySelectorAll("td");
+		if (cols.length >= 3) {
+			data.push({
+				category: "LOTUS",
+				gram: cols[0].textContent.trim(),
+				jual: cols[1].textContent.trim(),
+				buyback: cols[2].textContent.trim()
+			});
+		}
+	});
 
 	return data;
 }
