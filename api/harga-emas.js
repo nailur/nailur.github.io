@@ -95,8 +95,8 @@ function parseBullion(html) {
 		if (cols.length >= 3) {
 			data.push({
 				category: "LOTUS",
-				gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
+				gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2"),
+				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2")
 			});
 		}
 	});
