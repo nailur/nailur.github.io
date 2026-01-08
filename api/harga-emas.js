@@ -46,7 +46,7 @@ function parseGaleri24(html) {
       if (cols.length < 3) return;
 
       result.push({
-        category: category + "_GALERI24",
+        category: category + " - GALERI24",
         gram: cols[0].textContent.trim().replace(/[^\d]/g, ""),
         jual: cols[1].textContent.trim().replace(/[^\d]/g, "")
       });
