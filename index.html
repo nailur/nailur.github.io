@@ -105,14 +105,12 @@ function renderFull(){
   rows.forEach(r=>{
     const price = parseInt(r.jual);
     const gram = parseFloat(r.gram);
-    const perGram = Math.round(price/gram);
 
     html+=`
     <tr>
       <td>${r.category}</td>
       <td>${r.gram}</td>
       <td>Rp ${price.toLocaleString("id-ID")}</td>
-      <td>${perGram.toLocaleString("id-ID")}</td>
     </tr>`;
   });
 
