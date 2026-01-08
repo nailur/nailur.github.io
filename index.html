@@ -1,156 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>Harga Emas</title>
-
-	<style>
-		body {
-		margin: 0;
-		font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-		background: #0b1220;
-		color: #e5e7eb;
-		}
-
-		header {
-		padding: 16px;
-		background: #020617;
-		position: sticky;
-		top: 0;
-		z-index: 10;
-		border-bottom: 1px solid #1e293b;
-		}
-
-		h1 {
-		font-size: 18px;
-		margin: 0;
-		}
-
-		.updated {
-		font-size: 12px;
-		color: #94a3b8;
-		margin-top: 4px;
-		}
-
-		.container {
-		padding: 12px;
-		}
-
-		.card {
-		background: #020617;
-		border: 1px solid #1e293b;
-		border-radius: 10px;
-		padding: 12px;
-		margin-bottom: 10px;
-		}
-
-		.top {
-		display: flex;
-		justify-content: space-between;
-		margin-bottom: 6px;
-		}
-
-		.category {
-		font-weight: 600;
-		font-size: 14px;
-		}
-
-		.gram {
-		font-size: 13px;
-		color: #94a3b8;
-		}
-
-		.prices {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 8px;
-		}
-
-		.price-box {
-		background: #020617;
-		border: 1px solid #334155;
-		border-radius: 8px;
-		padding: 8px;
-		}
-
-		.label {
-		font-size: 11px;
-		color: #94a3b8;
-		}
-
-		.value {
-		font-size: 14px;
-		font-weight: 600;
-		margin-top: 2px;
-		}
-
-		.loading,
-		.error {
-		text-align: center;
-		padding: 20px;
-		color: #94a3b8;
-		}
-	</style>
+<meta charset="UTF-8">
+<title>Indonesia Gold Price Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:system-ui;background:#0d1117;color:#e6edf3;margin:0;padding:20px}
+h2{margin-bottom:6px}
+.card{background:#161b22;border-radius:14px;padding:16px;margin-bottom:12px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;text-align:left}
+th{color:#8b949e;font-size:13px}
+tr:hover{background:#21262d}
+.good{color:#3fb950;font-weight:bold}
+.bad{color:#f85149}
+small{color:#8b949e}
+</style>
 </head>
 <body>
 
-<header>
-	<h1>Harga Emas</h1>
-	<div class="updated" id="updated">Loading…</div>
-</header>
+<h2>Live Indonesia Gold Prices</h2>
+<small>Source: nailur.vercel.app/api/harga-emas</small>
 
-<div class="container" id="list">
-	<div class="loading">Loading data…</div>
-</div>
+<div id="app"></div>
 
 <script>
-	const API_URL = "https://nailur.vercel.app/api/harga-emas";
+const API = "https://nailur.vercel.app/api/harga-emas";
 
-	async function loadData() {
-		const list = document.getElementById("list");
-		const updated = document.getElementById("updated");
+async function load(){
+  const res = await fetch(API);
+  const json = await res.json();
+  const rows = json.data.filter(r=>r.gram==="1");
 
-		try {
-			const res = await fetch(API_URL);
-			const json = await res.json();
+  const grouped = {};
+  rows.forEach(r=>{
+    if(!grouped[r.category]) grouped[r.category]=[];
+    grouped[r.category].push(parseInt(r.jual));
+  });
 
-			updated.textContent =
-			"Updated: " + new Date(json.updated_at).toLocaleString();
+  const brands = Object.keys(grouped).map(k=>{
+    const avg = Math.min(...grouped[k]);
+    return {brand:k, price:avg};
+  }).sort((a,b)=>a.price-b.price);
 
-			list.innerHTML = "";
+  let html="";
+  brands.forEach((b,i)=>{
+    html+=`
+      <div class="card">
+        <h3>${b.brand} ${i===0?'<span class="good">(CHEAPEST)</span>':''}</h3>
+        <table>
+          <tr><th>1 Gram Price</th><td class="${i===0?'good':'bad'}">Rp ${b.price.toLocaleString("id-ID")}</td></tr>
+        </table>
+      </div>
+    `;
+  });
 
-			json.data.forEach(item => {
-			const card = document.createElement("div");
-			card.className = "card";
+  document.getElementById("app").innerHTML = html;
+}
 
-			card.innerHTML = `
-				<div class="top">
-				<div class="category">${item.category}</div>
-				<div class="gram">${item.gram}</div>
-				</div>
-
-				<div class="prices">
-				<div class="price-box">
-					<div class="label">Jual</div>
-					<div class="value">${item.jual}</div>
-				</div>
-				</div>
-			`;
-
-			list.appendChild(card);
-			});
-
-		} catch (err) {
-			list.innerHTML = `
-			<div class="error">
-				Failed to load data
-			</div>
-			`;
-		}
-	}
-
-	loadData();
+load();
+setInterval(load, 600000); // refresh every 10 min
 </script>
 
 </body>
