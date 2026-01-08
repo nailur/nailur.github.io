@@ -92,8 +92,14 @@ function buildFilter(){
 }
 
 function renderFull(){
-  const f=document.getElementById("filter").value;
-  const rows = f==="ALL"?rawData:rawData.filter(r=>r.category===f);
+  const f = document.getElementById("filter").value;
+
+  let rows = f==="ALL" ? rawData : rawData.filter(r=>r.category===f);
+
+  // SORT BY CATEGORY NAME A → Z
+  rows = rows.sort((a,b)=>{
+    return a.category.localeCompare(b.category);
+  });
 
   let html="";
   rows.forEach(r=>{
