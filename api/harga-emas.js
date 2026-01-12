@@ -1,3 +1,6 @@
+export const config = {runtime: "nodejs",};
+import { JSDOM } from "jsdom";
+
 export default async function handler(req, res) {
   try {
     const [galeriHTML, bullionHTML, ubsHTML] = await Promise.all([
@@ -25,7 +28,6 @@ export default async function handler(req, res) {
 }
 
 function parseGaleri24(html) {
-  const { JSDOM } = require("jsdom");
   const dom = new JSDOM(html);
   const doc = dom.window.document;
 
@@ -59,7 +61,6 @@ function parseGaleri24(html) {
 }
 
 function parseBullion(html) {
-	const { JSDOM } = require("jsdom");
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
 
@@ -133,7 +134,6 @@ async function fetchUBSLifestyle() {
 }
 
 function parseUBSLifestyle(pages) {
-	const { JSDOM } = require("jsdom");
 	const data = [];
 
 	pages.forEach(p => {
