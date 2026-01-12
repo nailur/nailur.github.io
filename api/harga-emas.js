@@ -133,6 +133,7 @@ async function fetchUBSLifestyle() {
 }
 
 function parseUBSLifestyle(pages) {
+	const { JSDOM } = require("jsdom");
 	const data = [];
 
 	pages.forEach(p => {
