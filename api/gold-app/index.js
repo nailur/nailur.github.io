@@ -33,4 +33,4 @@ export default async function handler(req,res){
     await supabase.from('gold_portfolio').insert([{ user_id:user.id, brand, gram, buy_date, buy_price }])
     return res.json({ success:true })
   }
-}
+} 
