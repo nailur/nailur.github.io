@@ -1,3 +1,4 @@
+export const config = { runtime:'nodejs' }
 import { getSupabase } from '../../lib/supabase'
 
 function monthsBetween(d1,d2){
