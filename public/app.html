@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>Your Gold</h2>
+<input id="gram" placeholder="gram">
+<input id="price" placeholder="buy price">
+<button onclick="save()">SAVE</button>
+<pre id="out"></pre>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+const supabase = supabase.createClient(
+  "https://iwsacljessokrqhfmdbv.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo"
+);
+
+async function save(){
+ const user = (await supabase.auth.getUser()).data.user;
+ await fetch('/api/gold-app',{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({gram:gram.value,buy_price:price.value})
+ });
+ load();
+}
+
+async function load(){
+ const r = await fetch('/api/gold-app');
+ const d = await r.json();
+ out.innerText = JSON.stringify(d,null,2);
+}
+load();
+</script>
+</body>
+</html>
