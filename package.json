@@ -1,5 +1,9 @@
 {
-  "dependencies": {
-    "jsdom": "^24.0.0"
+  "name":"gold-app",
+  "version":"1.0.0",
+  "type":"module",
+  "dependencies":{
+    "@supabase/supabase-js":"^2.39.5",
+	"jsdom": "^24.0.0"
   }
 }
