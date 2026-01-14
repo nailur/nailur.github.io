@@ -1,0 +1,17 @@
+{
+  "name": "gold-monitor-api",
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "start": "node api/index.js",
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "mysql2": "^3.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3"
+  }
+}
