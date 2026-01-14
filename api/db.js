@@ -1,11 +1,13 @@
 import mysql from 'mysql2/promise';
 
-// Reuse connection pool across function calls
 const pool = mysql.createPool({
-  uri: process.env.DATABASE_URL,
+  // Railway provides a single connection string (URI)
+  uri: process.env.DATABASE_URL, 
   waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  connectionLimit: 10, // Good for Vercel's serverless nature
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
 });
 
 export default pool;
