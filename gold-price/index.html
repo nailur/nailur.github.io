@@ -254,29 +254,6 @@
 
     load();
     setInterval(load, 60000);
-		try {
-			// Fetching prices from your tblpricelog
-			const { data, error } = await supabase
-				.from('tblpricelog')
-				.select('*')
-				.order('log_date', { ascending: false });
-
-			if (error) throw error;
-
-			// Map Supabase data to your existing rawData format
-			rawData = data.map(item => ({
-				category: item.brand,
-				gram: item.weight_grams.toString(),
-				jual: item.price
-			}));
-
-			buildSummary();
-			buildFilter();
-			renderFull();
-		} catch (e) {
-			console.error("Supabase Sync Failed:", e.message);
-		}
-	}
 
 	function toggleMenu() {
 		const nav = document.getElementById('sideNav');
