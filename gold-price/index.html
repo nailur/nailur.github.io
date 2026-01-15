@@ -173,6 +173,39 @@
 </div>
 
 <script>
+	// Add these at the top of your existing <script>
+	const SB_URL = "https://iwsacljessokrqhfmdbv.supabase.co";
+	const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo";
+	const supabase = supabase.createClient(SB_URL, SB_KEY);
+    
+	function toggleMenu() {
+		const nav = document.getElementById('sideNav');
+		const overlay = document.getElementById('overlay');
+		const burger = document.querySelector('.burger-menu');
+
+		nav.classList.toggle('open');
+		overlay.classList.toggle('active');
+		burger.classList.toggle('burger-active');
+	}
+
+	async function handleLogin() {
+		const email = document.getElementById('username').value; // Use email for Supabase Auth
+		const password = document.getElementById('password').value;
+
+		const { data, error } = await supabase.auth.signInWithPassword({
+			email: email,
+			password: password,
+		});
+
+		if (error) {
+			alert("Login Failed: " + error.message);
+		} else {
+			alert("Welcome back");
+			toggleMenu(); // Close the sidebar
+			loadUserInventory(data.user.id);
+		}
+	}
+
     const API="https://nailur.vercel.app/api/harga-emas";
     const brandLinks = {
         "ANTAM": "http://logammulia.com/id/harga-emas-hari-ini",
@@ -186,11 +219,6 @@
 		
     };
 
-	// Add these at the top of your existing <script>
-	const SB_URL = "https://iwsacljessokrqhfmdbv.supabase.co";
-	const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo";
-	const supabase = supabase.createClient(SB_URL, SB_KEY);
-    
     let rawData=[];
 
     async function load(){
@@ -254,34 +282,6 @@
 
     load();
     setInterval(load, 60000);
-
-	function toggleMenu() {
-		const nav = document.getElementById('sideNav');
-		const overlay = document.getElementById('overlay');
-		const burger = document.querySelector('.burger-menu');
-
-		nav.classList.toggle('open');
-		overlay.classList.toggle('active');
-		burger.classList.toggle('burger-active');
-	}
-
-	async function handleLogin() {
-		const email = document.getElementById('username').value; // Use email for Supabase Auth
-		const password = document.getElementById('password').value;
-
-		const { data, error } = await supabase.auth.signInWithPassword({
-			email: email,
-			password: password,
-		});
-
-		if (error) {
-			alert("Login Failed: " + error.message);
-		} else {
-			alert("Welcome back");
-			toggleMenu(); // Close the sidebar
-			loadUserInventory(data.user.id);
-		}
-	}
 </script>
 </body>
 </html>
