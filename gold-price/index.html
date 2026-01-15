@@ -248,6 +248,26 @@
 
     load();
     setInterval(load, 60000);
+
+	function toggleMenu() {
+		const nav = document.getElementById('sideNav');
+		const overlay = document.getElementById('overlay');
+		const burger = document.querySelector('.burger-menu');
+
+		nav.classList.toggle('open');
+		overlay.classList.toggle('active');
+		burger.classList.toggle('burger-active');
+	}
+
+	async function handleLogin() {
+		// This is where you connect to your Vercel /api/login
+		const user = document.getElementById('username').value;
+		const pass = document.getElementById('password').value;
+		
+		alert(`Attempting login for ${user}...`);
+		// After successful fetch, you can store the JWT in localStorage
+		// toggleMenu(); 
+	}
 </script>
 </body>
 </html>
