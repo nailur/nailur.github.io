@@ -135,22 +135,29 @@
     <div class="status-dot"></div>
 </header>
 
-<nav id="sideNav" class="side-nav">
-    <div class="nav-content">
-        <h2 class="nav-title">Member Area</h2>
-        <p class="nav-subtitle"></p>
-        
-        <div class="login-form">
-            <input type="text" id="username" placeholder="Username" class="nav-input">
-            <input type="password" id="password" placeholder="Password" class="nav-input">
-            <button onclick="handleLogin()" class="btn-login">Login</button>
+<div class="nav-content">
+    <h2 class="nav-title">Gold Pulse</h2>
+    
+    <div id="nav-menu" class="space-y-2">
+        <a href="#" onclick="showSection('gold-price')" class="nav-item">Gold Price</a>
+
+        <div id="auth-menu" style="display: none;">
+            <a href="#" onclick="showSection('dashboard')" class="nav-item">Dashboard</a>
+            <button onclick="handleLogout()" class="nav-item btn-logout">Log Out</button>
         </div>
-        
-        <div class="nav-footer">
-            <!-- <p>v1.0 • Nailur 2026</p> -->
+
+        <div id="guest-menu">
+            <button onclick="showLogin()" class="nav-item btn-login-nav">Login</button>
         </div>
     </div>
-</nav>
+
+    <div id="login-section" style="display: none;" class="login-form">
+        <input type="text" id="username" placeholder="Email" class="nav-input">
+        <input type="password" id="password" placeholder="Password" class="nav-input">
+        <button onclick="handleLogin()" class="btn-login">Unlock Portfolio</button>
+        <button onclick="showMenu()" class="btn-back">Back</button>
+    </div>
+</div>
 
 <div id="overlay" class="overlay" onclick="toggleMenu()"></div>
 
@@ -176,7 +183,7 @@
 	// Add these at the top of your existing <script>
 	const SB_URL = "https://iwsacljessokrqhfmdbv.supabase.co";
 	const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo";
-	const supabase = supabase.createClient(SB_URL, SB_KEY);
+	const clientSupabase = supabase.createClient(SB_URL, SB_KEY);
     
 	function toggleMenu() {
 		const nav = document.getElementById('sideNav');
@@ -192,7 +199,7 @@
 		const email = document.getElementById('username').value; // Use email for Supabase Auth
 		const password = document.getElementById('password').value;
 
-		const { data, error } = await supabase.auth.signInWithPassword({
+		const { data, error } = await clientSupabase.auth.signInWithPassword({
 			email: email,
 			password: password,
 		});
@@ -204,6 +211,44 @@
 			toggleMenu(); // Close the sidebar
 			loadUserInventory(data.user.id);
 		}
+	}
+
+	// Listen for Auth changes (Login/Logout)
+	clientSupabase.auth.onAuthStateChange((event, session) => {
+		const authMenu = document.getElementById('auth-menu');
+		const guestMenu = document.getElementById('guest-menu');
+		const loginSection = document.getElementById('login-section');
+
+		if (event === 'SIGNED_IN') {
+			authMenu.style.display = 'block';
+			guestMenu.style.display = 'none';
+			loginSection.style.display = 'none';
+			console.log("User logged in:", session.user.email);
+			showSection('dashboard'); // Auto-switch to dashboard on login
+		} 
+		
+		if (event === 'SIGNED_OUT') {
+			authMenu.style.display = 'none';
+			guestMenu.style.display = 'block';
+			showSection('gold-price'); // Switch back to public price
+		}
+	});
+
+	async function handleLogout() {
+		await clientSupabase.auth.signOut();
+		alert("Logged out. See you next time!");
+		toggleMenu(); // Close sidebar
+	}
+
+	// UI Toggles for Sidebar
+	function showLogin() {
+		document.getElementById('nav-menu').style.display = 'none';
+		document.getElementById('login-section').style.display = 'block';
+	}
+
+	function showMenu() {
+		document.getElementById('nav-menu').style.display = 'block';
+		document.getElementById('login-section').style.display = 'none';
 	}
 
     const API="https://nailur.vercel.app/api/harga-emas";
