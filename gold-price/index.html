@@ -5,6 +5,7 @@
     <title>Gold Portfolio Premium</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg: #05070a;
@@ -146,7 +147,7 @@
         </div>
         
         <div class="nav-footer">
-            <p>v1.0 • Nailur 2026</p>
+            <!-- <p>v1.0 • Nailur 2026</p> -->
         </div>
     </div>
 </nav>
@@ -184,6 +185,11 @@
 		"UBS - GALERI24": "https://galeri24.co.id/harga-emas"
 		
     };
+
+	// Add these at the top of your existing <script>
+	const SB_URL = "https://iwsacljessokrqhfmdbv.supabase.co";
+	const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo";
+	const supabase = supabase.createClient(SB_URL, SB_KEY);
     
     let rawData=[];
 
@@ -248,6 +254,29 @@
 
     load();
     setInterval(load, 60000);
+		try {
+			// Fetching prices from your tblpricelog
+			const { data, error } = await supabase
+				.from('tblpricelog')
+				.select('*')
+				.order('log_date', { ascending: false });
+
+			if (error) throw error;
+
+			// Map Supabase data to your existing rawData format
+			rawData = data.map(item => ({
+				category: item.brand,
+				gram: item.weight_grams.toString(),
+				jual: item.price
+			}));
+
+			buildSummary();
+			buildFilter();
+			renderFull();
+		} catch (e) {
+			console.error("Supabase Sync Failed:", e.message);
+		}
+	}
 
 	function toggleMenu() {
 		const nav = document.getElementById('sideNav');
@@ -260,13 +289,21 @@
 	}
 
 	async function handleLogin() {
-		// This is where you connect to your Vercel /api/login
-		const user = document.getElementById('username').value;
-		const pass = document.getElementById('password').value;
-		
-		alert(`Attempting login for ${user}...`);
-		// After successful fetch, you can store the JWT in localStorage
-		// toggleMenu(); 
+		const email = document.getElementById('username').value; // Use email for Supabase Auth
+		const password = document.getElementById('password').value;
+
+		const { data, error } = await supabase.auth.signInWithPassword({
+			email: email,
+			password: password,
+		});
+
+		if (error) {
+			alert("Login Failed: " + error.message);
+		} else {
+			alert("Welcome back");
+			toggleMenu(); // Close the sidebar
+			loadUserInventory(data.user.id); // Load their specific 15g gold data
+		}
 	}
 </script>
 </body>
