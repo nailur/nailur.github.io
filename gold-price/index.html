@@ -1,136 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<title>Gold Price Indonesia</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<style>
-		body{margin:0;background:#0b0f14;color:#e6edf3;font-family:system-ui}
-		header{position:sticky;top:0;background:#0d1117;padding:14px;font-size:18px;font-weight:600;border-bottom:1px solid #222}
-		.container{padding:12px}
-		.good{color:#3fb950}
-		select{width:100%;padding:10px;border-radius:10px;background:#0d1117;color:#fff;border:1px solid #333}
-		table{width:100%;font-size:12px}
-		th,td{padding:8px}
-		th{color:#8b949e}
-		tr{border-bottom:1px solid #222}
+    <meta charset="UTF-8">
+    <title>Gold Portfolio Premium</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #05070a;
+            --card-bg: rgba(22, 27, 34, 0.6);
+            --accent: #fbbf24;
+            --success: #22c55e;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+        
+        body {
+            margin: 0; background: var(--bg); color: #f0f6fc;
+            font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+        }
 
-		.brand-link {
-			display: block;
-			margin-top: 8px;
-			font-size: 0.75rem;
-			color: #94a3b8; /* Slate color to match dark mode */
-			text-decoration: none;
-			transition: color 0.2s ease;
-		}
+        /* Glassmorphism Header */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            background: rgba(13, 17, 23, 0.8);
+            padding: 18px 20px; font-weight: 800; font-size: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
 
-		.brand-link:hover {
-			color: #fbbf24; /* Amber color on hover */
-			text-decoration: underline;
-		}
+        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
 
-		/* Ensure the card has enough padding for the link */
-		.card {
-			padding: 1rem;
-			display: flex;
-			flex-direction: column;
-			justify-content: space-between;
-			background:#161b22;
-			border-radius:18px;
-			/* padding:14px; */
-			margin-bottom:10px;
-			font-size:12px;
-		}
-	</style>
+        /* Bento Grid Summary */
+        #summary {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 24px; padding: 20px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
+        }
+
+        .card:active { transform: scale(0.97); }
+
+        /* Highlight the cheapest brand */
+        .best-deal {
+            grid-column: span 2; border-color: rgba(251, 191, 36, 0.4);
+            background: linear-gradient(145deg, rgba(251, 191, 36, 0.1), var(--card-bg));
+        }
+
+        .brand-name { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .price-val { font-size: 1.4rem; font-weight: 800; margin: 8px 0; display: block; }
+        .good { color: var(--success); text-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
+
+        .brand-link {
+            font-size: 11px; color: var(--accent); text-decoration: none;
+            font-weight: 600; display: flex; align-items: center; gap: 4px;
+        }
+
+        /* Filter Section */
+        .filter-section { margin-top: 30px; }
+        select {
+            width: 100%; padding: 14px; border-radius: 16px; margin-bottom: 15px;
+            background: #161b22; color: #fff; border: 1px solid var(--border);
+            font-family: inherit; font-weight: 600; appearance: none;
+        }
+
+        /* Modern Table */
+        .table-wrap { overflow: hidden; border-radius: 16px; background: #0d1117; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #161b22; text-align: left; padding: 12px 16px; color: #8b949e; font-size: 11px; text-transform: uppercase; }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+        tr:last-child td { border-bottom: none; }
+
+        /* Animation */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card { animation: fadeIn 0.4s ease forwards; }
+    </style>
 </head>
 <body>
 
-<header>Indonesia Gold Price</header>
+<header>
+    <span>Gold Pulse</span>
+    <div style="width: 10px; hieght: 10px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success);"></div>
+</header>
+
 <div class="container">
-	<div id="summary"></div>
-	<div class="card">
-		<select id="filter" onchange="renderFull()"></select>
-		<table>
-			<thead><tr><th>Brand</th><th>Gram</th><th>Price</th></tr></thead>
-			<tbody id="fullTable"></tbody>
-		</table>
-	</div>
+    <div id="summary"></div>
+
+    <div class="filter-section">
+        <div style="display:flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
+            <h3 style="margin:0; font-size: 16px;">Market List</h3>
+            <span style="font-size: 11px; color: #8b949e;">Live 10m</span>
+        </div>
+        <select id="filter" onchange="renderFull()"></select>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Brand</th><th>Gram</th><th>Price</th></tr></thead>
+                <tbody id="fullTable"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
-	const API="https://nailur.vercel.app/api/harga-emas";
-	let rawData=[];
+    const API="https://nailur.vercel.app/api/harga-emas";
+    const brandLinks = {
+        "LOTUS ARCHI": "https://lotusarchi.com/pricing/",
+        "GALERI 24": "https://galeri24.co.id/harga-emas",
+        "SAMPOERNA": "https://sampoernagold.com/",
+        "ANTAM": "http://logammulia.com/id/harga-emas-hari-ini"
+    };
+    
+    let rawData=[];
 
-	async function load(){
-		const r=await fetch(API);
-		const j=await r.json();
-		rawData=j.data;
-		buildSummary();
-		buildFilter();
-		renderFull();
-	}
+    async function load(){
+        try {
+            const r = await fetch(API);
+            const j = await r.json();
+            rawData = j.data;
+            buildSummary();
+            buildFilter();
+            renderFull();
+        } catch(e) { console.error("Sync Failed", e); }
+    }
 
-	function cleanNum(txt){
-		return Number(String(txt).replace(/[^\d]/g,""));
-	}
+    const cleanNum = txt => Number(String(txt).replace(/[^\d]/g,""));
 
-	function buildSummary(){
-		// Mapping of brands to their official sites
-		const brandLinks = {
-			"LOTUS ARCHI": "https://lotusarchi.com/pricing/",
-			"GALERI 24": "https://galeri24.co.id/harga-emas",
-			"SAMPOERNA": "https://sampoernagold.com/",
-			"ANTAM": "http://logammulia.com/id/harga-emas-hari-ini",
-			"ANTAM - GALERI24": "https://galeri24.co.id/harga-emas",
-			"LOTUS ARCHI - GALERI24": "https://galeri24.co.id/harga-emas",
-			"UBS - GALERI24": "https://galeri24.co.id/harga-emas"
-		};
-		
-		const g1=rawData.filter(r=>r.gram==="1");
-		const map={};
-		g1.forEach(r=>{
-			if(!map[r.category]) map[r.category]=[];
-			map[r.category].push(cleanNum(r.jual));
-		});
+    function buildSummary(){
+        const g1 = rawData.filter(r => r.gram === "1");
+        const map = {};
+        g1.forEach(r => {
+            if(!map[r.category]) map[r.category] = [];
+            map[r.category].push(cleanNum(r.jual));
+        });
 
-		const list=Object.keys(map).map(k=>({
-			brand:k,
-			price:Math.min(...map[k]),
-			url: brandLinks[k] || "#" // Fallback to "#" if brand not found
-		})).sort((a,b)=>a.price-b.price);
+        const list = Object.keys(map).map(k => ({
+            brand: k,
+            price: Math.min(...map[k]),
+            url: brandLinks[k] || "https://www.google.com/search?q=" + k + "+gold+price"
+        })).sort((a,b) => a.price - b.price);
 
-		document.getElementById("summary").innerHTML=list.map((b,i)=>`
-		<div class="card">
-			<b>${b.brand}</b>
-			<div class="${i===0?'good':''}">Rp ${b.price.toLocaleString("id-ID")}</div>
-			<a href="${b.url}" target="_blank" class="brand-link">Go to Official Site</a>
-		</div>`).join("");
-	}
+        document.getElementById("summary").innerHTML = list.map((b,i) => `
+        <div class="card ${i===0 ? 'best-deal' : ''}">
+            <div class="brand-name">${b.brand}</div>
+            <div class="price-val ${i===0 ? 'good' : ''}">Rp ${b.price.toLocaleString("id-ID")}</div>
+            <a href="${b.url}" target="_blank" class="brand-link">
+                View Site ↗
+            </a>
+        </div>`).join("");
+    }
 
-	function buildFilter(){
-		const sel=document.getElementById("filter");
-		sel.innerHTML='<option value="ALL">All Brands</option>';
-		[...new Set(rawData.map(r=>r.category))].sort().forEach(b=>{
-			sel.innerHTML+=`<option value="${b}">${b}</option>`;
-		});
-	}
+    function buildFilter(){
+        const sel = document.getElementById("filter");
+        const current = sel.value;
+        sel.innerHTML = '<option value="ALL">All Brands</option>';
+        [...new Set(rawData.map(r => r.category))].sort().forEach(b => {
+            sel.innerHTML += `<option value="${b}" ${current === b ? 'selected' : ''}>${b}</option>`;
+        });
+    }
 
-	function renderFull(){
-		const f=document.getElementById("filter").value;
-		let rows=f==="ALL"?rawData:rawData.filter(r=>r.category===f);
-		rows.sort((a,b)=>a.category.localeCompare(b.category));
+    function renderFull(){
+        const f = document.getElementById("filter").value;
+        let rows = f === "ALL" ? rawData : rawData.filter(r => r.category === f);
+        rows.sort((a,b) => a.category.localeCompare(b.category));
 
-		document.getElementById("fullTable").innerHTML=rows.map(r=>`
-			<tr>
-				<td>${r.category}</td>
-				<td>${r.gram}</td>
-				<td>Rp ${cleanNum(r.jual).toLocaleString("id-ID")}</td>
-			</tr>`).join("");
-	}
+        document.getElementById("fullTable").innerHTML = rows.map(r => `
+            <tr>
+                <td><b>${r.category}</b></td>
+                <td>${r.gram}g</td>
+                <td style="text-align:right">Rp ${cleanNum(r.jual).toLocaleString("id-ID")}</td>
+            </tr>`).join("");
+    }
 
-	load();
-	setInterval(load,600000);
+    load();
+    setInterval(load, 600000);
 </script>
-
 </body>
 </html>
