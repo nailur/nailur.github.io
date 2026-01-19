@@ -37,7 +37,7 @@ function parseGaleri24(html) {
 
   const categories = doc.querySelectorAll(
     // '#GALERI\\ 24, #ANTAM, #UBS, #ANTAM\\ MULIA\\ RETRO, #ANTAM\\ NON\\ PEGADAIAN, #LOTUS\\ ARCHI'
-	'#ANTAM, #UBS, #LOTUS\\ ARCHI'
+	'#ANTAM, #ANTAM\\ MULIA\\ RETRO, #UBS, #LOTUS\\ ARCHI'
   );
 
   categories.forEach(categoryEl => {
@@ -145,7 +145,7 @@ function parseUBSLifestyle(pages) {
 	for (const gram in pages) {
 		const dom = new JSDOM(pages[gram]);
 		const priceEl = dom.window.document.querySelector(".product_price");
-		
+
 		if (priceEl) {
 			data.push({
 				category: "UBS",
