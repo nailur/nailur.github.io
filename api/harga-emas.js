@@ -12,11 +12,13 @@ export default async function handler(req, res) {
   try {
     const galeriHTML = await fetchWithTimeout("https://galeri24.co.id/harga-emas").then(r => r.text());
     const bullionHTML = await fetchWithTimeout("https://idbullion.com/").then(r => r.text());
+	const emasKitaHTML = await fetchWithTimeout("https://emaskita.id/Harga_emas").then(r => r.text());
     const ubsPages = await fetchUBS();
 
     const data = [
       ...parseGaleri24(galeriHTML),
       ...parseBullion(bullionHTML),
+	  ...parseEmasKita(emasKitaHTML),
       ...parseUBSLifestyle(ubsPages)
     ];
 
@@ -118,6 +120,46 @@ function parseBullion(html) {
 	});
 
 	return data;
+}
+
+function parseEmasKita(html) {
+    const dom = new JSDOM(html);
+    const doc = dom.window.document;
+    const result = [];
+
+    // EmasKITA prices are usually in the first table of the page content
+    const rows = doc.querySelectorAll("table tr");
+
+    rows.forEach((row, index) => {
+        // Skip header row if it exists
+        if (index === 0) return;
+
+        const cols = row.querySelectorAll("td");
+        if (cols.length >= 2) {
+            const weightRaw = cols[0].textContent.trim().toLowerCase(); // e.g., "1 gr" or "0,5 gr"
+            const priceRaw = cols[1].textContent.trim(); // e.g., "1.411.600"
+
+            // Convert Indonesian decimal comma to dot for parsing
+            let gramValue = weightRaw
+                .replace("gr", "")
+                .replace(",", ".")
+                .trim();
+
+            // Extract numeric price
+            const priceValue = Number(priceRaw.replace(/[^\d]/g, ""));
+
+            // Only push if we have valid numbers
+            if (gramValue && !isNaN(priceValue) && priceValue > 0) {
+                result.push({
+                    category: "EMASKITA",
+                    gram: gramValue,
+                    jual: priceValue
+                });
+            }
+        }
+    });
+
+    return result;
 }
 
 async function fetchUBS() {
