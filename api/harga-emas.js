@@ -151,7 +151,7 @@ function parseEmasKita(html) {
             // Only push if we have valid numbers
             if (gramValue && !isNaN(priceValue) && priceValue > 0) {
                 result.push({
-                    category: "EMASKITA",
+                    category: "EMAS KITA",
                     gram: gramValue,
                     jual: priceValue
                 });
