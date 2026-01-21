@@ -2,7 +2,7 @@ export const config = { runtime: "nodejs" };
 
 import { JSDOM } from "jsdom";
 
-const fetchWithTimeout = (url, ms = 10000) =>
+const fetchWithTimeout = (url, ms = 60000) =>
   Promise.race([
     fetch(url),
     new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms))
