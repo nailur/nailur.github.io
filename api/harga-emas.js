@@ -56,7 +56,8 @@ function parseGaleri24(html) {
       result.push({
         category: category + " - GALERI24",
         gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-        jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
+        jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
+		buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
       });
     });
   });
@@ -81,7 +82,8 @@ function parseBullion(html) {
 			data.push({
 				category: "ANTAM",
 				gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
+				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
+				buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
 			});
 		}
 	});
@@ -92,7 +94,8 @@ function parseBullion(html) {
 			data.push({
 				category: "GALERI24",
 				gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
+				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
+				buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
 			});
 		}
 	});
@@ -103,7 +106,8 @@ function parseBullion(html) {
 			data.push({
 				category: "LOTUS ARCHI",
 				gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2"),
-				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2")
+				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2"),
+				buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2")
 			});
 		}
 	});
@@ -114,7 +118,8 @@ function parseBullion(html) {
 			data.push({
 				category: "SAMPOERNA",
 				gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
+				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
+				buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
 			});
 		}
 	});
@@ -138,6 +143,7 @@ function parseEmasKita(html) {
         if (cols.length >= 2) {
             const weightRaw = cols[0].textContent.trim().toLowerCase(); // e.g., "1 gr" or "0,5 gr"
             const priceRaw = cols[1].textContent.trim(); // e.g., "1.411.600"
+			const buybackRaw = cols[1].textContent.trim(); // e.g., "1.411.600"
 
             // Convert Indonesian decimal comma to dot for parsing
             let gramValue = weightRaw
@@ -147,13 +153,15 @@ function parseEmasKita(html) {
 
             // Extract numeric price
             const priceValue = Number(priceRaw.replace(/[^\d]/g, ""));
+			const buybackValue = Number(buybackRaw.replace(/[^\d]/g, ""));
 
             // Only push if we have valid numbers
             if (gramValue && !isNaN(priceValue) && priceValue > 0) {
                 result.push({
                     category: "EMAS KITA",
                     gram: gramValue,
-                    jual: priceValue
+                    jual: priceValue,
+					buyback: buybackValue
                 });
             }
         }
