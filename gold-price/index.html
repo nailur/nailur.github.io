@@ -69,8 +69,16 @@
         }
 
         /* Modern Table */
-        .table-wrap { overflow: hidden; border-radius: 16px; background: #0d1117; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        /* Enable horizontal scroll for the table on small screens */
+		.table-wrap { 
+			overflow-x: auto; 
+			-webkit-overflow-scrolling: touch; 
+		}
+
+		table { 
+			width: 100%; 
+			min-width: 450px; /* Forces scroll instead of squishing columns */
+		}
         th { background: #161b22; text-align: left; padding: 12px 16px; color: #8b949e; font-size: 11px; text-transform: uppercase; }
         td { padding: 14px 16px; border-bottom: 1px solid var(--border); }
         tr:last-child td { border-bottom: none; }
@@ -121,6 +129,12 @@
 			background: rgba(0,0,0,0.6); display: none; z-index: 999;
 		}
 		.overlay.active { display: block; }
+
+		/* Fix for sidebar nav items */
+		.nav-item {
+			display: block;
+			margin-bottom: 10px;
+		}
     </style>
 </head>
 <body>
@@ -135,40 +149,36 @@
     <div class="status-dot"></div>
 </header>
 
-<div class="nav-content">
-    <h2 class="nav-title">Gold Pulse</h2>
-    
-    <div id="nav-menu" class="space-y-2">
-        <a href="#" onclick="showSection('gold-price')" class="nav-item">Gold Price</a>
+<nav id="sideNav" class="side-nav">
+    <div class="nav-content">
+        <h2 class="nav-title">Gold Pulse</h2>
+        
+        <div id="nav-menu" class="space-y-2">
+            <a href="#" onclick="showSection('gold-price')" class="nav-item" style="display:block; padding:10px; color:var(--accent); text-decoration:none;">Gold Price</a>
 
-        <div id="auth-menu" style="display: none;">
-            <a href="#" onclick="showSection('dashboard')" class="nav-item">Dashboard</a>
-            <button onclick="handleLogout()" class="nav-item btn-logout">Log Out</button>
+            <div id="auth-menu" style="display: none;">
+                <a href="#" onclick="showSection('dashboard')" class="nav-item" style="display:block; padding:10px; color:white; text-decoration:none;">Dashboard</a>
+                <button onclick="handleLogout()" class="nav-item btn-logout" style="background:none; border:none; color:#ff4d4d; padding:10px; cursor:pointer;">Log Out</button>
+            </div>
+
+            <div id="guest-menu">
+                <button onclick="showLogin()" class="nav-item btn-login-nav" style="background:var(--accent); color:black; border:none; border-radius:8px; padding:10px 20px; font-weight:bold; cursor:pointer;">Login</button>
+            </div>
         </div>
 
-        <div id="guest-menu">
-            <button onclick="showLogin()" class="nav-item btn-login-nav">Login</button>
+        <div id="login-section" style="display: none;" class="login-form">
+            <input type="text" id="username" placeholder="Email" class="nav-input">
+            <input type="password" id="password" placeholder="Password" class="nav-input">
+            <button onclick="handleLogin()" class="btn-login">Unlock Portfolio</button>
+            <button onclick="showMenu()" class="btn-back" style="background:none; border:none; color:#8b949e; margin-top:10px; cursor:pointer;">← Back</button>
         </div>
     </div>
-
-    <div id="login-section" style="display: none;" class="login-form">
-        <input type="text" id="username" placeholder="Email" class="nav-input">
-        <input type="password" id="password" placeholder="Password" class="nav-input">
-        <button onclick="handleLogin()" class="btn-login">Unlock Portfolio</button>
-        <button onclick="showMenu()" class="btn-back">Back</button>
-    </div>
-</div>
+</nav>
 
 <div id="overlay" class="overlay" onclick="toggleMenu()"></div>
 
 <div class="container">
-	<div id="section-dashboard" style="display: none;">
-        <div class="card best-deal">
-            <div class="brand-name">Your Portfolio</div>
-            <div class="price-val"></div>
-            <p style="font-size: 11px; color: var(--success)"></p>
-        </div>
-	</div>
+	<div id="section-dashboard" style="display: none;"></div>
 
     <div id="summary"></div>
 
