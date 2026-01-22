@@ -162,17 +162,25 @@
 <div id="overlay" class="overlay" onclick="toggleMenu()"></div>
 
 <div class="container">
+	<div id="section-dashboard" style="display: none;">
+        <div class="card best-deal">
+            <div class="brand-name">Your Portfolio</div>
+            <div class="price-val"></div>
+            <p style="font-size: 11px; color: var(--success)"></p>
+        </div>
+	</div>
+
     <div id="summary"></div>
 
     <div class="filter-section">
         <div style="display:flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
             <h3 style="margin:0; font-size: 16px;">Market List</h3>
-            <span style="font-size: 11px; color: #8b949e;">Every 1 minute(s)</span>
+            <span style="font-size: 11px; color: #8b949e;">Every 5 minute(s)</span>
         </div>
         <select id="filter" onchange="renderFull()"></select>
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Brand</th><th>Gram</th><th>Price</th></tr></thead>
+                <thead><tr><th>Brand</th><th>Gram</th><th>Price</th><th>Buyback</th></tr></thead>
                 <tbody id="fullTable"></tbody>
             </table>
         </div>
@@ -251,6 +259,12 @@
 		document.getElementById('login-section').style.display = 'none';
 	}
 
+	function showSection(sectionId) {
+		document.getElementById('section-gold-price').style.display = (sectionId === 'gold-price') ? 'block' : 'none';
+		document.getElementById('section-dashboard').style.display = (sectionId === 'dashboard') ? 'block' : 'none';
+		if(window.innerWidth < 768) toggleMenu(); // Auto-close sidebar on mobile
+	}
+
     const API="https://nailur.vercel.app/api/harga-emas";
     const brandLinks = {
         "ANTAM": "http://logammulia.com/id/harga-emas-hari-ini",
@@ -284,7 +298,9 @@
         const map = {};
         g1.forEach(r => {
             if(!map[r.category]) map[r.category] = [];
-            map[r.category].push(cleanNum(r.jual));
+            map[r.category].push(
+				cleanNum(r.jual)
+			);
         });
 
         const list = Object.keys(map).map(k => ({
@@ -322,11 +338,12 @@
                 <td><b>${r.category}</b></td>
                 <td>${r.gram}g</td>
                 <td style="text-align:right">Rp ${cleanNum(r.jual).toLocaleString("id-ID")}</td>
+				<td style="text-align:right">Rp ${cleanNum(r.buyback).toLocaleString("id-ID")}</td>
             </tr>`).join("");
     }
 
     load();
-    setInterval(load, 60000);
+    setInterval(load, 300000);
 </script>
 </body>
 </html>
