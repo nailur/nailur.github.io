@@ -50,7 +50,7 @@ function parseGaleri24(html) {
     const rawUpdateText = updateHeader ? updateHeader.textContent.trim() : "";
 
 	// Format it to 2026-01-23
-	const formattedDate = formatIndoDate(rawUpdateText);
+	const formattedUpdate = formatGaleriDate(rawUpdateText);
 
     const rows = categoryEl.querySelectorAll(
       '.grid.grid-cols-5.divide-x.lg\\:hover\\:bg-neutral-50'
@@ -66,7 +66,7 @@ function parseGaleri24(html) {
         jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
         buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
         // Attach the update string to each record
-        last_update: formattedDate 
+        last_update: formattedUpdate 
       });
     });
   });
@@ -216,7 +216,7 @@ function parseUBSLifestyle(pages) {
 	return data;
 }
 
-function formatIndoDate(text) {
+function formatGaleriDate(text) {
   if (!text) return null;
 
   const months = {
@@ -224,19 +224,25 @@ function formatIndoDate(text) {
     juli: "07", agustus: "08", september: "09", oktober: "10", november: "11", desember: "12"
   };
 
-  // Use regex to find the Day, Month Name, and Year
-  // Matches "23 Januari 2026"
-  const match = text.match(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/);
+  // 1. Try to match Date AND Time (e.g., "23 Januari 2026 10:45")
+  const dateTimeMatch = text.match(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})\s+(\d{1,2}:\d{2})/);
+  
+  // 2. Try to match Date ONLY (e.g., "23 Januari 2026")
+  const dateOnlyMatch = text.match(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/);
 
-  if (match) {
-    const day = match[1].padStart(2, '0');
-    const monthName = match[2].toLowerCase();
-    const year = match[3];
-    const month = months[monthName];
-
-    if (month) {
-      return `${year}-${month}-${day}`;
-    }
+  if (dateTimeMatch) {
+    const [_, day, monthName, year, time] = dateTimeMatch;
+    const month = months[monthName.toLowerCase()];
+    // Return yyyy-mm-dd hh:mm:ss (adding :00 for seconds)
+    return `${year}-${month}-${day.padStart(2, '0')} ${time}:00`;
+  } 
+  
+  if (dateOnlyMatch) {
+    const [_, day, monthName, year] = dateOnlyMatch;
+    const month = months[monthName.toLowerCase()];
+    // Return yyyy-mm-dd only
+    return `${year}-${month}-${day.padStart(2, '0')}`;
   }
+
   return null;
 }
