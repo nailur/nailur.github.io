@@ -2,7 +2,7 @@ export const config = { runtime: "nodejs" };
 
 import { JSDOM } from "jsdom";
 
-const fetchWithTimeout = (url, ms = 60000) =>
+const fetchWithTimeout = (url, ms = 120000) =>
   Promise.race([
     fetch(url),
     new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms))
@@ -89,7 +89,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
 	// NEW: Scrape Lotus Archi Update
     const lDoc = new JSDOM(lotusHtml).window.document;
     const lUpdateEl = lDoc.querySelector(".section-content.relative h4");
-    const lotusUpdate = lUpdateEl ? lUpdateEl.textContent.split("||")[0].trim() : "";
+    const lotusUpdate = lUpdateEl ? lUpdateEl.innerText.split("||")[0].trim() : "";
 
 	const data = [];
 
@@ -127,6 +127,8 @@ function parseEmasKita(html) {
     // EmasKITA prices are usually in the first table of the page content
     const rows = doc.querySelectorAll("table tr");
 
+	const lUpdate = formatGaleriDate(doc.getElementsByClassName("d-flex justify-content-center mt-3")[0]);
+
     rows.forEach((row, index) => {
         // Skip header row if it exists
         if (index === 0) return;
@@ -154,7 +156,7 @@ function parseEmasKita(html) {
                     gram: gramValue,
                     jual: priceValue,
 					buyback: buybackValue,
-					last_update : ""
+					last_update : lUpdate,
                 });
             }
         }
@@ -205,31 +207,39 @@ function parseUBSLifestyle(pages) {
 function formatGaleriDate(text) {
   if (!text) return null;
 
+  // Map for both Indo and English
   const months = {
-    januari: "01", februari: "02", maret: "03", april: "04", mei: "05", juni: "06",
-    juli: "07", agustus: "08", september: "09", oktober: "10", november: "11", desember: "12"
+    januari: "01", january: "01",
+    februari: "02", february: "02",
+    maret: "03", march: "03",
+    april: "04",
+    mei: "05", may: "05",
+    juni: "06", june: "06",
+    juli: "07", july: "07",
+    agustus: "08", august: "08",
+    september: "09",
+    oktober: "10", october: "10",
+    november: "11",
+    desember: "12", december: "12"
   };
 
-  // 1. Improved Regex: Stop before "||" or other extra text
-  // Matches "23 Januari 2026 09:15" or "23 Januari 2026"
-  const dateTimeMatch = text.match(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})(?:\s+(\d{1,2}:\d{2}))?/);
+  // 1. Regex to find Month Name, Day, and Year (handles English/Indo order)
+  // This looks for "January 23 2026" or "23 Januari 2026"
+  const monthNameMatch = text.match(/(januari|january|februari|february|maret|march|april|mei|may|juni|june|juli|july|agustus|august|september|oktober|october|november|desember|december)/i);
+  const dayMatch = text.match(/\b(\d{1,2})\b/);
+  const yearMatch = text.match(/\b(\d{4})\b/);
+  const timeMatch = text.match(/(\d{1,2}:\d{2})/);
 
-  if (dateTimeMatch) {
-    const day = dateTimeMatch[1].padStart(2, '0');
-    const monthName = dateTimeMatch[2].toLowerCase();
-    const year = dateTimeMatch[3];
-    const time = dateTimeMatch[4]; // Might be undefined if time isn't present
-    
-    const month = months[monthName];
-    if (!month) return null;
+  if (monthNameMatch && dayMatch && yearMatch) {
+    const year = yearMatch[0];
+    const day = dayMatch[0].padStart(2, '0');
+    const month = months[monthNameMatch[0].toLowerCase()];
+    const time = timeMatch ? timeMatch[0] : null;
 
     if (time) {
-      // Return YYYY-MM-DD HH:mm
-      return `${year}-${month}-${day} ${time}`;
-    } else {
-      // Return YYYY-MM-DD
-      return `${year}-${month}-${day}`;
+      return `${year}-${month}-${day} ${time.padStart(5, '0')}:00`;
     }
+    return `${year}-${month}-${day}`;
   }
 
   return null;
