@@ -137,7 +137,7 @@ function parseEmasKita(html) {
     // EmasKITA prices are usually in the first table of the page content
     const rows = doc.querySelectorAll("table tr");
 
-	const lUpdate = formatGaleriDate(doc.getElementsByClassName("d-flex justify-content-center mt-3")[0]);
+	const lUpdate = formatGaleriDate(doc.getElementsByClassName("d-flex justify-content-center mt-3")[0].textContent);
 
     rows.forEach((row, index) => {
         // Skip header row if it exists
