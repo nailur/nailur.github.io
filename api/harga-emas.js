@@ -13,11 +13,12 @@ export default async function handler(req, res) {
     const galeriHTML = await fetchWithTimeout("https://galeri24.co.id/harga-emas").then(r => r.text());
     const bullionHTML = await fetchWithTimeout("https://idbullion.com/").then(r => r.text());
 	const emasKitaHTML = await fetchWithTimeout("https://emaskita.id/Harga_emas").then(r => r.text());
+	const sampoernaHTML = await fetchWithTimeout("https://sampoernagold.com/").then(r => r.text());
     const ubsPages = await fetchUBS();
 
     const data = [
       ...parseGaleri24(galeriHTML),
-      ...parseBullion(bullionHTML),
+      ...parseBullion(bullionHTML, sampoernaHTML),
 	  ...parseEmasKita(emasKitaHTML),
       ...parseUBSLifestyle(ubsPages)
     ];
@@ -78,6 +79,12 @@ function parseBullion(html) {
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
 
+	// Extract Sampoerna Last Update from official site
+    const sDom = new JSDOM(sampoernaHtml);
+    const sDoc = sDom.window.document;
+    const sampoernaUpdateEl = sDoc.querySelector(".small-text");
+    const sampoernaUpdate = sampoernaUpdateEl ? formatGaleriDate(sampoernaUpdateEl.textContent.trim()) : null;
+
 	const data = [];
 
 	const tblAntam = doc.getElementById("modalAntam");
@@ -128,7 +135,8 @@ function parseBullion(html) {
 				category: "SAMPOERNA",
 				gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
 				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
+				buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
+				last_update: sampoernaUpdate
 			});
 		}
 	});
