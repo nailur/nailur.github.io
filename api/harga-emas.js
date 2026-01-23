@@ -199,35 +199,63 @@ async function fetchUBS() {
 		"5": "https://ubslifestyle.com/fine-gold-5gram/",
 		"10": "https://ubslifestyle.com/fine-gold-10gram/",
 		"25": "https://ubslifestyle.com/ubs-logam-mulia-25-gram-classic/",
-		"50": "https://ubslifestyle.com/ubs-logam-mulia-50-gram-classic/"
+		"50": "https://ubslifestyle.com/ubs-logam-mulia-50-gram-classic/",
+		"buyback": "https://ubslifestyle.com/harga-buyback-hari-ini/"
 	};
 
 	const result = {};
-	for (const g in urls) {
-		const html = await fetchWithTimeout(urls[g], 8000).then(r => r.text());
-		result[g] = html;
-	}
+    const keys = Object.keys(urls);
+    const htmls = await Promise.all(keys.map(k => fetchWithTimeout(urls[k], 10000).then(r => r.text())));
+    
+    keys.forEach((key, i) => { result[key] = htmls[i]; });
 
-	return result;
+    return result;
 }
 
 function parseUBSLifestyle(pages) {
-	const data = [];
-	for (const gram in pages) {
-		const dom = new JSDOM(pages[gram]);
-		const priceEl = dom.window.document.querySelector(".product_price");
+    const data = [];
+    const buybackMap = {};
+    let ubsUpdate = "";
 
-		if (priceEl) {
-			data.push({
-				category: "UBS",
-				gram,
-				jual: Number(priceEl.textContent.replace(/[^\d]/g,"")),
-				buyback : "",
-				last_update : ""
-			});
-		}
-	}
-	return data;
+    // 1. Parse the Buyback Table First
+    if (pages.buyback) {
+        const bDom = new JSDOM(pages.buyback);
+        const bDoc = bDom.window.document;
+        
+        // Extract Update Time
+        const dateEl = bDoc.querySelector('.text-xs.font-semibold'); // "23 January 2026"
+        ubsUpdate = formatGaleriDate(`${dateEl?.textContent || ""}`);
+
+        // Scrape the table rows
+        const rows = bDoc.querySelectorAll("table tr");
+        rows.forEach(row => {
+            const cols = row.querySelectorAll("td");
+            if (cols.length >= 3) {
+                const gram = cols[0].textContent.trim().replace(" Gram", "").replace(",", ".");
+                const buybackPrice = cols[2].textContent.trim().replace(/[^\d]/g, "");
+                buybackMap[gram] = buybackPrice;
+            }
+        });
+    }
+
+    // 2. Parse Individual Selling Prices and Attach Buyback
+    for (const gram in pages) {
+        if (gram === "buyback") continue;
+
+        const dom = new JSDOM(pages[gram]);
+        const priceEl = dom.window.document.querySelector(".product_price");
+
+        if (priceEl) {
+            data.push({
+                category: "UBS",
+                gram: gram,
+                jual: Number(priceEl.textContent.replace(/[^\d]/g, "")),
+                buyback: buybackMap[gram] || "", // Map from our buyback table
+                last_update: ubsUpdate
+            });
+        }
+    }
+    return data;
 }
 
 function formatGaleriDate(text) {
