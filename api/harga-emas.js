@@ -88,8 +88,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
 
 	// NEW: Scrape Lotus Archi Update
     const lDoc = new JSDOM(lotusHtml).window.document;
-    const lUpdateEl = lDoc.querySelector(".section-content.relative .text") || 
-                      lDoc.querySelector(".section-content.relative h4"); // Fallback to any h4 tag inside
+    const lUpdateEl = lDoc.querySelector(".section-content.relative h4");
     // We look for the line containing "Update" inside that relative container
     const lotusUpdate = lUpdateEl ? formatGaleriDate(lUpdateEl.textContent.trim()) : "";
 
@@ -223,8 +222,8 @@ function formatGaleriDate(text) {
     if (!month) return null;
 
     if (time) {
-      // Return YYYY-MM-DD HH:mm:ss
-      return `${year}-${month}-${day} ${time}:00`;
+      // Return YYYY-MM-DD HH:mm
+      return `${year}-${month}-${day} ${time}`;
     } else {
       // Return YYYY-MM-DD
       return `${year}-${month}-${day}`;
