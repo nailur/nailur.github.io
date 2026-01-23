@@ -30,7 +30,7 @@ export default async function handler(req, res) {
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
-			fetchWithTimeout("https://kinghalim.com/gold-bar").catch(() => ""),
+			fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
             fetchUBS().catch(() => ({}))
         ]);
 
@@ -60,7 +60,8 @@ export default async function handler(req, res) {
         });
 
     } catch (e) {
-        res.status(500).json({ success: false, error: "Internal Server Error" });
+        // res.status(500).json({ success: false, error: "Internal Server Error" });
+		res.status(500).json({ success: false, error: e.message, stack: e.stack });
     }
 }
 
@@ -165,45 +166,42 @@ function parseEmasKita(html) {
 
 function parseKingHalim(html) {
     if (!html) return [];
-    const doc = new JSDOM(html).window.document;
-    const result = [];
+    try {
+        const { window } = new JSDOM(html);
+        const doc = window.document;
+        const result = [];
 
-    const updateEl = doc.querySelector('.kv-ee-section-subtitle.kv-ee-section-subtitle--sm');
-    const rawUpdate = updateEl ? updateEl.textContent.trim() : "";
-    const formattedUpdate = formatGaleriDate(rawUpdate);
+        const updateEl = doc.querySelector('.kv-ee-section-subtitle.kv-ee-section-subtitle--sm');
+        const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
 
-    const rows = doc.querySelectorAll('.kv-ee-col-12.kv-ee-col-sm-6.kv-ee-item.kv-ee-align-center');
+        const items = doc.querySelectorAll('.kv-ee-item');
 
-    rows.forEach((row, index) => {
-		if (index === 0) return;
+        items.forEach((item) => {
+            const titleEl = item.querySelector('.kv-ee-title.kv-ee-title--md');
+            const priceEl = item.querySelector('.kv-ee-price.kv-ee-section-title--lg');
 
-		const titleEl = row.querySelector('.kv-ee-title.kv-ee-title--md');
-        const priceEl = row.querySelector('.kv-ee-price.kv-ee-section-title--lg');
+            if (titleEl && priceEl) {
+                const gramRaw = titleEl.textContent.trim();
+                // Safer price extraction
+                const jualRaw = priceEl.textContent.trim();
 
-		if (titleEl && priceEl) {
-            const gramRaw = titleEl.textContent.trim();
-            const jualRaw = priceEl.children[0].children[0].textContent.trim();
+                const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
+                const priceValue = jualRaw.replace(/[^\d]/g, "");
 
-            const gramValue = gramRaw.toLowerCase()
-			.replace(/[^\d,.]/g, "")
-			.replace(",", ".")
-			.trim();
-			
-			const priceValue = jualRaw.replace(/[^\d]/g, "");
-
-			if (gramValue && priceValue) {
-                result.push({
-                    category: "KING HALIM",
-                    gram: gramValue,
-                    jual: priceValue,
-                    buyback: 0,
-                    last_update: formattedUpdate
-                });
+                if (gramValue && priceValue) {
+                    result.push({
+                        category: "KING HALIM",
+                        gram: gramValue,
+                        jual: priceValue,
+                        buyback: 0,
+                        last_update: formattedUpdate
+                    });
+                }
             }
-        }
-    });
-
-    return result;
+        });
+        window.close(); // Memory cleanup
+        return result;
+    } catch (e) { return []; }
 }
 
 async function fetchUBS() {
