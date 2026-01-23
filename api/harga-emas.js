@@ -101,7 +101,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
         const parts = rawContent.split("||");
         const potentialDate = parts[0].trim();
 
-        lotusUpdate = formatGaleriDate(potentialDate) || "";
+        lotusUpdate = rawContent;
     }
 
 	const data = [];
