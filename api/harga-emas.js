@@ -38,12 +38,16 @@ function parseGaleri24(html) {
   const result = [];
 
   const categories = doc.querySelectorAll(
-    // '#GALERI\\ 24, #ANTAM, #UBS, #ANTAM\\ MULIA\\ RETRO, #ANTAM\\ NON\\ PEGADAIAN, #LOTUS\\ ARCHI'
-	'#ANTAM, #ANTAM\\ MULIA\\ RETRO, #UBS, #LOTUS\\ ARCHI'
+    '#ANTAM, #ANTAM\\ MULIA\\ RETRO, #UBS, #LOTUS\\ ARCHI'
   );
 
   categories.forEach(categoryEl => {
     const category = categoryEl.id;
+
+    // --- NEW LOGIC: Extract the Update Date ---
+    // We look for the specific class you mentioned within this category
+    const updateHeader = categoryEl.querySelector('.text-lg.font-semibold.mb-4');
+    const lastUpdate = updateHeader ? updateHeader.textContent.trim() : "";
 
     const rows = categoryEl.querySelectorAll(
       '.grid.grid-cols-5.divide-x.lg\\:hover\\:bg-neutral-50'
@@ -57,7 +61,9 @@ function parseGaleri24(html) {
         category: category + " - GALERI24",
         gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
         jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-		buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
+        buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
+        // Attach the update string to each record
+        last_update: lastUpdate 
       });
     });
   });
