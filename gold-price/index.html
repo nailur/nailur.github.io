@@ -74,8 +74,6 @@
 </header>
 
 <div class="container">
-    <div id="summary"></div>
-
     <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px">
         <h3 style="margin:0; font-size:14px">Market Overview</h3>
         <span id="update-timer" style="font-size:10px; color:var(--text-dim)">Checking...</span>
@@ -114,7 +112,6 @@
             const j = await r.json();
             rawData = j.data || [];
             
-            buildSummary();
             buildFilter();
             renderFull();
             
@@ -127,29 +124,6 @@
     }
 
     const cleanNum = n => n ? Number(String(n).replace(/[^\d]/g,"")) : 0;
-
-    function buildSummary() {
-        // Find best 1g price
-        const g1 = rawData.filter(r => r.gram == 1).sort((a,b) => cleanNum(a.jual) - cleanNum(b.jual));
-        if(!g1.length) return;
-
-        const best = g1[0];
-        document.getElementById("summary").innerHTML = `
-            <div class="card best-deal">
-                <div style="font-size:10px; color:var(--accent); font-weight:800">LOWEST PRICE (1G)</div>
-                <div style="font-size:1.4rem; font-weight:800; margin:5px 0">Rp ${cleanNum(best.jual).toLocaleString('id-ID')}</div>
-                <div style="font-size:11px; color:var(--text-dim)">${best.category}</div>
-            </div>
-            <div class="card">
-                <div style="font-size:10px; color:var(--text-dim)">ANTAM (1G)</div>
-                <div style="font-weight:800">Rp ${cleanNum(rawData.find(r => r.category === 'ANTAM' && r.gram == 1)?.jual || 0).toLocaleString('id-ID')}</div>
-            </div>
-            <div class="card">
-                <div style="font-size:10px; color:var(--text-dim)">UBS (1G)</div>
-                <div style="font-weight:800">Rp ${cleanNum(rawData.find(r => r.category === 'UBS' && r.gram == 1)?.jual || 0).toLocaleString('id-ID')}</div>
-            </div>
-        `;
-    }
 
     function buildFilter() {
         const sel = document.getElementById("filter");
@@ -174,12 +148,26 @@
         `).join('');
     }
 
-    function formatUpdateDate(str) {
-        if(!str || str === "null") return "-";
-        const d = new Date(str.replace(/-/g, "/"));
-        if(isNaN(d.getTime())) return str;
-        return `${d.getDate()} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
-    }
+    function formatUpdateDate(dateStr) {
+		if (!dateStr || dateStr === "null" || dateStr.trim() === "") return "-";
+
+		const d = new Date(dateStr.replace(/-/g, "/"));
+		if (isNaN(d.getTime())) return dateStr;
+
+		const day = String(d.getDate()).padStart(2, '0');
+		const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+		const month = months[d.getMonth()];
+		
+		const hasTimeInSource = dateStr.includes(":");
+
+		if (!hasTimeInSource) {
+			return `${day}-${month}`; 
+		} else {
+			const hh = String(d.getHours()).padStart(2, '0');
+			const mm = String(d.getMinutes()).padStart(2, '0');
+			return `${day}-${month} ${hh}:${mm}`;
+		}
+	}
 
     load();
     setInterval(load, 300000);
