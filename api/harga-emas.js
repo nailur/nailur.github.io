@@ -153,7 +153,8 @@ function parseEmasKita(html) {
                     category: "EMAS KITA",
                     gram: gramValue,
                     jual: priceValue,
-					buyback: buybackValue
+					buyback: buybackValue,
+					last_update : ""
                 });
             }
         }
@@ -192,7 +193,9 @@ function parseUBSLifestyle(pages) {
 			data.push({
 				category: "UBS",
 				gram,
-				jual: Number(priceEl.textContent.replace(/[^\d]/g,""))
+				jual: Number(priceEl.textContent.replace(/[^\d]/g,"")),
+				buyback : "",
+				last_update : ""
 			});
 		}
 	}
