@@ -96,7 +96,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
 	const data = [];
 
 	// Helper to process standard tables from idbullion
-    const processTable = (id, category, updateDate = null) => {
+    const processTable = (id, category, updateDate = "") => {
         const tbl = doc.getElementById(id);
         if (!tbl) return;
         tbl.querySelectorAll("table tr").forEach(row => {
@@ -209,24 +209,26 @@ function formatGaleriDate(text) {
     juli: "07", agustus: "08", september: "09", oktober: "10", november: "11", desember: "12"
   };
 
-  // 1. Try to match Date AND Time (e.g., "23 Januari 2026 10:45")
-  const dateTimeMatch = text.match(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})\s+(\d{1,2}:\d{2})/);
-  
-  // 2. Try to match Date ONLY (e.g., "23 Januari 2026")
-  const dateOnlyMatch = text.match(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/);
+  // 1. Improved Regex: Stop before "||" or other extra text
+  // Matches "23 Januari 2026 09:15" or "23 Januari 2026"
+  const dateTimeMatch = text.match(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})(?:\s+(\d{1,2}:\d{2}))?/);
 
   if (dateTimeMatch) {
-    const [_, day, monthName, year, time] = dateTimeMatch;
-    const month = months[monthName.toLowerCase()];
-    // Return yyyy-mm-dd hh:mm:ss (adding :00 for seconds)
-    return `${year}-${month}-${day.padStart(2, '0')} ${time}:00`;
-  } 
-  
-  if (dateOnlyMatch) {
-    const [_, day, monthName, year] = dateOnlyMatch;
-    const month = months[monthName.toLowerCase()];
-    // Return yyyy-mm-dd only
-    return `${year}-${month}-${day.padStart(2, '0')}`;
+    const day = dateTimeMatch[1].padStart(2, '0');
+    const monthName = dateTimeMatch[2].toLowerCase();
+    const year = dateTimeMatch[3];
+    const time = dateTimeMatch[4]; // Might be undefined if time isn't present
+    
+    const month = months[monthName];
+    if (!month) return null;
+
+    if (time) {
+      // Return YYYY-MM-DD HH:mm:ss
+      return `${year}-${month}-${day} ${time}:00`;
+    } else {
+      // Return YYYY-MM-DD
+      return `${year}-${month}-${day}`;
+    }
   }
 
   return null;
