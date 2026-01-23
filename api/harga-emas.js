@@ -40,7 +40,7 @@ function parseGaleri24(html) {
   const result = [];
 
   const categories = doc.querySelectorAll(
-    '#ANTAM, #ANTAM\\ MULIA\\ RETRO, #UBS, #LOTUS\\ ARCHI'
+    '#ANTAM, #ANTAM\\ MULIA\\ RETRO, #GALERI\\ 24, #UBS, #LOTUS\\ ARCHI'
   );
 
   categories.forEach(categoryEl => {
@@ -112,7 +112,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
     };
 
     processTable("modalAntam", "ANTAM");
-    processTable("modalGaleri24", "GALERI24");
+    // processTable("modalGaleri24", "GALERI24");
     processTable("modalLotus", "LOTUS ARCHI", lotusUpdate); // Pass Lotus Update
     processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate); // Pass Sampoerna Update
 
