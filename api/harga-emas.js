@@ -125,7 +125,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
     processTable("modalLotus", "LOTUS ARCHI", lotusUpdate); // Pass Lotus Update
     processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate); // Pass Sampoerna Update
 
-	data.push({debug: lDom, debug_1: lDoc, debug_2: lUpdateEl});
+	data.push({debug: lotusHtml, debug_1: lDom, debug_2: lDoc, debug_3: lUpdateEl});
 
 	return data;
 }
