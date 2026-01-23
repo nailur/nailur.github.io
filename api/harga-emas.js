@@ -47,7 +47,10 @@ function parseGaleri24(html) {
     // --- NEW LOGIC: Extract the Update Date ---
     // We look for the specific class you mentioned within this category
     const updateHeader = categoryEl.querySelector('.text-lg.font-semibold.mb-4');
-    const lastUpdate = updateHeader ? updateHeader.textContent.trim() : "";
+    const rawUpdateText = updateHeader ? updateHeader.textContent.trim() : "";
+
+	// Format it to 2026-01-23
+	const formattedDate = formatIndoDate(rawUpdateText);
 
     const rows = categoryEl.querySelectorAll(
       '.grid.grid-cols-5.divide-x.lg\\:hover\\:bg-neutral-50'
@@ -63,7 +66,7 @@ function parseGaleri24(html) {
         jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
         buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
         // Attach the update string to each record
-        last_update: lastUpdate 
+        last_update: formattedDate 
       });
     });
   });
@@ -211,4 +214,29 @@ function parseUBSLifestyle(pages) {
 		}
 	}
 	return data;
+}
+
+function formatIndoDate(text) {
+  if (!text) return null;
+
+  const months = {
+    januari: "01", februari: "02", maret: "03", april: "04", mei: "05", juni: "06",
+    juli: "07", agustus: "08", september: "09", oktober: "10", november: "11", desember: "12"
+  };
+
+  // Use regex to find the Day, Month Name, and Year
+  // Matches "23 Januari 2026"
+  const match = text.match(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/);
+
+  if (match) {
+    const day = match[1].padStart(2, '0');
+    const monthName = match[2].toLowerCase();
+    const year = match[3];
+    const month = months[monthName];
+
+    if (month) {
+      return `${year}-${month}-${day}`;
+    }
+  }
+  return null;
 }
