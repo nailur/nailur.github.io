@@ -75,8 +75,8 @@ function parseGaleri24(html) {
   return result;
 }
 
-function parseBullion(html) {
-	const dom = new JSDOM(html);
+function parseBullion(bullionHtml, sampoernaHtml) {
+	const dom = new JSDOM(bullionHtml);
 	const doc = dom.window.document;
 
 	// Extract Sampoerna Last Update from official site
