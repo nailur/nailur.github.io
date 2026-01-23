@@ -191,7 +191,7 @@
         <select id="filter" onchange="renderFull()"></select>
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Brand</th><th>Gram</th><th>Price</th><th>Buyback</th></tr></thead>
+                <thead><tr><th>Brand</th><th>Gram</th><th>Price</th><th>Buyback</th><th>Last Update</th></tr></thead>
                 <tbody id="fullTable"></tbody>
             </table>
         </div>
@@ -350,6 +350,7 @@
                 <td>${r.gram}g</td>
                 <td style="text-align:right">Rp ${cleanNum(r.jual).toLocaleString("id-ID")}</td>
 				<td style="text-align:right">Rp ${cleanNum(r.buyback).toLocaleString("id-ID")}</td>
+				<td>${r.last_update}g</td>
             </tr>`).join("");
     }
 
