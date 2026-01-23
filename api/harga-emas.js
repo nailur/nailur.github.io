@@ -187,7 +187,7 @@ function parseKingHalim(html) {
 			.replace(",", ".")
 			.trim();
 			
-			const priceValue = priceRaw.replace(/[^\d]/g, "");
+			const priceValue = jualRaw.replace(/[^\d]/g, "");
 
 			if (gramValue && priceValue) {
                 result.push({
