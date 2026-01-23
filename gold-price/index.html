@@ -357,24 +357,27 @@
 	function formatUpdateDate(dateStr) {
 		if (!dateStr || dateStr.trim() === "") return "-";
 
-		// Standardize space-separated dates to ISO-like for the Date constructor
-		const d = new Date(dateStr.replace(/-/g, "/")); 
-		
-		// Check if the date is actually valid
-		if (isNaN(d.getTime())) return dateStr; 
+		// Standardize for the Date object
+		const d = new Date(dateStr.replace(/-/g, "/"));
+		if (isNaN(d.getTime())) return dateStr;
 
 		const day = String(d.getDate()).padStart(2, '0');
 		const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 		const month = months[d.getMonth()];
 		const year = d.getFullYear();
-		
-		const hours = String(d.getHours()).padStart(2, '0');
-		const mins = String(d.getMinutes()).padStart(2, '0');
-		const secs = String(d.getSeconds()).padStart(2, '0');
 
-		// If the input was only a date (no time), you might want to hide 00:00:00
-		// But per your request for "dd-mmm-yyyy hh:nn:ss":
-		return `${day}-${month}-${year} ${hours}:${mins}:${secs}`;
+		// Check if original string actually contains time components
+		// We look for ":" which is present in "09:41:00" but not in "2026-01-23"
+		const hasTime = dateStr.includes(":") || dateStr.includes("T");
+
+		if (!hasTime) {
+			return `${day}-${month}-${year}`; // Date only
+		} else {
+			const hh = String(d.getHours()).padStart(2, '0');
+			const mm = String(d.getMinutes()).padStart(2, '0');
+			const ss = String(d.getSeconds()).padStart(2, '0');
+			return `${day}-${month}-${year} ${hh}:${mm}:${ss}`; // Full date-time
+		}
 	}
 
     load();
