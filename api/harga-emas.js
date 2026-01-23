@@ -88,17 +88,18 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
 
 	// NEW: Scrape Lotus Archi Update
     const lDoc = new JSDOM(lotusHtml).window.document;
-    const lUpdateEl = lDoc.querySelector(".section-content.relative .text h4");
+	const lContainer = lDoc.querySelector(".section-content.relative");
 	let lotusUpdate = null;
-	if (lUpdateEl) {
-		const fullText = lUpdateEl.textContent.trim(); 
-		// fullText is: "22 Januari 2026 || Gold Price /gram : Rp 2.793.000 || Buyback Price : Rp 2.635.000"
+
+	if (lContainer) {
+		const rawContent = lContainer.textContent.trim();
 		
-		// Split by the double pipe and take index 0
-		const cleanDateOnly = fullText.split("||")[0].trim(); 
-		
-		// Format using your bilingual helper
-		lotusUpdate = formatGaleriDate(cleanDateOnly);
+		console.log("Lotus Raw Content:", rawContent);
+
+		const parts = rawContent.split("||");
+		const potentialDate = parts[0].replace(/["']/g, "").trim();
+
+		lotusUpdate = formatGaleriDate(potentialDate);
 	}
 
 	const data = [];
