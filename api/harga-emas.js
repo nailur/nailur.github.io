@@ -88,19 +88,21 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
 
 	// NEW: Scrape Lotus Archi Update
     const lDoc = new JSDOM(lotusHtml).window.document;
-	const lContainer = lDoc.querySelector(".section-content.relative");
-	let lotusUpdate = null;
+	const lUpdateEl = lDoc.querySelector('div[id^="text-"] h4') || 
+                      lDoc.querySelector('.section-content.relative h4') ||
+                      lDoc.querySelector('.elementor-widget-container h4');
 
-	if (lContainer) {
-		const rawContent = lContainer.textContent.trim();
-		
-		console.log("Lotus Raw Content:", rawContent);
+    let lotusUpdate = "";
+	if (lUpdateEl) {
+        // Use innerText if available, fallback to textContent
+        const rawContent = (lUpdateEl.innerText || lUpdateEl.textContent || "").trim();
+        
+        // Split by the double pipes
+        const parts = rawContent.split("||");
+        const potentialDate = parts[0].trim();
 
-		const parts = rawContent.split("||");
-		const potentialDate = parts[0].replace(/["']/g, "").trim();
-
-		lotusUpdate = formatGaleriDate(potentialDate);
-	}
+        lotusUpdate = formatGaleriDate(potentialDate) || "";
+    }
 
 	const data = [];
 
