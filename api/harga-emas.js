@@ -14,11 +14,12 @@ export default async function handler(req, res) {
     const bullionHTML = await fetchWithTimeout("https://idbullion.com/").then(r => r.text());
 	const emasKitaHTML = await fetchWithTimeout("https://emaskita.id/Harga_emas").then(r => r.text());
 	const sampoernaHTML = await fetchWithTimeout("https://sampoernagold.com/").then(r => r.text());
+	const lotusHTML = await fetchWithTimeout("https://lotusarchi.com/pricing/").then(r => r.text());
     const ubsPages = await fetchUBS();
 
     const data = [
       ...parseGaleri24(galeriHTML),
-      ...parseBullion(bullionHTML, sampoernaHTML),
+      ...parseBullion(bullionHTML, sampoernaHTML, lotusHTML),
 	  ...parseEmasKita(emasKitaHTML),
       ...parseUBSLifestyle(ubsPages)
     ];
@@ -75,7 +76,7 @@ function parseGaleri24(html) {
   return result;
 }
 
-function parseBullion(bullionHtml, sampoernaHtml) {
+function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
 	const dom = new JSDOM(bullionHtml);
 	const doc = dom.window.document;
 
@@ -85,61 +86,36 @@ function parseBullion(bullionHtml, sampoernaHtml) {
     const sampoernaUpdateEl = sDoc.querySelector(".small-text");
     const sampoernaUpdate = sampoernaUpdateEl ? formatGaleriDate(sampoernaUpdateEl.textContent.trim()) : null;
 
+	// NEW: Scrape Lotus Archi Update
+    const lDoc = new JSDOM(lotusHtml).window.document;
+    const lUpdateEl = lDoc.querySelector(".section-content.relative");
+    // We look for the line containing "Update" inside that relative container
+    const lotusUpdate = lUpdateEl ? formatGaleriDate(lUpdateEl.textContent.trim()) : null;
+
 	const data = [];
 
-	const tblAntam = doc.getElementById("modalAntam");
-	const tblGaleri = doc.getElementById("modalGaleri24");
-	const tblLotus = doc.getElementById("modalLotus");
-	const tblSampoerna = doc.getElementById("modalSampoerna");
-	
-	tblAntam.querySelectorAll("table tr").forEach(row => {
-		const cols = row.querySelectorAll("td");
-		if (cols.length >= 3) {
-			data.push({
-				category: "ANTAM",
-				gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
-			});
-		}
-	});
+	// Helper to process standard tables from idbullion
+    const processTable = (id, category, updateDate = null) => {
+        const tbl = doc.getElementById(id);
+        if (!tbl) return;
+        tbl.querySelectorAll("table tr").forEach(row => {
+            const cols = row.querySelectorAll("td");
+            if (cols.length >= 3) {
+                data.push({
+                    category: category,
+                    gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2"),
+                    jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2"),
+                    buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2"),
+                    last_update: updateDate
+                });
+            }
+        });
+    };
 
-	tblGaleri.querySelectorAll("table tr").forEach(row => {
-		const cols = row.querySelectorAll("td");
-		if (cols.length >= 3) {
-			data.push({
-				category: "GALERI24",
-				gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5")
-			});
-		}
-	});
-
-	tblLotus.querySelectorAll("table tr").forEach(row => {
-		const cols = row.querySelectorAll("td");
-		if (cols.length >= 3) {
-			data.push({
-				category: "LOTUS ARCHI",
-				gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2"),
-				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2"),
-				buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5").replace("01", "0.1").replace("02", "0.2")
-			});
-		}
-	});
-
-	tblSampoerna.querySelectorAll("table tr").forEach(row => {
-		const cols = row.querySelectorAll("td");
-		if (cols.length >= 3) {
-			data.push({
-				category: "SAMPOERNA",
-				gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				jual: cols[1].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				buyback: cols[2].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
-				last_update: sampoernaUpdate
-			});
-		}
-	});
+    processTable("modalAntam", "ANTAM");
+    processTable("modalGaleri24", "GALERI24");
+    processTable("modalLotus", "LOTUS ARCHI", lotusUpdate); // Pass Lotus Update
+    processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate); // Pass Sampoerna Update
 
 	return data;
 }
