@@ -24,12 +24,13 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, ubsPages] = await Promise.all([
+        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, ubsPages, kingHalimHTML] = await Promise.all([
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
             fetchWithTimeout("https://idbullion.com/").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
+			fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
             fetchUBS().catch(() => ({}))
         ]);
 
@@ -37,6 +38,7 @@ export default async function handler(req, res) {
             ...(galeriHTML ? parseGaleri24(galeriHTML) : []),
             ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
+			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
             ...parseUBSLifestyle(ubsPages)
         ];
 
@@ -158,6 +160,42 @@ function parseEmasKita(html) {
             }
         }
     });
+    return result;
+}
+
+function parseKingHalim(html) {
+    if (!html) return [];
+    const { window } = new JSDOM(html);
+    const doc = window.document;
+    const result = [];
+
+    const updateEl = doc.querySelector('.price-update, .last-update'); 
+    const rawUpdate = updateEl ? updateEl.textContent.trim() : "";
+    const formattedUpdate = formatGaleriDate(rawUpdate);
+
+    const rows = doc.querySelectorAll('table tr');
+
+    rows.forEach((row, index) => {
+        const cols = row.querySelectorAll('td');
+        // King Halim table structure: [Gram, Price/Jual, Buyback]
+        if (cols.length >= 2) {
+            const gramRaw = cols[0].textContent.trim();
+            const jualRaw = cols[1].textContent.trim();
+            const buybackRaw = cols[2] ? cols[2].textContent.trim() : jualRaw; // Fallback if no buyback column
+
+            // Basic filter to skip header rows
+            if (gramRaw.toLowerCase().includes("gram") || !/\d/.test(gramRaw)) return;
+
+            result.push({
+                category: "KING HALIM",
+                gram: gramRaw.replace(/[^\d.,]/g, "").replace(",", "."),
+                jual: jualRaw.replace(/[^\d]/g, ""),
+                buyback: buybackRaw.replace(/[^\d]/g, ""),
+                last_update: formattedUpdate
+            });
+        }
+    });
+
     return result;
 }
 
