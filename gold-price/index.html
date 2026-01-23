@@ -165,7 +165,7 @@
         
         document.getElementById("fullTable").innerHTML = rows.map(r => `
             <tr>
-                <td><b>${r.category.split(' - ')[0]}</b></td>
+                <td><b>${r.category}</b></td>
                 <td>${r.gram}g</td>
                 <td><b>${cleanNum(r.jual).toLocaleString('id-ID')}</b></td>
                 <td style="color:var(--text-dim)">${cleanNum(r.buyback).toLocaleString('id-ID')}</td>

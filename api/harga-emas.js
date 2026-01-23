@@ -33,12 +33,18 @@ export default async function handler(req, res) {
             fetchUBS().catch(() => ({}))
         ]);
 
-        const data = [
+        const rawData = [
             ...(galeriHTML ? parseGaleri24(galeriHTML) : []),
             ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
             ...parseUBSLifestyle(ubsPages)
         ];
+
+		const data = rawData.filter(item => {
+			const hasGram = item.gram && String(item.gram).trim() !== "";
+			const hasPrice = item.jual && item.jual !== 0 && item.jual !== "0";
+			return hasGram && hasPrice;
+		});
 
         res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
         res.setHeader("Access-Control-Allow-Origin", "*"); // Change to your domain in production
