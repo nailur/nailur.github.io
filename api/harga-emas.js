@@ -176,13 +176,13 @@ function parseKingHalim(html) {
 
     rows.forEach((row, index) => {
 		if (index === 0) return;
-		
+
 		const titleEl = row.querySelector('.kv-ee-title.kv-ee-title--md');
         const priceEl = row.querySelector('.kv-ee-price.kv-ee-section-title--lg');
 
 		if (titleEl && priceEl) {
-            const gramRaw = titleEl[0].textContent.trim();
-            const jualRaw = priceEl[1].textContent.trim();
+            const gramRaw = titleEl.textContent.trim();
+            const jualRaw = priceEl.children[0].children[0].textContent.trim();
 
             const gramValue = gramRaw.toLowerCase()
 			.replace(/[^\d,.]/g, "")
