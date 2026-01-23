@@ -175,8 +175,10 @@ function parseKingHalim(html) {
     const rows = doc.querySelectorAll('.kv-ee-col-12.kv-ee-col-sm-6.kv-ee-item.kv-ee-align-center');
 
     rows.forEach((row, index) => {
-		const titleEl = item.querySelector('.kv-ee-title.kv-ee-title--md');
-        const priceEl = item.querySelector('.kv-ee-price.kv-ee-section-title--lg');
+		if (index === 0) return;
+		
+		const titleEl = row.querySelector('.kv-ee-title.kv-ee-title--md');
+        const priceEl = row.querySelector('.kv-ee-price.kv-ee-section-title--lg');
 
 		if (titleEl && priceEl) {
             const gramRaw = titleEl[0].textContent.trim();
