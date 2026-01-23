@@ -215,7 +215,10 @@ function parseUBSLifestyle(pages) {
 }
 
 function formatGaleriDate(text) {
-  if (!text) return null;
+  // 1. Force conversion to string and handle null/undefined
+  const str = String(text || "").trim();
+  
+  if (!str) return null;
 
   const months = {
     januari: "01", january: "01", februari: "02", february: "02",
@@ -225,11 +228,11 @@ function formatGaleriDate(text) {
     november: "11", desember: "12", december: "12"
   };
 
-  // Find Month, Day, Year, and optional Time
-  const monthMatch = text.match(/(januari|january|februari|february|maret|march|april|mei|may|juni|june|juli|july|agustus|august|september|oktober|october|november|desember|december)/i);
-  const dayMatch = text.match(/\b(\d{1,2})\b/);
-  const yearMatch = text.match(/\b(\d{4})\b/);
-  const timeMatch = text.match(/(\d{1,2}:\d{2})/);
+  // 2. Use 'str' instead of 'text'
+  const monthMatch = str.match(/(januari|january|februari|february|maret|march|april|mei|may|juni|june|juli|july|agustus|august|september|oktober|october|november|desember|december)/i);
+  const dayMatch = str.match(/\b(\d{1,2})\b/);
+  const yearMatch = str.match(/\b(\d{4})\b/);
+  const timeMatch = str.match(/(\d{1,2}:\d{2})/);
 
   if (monthMatch && dayMatch && yearMatch) {
     const month = months[monthMatch[0].toLowerCase()];
