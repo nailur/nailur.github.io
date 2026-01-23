@@ -90,7 +90,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
     const lDoc = new JSDOM(lotusHtml).window.document;
     const lUpdateEl = lDoc.querySelector(".section-content.relative h4");
     // We look for the line containing "Update" inside that relative container
-    const lotusUpdate = lUpdateEl ? formatGaleriDate(lUpdateEl.textContent.trim()) : "";
+    const lotusUpdate = lUpdateEl ? formatGaleriDate(lUpdateEl.textContent.split("||")[0].trim()) : "";
 
 	const data = [];
 
