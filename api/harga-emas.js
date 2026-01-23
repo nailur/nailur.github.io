@@ -89,8 +89,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
 	// NEW: Scrape Lotus Archi Update
     const lDoc = new JSDOM(lotusHtml).window.document;
     const lUpdateEl = lDoc.querySelector(".section-content.relative h4");
-    // We look for the line containing "Update" inside that relative container
-    const lotusUpdate = lUpdateEl ? formatGaleriDate(lUpdateEl.textContent.split("||")[0].trim()) : "";
+    const lotusUpdate = lUpdateEl ? lUpdateEl.textContent.split("||")[0].trim() : "";
 
 	const data = [];
 
