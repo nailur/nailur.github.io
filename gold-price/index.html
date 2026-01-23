@@ -2,383 +2,184 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Gold Portfolio Premium</title>
+    <title>Gold Pulse | Portfolio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg: #05070a;
-            --card-bg: rgba(22, 27, 34, 0.6);
+            --card-bg: rgba(22, 27, 34, 0.4);
             --accent: #fbbf24;
             --success: #22c55e;
             --border: rgba(255, 255, 255, 0.08);
+            --text-dim: #8b949e;
         }
         
         body {
             margin: 0; background: var(--bg); color: #f0f6fc;
-            font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+            font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased;
         }
 
-        /* Glassmorphism Header */
         header {
             position: sticky; top: 0; z-index: 100;
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            background: rgba(13, 17, 23, 0.8);
-            padding: 18px 20px; font-weight: 800; font-size: 20px;
-            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px); background: rgba(5, 7, 10, 0.8);
+            padding: 14px 20px; border-bottom: 1px solid var(--border);
             display: flex; justify-content: space-between; align-items: center;
         }
 
-        .container { padding: 16px; margin: 0 auto; }
+        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
 
-        /* Bento Grid Summary */
-        #summary {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;
-        }
-
-        .card {
+        /* Summary Bento Grid */
+        #summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .card { 
             background: var(--card-bg); border: 1px solid var(--border);
-            border-radius: 24px; padding: 20px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(8px);
+            border-radius: 18px; padding: 16px; transition: transform 0.2s;
         }
+        .best-deal { grid-column: span 2; border-color: rgba(251, 191, 36, 0.3); }
 
-        .card:active { transform: scale(0.97); }
-
-        /* Highlight the cheapest brand */
-        .best-deal {
-            grid-column: span 2; border-color: rgba(251, 191, 36, 0.4);
-            background: linear-gradient(145deg, rgba(251, 191, 36, 0.1), var(--card-bg));
+        /* Table Styling */
+        .table-wrap { 
+            background: var(--card-bg); border-radius: 16px; 
+            border: 1px solid var(--border); overflow-x: auto; 
         }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 400px; }
+        th { text-align: left; padding: 12px; color: var(--text-dim); font-size: 10px; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); }
 
-        .brand-name { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-        .price-val { font-size: 1.0rem; font-weight: 800; margin: 8px 0; display: block; }
-        .good { color: var(--success); text-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
-
-        .brand-link {
-            font-size: 11px; color: var(--accent); text-decoration: none;
-            font-weight: 600; display: flex; align-items: center; gap: 4px;
-        }
-
-        /* Filter Section */
-        .filter-section { margin-top: 30px; }
-        select {
-            width: 100%; padding: 14px; border-radius: 16px; margin-bottom: 15px;
+        /* Input Styling */
+        select, input {
+            width: 100%; padding: 12px; border-radius: 12px; margin-bottom: 12px;
             background: #161b22; color: #fff; border: 1px solid var(--border);
-            font-family: inherit; font-weight: 600; appearance: none;
+            font-family: inherit; box-sizing: border-box;
         }
 
-        /* Modern Table */
-        /* Enable horizontal scroll for the table on small screens */
-		.table-wrap { 
-			overflow-x: auto; 
-			-webkit-overflow-scrolling: touch; 
-		}
+        .status-pill {
+            font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05);
+        }
 
-		table { 
-			width: 100%; 
-			min-width: 450px; /* Forces scroll instead of squishing columns */
-			font-size: 13px;
-		}
-        th { background: #161b22; text-align: left; padding: 12px 16px; color: #8b949e; font-size: 11px; text-transform: uppercase; }
-        td { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-        tr:last-child td { border-bottom: none; }
-
-        /* Animation */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .card { animation: fadeIn 0.4s ease forwards; }
-
-		/* Animated Burger Icon */
-		.burger-menu {
-			cursor: pointer; display: flex; flex-direction: column; gap: 5px; z-index: 1001;
-		}
-		.line {
-			width: 22px; height: 2px; background: #fff; border-radius: 10px; transition: 0.3s;
-		}
-
-		/* Burger to X Animation */
-		.burger-active .line:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-		.burger-active .line:nth-child(2) { opacity: 0; }
-		.burger-active .line:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-		/* Side Navbar Styling */
-		.side-nav {
-			position: fixed; top: 0; left: -300px; width: 280px; height: 100%;
-			background: rgba(13, 17, 23, 0.95); backdrop-filter: blur(20px);
-			z-index: 1000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-			border-right: 1px solid var(--border);
-		}
-		.side-nav.open { left: 0; }
-
-		.nav-content { padding: 40px 24px; display: flex; flex-direction: column; height: 100%; }
-		.nav-title { font-size: 24px; font-weight: 800; margin-bottom: 4px; color: var(--accent); }
-		.nav-subtitle { font-size: 12px; color: #8b949e; margin-bottom: 30px; }
-
-		/* Login Form inside Nav */
-		.nav-input {
-			width: 100%; padding: 14px; background: #05070a; border: 1px solid var(--border);
-			border-radius: 12px; color: #fff; margin-bottom: 12px; box-sizing: border-box;
-		}
-		.btn-login {
-			width: 100%; padding: 14px; background: var(--accent); color: #000;
-			border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.2s;
-		}
-		.btn-login:active { transform: scale(0.96); }
-
-		.overlay {
-			position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-			background: rgba(0,0,0,0.6); display: none; z-index: 999;
-		}
-		.overlay.active { display: block; }
-
-		/* Fix for sidebar nav items */
-		.nav-item {
-			display: block;
-			margin-bottom: 10px;
-		}
+        /* Mobile Adjustments */
+        @media (max-width: 480px) {
+            .price-val { font-size: 0.9rem; }
+            th, td { padding: 8px; }
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="burger-menu" onclick="toggleMenu()">
-        <div class="line"></div>
-        <div class="line"></div>
-        <div class="line"></div>
-    </div>
-    <span>Gold Price</span>
-    <div class="status-dot"></div>
+    <div onclick="toggleMenu()" style="cursor:pointer">☰</div>
+    <span style="font-weight:800; letter-spacing:-0.5px">GOLD PULSE</span>
+    <div id="sync-dot" style="width:8px; height:8px; border-radius:50%; background:var(--success)"></div>
 </header>
 
-<nav id="sideNav" class="side-nav">
-    <div class="nav-content">
-        <h2 class="nav-title">Gold Pulse</h2>
-        
-        <div id="nav-menu" class="space-y-2">
-            <a href="#" onclick="showSection('gold-price')" class="nav-item" style="display:block; padding:10px; color:var(--accent); text-decoration:none;">Gold Price</a>
-
-            <div id="auth-menu" style="display: none;">
-                <a href="#" onclick="showSection('dashboard')" class="nav-item" style="display:block; padding:10px; color:white; text-decoration:none;">Dashboard</a>
-                <button onclick="handleLogout()" class="nav-item btn-logout" style="background:none; border:none; color:#ff4d4d; padding:10px; cursor:pointer;">Log Out</button>
-            </div>
-
-            <div id="guest-menu">
-                <button onclick="showLogin()" class="nav-item btn-login-nav" style="background:var(--accent); color:black; border:none; border-radius:8px; padding:10px 20px; font-weight:bold; cursor:pointer;">Login</button>
-            </div>
-        </div>
-
-        <div id="login-section" style="display: none;" class="login-form">
-            <input type="text" id="username" placeholder="Email" class="nav-input">
-            <input type="password" id="password" placeholder="Password" class="nav-input">
-            <button onclick="handleLogin()" class="btn-login">Unlock Portfolio</button>
-            <button onclick="showMenu()" class="btn-back" style="background:none; border:none; color:#8b949e; margin-top:10px; cursor:pointer;">← Back</button>
-        </div>
-    </div>
-</nav>
-
-<div id="overlay" class="overlay" onclick="toggleMenu()"></div>
-
 <div class="container">
-	<div id="section-dashboard" style="display: none;"></div>
+    <div id="summary"></div>
 
-    <!-- <div id="summary"></div> -->
+    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px">
+        <h3 style="margin:0; font-size:14px">Market Overview</h3>
+        <span id="update-timer" style="font-size:10px; color:var(--text-dim)">Checking...</span>
+    </div>
 
-    <div class="filter-section">
-        <div style="display:flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
-            <h3 style="margin:0; font-size: 16px;">Market List</h3>
-            <span style="font-size: 11px; color: #8b949e;">Every 5 minute(s)</span>
-        </div>
-        <select id="filter" onchange="renderFull()"></select>
-        <div class="table-wrap">
-            <table>
-                <thead><tr><th>Brand</th><th>Gram</th><th>Price</th><th>Buyback</th><th>Last Update</th></tr></thead>
-                <tbody id="fullTable"></tbody>
-            </table>
-        </div>
+    <select id="filter" onchange="renderFull()"></select>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Brand</th>
+                    <th>Gram</th>
+                    <th>Price</th>
+                    <th>Buyback</th>
+                    <th>Update</th>
+                </tr>
+            </thead>
+            <tbody id="fullTable">
+                <tr><td colspan="5" style="text-align:center; padding:40px">Loading live market data...</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
 <script>
-	// Add these at the top of your existing <script>
-	const SB_URL = "https://iwsacljessokrqhfmdbv.supabase.co";
-	const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo";
-	const clientSupabase = supabase.createClient(SB_URL, SB_KEY);
-    
-	function toggleMenu() {
-		const nav = document.getElementById('sideNav');
-		const overlay = document.getElementById('overlay');
-		const burger = document.querySelector('.burger-menu');
+    const API = "https://nailur.vercel.app/api/harga-emas";
+    let rawData = [];
 
-		nav.classList.toggle('open');
-		overlay.classList.toggle('active');
-		burger.classList.toggle('burger-active');
-	}
-
-	async function handleLogin() {
-		const email = document.getElementById('username').value; // Use email for Supabase Auth
-		const password = document.getElementById('password').value;
-
-		const { data, error } = await clientSupabase.auth.signInWithPassword({
-			email: email,
-			password: password,
-		});
-
-		if (error) {
-			alert("Login Failed: " + error.message);
-		} else {
-			alert("Welcome back");
-			toggleMenu(); // Close the sidebar
-			loadUserInventory(data.user.id);
-		}
-	}
-
-	// Listen for Auth changes (Login/Logout)
-	clientSupabase.auth.onAuthStateChange((event, session) => {
-		const authMenu = document.getElementById('auth-menu');
-		const guestMenu = document.getElementById('guest-menu');
-		const loginSection = document.getElementById('login-section');
-
-		if (event === 'SIGNED_IN') {
-			authMenu.style.display = 'block';
-			guestMenu.style.display = 'none';
-			loginSection.style.display = 'none';
-			console.log("User logged in:", session.user.email);
-			showSection('dashboard'); // Auto-switch to dashboard on login
-		} 
-		
-		if (event === 'SIGNED_OUT') {
-			authMenu.style.display = 'none';
-			guestMenu.style.display = 'block';
-			showSection('gold-price'); // Switch back to public price
-		}
-	});
-
-	async function handleLogout() {
-		await clientSupabase.auth.signOut();
-		alert("Logged out. See you next time!");
-		toggleMenu(); // Close sidebar
-	}
-
-	// UI Toggles for Sidebar
-	function showLogin() {
-		document.getElementById('nav-menu').style.display = 'none';
-		document.getElementById('login-section').style.display = 'block';
-	}
-
-	function showMenu() {
-		document.getElementById('nav-menu').style.display = 'block';
-		document.getElementById('login-section').style.display = 'none';
-	}
-
-	function showSection(sectionId) {
-		document.getElementById('section-gold-price').style.display = (sectionId === 'gold-price') ? 'block' : 'none';
-		document.getElementById('section-dashboard').style.display = (sectionId === 'dashboard') ? 'block' : 'none';
-		if(window.innerWidth < 768) toggleMenu(); // Auto-close sidebar on mobile
-	}
-
-    const API="https://nailur.vercel.app/api/harga-emas";
-    const brandLinks = {
-        "ANTAM": "http://logammulia.com/id/harga-emas-hari-ini",
-		"EMAS KITA": "https://emaskita.id/Harga_emas",
-		"LOTUS ARCHI": "https://lotusarchi.com/pricing/",
-		"SAMPOERNA": "https://sampoernagold.com/",
-		"UBS": "https://ubslifestyle.com/fine-gold",
-        "GALERI 24": "https://galeri24.co.id/harga-emas",
-		"ANTAM - GALERI24": "https://galeri24.co.id/harga-emas",
-		"LOTUS ARCHI - GALERI24": "https://galeri24.co.id/harga-emas",
-		"UBS - GALERI24": "https://galeri24.co.id/harga-emas"
-    };
-
-    let rawData=[];
-
-    async function load(){
+    async function load() {
+        const dot = document.getElementById('sync-dot');
+        dot.style.opacity = '0.5';
+        
         try {
             const r = await fetch(API);
             const j = await r.json();
-            rawData = j.data;
+            rawData = j.data || [];
+            
             buildSummary();
             buildFilter();
             renderFull();
-        } catch(e) { console.error("Sync Failed", e); }
+            
+            document.getElementById('update-timer').textContent = `Live: ${new Date().toLocaleTimeString()}`;
+            dot.style.opacity = '1';
+        } catch(e) {
+            console.error("Fetch error", e);
+            document.getElementById('fullTable').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red">Connection failed. Retrying...</td></tr>';
+        }
     }
 
-    const cleanNum = txt => Number(String(txt).replace(/[^\d]/g,""));
+    const cleanNum = n => n ? Number(String(n).replace(/[^\d]/g,"")) : 0;
 
-    function buildSummary(){
-        const g1 = rawData.filter(r => r.gram === "1");
-        const map = {};
-        g1.forEach(r => {
-            if(!map[r.category]) map[r.category] = [];
-            map[r.category].push(
-				cleanNum(r.jual)
-			);
-        });
+    function buildSummary() {
+        // Find best 1g price
+        const g1 = rawData.filter(r => r.gram == 1).sort((a,b) => cleanNum(a.jual) - cleanNum(b.jual));
+        if(!g1.length) return;
 
-        const list = Object.keys(map).map(k => ({
-            brand: k,
-            price: Math.min(...map[k]),
-            url: brandLinks[k] || "https://www.google.com/search?q=" + k + "+gold+price"
-        })).sort((a,b) => a.price - b.price);
-
-        document.getElementById("summary").innerHTML = list.map((b,i) => `
-        <div class="card ${i===0 ? 'best-deal' : ''}">
-            <div class="brand-name">${b.brand}</div>
-            <div class="price-val ${i===0 ? 'good' : ''}">Rp ${b.price.toLocaleString("id-ID")}</div>
-            <a href="${b.url}" target="_blank" class="brand-link">
-                View Site ↗
-            </a>
-        </div>`).join("");
+        const best = g1[0];
+        document.getElementById("summary").innerHTML = `
+            <div class="card best-deal">
+                <div style="font-size:10px; color:var(--accent); font-weight:800">LOWEST PRICE (1G)</div>
+                <div style="font-size:1.4rem; font-weight:800; margin:5px 0">Rp ${cleanNum(best.jual).toLocaleString('id-ID')}</div>
+                <div style="font-size:11px; color:var(--text-dim)">${best.category}</div>
+            </div>
+            <div class="card">
+                <div style="font-size:10px; color:var(--text-dim)">ANTAM (1G)</div>
+                <div style="font-weight:800">Rp ${cleanNum(rawData.find(r => r.category === 'ANTAM' && r.gram == 1)?.jual || 0).toLocaleString('id-ID')}</div>
+            </div>
+            <div class="card">
+                <div style="font-size:10px; color:var(--text-dim)">UBS (1G)</div>
+                <div style="font-weight:800">Rp ${cleanNum(rawData.find(r => r.category === 'UBS' && r.gram == 1)?.jual || 0).toLocaleString('id-ID')}</div>
+            </div>
+        `;
     }
 
-    function buildFilter(){
+    function buildFilter() {
         const sel = document.getElementById("filter");
-        const current = sel.value;
-        sel.innerHTML = '<option value="ALL">All Brands</option>';
-        [...new Set(rawData.map(r => r.category))].sort().forEach(b => {
-            sel.innerHTML += `<option value="${b}" ${current === b ? 'selected' : ''}>${b}</option>`;
-        });
+        if(sel.options.length > 0) return;
+        const cats = [...new Set(rawData.map(r => r.category))].sort();
+        sel.innerHTML = '<option value="ALL">All Brands</option>' + 
+            cats.map(c => `<option value="${c}">${c}</option>`).join('');
     }
 
-    function renderFull(){
-        const f = document.getElementById("filter").value;
-        let rows = f === "ALL" ? rawData : rawData.filter(r => r.category === f);
-        rows.sort((a,b) => a.category.localeCompare(b.category));
-
+    function renderFull() {
+        const filter = document.getElementById("filter").value;
+        const rows = filter === "ALL" ? rawData : rawData.filter(r => r.category === filter);
+        
         document.getElementById("fullTable").innerHTML = rows.map(r => `
             <tr>
-                <td><b>${r.category}</b></td>
+                <td><b>${r.category.split(' - ')[0]}</b></td>
                 <td>${r.gram}g</td>
-                <td style="text-align:right">Rp ${cleanNum(r.jual).toLocaleString("id-ID")}</td>
-				<td style="text-align:right">Rp ${cleanNum(r.buyback).toLocaleString("id-ID")}</td>
-				<td>${formatUpdateDate(r.last_update)}</td>
-            </tr>`).join("");
+                <td><b>${cleanNum(r.jual).toLocaleString('id-ID')}</b></td>
+                <td style="color:var(--text-dim)">${cleanNum(r.buyback).toLocaleString('id-ID')}</td>
+                <td><span class="status-pill">${formatUpdateDate(r.last_update)}</span></td>
+            </tr>
+        `).join('');
     }
 
-	function formatUpdateDate(dateStr) {
-		if (!dateStr || dateStr.trim() === "") return "-";
-
-		// Standardize for the Date object
-		const d = new Date(dateStr.replace(/-/g, "/"));
-		if (isNaN(d.getTime())) return dateStr;
-
-		const day = String(d.getDate()).padStart(2, '0');
-		const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-		const month = months[d.getMonth()];
-		const year = d.getFullYear();
-
-		// Check if original string actually contains time components
-		// We look for ":" which is present in "09:41:00" but not in "2026-01-23"
-		const hasTime = dateStr.includes(":") || dateStr.includes("T");
-
-		if (!hasTime) {
-			return `${day}-${month}-${year}`; // Date only
-		} else {
-			const hh = String(d.getHours()).padStart(2, '0');
-			const mm = String(d.getMinutes()).padStart(2, '0');
-			const ss = String(d.getSeconds()).padStart(2, '0');
-			return `${day}-${month}-${year} ${hh}:${mm}:${ss}`; // Full date-time
-		}
-	}
+    function formatUpdateDate(str) {
+        if(!str || str === "null") return "-";
+        const d = new Date(str.replace(/-/g, "/"));
+        if(isNaN(d.getTime())) return str;
+        return `${d.getDate()} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
 
     load();
     setInterval(load, 300000);

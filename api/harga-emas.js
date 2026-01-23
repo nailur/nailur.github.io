@@ -75,7 +75,7 @@ function parseGaleri24(html) {
             if (cols.length < 3) return;
             result.push({
                 category: `${category} - GALERI24`,
-                gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("05", "0.5"),
+                gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("01", "0.1").replace("02", "0.2").replace("03", "0.3").replace("04", "0.4").replace("05", "0.5"),
                 jual: cols[1].textContent.trim().replace(/[^\d]/g, ""),
                 buyback: cols[2].textContent.trim().replace(/[^\d]/g, ""),
                 last_update: formattedUpdate 
