@@ -87,21 +87,17 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
     const sampoernaUpdate = sampoernaUpdateEl ? formatGaleriDate(sampoernaUpdateEl.textContent.trim()) : "";
 
 	// NEW: Scrape Lotus Archi Update
-    const lDoc = new JSDOM(lotusHtml).window.document;
-	const lUpdateEl = lDoc.querySelector('div[id^="text-"] h4') || 
-                      lDoc.querySelector('.section-content.relative h4') ||
-                      lDoc.querySelector('.elementor-widget-container h4');
+    const lDom = new JSDOM(lotusHtml);
+	const lDoc = lDom.window.document;
+	const lUpdateEl = lDoc.querySelector(".section-content.relative h4") || 
+                      lDoc.querySelector(".elementor-widget-container h4");
 
     let lotusUpdate = "";
 	if (lUpdateEl) {
-        // Use innerText if available, fallback to textContent
-        const rawContent = (lUpdateEl.innerText || lUpdateEl.textContent || "").trim();
-        
-        // Split by the double pipes
+        const rawContent = lUpdateEl.textContent.trim();
+        // Split by the double pipe "||"
         const parts = rawContent.split("||");
-        const potentialDate = parts[0].trim();
-
-        lotusUpdate = rawContent;
+        lotusUpdate = formatGaleriDate(parts[0].trim()) || "";
     }
 
 	const data = [];
@@ -129,7 +125,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
     processTable("modalLotus", "LOTUS ARCHI", lotusUpdate); // Pass Lotus Update
     processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate); // Pass Sampoerna Update
 
-	data.push({debug: lDoc, debug_1: lUpdateEl});
+	data.push({debug: lDom, debug_1: lDoc, debug_2: lUpdateEl});
 
 	return data;
 }
