@@ -4,7 +4,22 @@ import { JSDOM } from "jsdom";
 
 const fetchWithTimeout = (url, ms = 120000) =>
   Promise.race([
-    fetch(url),
+    fetch(url, {
+		headers: {
+        // High-quality browser fingerprint
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9,id;q=0.8',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Referer': 'https://www.google.com/',
+        'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'cross-site',
+        'Upgrade-Insecure-Requests': '1'
+      }
+	}),
     new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms))
   ]);
 
