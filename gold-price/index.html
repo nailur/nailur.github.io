@@ -134,19 +134,31 @@
     }
 
     function renderFull() {
-        const filter = document.getElementById("filter").value;
-        const rows = filter === "ALL" ? rawData : rawData.filter(r => r.category === filter);
-        
-        document.getElementById("fullTable").innerHTML = rows.map(r => `
-            <tr>
-                <td><b>${r.category}</b></td>
-                <td>${r.gram}g</td>
-                <td><b>${cleanNum(r.jual).toLocaleString('id-ID')}</b></td>
-                <td style="color:var(--text-dim)">${cleanNum(r.buyback).toLocaleString('id-ID')}</td>
-                <td><span class="status-pill">${formatUpdateDate(r.last_update)}</span></td>
-            </tr>
-        `).join('');
-    }
+		const f = document.getElementById("filter").value;
+		const container = document.getElementById("fullTable");
+		
+		let rows = f === "ALL" ? [...rawData] : rawData.filter(r => r.category === f);
+		
+		rows.sort((a, b) => {
+			const catA = String(a.category).toUpperCase();
+			const catB = String(b.category).toUpperCase();
+			
+			if (catA < catB) return -1;
+			if (catA > catB) return 1;
+			
+			return cleanNum(a.gram) - cleanNum(b.gram);
+		});
+
+		container.innerHTML = rows.map(r => `
+			<tr>
+				<td><span style="font-weight:700">${r.category}</span></td>
+				<td>${r.gram}g</td>
+				<td style="text-align:right; font-weight:800">Rp ${cleanNum(r.jual).toLocaleString('id-ID')}</td>
+				<td style="text-align:right; color:var(--text-dim)">Rp ${cleanNum(r.buyback).toLocaleString('id-ID')}</td>
+				<td style="text-align:center"><span class="status-pill">${formatUpdateDate(r.last_update)}</span></td>
+			</tr>
+		`).join('');
+	}
 
     function formatUpdateDate(dateStr) {
 		if (!dateStr || dateStr === "null" || dateStr.trim() === "") return "-";
