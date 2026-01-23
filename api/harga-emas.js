@@ -165,43 +165,7 @@ function parseEmasKita(html) {
 }
 
 function parseKingHalim(html) {
-    if (!html) return [];
-    try {
-        const { window } = new JSDOM(html);
-        const doc = window.document;
-        const result = [];
-
-        const updateEl = doc.querySelector('.kv-ee-section-subtitle.kv-ee-section-subtitle--sm');
-        const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
-
-        const items = doc.querySelectorAll('.kv-ee-item');
-
-        items.forEach((item) => {
-            const titleEl = item.querySelector('.kv-ee-title.kv-ee-title--md');
-            const priceEl = item.querySelector('.kv-ee-price.kv-ee-section-title--lg');
-
-            if (titleEl && priceEl) {
-                const gramRaw = titleEl.textContent.trim();
-                // Safer price extraction
-                const jualRaw = priceEl.textContent.trim();
-
-                const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
-                const priceValue = jualRaw.replace(/[^\d]/g, "");
-
-                if (gramValue && priceValue) {
-                    result.push({
-                        category: "KING HALIM",
-                        gram: gramValue,
-                        jual: priceValue,
-                        buyback: 0,
-                        last_update: formattedUpdate
-                    });
-                }
-            }
-        });
-        window.close(); // Memory cleanup
-        return result;
-    } catch (e) { return []; }
+    return [];
 }
 
 async function fetchUBS() {
