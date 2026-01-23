@@ -215,10 +215,15 @@ function parseUBSLifestyle(pages) {
 }
 
 function formatGaleriDate(text) {
-  // 1. Force conversion to string and handle null/undefined
-  const str = String(text || "").trim();
-  
+  // 1. Convert to string and handle null/undefined
+  let str = String(text || "").trim();
   if (!str) return null;
+
+  // 2. CLEANING STEP: Remove quotes (") and special characters that cause issues
+  // This keeps spaces, letters, numbers, colons, and pipes
+  str = str.replace(/["']/g, "") // Remove all quotes
+           .replace(/[^\w\s:|]/g, " ") // Replace other special chars with a space
+           .replace(/\s+/g, " "); // Collapse multiple spaces into one
 
   const months = {
     januari: "01", january: "01", februari: "02", february: "02",
@@ -228,7 +233,7 @@ function formatGaleriDate(text) {
     november: "11", desember: "12", december: "12"
   };
 
-  // 2. Use 'str' instead of 'text'
+  // 3. Match Month, Day, Year, and optional Time
   const monthMatch = str.match(/(januari|january|februari|february|maret|march|april|mei|may|juni|june|juli|july|agustus|august|september|oktober|october|november|desember|december)/i);
   const dayMatch = str.match(/\b(\d{1,2})\b/);
   const yearMatch = str.match(/\b(\d{4})\b/);
