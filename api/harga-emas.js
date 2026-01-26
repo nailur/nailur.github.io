@@ -83,7 +83,7 @@ function parseGaleri24(html) {
             const cols = row.querySelectorAll("div");
             if (cols.length < 3) return;
             result.push({
-				code: category.trim().replace(/[^\d]/g, "")+cols[0].textContent.trim().replace(/[^\d]/g, "")+`_GALERI24`,
+				code: category.trim().replace(/\s+/g, "")+cols[0].textContent.trim().replace(/[^\d]/g, "")+`_GALERI24`,
                 category: `${category} - GALERI24`,
                 gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("01", "0.1").replace("02", "0.2").replace("03", "0.3").replace("04", "0.4").replace("05", "0.5"),
                 jual: cols[1].textContent.trim().replace(/[^\d]/g, ""),
@@ -120,7 +120,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
             const cols = row.querySelectorAll("td");
             if (cols.length >= 3) {
                 data.push({
-					code: category.replace(" ","") + cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1").replace(".",""),
+					code: category.replace(/\s+/g,"") + cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1").replace(".",""),
                     category,
                     gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1"),
                     jual: cols[1].textContent.trim().replace(/[^\d]/g, ""),
