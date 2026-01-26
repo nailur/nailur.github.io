@@ -83,7 +83,8 @@ function parseGaleri24(html) {
             const cols = row.querySelectorAll("div");
             if (cols.length < 3) return;
             result.push({
-                category: `${category} - GALERI24`,
+				code: `${category}`+cols[0].textContent.trim().replace(/[^\d]/g, "")+`_GALERI24`.replace(" ", ""),
+                category: `${category} - GALERI24`.replace(" ", ""),
                 gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("01", "0.1").replace("02", "0.2").replace("03", "0.3").replace("04", "0.4").replace("05", "0.5"),
                 jual: cols[1].textContent.trim().replace(/[^\d]/g, ""),
                 buyback: cols[2].textContent.trim().replace(/[^\d]/g, ""),
@@ -119,6 +120,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
             const cols = row.querySelectorAll("td");
             if (cols.length >= 3) {
                 data.push({
+					code: category + cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1"),
                     category,
                     gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1"),
                     jual: cols[1].textContent.trim().replace(/[^\d]/g, ""),
@@ -130,7 +132,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
     };
 
     processTable("modalAntam", "ANTAM");
-    processTable("modalLotus", "LOTUS ARCHI", lotusUpdate);
+    processTable("modalLotus", "LOTUSARCHI", lotusUpdate);
     processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate);
 
     return data;
@@ -152,7 +154,8 @@ function parseEmasKita(html) {
             const priceValue = cols[1].textContent.trim().replace(/[^\d]/g, "");
             if (gramValue && priceValue) {
                 result.push({
-                    category: "EMAS KITA",
+					code: "EMASKITA" + gramValue.replace(".",""),
+                    category: "EMASKITA",
                     gram: gramValue,
                     jual: priceValue,
                     buyback: priceValue,
@@ -190,7 +193,8 @@ function parseKingHalim(html) {
 
                 if (gramValue && priceValue) {
                     result.push({
-                        category: "KING HALIM",
+						code: "KINGHALIM" + gramValue.replace(".",""),
+                        category: "KINGHALIM",
                         gram: gramValue,
                         jual: priceValue,
                         buyback: 0,
@@ -245,6 +249,7 @@ function parseUBSLifestyle(pages) {
         const priceEl = doc.querySelector(".product_price");
         if (priceEl) {
             data.push({
+				code: "UBS" + gram.replace(".",""),
                 category: "UBS",
                 gram,
                 jual: priceEl.textContent.replace(/[^\d]/g, ""),
