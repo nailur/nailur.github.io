@@ -120,7 +120,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
             const cols = row.querySelectorAll("td");
             if (cols.length >= 3) {
                 data.push({
-					code: category + cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1"),
+					code: category + cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1").replace(" ",""),
                     category,
                     gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1"),
                     jual: cols[1].textContent.trim().replace(/[^\d]/g, ""),
@@ -132,7 +132,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
     };
 
     processTable("modalAntam", "ANTAM");
-    processTable("modalLotus", "LOTUSARCHI", lotusUpdate);
+    processTable("modalLotus", "LOTUS ARCHI", lotusUpdate);
     processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate);
 
     return data;
@@ -155,7 +155,7 @@ function parseEmasKita(html) {
             if (gramValue && priceValue) {
                 result.push({
 					code: "EMASKITA" + gramValue.replace(".",""),
-                    category: "EMASKITA",
+                    category: "EMAS KITA",
                     gram: gramValue,
                     jual: priceValue,
                     buyback: priceValue,
@@ -194,7 +194,7 @@ function parseKingHalim(html) {
                 if (gramValue && priceValue) {
                     result.push({
 						code: "KINGHALIM" + gramValue.replace(".",""),
-                        category: "KINGHALIM",
+                        category: "KING HALIM",
                         gram: gramValue,
                         jual: priceValue,
                         buyback: 0,
