@@ -140,7 +140,7 @@ function parseEmasKita(html) {
     if (!html) return [];
     const doc = new JSDOM(html).window.document;
     const result = [];
-    const rows = doc.querySelectorAll("table tr");
+    const rows = Array.from(doc.querySelectorAll("table tr")).slice(3);
     const updateEl = doc.querySelector(".d-flex.justify-content-center.mt-3");
     const lUpdate = formatGaleriDate(updateEl?.textContent || "");
 
