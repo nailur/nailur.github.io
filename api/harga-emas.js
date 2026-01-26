@@ -120,7 +120,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
             const cols = row.querySelectorAll("td");
             if (cols.length >= 3) {
                 data.push({
-					code: category + cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1").replace(" ",""),
+					code: category.replace(" ","") + cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1").replace(".",""),
                     category,
                     gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1"),
                     jual: cols[1].textContent.trim().replace(/[^\d]/g, ""),
