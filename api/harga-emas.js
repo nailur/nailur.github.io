@@ -123,7 +123,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
 					code: category.replace(/\s+/g,"") + cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1").replace(".",""),
                     category,
                     gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1"),
-                    jual: cols[1].textContent.trim().replace(/[^\d]/g, ""),
+                    jual: Math.floor(cols[1].textContent.trim().replace(/[^\d]/g, "") / category == "ANTAM" ? 1.0025 : 1),
                     buyback: cols[2].textContent.trim().replace(/[^\d]/g, ""),
                     last_update: updateDate
                 });
