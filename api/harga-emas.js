@@ -152,13 +152,14 @@ function parseEmasKita(html) {
         if (cols.length >= 2) {
             const gramValue = cols[0].textContent.trim().toLowerCase().replace("gr", "").replace(",", ".").trim();
             const priceValue = cols[1].textContent.trim().replace(/[^\d]/g, "");
+			const buybackValue = cols[2].textContent.trim().replace(/[^\d]/g, "");
             if (gramValue && priceValue) {
                 result.push({
 					code: "EMASKITA" + gramValue.replace(".",""),
                     category: "EMAS KITA",
                     gram: gramValue,
                     jual: priceValue,
-                    buyback: priceValue,
+                    buyback: buybackValue,
                     last_update : lUpdate,
                 });
             }
