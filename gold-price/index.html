@@ -149,11 +149,13 @@
 			return cleanNum(a.gram) - cleanNum(b.gram);
 		});
 
+		// <td style="text-align:right; font-weight:800">Rp ${cleanNum(r.category == 'ANTAM' ? Math.floor(r.jual / 1.0025) : r.jual).toLocaleString('id-ID')}</td>
+
 		container.innerHTML = rows.map(r => `
 			<tr>
 				<td><span style="font-weight:700">${r.category}</span></td>
 				<td>${r.gram}g</td>
-				<td style="text-align:right; font-weight:800">Rp ${cleanNum(r.category == 'ANTAM' ? Math.floor(r.jual / 1.0025) : r.jual).toLocaleString('id-ID')}</td>
+				<td style="text-align:right; font-weight:800">Rp ${cleanNum(r.jual).toLocaleString('id-ID')}</td>
 				<td style="text-align:right; color:var(--text-dim)">Rp ${cleanNum(r.buyback).toLocaleString('id-ID')}</td>
 				<td style="text-align:center"><span class="status-pill">${formatUpdateDate(r.last_update)}</span></td>
 			</tr>
