@@ -147,9 +147,8 @@ function parseEmasKita(html) {
     const lUpdate = formatGaleriDate(updateEl?.textContent || "");
 
     rows.forEach((row, index) => {
-        if (index === 0) return;
         const cols = row.querySelectorAll("td");
-        if (cols.length >= 2) {
+        if (cols.length >= 4) {
             const gramValue = cols[0].textContent.trim().toLowerCase().replace("gr", "").replace(",", ".").trim();
             const priceValue = cols[1].textContent.trim().replace(/[^\d]/g, "");
 			const buybackValue = cols[3].textContent.trim().replace(/[^\d]/g, "");
