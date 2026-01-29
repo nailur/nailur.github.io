@@ -160,7 +160,7 @@ function parseEmasKita(html) {
                     gram: gramValue,
                     jual: priceValue,
                     buyback: buybackValue,
-                    last_update : lUpdate,
+                    last_update : lUpdate
                 });
             }
         }
