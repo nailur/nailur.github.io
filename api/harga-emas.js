@@ -431,9 +431,9 @@ function parseAntam(html) {
                 }
             }
         });
-
+		
         window.close();
-        return doc;
+        return result;
     } catch (e) { return []; }
 }
 
