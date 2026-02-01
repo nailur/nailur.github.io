@@ -229,51 +229,6 @@ function parseKingHalim(html) {
     return results;
 } */
 
-async function fetchUBS() {
-    try {
-        // 1. Get the first page to see total pages and initial products
-        const firstPageHtml = await fetchWithTimeout("https://ubslifestyle.com/fine-gold/page/1/");
-        const dom = new JSDOM(firstPageHtml);
-        const doc = dom.window.document;
-
-        // 2. Determine total pages
-        const totalPagesText = doc.querySelector(".as-pagination-totalnumbers")?.textContent || "1";
-        const totalPages = parseInt(totalPagesText.replace(/[^\d]/g, "")) || 1;
-
-        // 3. Get Buyback HTML (separate call)
-        const buybackHtml = await fetchWithTimeout("https://ubslifestyle.com/harga-buyback-hari-ini/");
-
-        // 4. Collect all product links from all pages
-        let allProductUrls = [];
-        const pageRange = Array.from({ length: totalPages }, (_, i) => i + 1);
-        
-        const pageHtmls = await Promise.all(
-            pageRange.map(p => fetchWithTimeout(`https://ubslifestyle.com/fine-gold/page/${p}/`))
-        );
-
-        pageHtmls.forEach(html => {
-            const pDoc = new JSDOM(html).window.document;
-            const links = Array.from(pDoc.querySelectorAll(".as-producttile-tilelink"))
-                               .map(a => a.href);
-            allProductUrls.push(...links);
-        });
-
-        // 5. Fetch all individual product pages
-        // Optimization: Limit concurrency or skip non-gold items if needed
-        const productHtmls = await Promise.all(
-            allProductUrls.map(url => fetchWithTimeout(url).catch(() => ""))
-        );
-
-        return {
-            products: productHtmls,
-            buyback: buybackHtml
-        };
-    } catch (e) {
-        console.error("UBS Dynamic Fetch Failed", e);
-        return { products: [], buyback: "" };
-    }
-}
-
 /* function parseUBSLifestyle(pages) {
     const data = [];
     const buybackMap = {};
@@ -309,39 +264,57 @@ async function fetchUBS() {
     return data;
 } */
 
-function parseUBSLifestyle(pages) {
-    const data = [];
+async function fetchUBS() {
+    const listUrl = "https://ubslifestyle.com/fine-gold/page/1/?orderby=price";
+    const buybackUrl = "https://ubslifestyle.com/harga-buyback-hari-ini/";
+
+    try {
+        const [listHTML, buybackHTML] = await Promise.all([
+            fetchWithTimeout(listUrl).catch(() => ""),
+            fetchWithTimeout(buybackUrl).catch(() => "")
+        ]);
+        return { listHTML, buybackHTML };
+    } catch (e) {
+        return { listHTML: "", buybackHTML: "" };
+    }
+}
+
+function parseUBSLifestyle(ubsData) {
+    if (!ubsData.listHTML) return [];
+    const { window } = new JSDOM(ubsData.listHTML);
+    const doc = window.document;
+    const result = [];
+
+    // 1. Map Buyback first for lookup
     const buybackMap = {};
-    
-    // 1. Process Buyback (Same logic, keep it stable)
-    if (pages.buyback) {
-        const bDoc = new JSDOM(pages.buyback).window.document;
+    let ubsUpdate = "";
+    if (ubsData.buybackHTML) {
+        const bDoc = new JSDOM(ubsData.buybackHTML).window.document;
+        ubsUpdate = formatGaleriDate(bDoc.querySelector('.text-xs.font-semibold')?.textContent || "");
         bDoc.querySelectorAll("table tr").forEach(row => {
             const cols = row.querySelectorAll("td");
             if (cols.length >= 3) {
-                const gram = cols[0].textContent.trim().replace(/[^\d,.]/g, "").replace(",", ".");
-                buybackMap[gram] = cols[2].textContent.trim().replace(/[^\d]/g, "");
+                const g = cols[0].textContent.replace(/[^\d,.]/g, "").replace(",", ".");
+                buybackMap[g] = cols[2].textContent.replace(/[^\d]/g, "");
             }
         });
     }
 
-    // 2. Process Product Pages
-    pages.products.forEach(html => {
-        if (!html) return;
-        const pDoc = new JSDOM(html).window.document;
+    // 2. Target the info container you found
+    const containers = doc.querySelectorAll('.as-producttile-info');
 
-        // Target the specific price class you found
-        const priceEl = pDoc.querySelector(".as-price-currentprice.as-producttile-currentprice.price");
-        const titleEl = pDoc.querySelector(".as-productdetail-title");
+    containers.forEach(container => {
+        const titleEl = container.querySelector('.ase-truncate-title');
+        const priceEl = container.querySelector('.woocommerce-Price-amount.amount');
 
-        if (priceEl && titleEl) {
-            const priceText = priceEl.textContent.trim();
+        if (titleEl && priceEl) {
             const titleText = titleEl.textContent.trim();
+            const priceText = priceEl.textContent.trim();
 
-            // Safety: Skip if the site is serving "NaN" to our scraper
-            if (priceText.includes("NaN")) return;
+            // Skip if price is dynamic/empty
+            if (priceText.includes("NaN") || !priceText) return;
 
-            // Regex for Gram (flexible for "gr" or "gram")
+            // Extract gram using the Senior Regex
             const gramMatch = titleText.toLowerCase().match(/(\d+[.,]?\d*)\s*(gr|gram)/);
             
             if (gramMatch) {
@@ -349,22 +322,21 @@ function parseUBSLifestyle(pages) {
                 const priceValue = priceText.replace(/[^\d]/g, "");
 
                 if (priceValue && priceValue !== "0") {
-                    data.push({
+                    result.push({
                         code: "UBS" + gramValue.replace(".", ""),
                         category: "UBS",
                         gram: gramValue,
                         jual: priceValue,
                         buyback: buybackMap[gramValue] || "",
-                        // Note: Product pages often don't have the date, 
-                        // we can use the buyback date as the global UBS update
-                        last_update: "" 
+                        last_update: ubsUpdate
                     });
                 }
             }
         }
     });
 
-    return data;
+    window.close(); // Memory safety
+    return result;
 }
 
 // Global Formatter
