@@ -309,15 +309,13 @@ async function fetchUBS() {
     return data;
 } */
 
-function parseUBSLifestyle(ubsData) {
+function parseUBSLifestyle(pages) {
     const data = [];
     const buybackMap = {};
-    let ubsUpdate = "";
-
-    // 1. Parse Buyback
-    if (ubsData.buyback) {
-        const bDoc = new JSDOM(ubsData.buyback).window.document;
-        ubsUpdate = formatGaleriDate(bDoc.querySelector('.text-xs.font-semibold')?.textContent || "");
+    
+    // 1. Process Buyback (Same logic, keep it stable)
+    if (pages.buyback) {
+        const bDoc = new JSDOM(pages.buyback).window.document;
         bDoc.querySelectorAll("table tr").forEach(row => {
             const cols = row.querySelectorAll("td");
             if (cols.length >= 3) {
@@ -327,28 +325,41 @@ function parseUBSLifestyle(ubsData) {
         });
     }
 
-    // 2. Parse Products
-    ubsData.products.forEach(html => {
+    // 2. Process Product Pages
+    pages.products.forEach(html => {
         if (!html) return;
         const pDoc = new JSDOM(html).window.document;
-        
-        const title = pDoc.querySelector(".as-productdetail-title")?.textContent || "";
-        const priceEl = pDoc.querySelector(".product_price");
 
-        if (priceEl && title) {
-            // Regex to find digits + possible decimal comma/dot followed by 'gr' or 'gram'
-            const gramMatch = title.toLowerCase().match(/(\d+[.,]?\d*)\s*(gr|gram)/);
+        // Target the specific price class you found
+        const priceEl = pDoc.querySelector(".as-price-currentprice.as-producttile-currentprice.price");
+        const titleEl = pDoc.querySelector(".as-productdetail-title");
+
+        if (priceEl && titleEl) {
+            const priceText = priceEl.textContent.trim();
+            const titleText = titleEl.textContent.trim();
+
+            // Safety: Skip if the site is serving "NaN" to our scraper
+            if (priceText.includes("NaN")) return;
+
+            // Regex for Gram (flexible for "gr" or "gram")
+            const gramMatch = titleText.toLowerCase().match(/(\d+[.,]?\d*)\s*(gr|gram)/);
             
             if (gramMatch) {
                 const gramValue = gramMatch[1].replace(",", ".");
-                data.push({
-                    code: "UBS" + gramValue.replace(".", ""),
-                    category: "UBS",
-                    gram: gramValue,
-                    jual: priceEl.textContent.replace(/[^\d]/g, ""),
-                    buyback: buybackMap[gramValue] || "",
-                    last_update: ubsUpdate
-                });
+                const priceValue = priceText.replace(/[^\d]/g, "");
+
+                if (priceValue && priceValue !== "0") {
+                    data.push({
+                        code: "UBS" + gramValue.replace(".", ""),
+                        category: "UBS",
+                        gram: gramValue,
+                        jual: priceValue,
+                        buyback: buybackMap[gramValue] || "",
+                        // Note: Product pages often don't have the date, 
+                        // we can use the buyback date as the global UBS update
+                        last_update: "" 
+                    });
+                }
             }
         }
     });
