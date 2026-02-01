@@ -56,16 +56,16 @@ export default async function handler(req, res) {
 		const data = Array.from(uniqueMap.values());
 
 		data.sort((a, b) => {
-			// Primary Sort: Category Name (A-Z)
-			const catA = a.category.toUpperCase();
-			const catB = b.category.toUpperCase();
+			const brandA = a.category.toUpperCase();
+			const brandB = b.category.toUpperCase();
 			
-			if (catA < catB) return -1;
-			if (catA > catB) return 1;
+			if (brandA < brandB) return -1;
+			if (brandA > brandB) return 1;
 
-			// Secondary Sort: Gram (Lowest to Highest)
-			// We use a numeric sort on the gram field
-			return parseFloat(a.gram) - parseFloat(b.gram);
+			const priceA = parseFloat(String(a.jual).replace(/[^\d]/g, "")) || 0;
+			const priceB = parseFloat(String(b.jual).replace(/[^\d]/g, "")) || 0;
+			
+			return priceA - priceB;
 		});
 
         res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
