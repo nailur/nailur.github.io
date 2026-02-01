@@ -24,13 +24,13 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, ubsPages, kingHalimHTML] = await Promise.all([
+        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPages ] = await Promise.all([
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
             fetchWithTimeout("https://idbullion.com/").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
-			// fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
+			fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
             fetchUBS().catch(() => ({}))
         ]);
 
