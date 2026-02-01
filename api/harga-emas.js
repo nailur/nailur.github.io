@@ -265,29 +265,51 @@ function parseKingHalim(html) {
 } */
 
 async function fetchUBS() {
-    const listUrl = "https://ubslifestyle.com/fine-gold/page/1/?orderby=price";
+    const baseUrl = "https://ubslifestyle.com/fine-gold/page/";
     const buybackUrl = "https://ubslifestyle.com/harga-buyback-hari-ini/";
 
     try {
-        const [listHTML, buybackHTML] = await Promise.all([
-            fetchWithTimeout(listUrl).catch(() => ""),
-            fetchWithTimeout(buybackUrl).catch(() => "")
-        ]);
-        return { listHTML, buybackHTML };
+        // 1. Get Page 1 first to determine how many pages exist
+        const firstPageHTML = await fetchWithTimeout(`${baseUrl}1/?orderby=price`);
+        const buybackHTML = await fetchWithTimeout(buybackUrl);
+        
+        const dom = new JSDOM(firstPageHTML);
+        const doc = dom.window.document;
+
+        // 2. Extract the last page number
+        const totalPagesEl = doc.querySelector(".as-pagination-totalnumbers");
+        const totalPages = totalPagesEl ? parseInt(totalPagesEl.textContent.replace(/[^\d]/g, "")) : 1;
+
+        let allListHTMLs = [firstPageHTML];
+
+        // 3. If there are more pages, fetch them in parallel
+        if (totalPages > 1) {
+            const extraPages = [];
+            for (let i = 2; i <= totalPages; i++) {
+                extraPages.push(`${baseUrl}${i}/?orderby=price`);
+            }
+            
+            const results = await Promise.all(
+                extraPages.map(url => fetchWithTimeout(url).catch(() => ""))
+            );
+            allListHTMLs.push(...results);
+        }
+
+        return { allListHTMLs, buybackHTML };
     } catch (e) {
-        return { listHTML: "", buybackHTML: "" };
+        console.error("UBS Dynamic Fetch Error:", e);
+        return { allListHTMLs: [], buybackHTML: "" };
     }
 }
 
 function parseUBSLifestyle(ubsData) {
-    if (!ubsData.listHTML) return [];
-    const { window } = new JSDOM(ubsData.listHTML);
-    const doc = window.document;
+    if (!ubsData.allListHTMLs || ubsData.allListHTMLs.length === 0) return [];
+    
     const result = [];
-
-    // 1. Map Buyback first for lookup
     const buybackMap = {};
     let ubsUpdate = "";
+
+    // 1. Map Buyback (Remains the same for lookup)
     if (ubsData.buybackHTML) {
         const bDoc = new JSDOM(ubsData.buybackHTML).window.document;
         ubsUpdate = formatGaleriDate(bDoc.querySelector('.text-xs.font-semibold')?.textContent || "");
@@ -300,42 +322,44 @@ function parseUBSLifestyle(ubsData) {
         });
     }
 
-    // 2. Target the info container you found
-    const containers = doc.querySelectorAll('.as-producttile-info');
+    // 2. Loop through every page fetched
+    ubsData.allListHTMLs.forEach(html => {
+        if (!html) return;
+        const { window } = new JSDOM(html);
+        const doc = window.document;
 
-    containers.forEach(container => {
-        const titleEl = container.querySelector('.ase-truncate-title');
-        const priceEl = container.querySelector('.woocommerce-Price-amount.amount');
+        const containers = doc.querySelectorAll('.as-producttile-info');
+        containers.forEach(container => {
+            const titleEl = container.querySelector('.ase-truncate-title');
+            const priceEl = container.querySelector('.woocommerce-Price-amount.amount');
 
-        if (titleEl && priceEl) {
-            const titleText = titleEl.textContent.trim();
-            const priceText = priceEl.textContent.trim();
+            if (titleEl && priceEl) {
+                const titleText = titleEl.textContent.trim();
+                const priceText = priceEl.textContent.trim();
 
-            // Skip if price is dynamic/empty
-            if (priceText.includes("NaN") || !priceText) return;
+                if (priceText.includes("NaN") || !priceText) return;
 
-            // Extract gram using the Senior Regex
-            const gramMatch = titleText.toLowerCase().match(/(\d+[.,]?\d*)\s*(gr|gram)/);
-            
-            if (gramMatch) {
-                const gramValue = gramMatch[1].replace(",", ".");
-                const priceValue = priceText.replace(/[^\d]/g, "");
+                const gramMatch = titleText.toLowerCase().match(/(\d+[.,]?\d*)\s*(gr|gram)/);
+                if (gramMatch) {
+                    const gramValue = gramMatch[1].replace(",", ".");
+                    const priceValue = priceText.replace(/[^\d]/g, "");
 
-                if (priceValue && priceValue !== "0") {
-                    result.push({
-                        code: "UBS" + gramValue.replace(".", ""),
-                        category: "UBS",
-                        gram: gramValue,
-                        jual: priceValue,
-                        buyback: buybackMap[gramValue] || "",
-                        last_update: ubsUpdate
-                    });
+                    if (priceValue && priceValue !== "0") {
+                        result.push({
+                            code: "UBS" + gramValue.replace(".", ""),
+                            category: "UBS",
+                            gram: gramValue,
+                            jual: priceValue,
+                            buyback: buybackMap[gramValue] || "",
+                            last_update: ubsUpdate
+                        });
+                    }
                 }
             }
-        }
+        });
+        window.close(); // Important for memory!
     });
 
-    window.close(); // Memory safety
     return result;
 }
 
