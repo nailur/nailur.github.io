@@ -30,7 +30,7 @@ export default async function handler(req, res) {
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
-			fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
+			// fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
             fetchUBS().catch(() => ({}))
         ]);
 
