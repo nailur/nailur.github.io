@@ -56,8 +56,8 @@ export default async function handler(req, res) {
 		const data = Array.from(uniqueMap.values());
 
 		data.sort((a, b) => {
-			const brandA = a.category.toUpperCase();
-			const brandB = b.category.toUpperCase();
+			const brandA = String(a.category || "").toUpperCase();
+    		const brandB = String(b.category || "").toUpperCase();
 			
 			if (brandA < brandB) return -1;
 			if (brandA > brandB) return 1;
