@@ -30,7 +30,7 @@ export default async function handler(req, res) {
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
-			// fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
+			fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
             fetchUBS().catch(() => ({}))
         ]);
 
@@ -197,38 +197,46 @@ function parseKingHalim(html) {
         const doc = window.document;
         const result = [];
 
+        // Safety check for update element
         const updateEl = doc.querySelector('.kv-ee-section-subtitle.kv-ee-section-subtitle--sm');
         const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
 
+        // Target the items
         const items = doc.querySelectorAll('.kv-ee-item');
 
         items.forEach((item) => {
             const titleEl = item.querySelector('.kv-ee-title.kv-ee-title--md');
             const priceEl = item.querySelector('.kv-ee-price.kv-ee-section-title--lg');
 
+            // Senior Move: Only process if BOTH elements exist
             if (titleEl && priceEl) {
                 const gramRaw = titleEl.textContent.trim();
-                // Safer price extraction
+                
+                // Use .textContent directly instead of .children[0] for safety
                 const jualRaw = priceEl.textContent.trim();
 
                 const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
                 const priceValue = jualRaw.replace(/[^\d]/g, "");
 
-                if (gramValue && priceValue) {
+                if (gramValue && priceValue && priceValue !== "0") {
                     result.push({
-						code: "KINGHALIM" + gramValue.replace(".",""),
+                        code: "KINGHALIM" + gramValue.replace(".", ""),
                         category: "KING HALIM",
                         gram: gramValue,
                         jual: priceValue,
-                        buyback: 0,
+                        buyback: 0, // They rarely show buyback in the grid
                         last_update: formattedUpdate
                     });
                 }
             }
         });
-        window.close(); // Memory cleanup
+
+        window.close(); // Critical for Vercel memory management
         return result;
-    } catch (e) { return []; }
+    } catch (e) {
+        console.error("King Halim Parse Error:", e.message);
+        return []; // Return empty array instead of crashing the API
+    }
 }
 
 /* async function fetchUBS() {
