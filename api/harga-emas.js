@@ -30,7 +30,7 @@ export default async function handler(req, res) {
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
-			// fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
+			fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
             fetchUBS().catch(() => ({}))
         ]);
 
@@ -71,7 +71,8 @@ function parseGaleri24(html) {
     const doc = window.document;
     const result = [];
 
-    const categories = doc.querySelectorAll('#ANTAM, #ANTAM\\ MULIA\\ RETRO, #GALERI\\ 24, #UBS, #LOTUS\\ ARCHI');
+    // const categories = doc.querySelectorAll('#ANTAM, #ANTAM\\ MULIA\\ RETRO, #GALERI\\ 24, #UBS, #LOTUS\\ ARCHI');
+	const categories = doc.querySelectorAll('#GALERI\\ 24');
 
     categories.forEach(categoryEl => {
         const category = categoryEl.id;
@@ -83,8 +84,10 @@ function parseGaleri24(html) {
             const cols = row.querySelectorAll("div");
             if (cols.length < 3) return;
             result.push({
-				code: category.trim().replace(/\s+/g, "")+cols[0].textContent.trim().replace(/[^\d]/g, "")+`_GALERI24`,
-                category: `${category} - GALERI24`,
+				// code: category.trim().replace(/\s+/g, "")+cols[0].textContent.trim().replace(/[^\d]/g, "")+`_GALERI24`,
+                // category: `${category} - GALERI24`,
+				code: category.trim().replace(/\s+/g, "")+cols[0].textContent.trim().replace(/[^\d]/g, "")+``,
+				category: `${category}`,
                 gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("01", "0.1").replace("02", "0.2").replace("03", "0.3").replace("04", "0.4").replace("05", "0.5"),
                 jual: cols[1].textContent.trim().replace(/[^\d]/g, ""),
                 buyback: cols[2].textContent.trim().replace(/[^\d]/g, ""),
