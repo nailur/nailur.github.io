@@ -431,6 +431,8 @@ function parseAntam(html) {
                 }
             }
         });
+
+		return doc;
         window.close();
         return result;
     } catch (e) { return []; }
