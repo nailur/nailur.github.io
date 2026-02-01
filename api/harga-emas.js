@@ -86,7 +86,7 @@ function parseGaleri24(html) {
             result.push({
 				// code: category.trim().replace(/\s+/g, "")+cols[0].textContent.trim().replace(/[^\d]/g, "")+`_GALERI24`,
                 // category: `${category} - GALERI24`,
-				code: category.trim().replace(/\s+/g, "")+cols[0].textContent.trim().replace(/[^\d]/g, "")+``,
+				code: category.trim().replace(/\s+/g, "")+cols[0].textContent.trim().replace(/[^\d]/g, ""),
 				category: `${category}`,
                 gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("01", "0.1").replace("02", "0.2").replace("03", "0.3").replace("04", "0.4").replace("05", "0.5"),
                 jual: cols[1].textContent.trim().replace(/[^\d]/g, ""),
