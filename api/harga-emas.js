@@ -30,7 +30,7 @@ export default async function handler(req, res) {
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
-			fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
+			// fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
             fetchUBS().catch(() => ({}))
         ]);
 
@@ -211,7 +211,7 @@ function parseKingHalim(html) {
     } catch (e) { return []; }
 }
 
-async function fetchUBS() {
+/* async function fetchUBS() {
     const urls = {
         "0.5": "https://ubslifestyle.com/fine-gold-0.5gram/",
         "1": "https://ubslifestyle.com/fine-gold-1gram/",
@@ -227,9 +227,54 @@ async function fetchUBS() {
     const htmls = await Promise.all(keys.map(k => fetchWithTimeout(urls[k]).catch(() => "")));
     keys.forEach((k, i) => results[k] = htmls[i]);
     return results;
+} */
+
+async function fetchUBS() {
+    try {
+        // 1. Get the first page to see total pages and initial products
+        const firstPageHtml = await fetchWithTimeout("https://ubslifestyle.com/fine-gold/page/1/");
+        const dom = new JSDOM(firstPageHtml);
+        const doc = dom.window.document;
+
+        // 2. Determine total pages
+        const totalPagesText = doc.querySelector(".as-pagination-totalnumbers")?.textContent || "1";
+        const totalPages = parseInt(totalPagesText.replace(/[^\d]/g, "")) || 1;
+
+        // 3. Get Buyback HTML (separate call)
+        const buybackHtml = await fetchWithTimeout("https://ubslifestyle.com/harga-buyback-hari-ini/");
+
+        // 4. Collect all product links from all pages
+        let allProductUrls = [];
+        const pageRange = Array.from({ length: totalPages }, (_, i) => i + 1);
+        
+        const pageHtmls = await Promise.all(
+            pageRange.map(p => fetchWithTimeout(`https://ubslifestyle.com/fine-gold/page/${p}/`))
+        );
+
+        pageHtmls.forEach(html => {
+            const pDoc = new JSDOM(html).window.document;
+            const links = Array.from(pDoc.querySelectorAll(".as-producttile-tilelink"))
+                               .map(a => a.href);
+            allProductUrls.push(...links);
+        });
+
+        // 5. Fetch all individual product pages
+        // Optimization: Limit concurrency or skip non-gold items if needed
+        const productHtmls = await Promise.all(
+            allProductUrls.map(url => fetchWithTimeout(url).catch(() => ""))
+        );
+
+        return {
+            products: productHtmls,
+            buyback: buybackHtml
+        };
+    } catch (e) {
+        console.error("UBS Dynamic Fetch Failed", e);
+        return { products: [], buyback: "" };
+    }
 }
 
-function parseUBSLifestyle(pages) {
+/* function parseUBSLifestyle(pages) {
     const data = [];
     const buybackMap = {};
     let ubsUpdate = "";
@@ -261,6 +306,53 @@ function parseUBSLifestyle(pages) {
             });
         }
     }
+    return data;
+} */
+
+function parseUBSLifestyle(ubsData) {
+    const data = [];
+    const buybackMap = {};
+    let ubsUpdate = "";
+
+    // 1. Parse Buyback
+    if (ubsData.buyback) {
+        const bDoc = new JSDOM(ubsData.buyback).window.document;
+        ubsUpdate = formatGaleriDate(bDoc.querySelector('.text-xs.font-semibold')?.textContent || "");
+        bDoc.querySelectorAll("table tr").forEach(row => {
+            const cols = row.querySelectorAll("td");
+            if (cols.length >= 3) {
+                const gram = cols[0].textContent.trim().replace(/[^\d,.]/g, "").replace(",", ".");
+                buybackMap[gram] = cols[2].textContent.trim().replace(/[^\d]/g, "");
+            }
+        });
+    }
+
+    // 2. Parse Products
+    ubsData.products.forEach(html => {
+        if (!html) return;
+        const pDoc = new JSDOM(html).window.document;
+        
+        const title = pDoc.querySelector(".as-productdetail-title")?.textContent || "";
+        const priceEl = pDoc.querySelector(".product_price");
+
+        if (priceEl && title) {
+            // Regex to find digits + possible decimal comma/dot followed by 'gr' or 'gram'
+            const gramMatch = title.toLowerCase().match(/(\d+[.,]?\d*)\s*(gr|gram)/);
+            
+            if (gramMatch) {
+                const gramValue = gramMatch[1].replace(",", ".");
+                data.push({
+                    code: "UBS" + gramValue.replace(".", ""),
+                    category: "UBS",
+                    gram: gramValue,
+                    jual: priceEl.textContent.replace(/[^\d]/g, ""),
+                    buyback: buybackMap[gramValue] || "",
+                    last_update: ubsUpdate
+                });
+            }
+        }
+    });
+
     return data;
 }
 
