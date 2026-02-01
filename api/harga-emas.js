@@ -55,6 +55,19 @@ export default async function handler(req, res) {
 
 		const data = Array.from(uniqueMap.values());
 
+		data.sort((a, b) => {
+			// Primary Sort: Category Name (A-Z)
+			const catA = a.category.toUpperCase();
+			const catB = b.category.toUpperCase();
+			
+			if (catA < catB) return -1;
+			if (catA > catB) return 1;
+
+			// Secondary Sort: Gram (Lowest to Highest)
+			// We use a numeric sort on the gram field
+			return parseFloat(a.gram) - parseFloat(b.gram);
+		});
+
         res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
         res.setHeader("Access-Control-Allow-Origin", "*"); // Change to your domain in production
         res.setHeader("Content-Type", "application/json");
