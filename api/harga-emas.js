@@ -42,11 +42,18 @@ export default async function handler(req, res) {
             ...parseUBSLifestyle(ubsPages)
         ];
 
-		const data = rawData.filter(item => {
+		const filteredData = rawData.filter(item => {
 			const hasGram = item.gram && String(item.gram).trim() !== "";
 			const hasPrice = item.jual && item.jual !== 0 && item.jual !== "0";
 			return hasGram && hasPrice;
 		});
+
+		const uniqueMap = new Map();
+		filteredData.forEach(item => {
+			uniqueMap.set(item.code, item);
+		});
+
+		const data = Array.from(uniqueMap.values());
 
         res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
         res.setHeader("Access-Control-Allow-Origin", "*"); // Change to your domain in production
