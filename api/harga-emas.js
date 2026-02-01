@@ -26,14 +26,13 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, antamHTML, ubsPages ] = await Promise.all([
+        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPages ] = await Promise.all([
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
             fetchWithTimeout("https://idbullion.com/").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
 			fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
-			fetchWithTimeout("https://www.logammulia.com/id/harga-emas-hari-ini"),
             fetchUBS().catch(() => ({}))
         ]);
 
@@ -42,7 +41,6 @@ export default async function handler(req, res) {
             ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
 			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
-			...(antamHTML ? parseAntam(antamHTML) : []),
             ...parseUBSLifestyle(ubsPages)
         ];
 
@@ -158,7 +156,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
         });
     };
 
-    // processTable("modalAntam", "ANTAM");
+    processTable("modalAntam", "ANTAM");
     processTable("modalLotus", "LOTUS ARCHI", lotusUpdate);
     processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate);
 
@@ -393,48 +391,6 @@ function parseUBSLifestyle(ubsData) {
     });
 
     return result;
-}
-
-function parseAntam(html) {
-    if (!html) return [];
-    try {
-        const { window } = new JSDOM(html);
-        const doc = window.document;
-        const result = [];
-
-        // 1. Get the official "Harga Last Update"
-        // They often use .listing-price-date or a similar span
-        const updateText = doc.querySelector('.current-price-date, .listing-price-date')?.textContent || "";
-        const formattedUpdate = formatGaleriDate(updateText);
-
-        // 2. Select the rows from the pricing table
-        const rows = doc.querySelectorAll('.table-price tbody tr');
-
-        rows.forEach(row => {
-            const cols = row.querySelectorAll('td');
-            if (cols.length >= 2) {
-                const gramRaw = cols[0].textContent.trim();
-                const priceRaw = cols[1].textContent.trim();
-
-                const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
-                const priceValue = priceRaw.replace(/[^\d]/g, "");
-
-                if (gramValue && priceValue) {
-                    result.push({
-                        code: "ANTAM" + gramValue.replace(".", ""),
-                        category: "ANTAM",
-                        gram: gramValue,
-                        jual: priceValue,
-                        buyback: "", // Buyback is usually in a separate box at the top
-                        last_update: formattedUpdate
-                    });
-                }
-            }
-        });
-		
-        window.close();
-        return result;
-    } catch (e) { return []; }
 }
 
 // Global Formatter
