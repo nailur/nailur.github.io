@@ -2,10 +2,12 @@ export const config = { runtime: "nodejs" };
 import { JSDOM } from "jsdom";
 
 const REQUEST_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9,id;q=0.8',
     'Referer': 'https://www.google.com/',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
     'Upgrade-Insecure-Requests': '1'
 };
 
@@ -40,6 +42,7 @@ export default async function handler(req, res) {
             ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
 			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
+			...(antamHTML ? parseAntam(antamHTML) : []),
             ...parseUBSLifestyle(ubsPages)
         ];
 
@@ -392,29 +395,29 @@ function parseUBSLifestyle(ubsData) {
     return result;
 }
 
-function parseAntamOfficial(html) {
+function parseAntam(html) {
     if (!html) return [];
     try {
         const { window } = new JSDOM(html);
         const doc = window.document;
         const result = [];
 
-        // 1. Get the Update Date
-        const updateEl = doc.querySelector('.listing-price-date, .current-price-date');
-        const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
+        // 1. Get the official "Harga Last Update"
+        // They often use .listing-price-date or a similar span
+        const updateText = doc.querySelector('.current-price-date, .listing-price-date')?.textContent || "";
+        const formattedUpdate = formatGaleriDate(updateText);
 
-        // 2. Target the Price Table
-        // Official Antam usually uses a standard table for the weight breakdown
+        // 2. Select the rows from the pricing table
         const rows = doc.querySelectorAll('.table-price tbody tr');
 
         rows.forEach(row => {
             const cols = row.querySelectorAll('td');
             if (cols.length >= 2) {
-                const gramRaw = cols[0].textContent.trim(); // e.g., "1 gr"
-                const jualRaw = cols[1].textContent.trim(); // e.g., "1.450.000"
+                const gramRaw = cols[0].textContent.trim();
+                const priceRaw = cols[1].textContent.trim();
 
                 const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
-                const priceValue = jualRaw.replace(/[^\d]/g, "");
+                const priceValue = priceRaw.replace(/[^\d]/g, "");
 
                 if (gramValue && priceValue) {
                     result.push({
@@ -422,18 +425,15 @@ function parseAntamOfficial(html) {
                         category: "ANTAM",
                         gram: gramValue,
                         jual: priceValue,
-                        buyback: "", // Buyback is often on a separate part of the page
+                        buyback: "", // Buyback is usually in a separate box at the top
                         last_update: formattedUpdate
                     });
                 }
             }
         });
-
         window.close();
         return result;
-    } catch (e) {
-        return [];
-    }
+    } catch (e) { return []; }
 }
 
 // Global Formatter
