@@ -32,7 +32,7 @@ export default async function handler(req, res) {
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
-			fetchWithTimeout("https://www.kinghalim.com/gold-bar").catch(() => ""),
+			fetchWithTimeout("https://www.kinghalim.com/goldbarwithamala").catch(() => ""),
             fetchUBS().catch(() => ({}))
         ]);
 
@@ -217,19 +217,18 @@ function parseKingHalim(html) {
             // Senior Move: Only process if BOTH elements exist
             if (titleEl && priceEl) {
                 const gramRaw = titleEl.textContent.trim();
-                
-                // Use .textContent directly instead of .children[0] for safety
                 const jualRaw = priceEl.textContent.trim();
 
-                const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
-                const priceValue = jualRaw.replace(/[^\d]/g, "");
+				const cleanJual = jualRaw.split('.')[0].replace(/[^\d]/g, "");
 
-                if (gramValue && priceValue && priceValue !== "0") {
+                const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
+
+                if (gramValue && cleanJual && cleanJual !== "0") {
                     result.push({
                         code: "KINGHALIM" + gramValue.replace(".", ""),
                         category: "KING HALIM",
                         gram: gramValue,
-                        jual: priceValue,
+                        jual: cleanJual,
                         buyback: 0, // They rarely show buyback in the grid
                         last_update: formattedUpdate
                     });
