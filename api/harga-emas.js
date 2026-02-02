@@ -207,6 +207,8 @@ function parseKingHalim(html) {
         const updateEl = doc.querySelector('.kv-ee-section-subtitle.kv-ee-section-subtitle--sm');
         const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
 
+		const buyBackPrice = doc.querySelector('.kv-ee-section-description.kv-ee-description kv-ee-body--md')[0].textContent.trim().split('.')[0].replace(/[^\d]/g, "");;
+
         // Target the items
         const items = doc.querySelectorAll('.kv-ee-item');
 
@@ -229,7 +231,7 @@ function parseKingHalim(html) {
                         category: "KING HALIM",
                         gram: gramValue,
                         jual: cleanJual,
-                        buyback: 0, // They rarely show buyback in the grid
+                        buyback: buyBackPrice * gramValue,
                         last_update: formattedUpdate
                     });
                 }
