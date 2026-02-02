@@ -304,7 +304,7 @@ async function fetchUBS() {
 
     try {
         // 1. Get Page 1 first to determine how many pages exist
-        const firstPageHTML = await fetchWithTimeout(`${baseUrl}1/?orderby=price`);
+        const firstPageHTML = await fetchWithTimeout(`${baseUrl}1/?orderby=price&pagesize=100`);
         const buybackHTML = await fetchWithTimeout(buybackUrl);
         
         const dom = new JSDOM(firstPageHTML);
