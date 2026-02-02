@@ -207,7 +207,7 @@ function parseKingHalim(html) {
         const updateEl = doc.querySelector('.kv-ee-section-subtitle.kv-ee-section-subtitle--sm');
         const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
 
-		const buyBackPrice = doc.querySelector('.kv-ee-section-description.kv-ee-description kv-ee-body--md')[0].textContent.trim().split('.')[0].replace(/[^\d]/g, "");;
+		const buyBackPrice = doc.querySelector('.kv-ee-section-description.kv-ee-description.kv-ee-body--md').textContent.trim().split('.')[0].replace(/[^\d]/g, "");
 
         // Target the items
         const items = doc.querySelectorAll('.kv-ee-item');
