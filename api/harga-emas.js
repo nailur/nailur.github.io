@@ -47,7 +47,11 @@ export default async function handler(req, res) {
 		const filteredData = rawData.filter(item => {
 			const hasGram = item.gram && String(item.gram).trim() !== "";
 			const hasPrice = item.jual && item.jual !== 0 && item.jual !== "0";
-			return hasGram && hasPrice;
+
+			// Exclude UBS Bundle 0.05g
+    		const isUbs005 = item.category === "UBS" && (item.gram === "0.05" || item.gram === 0.05);
+
+			return hasGram && hasPrice && !isUbs005;
 		});
 
 		const uniqueMap = new Map();
