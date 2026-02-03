@@ -41,8 +41,10 @@ export default async function handler(req, res) {
 
         const rawData = [
             ...(galeriHTML ? parseGaleri24(galeriHTML) : []),
-            ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
+            // ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
+			...(bullionHTML ? parseBullion(bullionHTML, lotusHTML) : []),
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
+			...(sampoernaHTML ? parseSampoerna(sampoernaHTML) : []),
 			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
 			// ...(emasAntamHTML ? parseEmasAntamOfficial(emasAntamHTML) : []),
 			...parseUBSLifestyleFixed(ubsPagesFixed)
@@ -128,15 +130,15 @@ function parseGaleri24(html) {
     return result;
 }
 
-function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
+function parseBullion(bullionHtml, lotusHtml) {
     if (!bullionHtml) return [];
     const doc = new JSDOM(bullionHtml).window.document;
 
-    let sampoernaUpdate = "";
-    if (sampoernaHtml) {
-        const sDoc = new JSDOM(sampoernaHtml).window.document;
-        sampoernaUpdate = formatGaleriDate(sDoc.querySelector(".small-text")?.textContent || "");
-    }
+    // let sampoernaUpdate = "";
+    // if (sampoernaHtml) {
+    //     const sDoc = new JSDOM(sampoernaHtml).window.document;
+    //     sampoernaUpdate = formatGaleriDate(sDoc.querySelector(".small-text")?.textContent || "");
+    // }
 
     let lotusUpdate = "";
     if (lotusHtml) {
@@ -166,7 +168,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
 
     processTable("modalAntam", "ANTAM");
     processTable("modalLotus", "LOTUS ARCHI", lotusUpdate);
-    processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate);
+    // processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate);
 
     return data;
 }
@@ -198,6 +200,52 @@ function parseEmasKita(html) {
         }
     });
     return result;
+}
+
+function parseSampoerna(html) {
+    if (!html) return [];
+    try {
+        const { window } = new JSDOM(html);
+        const doc = window.document;
+        const result = [];
+
+        const updateEl = doc.querySelector('.date-price, .last-update');
+        const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
+
+        const table = doc.querySelector('.table-emas');
+        if (!table) return [];
+
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const cols = row.querySelectorAll('td');
+            if (cols.length >= 3) {
+                const gramRaw = cols[0].textContent.trim();
+                const priceRaw = cols[1].textContent.trim();
+                const buybackRaw = cols[cols.length - 1].textContent.trim();
+
+                const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".");
+                const priceValue = priceRaw.replace(/[^\d]/g, "");
+                const buybackValue = buybackRaw.replace(/[^\d]/g, "");
+
+                if (gramValue && priceValue && priceValue !== "0") {
+                    result.push({
+                        code: "SAMPOERNA" + gramValue.replace(".", ""),
+                        category: "SAMPOERNA",
+                        gram: gramValue,
+                        jual: priceValue,
+                        buyback: buybackValue || "0",
+                        last_update: formattedUpdate
+                    });
+                }
+            }
+        });
+
+        window.close();
+        return result;
+    } catch (e) {
+        console.error("Sampoerna Parse Error:", e);
+        return [];
+    }
 }
 
 function parseKingHalim(html) {
