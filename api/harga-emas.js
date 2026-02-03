@@ -439,7 +439,7 @@ function parseEmasAntamOfficial(html) {
                         code: "ANTAM" + gramValue.replace(".", ""),
                         category: "ANTAM",
                         gram: gramValue,
-                        jual: priceValue,
+                        jual: priceValue * 1.0025, // Include Tax PPh 0.25%
                         buyback: buybackValue || "0",
                         last_update: formattedUpdate
                     });
