@@ -309,6 +309,7 @@ async function fetchUBSFixed() {
         "10": "https://ubslifestyle.com/fine-gold-10gram/",
         "25": "https://ubslifestyle.com/ubs-logam-mulia-25-gram-classic/",
         // "50": "https://ubslifestyle.com/ubs-logam-mulia-50-gram-classic/",
+		"100": "https://ubslifestyle.com/ubs-logam-mulia-100-gram-classic/",
         "buyback": "https://ubslifestyle.com/harga-buyback-hari-ini/"
     };
     const keys = Object.keys(urls);

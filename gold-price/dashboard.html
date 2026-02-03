@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Gold Pulse | Senior Dashboard</title>
+    <title>NTGold</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -11,7 +11,7 @@
             --bg: #05070a;
             --card: #161b22;
             --border: #30363d;
-            --accent: #fbbf24; /* Gold */
+            --accent: #fbbf24;
             --text: #c9d1d9;
             --text-dim: #8b949e;
             --danger: #f85149;
@@ -53,7 +53,7 @@
 
     <div id="auth-container">
         <div class="auth-box" id="login-box">
-            <h2>GOLD PULSE</h2>
+            <h2>Login NTGold</h2>
             <p style="text-align:center; font-size:13px; color:var(--text-dim); margin-bottom:20px">Member Login</p>
             <input type="email" id="l-email" placeholder="Email">
             <input type="password" id="l-password" placeholder="Password">
@@ -63,7 +63,7 @@
         </div>
 
         <div class="auth-box hidden" id="register-box">
-            <h2>JOIN PULSE</h2>
+            <h2>Join NTGold</h2>
             <p style="text-align:center; font-size:13px; color:var(--text-dim); margin-bottom:20px">Create Portfolio</p>
             <input type="email" id="r-email" placeholder="Email">
             <input type="password" id="r-password" placeholder="Password">
@@ -95,7 +95,7 @@
                         <th>Weight</th>
                         <th style="text-align:right">Selling Price</th>
                         <th style="text-align:right">Buyback</th>
-                        <th style="text-align:center">Date</th>
+                        <th style="text-align:center">Last Update</th>
                     </tr>
                 </thead>
                 <tbody id="price-table">
@@ -107,14 +107,18 @@
 
 <script>
     const SUPABASE_URL = "https://iwsacljessokrqhfmdbv.supabase.co"; 
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo";
-    
-    const supabase = supa.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo";
+    const { createClient } = supabase;
+    const sbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Check session on load
     window.onload = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) showDashboard(session.user);
+        // Check session on load
+        const { data: { session } } = await sbClient.auth.getSession();
+        if (session) {
+            showDashboard(session.user);
+        } else {
+            console.log("No active session found.");
+        }
     };
 
     async function handleLogin() {
@@ -122,7 +126,7 @@
         const password = document.getElementById('l-password').value;
         const errEl = document.getElementById('l-error');
         
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
         
         if (error) {
             errEl.textContent = error.message;
@@ -133,73 +137,139 @@
     }
 
     async function handleRegister() {
-        const email = document.getElementById('r-email').value;
-        const password = document.getElementById('r-password').value;
-        const errEl = document.getElementById('r-error');
+		const email = document.getElementById('r-email').value;
+		const password = document.getElementById('r-password').value;
+		const fullName = document.getElementById('r-name')?.value || "New Member"; 
+		const errEl = document.getElementById('r-error');
 
-        const { data, error } = await supabase.auth.signUp({ email, password });
+		const { data, error } = await sbClient.auth.signUp({ 
+			email, 
+			password,
+			options: {
+				data: {
+					full_name: fullName
+				}
+			}
+		});
 
-        if (error) {
-            errEl.textContent = error.message;
-            errEl.style.display = 'block';
-        } else {
-            alert("Registration successful! Please check your email to verify (or login if auto-confirm is on).");
-            toggleAuth();
-        }
-    }
+		if (error) {
+			errEl.textContent = error.message;
+			errEl.style.display = 'block';
+		} else {
+			alert("Registration successful! Check your email.");
+			toggleAuth();
+		}
+	}
 
     async function handleLogout() {
-        await supabase.auth.signOut();
+        await sbClient.auth.signOut();
         location.reload();
     }
 
-    function showDashboard(user) {
-        document.getElementById('auth-container').style.display = 'none';
-        document.getElementById('dashboard-container').style.display = 'block';
-        document.getElementById('user-display').textContent = `User: ${user.email}`;
-        fetchTodayPrices();
-    }
+    async function showDashboard(user) {
+		document.getElementById('auth-container').style.display = 'none';
+		document.getElementById('dashboard-container').style.display = 'block';
 
-    async function fetchTodayPrices() {
-        // Get Today's Date in YYYY-MM-DD format
-        const today = new Date().toISOString().split('T')[0];
+		// 1. Fetch the linked profile from YOUR table
+		const { data: profile, error } = await sbClient
+			.from('tbluser')
+			.select('*')
+			.eq('id', user.id)
+			.single();
 
-        const { data, error } = await supabase
-            .from('tblpricelog')
-            .select(`
-                price, 
-                buyback_price, 
-                weight_grams, 
-                log_date,
-                tblbrand ( brand_name, brand_code ) 
-            `)
-            .eq('log_date', today)
-            .order('price', { ascending: true });
+		// 2. Display the data
+		const displayName = profile?.full_name || user.email;
+		const tier = profile?.subscription_tier || 'free';
+		
+		document.getElementById('user-display').innerHTML = `
+			Welcome, <b>${displayName}</b> 
+			<span style="font-size:10px; background:#333; padding:2px 6px; border-radius:4px; margin-left:5px">
+				${tier.toUpperCase()}
+			</span>
+		`;
 
-        const tbody = document.getElementById('price-table');
+		fetchLatestPrices();
+	}
+
+    async function fetchLatestPrices() {
+		const dateLimit = new Date();
+		dateLimit.setDate(dateLimit.getDate() - 5);
+		const dateLimitStr = dateLimit.toISOString().split('T')[0];
+
+		console.log("Fetching latest prices since:", dateLimitStr);
+
+        let { data, error } = await sbClient
+        .from('tblpricelog')
+        .select(`
+            price, 
+            buyback_price, 
+            weight_grams, 
+            log_date,
+            tblbrand ( brand_name, brand_code ) 
+        `)
+        .gt('log_date', dateLimitStr) 
+        .order('log_date', { ascending: false });
+
+    	const tbody = document.getElementById('price-table');
 
         if (error) {
-            console.error(error);
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--danger)">Failed to load data: ${error.message}</td></tr>`;
-            return;
-        }
+			console.error("Supabase Error:", error);
+			tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--danger)">Error: ${error.message}</td></tr>`;
+			return;
+		}
 
-        if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center">No data found for today (${today}). Run the API scraper first.</td></tr>`;
-            return;
-        }
+		if (!data || data.length === 0) {
+			tbody.innerHTML = `<tr><td colspan="5" style="text-align:center">No data found in the last 5 days. Run your API scraper.</td></tr>`;
+			return;
+		}
 
-        tbody.innerHTML = data.map(item => `
-            <tr>
-                <td>
-                    <span class="brand-badge">${item.tblbrand?.brand_name || 'Unknown'}</span>
-                </td>
-                <td>${item.weight_grams}g</td>
-                <td class="price-cell">Rp ${item.price.toLocaleString('id-ID')}</td>
-                <td class="price-cell" style="color:var(--text-dim)">Rp ${item.buyback_price.toLocaleString('id-ID')}</td>
-                <td style="text-align:center; color:var(--text-dim)">${item.log_date}</td>
-            </tr>
-        `).join('');
+		const uniqueMap = new Map();
+		
+		data.forEach(item => {
+			const brand = item.tblbrand?.brand_code || "UNKNOWN";
+			const weight = item.weight_grams;
+			const compositeKey = `${brand}_${weight}`;
+
+			if (!uniqueMap.has(compositeKey)) {
+				uniqueMap.set(compositeKey, item);
+			}
+		});
+		
+		const latestData = Array.from(uniqueMap.values());
+
+		latestData.sort((a, b) => {
+			const brandA = a.tblbrand?.brand_name || "";
+			const brandB = b.tblbrand?.brand_name || "";
+			
+			// Sort by Brand first
+			const brandCompare = brandA.localeCompare(brandB);
+			if (brandCompare !== 0) return brandCompare;
+
+			// Then sort by Weight
+			return a.weight_grams - b.weight_grams;
+		});
+
+		const todayStr = new Date().toISOString().split('T')[0];
+
+		tbody.innerHTML = latestData.map(item => {
+			const isToday = item.log_date === todayStr;
+			const dateColor = isToday ? 'var(--success)' : 'var(--danger)';
+			const dateLabel = isToday ? 'TODAY' : item.log_date;
+
+			return `
+				<tr>
+					<td>
+						<span class="brand-badge">${item.tblbrand?.brand_name || 'Unknown'}</span>
+					</td>
+					<td>${item.weight_grams}g</td>
+					<td class="price-cell">Rp ${item.price.toLocaleString('id-ID')}</td>
+					<td class="price-cell" style="color:var(--text-dim)">Rp ${item.buyback_price.toLocaleString('id-ID')}</td>
+					<td style="text-align:center; font-size:11px; font-weight:bold; color:${dateColor}">
+						${dateLabel}
+					</td>
+				</tr>
+			`;
+		}).join('');
     }
 
     function toggleAuth() {
