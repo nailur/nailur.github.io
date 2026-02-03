@@ -209,8 +209,7 @@ function parseSampoerna(html) {
         const doc = window.document;
         const result = [];
 
-        const updateEl = doc.querySelector('.date-price, .last-update');
-        const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
+        const formattedUpdate = formatGaleriDate(sDoc.querySelector(".small-text")?.textContent || "");
 
         const table = doc.querySelector('.table-emas');
         if (!table) return [];
