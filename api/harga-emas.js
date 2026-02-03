@@ -303,10 +303,24 @@ async function fetchUBS() {
     const baseUrl = "https://ubslifestyle.com/fine-gold/page/";
     const buybackUrl = "https://ubslifestyle.com/harga-buyback-hari-ini/";
 
+	const fixedUrls = {
+		"0.5": "https://ubslifestyle.com/fine-gold-0.5gram/",
+		"1": "https://ubslifestyle.com/fine-gold-1gram/",
+		// "3": "https://ubslifestyle.com/fine-gold-3gram/",
+		"3": "https://ubslifestyle.com/ubs-gold-logam-mulia-new-born-baby-boy-3-gr/",
+		"5": "https://ubslifestyle.com/fine-gold-5gram/",
+		"10": "https://ubslifestyle.com/fine-gold-10gram/",
+		"25": "https://ubslifestyle.com/ubs-logam-mulia-25-gram-classic/",
+		"50": "https://ubslifestyle.com/ubs-logam-mulia-50-gram-classic/"
+	};
+
     try {
         // 1. Get Page 1 first to determine how many pages exist
-        const firstPageHTML = await fetchWithTimeout(`${baseUrl}1/?orderby=price&pagesize=100`);
-        const buybackHTML = await fetchWithTimeout(buybackUrl);
+        const [fixedHTMLs, firstPageHTML, buybackHTML] = await Promise.all([
+            Promise.all(fixedUrls.map(url => fetchWithTimeout(url).catch(() => ""))),
+            fetchWithTimeout(`${baseUrl}1/?orderby=price`),
+            fetchWithTimeout(buybackUrl)
+        ]);
         
         const dom = new JSDOM(firstPageHTML);
         const doc = dom.window.document;
@@ -324,13 +338,13 @@ async function fetchUBS() {
                 extraPages.push(`${baseUrl}${i}/?orderby=price`);
             }
             
-            const results = await Promise.all(
+            const resultsd = await Promise.all(
                 extraPages.map(url => fetchWithTimeout(url).catch(() => ""))
             );
-            allListHTMLs.push(...results);
+            allListHTMLs.push(...resultsd);
         }
 
-        return { allListHTMLs, buybackHTML };
+        return { allListHTMLs, fixedHTMLs, buybackHTML };
     } catch (e) {
         console.error("UBS Dynamic Fetch Error:", e);
         return { allListHTMLs: [], buybackHTML: "" };
