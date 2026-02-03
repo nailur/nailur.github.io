@@ -162,7 +162,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
         });
     };
 
-    processTable("modalAntam", "ANTAM");
+    // processTable("modalAntam", "ANTAM");
     processTable("modalLotus", "LOTUS ARCHI", lotusUpdate);
     processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate);
 
