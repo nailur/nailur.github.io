@@ -412,33 +412,35 @@ function parseEmasAntamOfficial(html) {
         const doc = window.document;
         const result = [];
 
-        // 1. Get the Update Date (usually at the top of the price section)
-        const updateEl = doc.querySelector('.price-date, .updated-at');
-        const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
+        const updateEl = doc.querySelector('.harga-emas');
+        const rawUpdateText = updateEl ? updateEl.textContent.trim() : "";
+        const formattedUpdate = formatGaleriDate(rawUpdateText);
 
-        // 2. Select the rows (they usually use standard table structures)
-        const rows = doc.querySelectorAll('table tr');
+        const table = doc.querySelector('table.table-bordered.table-hover.table-striped.nowrap');
+        if (!table) return [];
 
-        rows.forEach((row, index) => {
-            // Skip header row if it exists
+        const rows = table.querySelectorAll('tbody tr');
+
+        rows.forEach((row) => {
             const cols = row.querySelectorAll('td');
+            
             if (cols.length >= 2) {
-                const gramRaw = cols[0].textContent.trim(); // e.g. "1 gr"
-                const priceRaw = cols[1].textContent.trim(); // e.g. "Rp 3.027.000"
-                const buybackRaw = cols[2] ? cols[2].textContent.trim() : "";
-
+                const gramRaw = cols[0].textContent.trim();
+                const priceRaw = cols[1].textContent.trim();
+                
+                const buybackRaw = cols[2] ? cols[2].textContent.trim() : "0";
                 const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
-                const priceValue = priceRaw.replace(/[^\d]/g, "");
-                const buybackValue = buybackRaw.replace(/[^\d]/g, "");
+                
+                const priceValue = priceRaw.split('.')[0].replace(/[^\d]/g, "");
+                const buybackValue = buybackRaw.split('.')[0].replace(/[^\d]/g, "");
 
-                // Filter out non-numeric header garbage
-                if (gramValue && priceValue && !isNaN(parseFloat(gramValue))) {
+                if (gramValue && priceValue && priceValue !== "0") {
                     result.push({
                         code: "ANTAM" + gramValue.replace(".", ""),
                         category: "ANTAM",
                         gram: gramValue,
                         jual: priceValue,
-                        buyback: buybackValue || 0,
+                        buyback: buybackValue || "0",
                         last_update: formattedUpdate
                     });
                 }
@@ -448,6 +450,7 @@ function parseEmasAntamOfficial(html) {
         window.close();
         return result;
     } catch (e) {
+        console.error("EmasAntam Parse Error:", e.message);
         return [];
     }
 }
