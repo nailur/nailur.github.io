@@ -26,14 +26,14 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, emasAntamHTML, ubsPagesFixed, ubsPages ] = await Promise.all([
+        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed, ubsPages ] = await Promise.all([
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
             fetchWithTimeout("https://idbullion.com/").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
 			fetchWithTimeout("https://www.kinghalim.com/goldbarwithamala").catch(() => ""),
-			fetchWithTimeout("https://emasantam.id/harga-emas-hari-ini/").catch(() => ""),
+			// fetchWithTimeout("https://emasantam.id/harga-emas-hari-ini/").catch(() => ""),
             fetchUBSFixed().catch(() => ({})),
 			fetchUBS().catch(() => ({}))
         ]);
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
             ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
 			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
-			...(emasAntamHTML ? parseEmasAntamOfficial(emasAntamHTML) : []),
+			// ...(emasAntamHTML ? parseEmasAntamOfficial(emasAntamHTML) : []),
 			...parseUBSLifestyleFixed(ubsPagesFixed),
             ...parseUBSLifestyle(ubsPages)
         ];
@@ -163,7 +163,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
         });
     };
 
-    // processTable("modalAntam", "ANTAM");
+    processTable("modalAntam", "ANTAM");
     processTable("modalLotus", "LOTUS ARCHI", lotusUpdate);
     processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate);
 
@@ -405,7 +405,7 @@ function parseUBSLifestyle(ubsData) {
     return result;
 }
 
-function parseEmasAntamOfficial(html) {
+/* function parseEmasAntamOfficial(html) {
     if (!html) return [];
     try {
         const { window } = new JSDOM(html);
@@ -453,7 +453,7 @@ function parseEmasAntamOfficial(html) {
         console.error("EmasAntam Parse Error:", e.message);
         return [];
     }
-}
+} */
 
 // Global Formatter
 function formatGaleriDate(text) {
