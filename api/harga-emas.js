@@ -26,15 +26,15 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, antamHTML, ubsPages ] = await Promise.all([
+        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed, ubsPages ] = await Promise.all([
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
             fetchWithTimeout("https://idbullion.com/").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
 			fetchWithTimeout("https://www.kinghalim.com/goldbarwithamala").catch(() => ""),
-			fetchWithTimeout("https://emasantam.id/harga-emas-antam-harian/").catch(() => ""),
-            fetchUBS().catch(() => ({}))
+            fetchUBSFixed().catch(() => ({})),
+			fetchUBS().catch(() => ({}))
         ]);
 
         const rawData = [
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
             ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
 			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
-			...(antamHTML ? parseEmasAntamOfficial(antamHTML) : []),
+			...parseUBSLifestyleFixed(ubsPagesFixed),
             ...parseUBSLifestyle(ubsPages)
         ];
 
@@ -88,7 +88,6 @@ export default async function handler(req, res) {
         });
 
     } catch (e) {
-        // res.status(500).json({ success: false, error: "Internal Server Error" });
 		res.status(500).json({ success: false, error: e.message, stack: e.stack });
     }
 }
@@ -162,7 +161,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
         });
     };
 
-    // processTable("modalAntam", "ANTAM");
+    processTable("modalAntam", "ANTAM");
     processTable("modalLotus", "LOTUS ARCHI", lotusUpdate);
     processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate);
 
@@ -248,11 +247,12 @@ function parseKingHalim(html) {
     }
 }
 
-/* async function fetchUBS() {
+async function fetchUBSFixed() {
     const urls = {
         "0.5": "https://ubslifestyle.com/fine-gold-0.5gram/",
         "1": "https://ubslifestyle.com/fine-gold-1gram/",
         "3": "https://ubslifestyle.com/fine-gold-3gram/",
+		"3": "https://ubslifestyle.com/ubs-gold-logam-mulia-new-born-baby-boy-3-gr/",
         "5": "https://ubslifestyle.com/fine-gold-5gram/",
         "10": "https://ubslifestyle.com/fine-gold-10gram/",
         "25": "https://ubslifestyle.com/ubs-logam-mulia-25-gram-classic/",
@@ -264,9 +264,9 @@ function parseKingHalim(html) {
     const htmls = await Promise.all(keys.map(k => fetchWithTimeout(urls[k]).catch(() => "")));
     keys.forEach((k, i) => results[k] = htmls[i]);
     return results;
-} */
+}
 
-/* function parseUBSLifestyle(pages) {
+function parseUBSLifestyleFixed(pages) {
     const data = [];
     const buybackMap = {};
     let ubsUpdate = "";
@@ -299,69 +299,54 @@ function parseKingHalim(html) {
         }
     }
     return data;
-} */
-
+}
 
 async function fetchUBS() {
     const baseUrl = "https://ubslifestyle.com/fine-gold/page/";
     const buybackUrl = "https://ubslifestyle.com/harga-buyback-hari-ini/";
-    
-    // Your Fixed Links
-    const fixedUrls = [
-        "https://ubslifestyle.com/fine-gold-0.5gram/",
-        "https://ubslifestyle.com/fine-gold-1gram/",
-        "https://ubslifestyle.com/ubs-gold-logam-mulia-new-born-baby-boy-3-gr/",
-        "https://ubslifestyle.com/fine-gold-5gram/",
-        "https://ubslifestyle.com/fine-gold-10gram/",
-        "https://ubslifestyle.com/ubs-logam-mulia-25-gram-classic/",
-        "https://ubslifestyle.com/ubs-logam-mulia-50-gram-classic/"
-    ];
 
     try {
-        // 1. Initial fetches: Fixed Links + Page 1 + Buyback
-        const [fixedHTMLs, firstPageHTML, buybackHTML] = await Promise.all([
-            Promise.all(fixedUrls.map(url => fetchWithTimeout(url).catch(() => ""))),
-            fetchWithTimeout(`${baseUrl}1/?orderby=price`),
-            fetchWithTimeout(buybackUrl)
-        ]);
+        // 1. Get Page 1 first to determine how many pages exist
+        const firstPageHTML = await fetchWithTimeout(`${baseUrl}1/?orderby=price&pagesize=100`);
+        const buybackHTML = await fetchWithTimeout(buybackUrl);
         
         const dom = new JSDOM(firstPageHTML);
         const doc = dom.window.document;
 
-        // 2. Dynamic Pagination: Extract total pages from Page 1
+        // 2. Extract the last page number
         const totalPagesEl = doc.querySelector(".as-pagination-totalnumbers");
         const totalPages = totalPagesEl ? parseInt(totalPagesEl.textContent.replace(/[^\d]/g, "")) : 1;
 
         let allListHTMLs = [firstPageHTML];
 
-        // 3. Fetch remaining dynamic pages
+        // 3. If there are more pages, fetch them in parallel
         if (totalPages > 1) {
             const extraPages = [];
             for (let i = 2; i <= totalPages; i++) {
                 extraPages.push(`${baseUrl}${i}/?orderby=price`);
             }
-            const results = await Promise.all(extraPages.map(url => fetchWithTimeout(url).catch(() => "")));
+            
+            const results = await Promise.all(
+                extraPages.map(url => fetchWithTimeout(url).catch(() => ""))
+            );
             allListHTMLs.push(...results);
         }
 
-        return { 
-            allListHTMLs, // The dynamic grid pages
-            fixedHTMLs,   // The individual product pages you requested
-            buybackHTML 
-        };
+        return { allListHTMLs, buybackHTML };
     } catch (e) {
-        console.error("UBS Hybrid Fetch Error:", e);
-        return { allListHTMLs: [], fixedHTMLs: [], buybackHTML: "" };
+        console.error("UBS Dynamic Fetch Error:", e);
+        return { allListHTMLs: [], buybackHTML: "" };
     }
 }
 
 function parseUBSLifestyle(ubsData) {
-    if (!ubsData) return [];
+    if (!ubsData.allListHTMLs || ubsData.allListHTMLs.length === 0) return [];
     
     const result = [];
     const buybackMap = {};
     let ubsUpdate = "";
 
+    // 1. Map Buyback (Remains the same for lookup)
     if (ubsData.buybackHTML) {
         const bDoc = new JSDOM(ubsData.buybackHTML).window.document;
         ubsUpdate = formatGaleriDate(bDoc.querySelector('.text-xs.font-semibold')?.textContent || "");
@@ -374,109 +359,45 @@ function parseUBSLifestyle(ubsData) {
         });
     }
 
-    const extractFromDoc = (doc) => {
-        const containers = doc.querySelectorAll('.as-producttile-info');
-        
-        if (containers.length === 0) {
-            const titleEl = doc.querySelector('.as-productdetail-title, .product_title');
-            const priceEl = doc.querySelector('.as-price-currentprice, .product_price');
-            processItem(titleEl, priceEl);
-        } else {
-            containers.forEach(container => {
-                const titleEl = container.querySelector('.ase-truncate-title');
-                const priceEl = container.querySelector('.woocommerce-Price-amount.amount');
-                processItem(titleEl, priceEl);
-            });
-        }
-    };
-
-    function processItem(titleEl, priceEl) {
-        if (titleEl && priceEl) {
-            const titleText = titleEl.textContent.trim();
-            const priceText = priceEl.textContent.trim();
-            if (priceText.includes("NaN") || !priceText) return;
-
-            const gramMatch = titleText.toLowerCase().match(/(\d+[.,]?\d*)\s*(gr|gram)/);
-            if (gramMatch) {
-                const gramValue = gramMatch[1].replace(",", ".");
-                const priceValue = priceText.replace(/[^\d]/g, "");
-
-                if (priceValue && priceValue !== "0") {
-                    result.push({
-                        code: "UBS" + gramValue.replace(".", ""),
-                        category: "UBS",
-                        gram: gramValue,
-                        jual: priceValue,
-                        buyback: buybackMap[gramValue] || "",
-                        last_update: ubsUpdate
-                    });
-                }
-            }
-        }
-    }
-
+    // 2. Loop through every page fetched
     ubsData.allListHTMLs.forEach(html => {
         if (!html) return;
-        const dom = new JSDOM(html);
-        extractFromDoc(dom.window.document);
-        dom.window.close();
-    });
-
-    ubsData.fixedHTMLs.forEach(html => {
-        if (!html) return;
-        const dom = new JSDOM(html);
-        extractFromDoc(dom.window.document);
-        dom.window.close();
-    });
-
-    return result;
-}
-
-function parseEmasAntamOfficial(html) {
-    if (!html) return [];
-    try {
         const { window } = new JSDOM(html);
         const doc = window.document;
-        const result = [];
 
-        // 1. Get the Update Date (usually at the top of the price section)
-        const updateEl = doc.querySelector('.price-date, .updated-at');
-        const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
+        const containers = doc.querySelectorAll('.as-producttile-info');
+        containers.forEach(container => {
+            const titleEl = container.querySelector('.ase-truncate-title');
+            const priceEl = container.querySelector('.woocommerce-Price-amount.amount');
 
-        // 2. Select the rows (they usually use standard table structures)
-        const rows = doc.querySelectorAll('table tr');
+            if (titleEl && priceEl) {
+                const titleText = titleEl.textContent.trim();
+                const priceText = priceEl.textContent.trim();
 
-        rows.forEach((row, index) => {
-            // Skip header row if it exists
-            const cols = row.querySelectorAll('td');
-            if (cols.length >= 2) {
-                const gramRaw = cols[0].textContent.trim(); // e.g. "1 gr"
-                const priceRaw = cols[1].textContent.trim(); // e.g. "Rp 3.027.000"
-                const buybackRaw = cols[2] ? cols[2].textContent.trim() : "";
+                if (priceText.includes("NaN") || !priceText) return;
 
-                const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
-                const priceValue = priceRaw.replace(/[^\d]/g, "");
-                const buybackValue = buybackRaw.replace(/[^\d]/g, "");
+                const gramMatch = titleText.toLowerCase().match(/(\d+[.,]?\d*)\s*(gr|gram)/);
+                if (gramMatch) {
+                    const gramValue = gramMatch[1].replace(",", ".");
+                    const priceValue = priceText.replace(/[^\d]/g, "");
 
-                // Filter out non-numeric header garbage
-                if (gramValue && priceValue && !isNaN(parseFloat(gramValue))) {
-                    result.push({
-                        code: "EAI" + gramValue.replace(".", ""),
-                        category: "EMAS KITA",
-                        gram: gramValue,
-                        jual: priceValue,
-                        buyback: buybackValue || 0,
-                        last_update: formattedUpdate
-                    });
+                    if (priceValue && priceValue !== "0") {
+                        result.push({
+                            code: "UBS" + gramValue.replace(".", ""),
+                            category: "UBS",
+                            gram: gramValue,
+                            jual: priceValue,
+                            buyback: buybackMap[gramValue] || "",
+                            last_update: ubsUpdate
+                        });
+                    }
                 }
             }
         });
+        window.close(); // Important for memory!
+    });
 
-        window.close();
-        return result;
-    } catch (e) {
-        return [];
-    }
+    return result;
 }
 
 // Global Formatter
