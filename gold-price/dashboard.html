@@ -1,281 +1,355 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>NTGold</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --bg: #05070a;
-            --card: #161b22;
-            --border: #30363d;
-            --accent: #fbbf24;
-            --text: #c9d1d9;
-            --text-dim: #8b949e;
-            --danger: #f85149;
-            --success: #2ea043;
-        }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
-        
-        /* Auth Screen */
-        #auth-container { display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .auth-box { background: var(--card); padding: 2rem; border-radius: 12px; border: 1px solid var(--border); width: 100%; max-width: 350px; }
-        .auth-box h2 { color: var(--accent); margin-top: 0; text-align: center; }
-        
-        /* Dashboard */
-        #dashboard-container { display: none; padding: 20px; max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
-        
-        /* Forms */
-        input { width: 100%; padding: 12px; margin: 8px 0; background: #0d1117; border: 1px solid var(--border); color: white; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; margin-top: 15px; background: var(--accent); border: none; font-weight: 700; color: black; border-radius: 6px; cursor: pointer; transition: 0.2s; }
-        button:hover { opacity: 0.9; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .btn-danger { background: var(--danger); color: white; width: auto; padding: 8px 16px; margin: 0; }
+	<meta charset="UTF-8">
+	<title>NTGold | Today Market Price | Manage Portofolio</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<style>
+		:root {
+			--bg: #05070a;
+			--card: #161b22;
+			--border: #30363d;
+			--accent: #fbbf24;
+			--text: #c9d1d9;
+			--dim: #8b949e;
+			--danger: #f85149;
+			--success: #2ea043;
+		}
 
-        /* Table */
-        .table-wrap { overflow-x: auto; background: var(--card); border-radius: 8px; border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: collapse; min-width: 500px; }
-        th { text-align: left; padding: 12px 16px; color: var(--text-dim); font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
-        td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        .price-cell { font-family: 'Monaco', monospace; font-weight: 600; color: white; text-align: right; }
-        .brand-badge { background: rgba(251, 191, 36, 0.1); color: var(--accent); padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
-        
-        /* Utils */
-        .hidden { display: none !important; }
-        .error-msg { color: var(--danger); font-size: 12px; text-align: center; margin-top: 10px; display: none; }
-        .link { color: var(--accent); cursor: pointer; font-size: 12px; text-align: center; display: block; margin-top: 15px; }
-    </style>
+		body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; -webkit-font-smoothing: antialiased; }
+		* { box-sizing: border-box; }
+
+		nav { 
+			display: flex; 
+			justify-content: space-between; 
+			align-items: center; 
+			padding: 15px 20px; 
+			border-bottom: 1px solid var(--border); 
+			background: var(--card);
+			position: sticky;
+			top: 0;
+			z-index: 100;
+		}
+		.logo { color: var(--accent); font-weight: 800; font-size: 20px; text-decoration: none; letter-spacing: -0.5px; }
+		.nav-items { display: flex; align-items: center; }
+		.nav-items a { 
+			color: var(--text); text-decoration: none; margin-left: 20px; font-size: 14px; cursor: pointer; transition: 0.2s; 
+		}
+		.nav-items a:hover { color: var(--accent); }
+		.btn-login { background: var(--accent); color: #000 !important; padding: 8px 16px; border-radius: 6px; font-weight: 700; }
+
+		.container { 
+			max-width: 1000px; 
+			margin: 0 auto; 
+			padding: 20px; 
+			width: 100%;
+		}
+		.section { display: none; animation: fadeIn 0.3s ease-out; }
+		.active-section { display: block; }
+
+		.table-wrap { 
+			overflow-x: auto;
+			background: var(--card); 
+			border-radius: 8px; 
+			border: 1px solid var(--border); 
+			margin-top: 15px; 
+			-webkit-overflow-scrolling: touch;
+		}
+		table { width: 100%; border-collapse: collapse; min-width: 600px;}
+		
+		th { text-align: left; padding: 12px 16px; color: var(--dim); font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
+		td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; white-space: nowrap; /* Prevent numbers splitting */ }
+		
+		.price-cell { font-family: 'Monaco', 'Consolas', monospace; font-weight: 600; color: white; text-align: right; }
+		.brand-badge { background: rgba(251, 191, 36, 0.1); color: var(--accent); padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+		.time-badge { font-size: 11px; color: var(--dim); display: flex; align-items: center; gap: 5px; }
+
+		.auth-box { 
+			width: 100%; 
+			max-width: 350px; 
+			margin: 40px auto; 
+			background: var(--card); 
+			padding: 2rem; 
+			border-radius: 12px; 
+			border: 1px solid var(--border); 
+		}
+		input { 
+			width: 100%; 
+			padding: 14px;
+			margin: 8px 0; 
+			background: #0d1117; 
+			border: 1px solid var(--border); 
+			color: white; 
+			border-radius: 6px; 
+			font-size: 16px;
+		}
+		button { 
+			width: 100%; 
+			padding: 14px;
+			margin-top: 15px; 
+			background: var(--accent); 
+			border: none; 
+			font-weight: 700; 
+			cursor: pointer; 
+			border-radius: 6px; 
+			font-size: 14px;
+			color: #05070a;
+		}
+		button:active { opacity: 0.9; transform: scale(0.98); }
+
+		@media (max-width: 600px) {
+			nav { flex-direction: column; gap: 15px; padding: 15px; }
+			.nav-items { width: 100%; justify-content: space-between; }
+			.nav-items a { margin: 0; font-size: 13px; }
+
+			th, td { padding: 10px 12px; font-size: 13px; }
+			.brand-badge { padding: 2px 6px; font-size: 10px; }
+
+			.container { padding: 15px; }
+			.auth-box { padding: 1.5rem; border: none; background: transparent; }
+		}
+
+		@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+	</style>
 </head>
 <body>
 
-    <div id="auth-container">
-        <div class="auth-box" id="login-box">
-            <h2>Login NTGold</h2>
-            <p style="text-align:center; font-size:13px; color:var(--text-dim); margin-bottom:20px">Member Login</p>
-            <input type="email" id="l-email" placeholder="Email">
-            <input type="password" id="l-password" placeholder="Password">
-            <button onclick="handleLogin()">Sign In</button>
-            <p id="l-error" class="error-msg"></p>
-            <span class="link" onclick="toggleAuth()">Need an account? Register</span>
-        </div>
+	<nav>
+		<a href="#" class="logo" onclick="showPage('market')">NTGold</a>
+		<div class="nav-items" id="nav-menu">
+		</div>
+	</nav>
 
-        <div class="auth-box hidden" id="register-box">
-            <h2>Join NTGold</h2>
-            <p style="text-align:center; font-size:13px; color:var(--text-dim); margin-bottom:20px">Create Portfolio</p>
-            <input type="email" id="r-email" placeholder="Email">
-            <input type="password" id="r-password" placeholder="Password">
-            <button onclick="handleRegister()">Register</button>
-            <p id="r-error" class="error-msg"></p>
-            <span class="link" onclick="toggleAuth()">Have an account? Login</span>
-        </div>
-    </div>
+	<div class="container">
+		
+		<div id="page-market" class="section active-section">
+			<div style="display:flex; justify-content:space-between; align-items:center;">
+				<h3>Today's Market Prices</h3>
+				<span style="font-size:12px; color:var(--dim)">Live Updates</span>
+			</div>
+			
+			<div class="table-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th>Brand</th>
+							<th>Weight</th>
+							<th style="text-align:right">Price</th>
+							<th style="text-align:right">Buyback</th>
+							<th style="text-align:right">Last Updated</th>
+						</tr>
+					</thead>
+					<tbody id="price-table">
+						<tr><td colspan="5" style="text-align:center; padding:20px">Loading market data...</td></tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
 
-    <div id="dashboard-container">
-        <header>
-            <div>
-                <h1 style="margin:0; font-size:20px">My Dashboard</h1>
-                <span style="font-size:12px; color:var(--text-dim)" id="user-display">Welcome</span>
-            </div>
-            <button class="btn-danger" onclick="handleLogout()">Logout</button>
-        </header>
+		<div id="page-portfolio" class="section">
+			<h3>My Portfolio</h3>
+			<div style="padding: 40px; text-align: center; color: var(--dim); border: 1px dashed var(--border); border-radius: 8px;">
+				<p>You have not added any gold assets yet.</p>
+				<button style="width:auto; font-size:12px;">+ Add Transaction</button>
+			</div>
+		</div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-            <h3 style="margin:0">Today's Market Prices</h3>
-            <span style="font-size:12px; background:#238636; padding:4px 8px; border-radius:12px; color:white">Live DB Connection</span>
-        </div>
+		<div id="page-auth" class="section">
+			<div class="auth-box" id="login-box">
+				<h2 style="color:var(--accent); text-align:center; margin-top:0">Sign In</h2>
+				<form onsubmit="handleLogin(event)">
+					<input type="email" id="l-email" placeholder="Email" required autocomplete="email">
+					<input type="password" id="l-password" placeholder="Password" required autocomplete="current-password">
+					<button type="submit">Login</button>
+				</form>
 
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Brand</th>
-                        <th>Weight</th>
-                        <th style="text-align:right">Selling Price</th>
-                        <th style="text-align:right">Buyback</th>
-                        <th style="text-align:center">Last Update</th>
-                    </tr>
-                </thead>
-                <tbody id="price-table">
-                    <tr><td colspan="5" style="text-align:center; padding:20px">Loading data...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+				<p id="l-error" style="color:var(--danger); font-size:12px; display:none; text-align:center; margin-top:10px"></p>
+				<p style="text-align:center; font-size:12px; cursor:pointer; color:var(--dim); margin-top:15px" onclick="toggleAuthMode()">
+					Need an account? Register
+				</p>
+			</div>
+			
+			<div class="auth-box" id="register-box" style="display:none">
+				<h2 style="color:var(--accent); text-align:center; margin-top:0">Register</h2>
+				<input type="text" id="r-name" placeholder="Full Name">
+				<input type="email" id="r-email" placeholder="Email">
+				<input type="password" id="r-password" placeholder="Password">
+				<button onclick="handleRegister()">Create Account</button>
+				<p id="r-error" style="color:var(--danger); font-size:12px; display:none; text-align:center;"></p>
+				<p style="text-align:center; font-size:12px; cursor:pointer; color:var(--dim)" onclick="toggleAuthMode()">Have an account? Login</p>
+			</div>
+		</div>
+
+	</div>
 
 <script>
-    const SUPABASE_URL = "https://iwsacljessokrqhfmdbv.supabase.co"; 
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo";
-    const { createClient } = supabase;
-    const sbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+	const SUPABASE_URL = "https://iwsacljessokrqhfmdbv.supabase.co"; 
+	const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo";
+	const { createClient } = supabase;
+	const sbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    window.onload = async () => {
-        // Check session on load
-        const { data: { session } } = await sbClient.auth.getSession();
-        if (session) {
-            showDashboard(session.user);
-        } else {
-            console.log("No active session found.");
-        }
-    };
+	window.onload = async () => {
+		fetchLatestPrices();
 
-    async function handleLogin() {
-        const email = document.getElementById('l-email').value;
-        const password = document.getElementById('l-password').value;
-        const errEl = document.getElementById('l-error');
-        
-        const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
-        
-        if (error) {
-            errEl.textContent = error.message;
-            errEl.style.display = 'block';
-        } else {
-            showDashboard(data.user);
-        }
-    }
+		const { data: { session } } = await sbClient.auth.getSession();
+		updateUIForAuth(session);
 
-    async function handleRegister() {
-		const email = document.getElementById('r-email').value;
-		const password = document.getElementById('r-password').value;
-		const fullName = document.getElementById('r-name')?.value || "New Member"; 
-		const errEl = document.getElementById('r-error');
-
-		const { data, error } = await sbClient.auth.signUp({ 
-			email, 
-			password,
-			options: {
-				data: {
-					full_name: fullName
-				}
-			}
+		sbClient.auth.onAuthStateChange((event, session) => {
+			updateUIForAuth(session);
 		});
+	};
 
-		if (error) {
-			errEl.textContent = error.message;
-			errEl.style.display = 'block';
+	function updateUIForAuth(session) {
+		const nav = document.getElementById('nav-menu');
+		if (session) {
+			const email = session.user.email;
+			nav.innerHTML = `
+				<a onclick="showPage('market')">Market</a>
+				<a onclick="showPage('portfolio')">My Portfolio</a>
+				<a onclick="handleLogout()" style="color:var(--danger)">Logout</a>
+			`;
 		} else {
-			alert("Registration successful! Check your email.");
-			toggleAuth();
+			nav.innerHTML = `
+				<a onclick="showPage('market')">Market</a>
+				<a onclick="showPage('auth')" class="btn-login">Login</a>
+			`;
 		}
 	}
 
-    async function handleLogout() {
-        await sbClient.auth.signOut();
-        location.reload();
-    }
-
-    async function showDashboard(user) {
-		document.getElementById('auth-container').style.display = 'none';
-		document.getElementById('dashboard-container').style.display = 'block';
-
-		// 1. Fetch the linked profile from YOUR table
-		const { data: profile, error } = await sbClient
-			.from('tbluser')
-			.select('*')
-			.eq('id', user.id)
-			.single();
-
-		// 2. Display the data
-		const displayName = profile?.full_name || user.email;
-		const tier = profile?.subscription_tier || 'free';
-		
-		document.getElementById('user-display').innerHTML = `
-			Welcome, <b>${displayName}</b> 
-			<span style="font-size:10px; background:#333; padding:2px 6px; border-radius:4px; margin-left:5px">
-				${tier.toUpperCase()}
-			</span>
-		`;
-
-		fetchLatestPrices();
+	function showPage(pageId) {
+		document.querySelectorAll('.section').forEach(el => el.classList.remove('active-section'));
+		document.getElementById(`page-${pageId}`).classList.add('active-section');
 	}
 
-    async function fetchLatestPrices() {
+	function toggleAuthMode() {
+		const login = document.getElementById('login-box');
+		const reg = document.getElementById('register-box');
+		if (login.style.display === 'none') {
+			login.style.display = 'block'; reg.style.display = 'none';
+		} else {
+			login.style.display = 'none'; reg.style.display = 'block';
+		}
+	}
+
+	async function fetchLatestPrices() {
 		const dateLimit = new Date();
 		dateLimit.setDate(dateLimit.getDate() - 5);
 		const dateLimitStr = dateLimit.toISOString().split('T')[0];
 
-		console.log("Fetching latest prices since:", dateLimitStr);
+		let { data, error } = await sbClient
+			.from('tblpricelog')
+			.select(`
+				price, buyback_price, weight_grams, log_date, created_date,
+				tblbrand ( brand_name, brand_code ) 
+			`)
+			.gt('log_date', dateLimitStr) 
+			.order('log_date', { ascending: false });
 
-        let { data, error } = await sbClient
-        .from('tblpricelog')
-        .select(`
-            price, 
-            buyback_price, 
-            weight_grams, 
-            log_date,
-            tblbrand ( brand_name, brand_code ) 
-        `)
-        .gt('log_date', dateLimitStr) 
-        .order('log_date', { ascending: false });
-
-    	const tbody = document.getElementById('price-table');
-
-        if (error) {
-			console.error("Supabase Error:", error);
-			tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--danger)">Error: ${error.message}</td></tr>`;
-			return;
-		}
-
-		if (!data || data.length === 0) {
-			tbody.innerHTML = `<tr><td colspan="5" style="text-align:center">No data found in the last 5 days. Run your API scraper.</td></tr>`;
+		const tbody = document.getElementById('price-table');
+		
+		if (error || !data || data.length === 0) {
+			tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--dim)">No recent data.</td></tr>`;
 			return;
 		}
 
 		const uniqueMap = new Map();
-		
 		data.forEach(item => {
-			const brand = item.tblbrand?.brand_code || "UNKNOWN";
-			const weight = item.weight_grams;
-			const compositeKey = `${brand}_${weight}`;
-
-			if (!uniqueMap.has(compositeKey)) {
-				uniqueMap.set(compositeKey, item);
-			}
+			const key = `${item.tblbrand?.brand_code}_${item.weight_grams}`;
+			if (!uniqueMap.has(key)) uniqueMap.set(key, item);
 		});
 		
-		const latestData = Array.from(uniqueMap.values());
-
-		latestData.sort((a, b) => {
+		const latestData = Array.from(uniqueMap.values()).sort((a, b) => {
 			const brandA = a.tblbrand?.brand_name || "";
 			const brandB = b.tblbrand?.brand_name || "";
-			
-			// Sort by Brand first
-			const brandCompare = brandA.localeCompare(brandB);
-			if (brandCompare !== 0) return brandCompare;
-
-			// Then sort by Weight
+			if (brandA !== brandB) return brandA.localeCompare(brandB);
 			return a.weight_grams - b.weight_grams;
 		});
 
-		const todayStr = new Date().toISOString().split('T')[0];
-
 		tbody.innerHTML = latestData.map(item => {
-			const isToday = item.log_date === todayStr;
+			const rawTime = item.created_date;
+
+			const dateObj = new Date(rawTime);
+			const todayObj = new Date();
+			const isToday = dateObj.toDateString() === todayObj.toDateString();
 			const dateColor = isToday ? 'var(--success)' : 'var(--danger)';
-			const dateLabel = isToday ? 'TODAY' : item.log_date;
+			const cleanTime = formatTimestamp(rawTime);
 
 			return `
 				<tr>
-					<td>
-						<span class="brand-badge">${item.tblbrand?.brand_name || 'Unknown'}</span>
-					</td>
+					<td><span class="brand-badge">${item.tblbrand?.brand_name}</span></td>
 					<td>${item.weight_grams}g</td>
 					<td class="price-cell">Rp ${item.price.toLocaleString('id-ID')}</td>
-					<td class="price-cell" style="color:var(--text-dim)">Rp ${item.buyback_price.toLocaleString('id-ID')}</td>
-					<td style="text-align:center; font-size:11px; font-weight:bold; color:${dateColor}">
-						${dateLabel}
+					<td class="price-cell" style="color:var(--dim)">Rp ${item.buyback_price.toLocaleString('id-ID')}</td>
+					<td style="text-align:right">
+						<div class="time-badge" style="justify-content:flex-end; color: ${dateColor}; font-weight:600;">
+							${cleanTime}
+						</div>
 					</td>
 				</tr>
 			`;
 		}).join('');
-    }
+	}
 
-    function toggleAuth() {
-        document.getElementById('login-box').classList.toggle('hidden');
-        document.getElementById('register-box').classList.toggle('hidden');
-    }
+	async function handleLogin(event) {
+		if (event) event.preventDefault();
+
+		const email = document.getElementById('l-email').value;
+		const password = document.getElementById('l-password').value;
+		const errEl = document.getElementById('l-error');
+
+		errEl.style.display = 'none';
+
+		const { error } = await sbClient.auth.signInWithPassword({ email, password });
+		
+		if (error) {
+			errEl.innerText = error.message;
+			errEl.style.display = 'block';
+		} else {
+			showPage('market'); 
+		}
+	}
+
+	async function handleRegister() {
+		const email = document.getElementById('r-email').value;
+		const password = document.getElementById('r-password').value;
+		const name = document.getElementById('r-name').value;
+		const { error } = await sbClient.auth.signUp({ 
+			email, password, options: { data: { full_name: name } } 
+		});
+		if (error) {
+			document.getElementById('r-error').innerText = error.message;
+			document.getElementById('r-error').style.display = 'block';
+		} else {
+			alert("Check email for verification!");
+			toggleAuthMode();
+		}
+	}
+
+	async function handleLogout() {
+		await sbClient.auth.signOut();
+		showPage('market');
+	}
+
+	function formatTimestamp(isoString) {
+		if (!isoString) return "-";
+		const date = new Date(isoString);
+		
+		if (isNaN(date.getTime())) return isoString;
+
+		const day = String(date.getDate()).padStart(2, '0');
+		const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+		const month = months[date.getMonth()];
+		const year = date.getFullYear();
+		
+		const hours = String(date.getHours()).padStart(2, '0');
+		const minutes = String(date.getMinutes()).padStart(2, '0');
+		const seconds = String(date.getSeconds()).padStart(2, '0');
+
+		return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+	}
+
 </script>
 </body>
 </html>
