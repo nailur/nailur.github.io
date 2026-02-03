@@ -209,7 +209,7 @@ function parseSampoerna(html) {
         const doc = window.document;
         const result = [];
 
-        const formattedUpdate = formatGaleriDate(sDoc.querySelector(".small-text")?.textContent || "");
+        const formattedUpdate = formatGaleriDate(doc.querySelector(".small-text")?.textContent || "");
 
         const table = doc.querySelector('.table-emas');
         if (!table) return [];
