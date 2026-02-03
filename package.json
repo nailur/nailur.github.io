@@ -10,9 +10,10 @@
     "parse5": "7.1.2"
   },
   "dependencies": {
-    "mysql2": "^3.11.0",
-    "jsonwebtoken": "^9.0.2",
+    "@supabase/supabase-js": "^2.93.3",
     "bcryptjs": "^2.4.3",
-    "jsdom": "26.1.0"
+    "jsdom": "26.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.0"
   }
 }
