@@ -1,355 +1,343 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<title>NTGold | Today Market Price | Manage Portofolio</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-	<style>
-		:root {
-			--bg: #05070a;
-			--card: #161b22;
-			--border: #30363d;
-			--accent: #fbbf24;
-			--text: #c9d1d9;
-			--dim: #8b949e;
-			--danger: #f85149;
-			--success: #2ea043;
-		}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NTGold | Market & Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --border: #30363d; --accent: #fbbf24;
+            --text: #c9d1d9; --dim: #8b949e; --danger: #f85149; --success: #2ea043;
+            --nav-desktop: 70px; --nav-mobile: 60px;
+        }
+        
+        /* 1. APP SHELL */
+        html, body { height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+        body { display: flex; flex-direction: column; }
+        * { box-sizing: border-box; }
 
-		body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; -webkit-font-smoothing: antialiased; }
-		* { box-sizing: border-box; }
+        /* 2. NAVIGATION */
+        .desktop-nav {
+            flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;
+            height: var(--nav-desktop); padding: 0 40px;
+            background: var(--card); border-bottom: 1px solid var(--border);
+            z-index: 100;
+        }
+        .logo { font-size: 20px; font-weight: 800; color: var(--accent); cursor: pointer; }
+        .nav-links { display: flex; gap: 30px; align-items: center; }
+        .nav-links a { color: var(--text); text-decoration: none; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .nav-links a:hover { color: var(--accent); }
+        
+        .mobile-header, .bottom-nav { display: none; }
 
-		nav { 
-			display: flex; 
-			justify-content: space-between; 
-			align-items: center; 
-			padding: 15px 20px; 
-			border-bottom: 1px solid var(--border); 
-			background: var(--card);
-			position: sticky;
-			top: 0;
-			z-index: 100;
-		}
-		.logo { color: var(--accent); font-weight: 800; font-size: 20px; text-decoration: none; letter-spacing: -0.5px; }
-		.nav-items { display: flex; align-items: center; }
-		.nav-items a { 
-			color: var(--text); text-decoration: none; margin-left: 20px; font-size: 14px; cursor: pointer; transition: 0.2s; 
-		}
-		.nav-items a:hover { color: var(--accent); }
-		.btn-login { background: var(--accent); color: #000 !important; padding: 8px 16px; border-radius: 6px; font-weight: 700; }
+        /* 3. MAIN CONTENT */
+        .container { 
+            flex-grow: 1; position: relative; overflow: hidden;
+            width: 100%; max-width: 1200px; margin: 0 auto; 
+            display: flex; flex-direction: column;
+        }
+        
+        .section { display: none; height: 100%; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .active-section { display: flex; }
 
-		.container { 
-			max-width: 1000px; 
-			margin: 0 auto; 
-			padding: 20px; 
-			width: 100%;
-		}
-		.section { display: none; animation: fadeIn 0.3s ease-out; }
-		.active-section { display: block; }
+        /* 4. TABLE STYLES */
+        .table-wrapper {
+            flex-grow: 1; background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            overflow: auto; -webkit-overflow-scrolling: touch; position: relative;
+            -ms-overflow-style: none; scrollbar-width: none;
+        }
+        .table-wrapper::-webkit-scrollbar { display: none; }
 
-		.table-wrap { 
-			overflow-x: auto;
-			background: var(--card); 
-			border-radius: 8px; 
-			border: 1px solid var(--border); 
-			margin-top: 15px; 
-			-webkit-overflow-scrolling: touch;
-		}
-		table { width: 100%; border-collapse: collapse; min-width: 600px;}
-		
-		th { text-align: left; padding: 12px 16px; color: var(--dim); font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
-		td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; white-space: nowrap; /* Prevent numbers splitting */ }
-		
-		.price-cell { font-family: 'Monaco', 'Consolas', monospace; font-weight: 600; color: white; text-align: right; }
-		.brand-badge { background: rgba(251, 191, 36, 0.1); color: var(--accent); padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
-		.time-badge { font-size: 11px; color: var(--dim); display: flex; align-items: center; gap: 5px; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 600px; }
+        
+        th { 
+            position: sticky; top: 0; z-index: 50; background: var(--card);
+            text-align: left; padding: 15px; color: var(--dim); font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        th:first-child, td:first-child { position: sticky; left: 0; z-index: 40; background: var(--card); border-right: 1px solid var(--border); }
+        th:first-child { z-index: 60; }
 
-		.auth-box { 
-			width: 100%; 
-			max-width: 350px; 
-			margin: 40px auto; 
-			background: var(--card); 
-			padding: 2rem; 
-			border-radius: 12px; 
-			border: 1px solid var(--border); 
-		}
-		input { 
-			width: 100%; 
-			padding: 14px;
-			margin: 8px 0; 
-			background: #0d1117; 
-			border: 1px solid var(--border); 
-			color: white; 
-			border-radius: 6px; 
-			font-size: 16px;
-		}
-		button { 
-			width: 100%; 
-			padding: 14px;
-			margin-top: 15px; 
-			background: var(--accent); 
-			border: none; 
-			font-weight: 700; 
-			cursor: pointer; 
-			border-radius: 6px; 
-			font-size: 14px;
-			color: #05070a;
-		}
-		button:active { opacity: 0.9; transform: scale(0.98); }
+        td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 14px; white-space: nowrap; }
+        .price-font { font-family: 'Roboto Mono', monospace; color: white; letter-spacing: -0.5px; }
+        .brand-pill { background: rgba(251, 191, 36, 0.1); color: var(--accent); padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; }
 
-		@media (max-width: 600px) {
-			nav { flex-direction: column; gap: 15px; padding: 15px; }
-			.nav-items { width: 100%; justify-content: space-between; }
-			.nav-items a { margin: 0; font-size: 13px; }
+        /* 5. PROFILE & FORMS (Responsive Grid) */
+        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
+        .settings-group { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid var(--border); height: 100%; }
+        .settings-title { font-size: 14px; font-weight: 700; color: var(--dim); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        
+        input { width: 100%; background: #05070a; border: 1px solid var(--border); color: white; padding: 14px; border-radius: 6px; margin-bottom: 15px; font-size: 16px; transition: 0.2s; }
+        input:focus { border-color: var(--accent); outline: none; }
+        
+        .btn-primary { background: var(--accent); color: #000; padding: 12px 20px; border-radius: 6px; font-weight: 700; border: none; cursor: pointer; width: 100%; font-size: 14px; }
+        .btn-danger { background: rgba(248, 81, 73, 0.1); color: var(--danger); border: 1px solid var(--danger); margin-top: 20px; }
+        
+        /* Utility to hide/show based on device */
+        .mobile-only-btn { display: none; } 
 
-			th, td { padding: 10px 12px; font-size: 13px; }
-			.brand-badge { padding: 2px 6px; font-size: 10px; }
+        /* Auth Center */
+        .auth-center { flex-grow: 1; display: flex; justify-content: center; align-items: center; }
+        .auth-box { width: 100%; max-width: 400px; background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid var(--border); }
+        .auth-toggle { text-align: center; font-size: 12px; color: var(--dim); margin-top: 20px; cursor: pointer; }
+        .auth-toggle span { color: var(--accent); font-weight: 700; }
 
-			.container { padding: 15px; }
-			.auth-box { padding: 1.5rem; border: none; background: transparent; }
-		}
+        /* --- MOBILE MODE --- */
+        @media (max-width: 768px) {
+            .desktop-nav { display: none !important; }
+            
+            /* Profile Stack for Mobile */
+            .profile-grid { display: flex; flex-direction: column; gap: 20px; }
+            .mobile-only-btn { display: block; } /* Show logout button on mobile profile */
 
-		@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-	</style>
+            .mobile-header {
+                flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;
+                height: 60px; padding: 0 20px; background: var(--card); border-bottom: 1px solid var(--border);
+                z-index: 100;
+            }
+            .mobile-title { font-size: 18px; font-weight: 800; color: var(--accent); margin: 0; }
+
+            .bottom-nav {
+                flex-shrink: 0; display: flex; height: var(--nav-mobile); 
+                background: var(--card); border-top: 1px solid var(--border);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--dim); font-size: 10px; font-weight: 600; text-decoration: none; cursor: pointer; }
+            .nav-item.active { color: var(--accent); }
+            .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; stroke: currentColor; }
+            
+            .section { padding: 15px; }
+            .auth-box { border: none; background: transparent; padding: 0; }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
 </head>
 <body>
 
-	<nav>
-		<a href="#" class="logo" onclick="showPage('market')">NTGold</a>
-		<div class="nav-items" id="nav-menu">
-		</div>
-	</nav>
+    <nav class="desktop-nav">
+        <div class="logo" onclick="showPage('market')">NTGold</div>
+        <div class="nav-links" id="desktop-links"></div>
+    </nav>
 
-	<div class="container">
-		
-		<div id="page-market" class="section active-section">
-			<div style="display:flex; justify-content:space-between; align-items:center;">
-				<h3>Today's Market Prices</h3>
-				<span style="font-size:12px; color:var(--dim)">Live Updates</span>
-			</div>
-			
-			<div class="table-wrap">
-				<table>
-					<thead>
-						<tr>
-							<th>Brand</th>
-							<th>Weight</th>
-							<th style="text-align:right">Price</th>
-							<th style="text-align:right">Buyback</th>
-							<th style="text-align:right">Last Updated</th>
-						</tr>
-					</thead>
-					<tbody id="price-table">
-						<tr><td colspan="5" style="text-align:center; padding:20px">Loading market data...</td></tr>
-					</tbody>
-				</table>
-			</div>
-		</div>
+    <header class="mobile-header">
+        <h1 class="mobile-title">NTGold</h1>
+        <div id="mobile-user-badge" style="font-size:12px; color:var(--dim); background:rgba(255,255,255,0.1); padding:4px 10px; border-radius:20px;">Guest</div>
+    </header>
 
-		<div id="page-portfolio" class="section">
-			<h3>My Portfolio</h3>
-			<div style="padding: 40px; text-align: center; color: var(--dim); border: 1px dashed var(--border); border-radius: 8px;">
-				<p>You have not added any gold assets yet.</p>
-				<button style="width:auto; font-size:12px;">+ Add Transaction</button>
-			</div>
-		</div>
+    <div class="container">
+        
+        <div id="page-market" class="active-section section">
+            <h2 style="margin-top:0; margin-bottom:15px; flex-shrink:0;">Today's Prices</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Brand</th>
+                            <th>Weight</th>
+                            <th style="text-align:right">Price</th>
+                            <th style="text-align:right">Buyback</th>
+                            <th style="text-align:right">Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="market-table-body">
+                        <tr><td colspan="5" style="text-align:center; padding:30px">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-		<div id="page-auth" class="section">
-			<div class="auth-box" id="login-box">
-				<h2 style="color:var(--accent); text-align:center; margin-top:0">Sign In</h2>
-				<form onsubmit="handleLogin(event)">
-					<input type="email" id="l-email" placeholder="Email" required autocomplete="email">
-					<input type="password" id="l-password" placeholder="Password" required autocomplete="current-password">
-					<button type="submit">Login</button>
-				</form>
+        <div id="page-portfolio" class="section">
+            <div style="background:linear-gradient(135deg, #fbbf24, #d97706); border-radius:16px; padding:25px; color:black; text-align:center; margin-bottom:30px; flex-shrink:0;">
+                <div style="font-size:12px; font-weight:700; opacity:0.8; text-transform:uppercase">Net Worth</div>
+                <div style="font-size:36px; font-weight:800; margin:5px 0" id="pf-total">Rp 0</div>
+            </div>
+            <div style="flex-grow:1; overflow:auto; text-align:center; padding:40px; color:var(--dim); border:2px dashed var(--border); border-radius:12px;">
+                <p>No Assets Found</p>
+                <button class="btn-primary" style="width:auto">+ Add Transaction</button>
+            </div>
+        </div>
 
-				<p id="l-error" style="color:var(--danger); font-size:12px; display:none; text-align:center; margin-top:10px"></p>
-				<p style="text-align:center; font-size:12px; cursor:pointer; color:var(--dim); margin-top:15px" onclick="toggleAuthMode()">
-					Need an account? Register
-				</p>
-			</div>
-			
-			<div class="auth-box" id="register-box" style="display:none">
-				<h2 style="color:var(--accent); text-align:center; margin-top:0">Register</h2>
-				<input type="text" id="r-name" placeholder="Full Name">
-				<input type="email" id="r-email" placeholder="Email">
-				<input type="password" id="r-password" placeholder="Password">
-				<button onclick="handleRegister()">Create Account</button>
-				<p id="r-error" style="color:var(--danger); font-size:12px; display:none; text-align:center;"></p>
-				<p style="text-align:center; font-size:12px; cursor:pointer; color:var(--dim)" onclick="toggleAuthMode()">Have an account? Login</p>
-			</div>
-		</div>
+        <div id="page-profile" class="section">
+            <h2 style="margin-top:0; margin-bottom:20px;">Account Settings</h2>
+            
+            <div class="profile-grid">
+                <div class="settings-group">
+                    <div class="settings-title">Personal Details</div>
+                    <label style="font-size:12px; color:var(--dim); display:block; margin-bottom:5px">Email Address</label>
+                    <input type="text" id="prof-email" disabled style="opacity:0.6; cursor:not-allowed">
+                    
+                    <label style="font-size:12px; color:var(--dim); display:block; margin-bottom:5px">Full Name</label>
+                    <input type="text" id="prof-name" placeholder="Enter your name">
+                    
+                    <button class="btn-primary" onclick="updateName()">Save Changes</button>
+                </div>
 
-	</div>
+                <div class="settings-group">
+                    <div class="settings-title">Security</div>
+                    <label style="font-size:12px; color:var(--dim); display:block; margin-bottom:5px">New Password</label>
+                    <input type="password" id="prof-pass" placeholder="Enter new password">
+                    <button class="btn-primary" onclick="updatePassword()">Update Password</button>
+                </div>
+            </div>
+
+            <button class="btn-primary btn-danger mobile-only-btn" onclick="handleLogout()">Sign Out</button>
+        </div>
+
+        <div id="page-auth" class="section">
+            <div class="auth-center">
+                <div class="auth-box" id="login-box">
+                    <h2 style="text-align:center; color:var(--accent); margin-top:0">Welcome Back</h2>
+                    <form onsubmit="handleLogin(event)">
+                        <input type="email" id="l-email" placeholder="Email" required>
+                        <input type="password" id="l-password" placeholder="Password" required>
+                        <button type="submit" class="btn-primary" style="width:100%; margin-top:10px; height:45px">Sign In</button>
+                    </form>
+                    <p id="l-error" style="color:var(--danger); text-align:center; font-size:12px; margin-top:10px; display:none"></p>
+                    <div class="auth-toggle" onclick="toggleAuth()">New here? <span>Create Account</span></div>
+                </div>
+                <div class="auth-box" id="register-box" style="display:none">
+                    <h2 style="text-align:center; color:var(--accent); margin-top:0">Join NTGold</h2>
+                    <form onsubmit="handleRegister(event)">
+                        <input type="text" id="r-name" placeholder="Full Name" required>
+                        <input type="email" id="r-email" placeholder="Email" required>
+                        <input type="password" id="r-password" placeholder="Password" required>
+                        <button type="submit" class="btn-primary" style="width:100%; margin-top:10px; height:45px">Create Account</button>
+                    </form>
+                    <p id="r-error" style="color:var(--danger); text-align:center; font-size:12px; margin-top:10px; display:none"></p>
+                    <div class="auth-toggle" onclick="toggleAuth()">Already have an account? <span>Login</span></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="bottom-nav" id="mobile-links"></div>
 
 <script>
-	const SUPABASE_URL = "https://iwsacljessokrqhfmdbv.supabase.co"; 
-	const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo";
-	const { createClient } = supabase;
-	const sbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // --- 1. CONFIG ---
+    const SUPABASE_URL = "https://iwsacljessokrqhfmdbv.supabase.co"; 
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c2FjbGplc3Nva3JxaGZtZGJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODcyNTMsImV4cCI6MjA4Mzc2MzI1M30.jQ_8KR76Xbbn1Heest75p3I78J6oiSt9V-H31cWWLOo"; 
+    const { createClient } = supabase;
+    const sbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-	window.onload = async () => {
-		fetchLatestPrices();
+    // --- 2. INIT ---
+    window.onload = async () => {
+        fetchMarketData();
+        const { data: { session } } = await sbClient.auth.getSession();
+        updateNavigation(session);
+        if(session) loadProfile(session.user);
+        
+        sbClient.auth.onAuthStateChange((_, session) => { 
+            updateNavigation(session);
+            if(session) loadProfile(session.user);
+        });
+    };
 
-		const { data: { session } } = await sbClient.auth.getSession();
-		updateUIForAuth(session);
+    // --- 3. MARKET ---
+    async function fetchMarketData() {
+        const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 5);
+        const { data } = await sbClient.from('tblpricelog')
+            .select(`price, buyback_price, weight_grams, log_date, created_date, tblbrand(brand_name)`)
+            .gt('log_date', dateLimit.toISOString().split('T')[0]).order('log_date', { ascending: false });
 
-		sbClient.auth.onAuthStateChange((event, session) => {
-			updateUIForAuth(session);
-		});
-	};
+        if (!data) return;
+        const uniqueMap = new Map();
+        data.forEach(item => {
+            const key = `${item.tblbrand?.brand_name}_${item.weight_grams}`;
+            if (!uniqueMap.has(key)) uniqueMap.set(key, item);
+        });
+        const items = Array.from(uniqueMap.values()).sort((a, b) => {
+            const brandA = a.tblbrand?.brand_name || ""; const brandB = b.tblbrand?.brand_name || "";
+            return brandA.localeCompare(brandB) || a.weight_grams - b.weight_grams;
+        });
 
-	function updateUIForAuth(session) {
-		const nav = document.getElementById('nav-menu');
-		if (session) {
-			const email = session.user.email;
-			nav.innerHTML = `
-				<a onclick="showPage('market')">Market</a>
-				<a onclick="showPage('portfolio')">My Portfolio</a>
-				<a onclick="handleLogout()" style="color:var(--danger)">Logout</a>
-			`;
-		} else {
-			nav.innerHTML = `
-				<a onclick="showPage('market')">Market</a>
-				<a onclick="showPage('auth')" class="btn-login">Login</a>
-			`;
-		}
-	}
+        const tbody = document.getElementById('market-table-body');
+        tbody.innerHTML = items.map(item => {
+            const { time, color } = formatTime(item);
+            return `<tr>
+                <td><span class="brand-pill">${item.tblbrand?.brand_name}</span></td>
+                <td>${item.weight_grams}g</td>
+                <td style="text-align:right" class="price-font">Rp ${item.price.toLocaleString('id-ID')}</td>
+                <td style="text-align:right; color:var(--dim)">Rp ${item.buyback_price.toLocaleString('id-ID')}</td>
+                <td style="text-align:right; font-size:12px; color:${color}; font-weight:600">${time}</td>
+            </tr>`;
+        }).join('');
+    }
 
-	function showPage(pageId) {
-		document.querySelectorAll('.section').forEach(el => el.classList.remove('active-section'));
-		document.getElementById(`page-${pageId}`).classList.add('active-section');
-	}
+    // --- 4. PROFILE ---
+    async function loadProfile(user) {
+        document.getElementById('prof-email').value = user.email;
+        const { data } = await sbClient.from('tbluser').select('full_name').eq('id', user.id).single();
+        if(data) document.getElementById('prof-name').value = data.full_name || '';
+    }
+    async function updateName() {
+        const newName = document.getElementById('prof-name').value;
+        const { data: { user } } = await sbClient.auth.getUser();
+        const { error } = await sbClient.from('tbluser').update({ full_name: newName }).eq('id', user.id);
+        if(error) alert("Error: " + error.message); else alert("Name updated!");
+    }
+    async function updatePassword() {
+        const newPass = document.getElementById('prof-pass').value;
+        if(!newPass) return alert("Enter a new password");
+        const { error } = await sbClient.auth.updateUser({ password: newPass });
+        if(error) alert("Error: " + error.message); else { alert("Password updated!"); document.getElementById('prof-pass').value = ""; }
+    }
 
-	function toggleAuthMode() {
-		const login = document.getElementById('login-box');
-		const reg = document.getElementById('register-box');
-		if (login.style.display === 'none') {
-			login.style.display = 'block'; reg.style.display = 'none';
-		} else {
-			login.style.display = 'none'; reg.style.display = 'block';
-		}
-	}
+    // --- 5. NAVIGATION ---
+    function updateNavigation(session) {
+        const desktop = document.getElementById('desktop-links');
+        const mobile = document.getElementById('mobile-links');
+        const badge = document.getElementById('mobile-user-badge');
+        
+        const iMarket = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
+        const iPort = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>`;
+        const iUser = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
 
-	async function fetchLatestPrices() {
-		const dateLimit = new Date();
-		dateLimit.setDate(dateLimit.getDate() - 5);
-		const dateLimitStr = dateLimit.toISOString().split('T')[0];
+        if (session) {
+            badge.innerText = session.user.email.split('@')[0];
+            // DESKTOP: LOGOUT IS HERE
+            desktop.innerHTML = `<a onclick="showPage('market')">Market</a><a onclick="showPage('portfolio')">Portfolio</a><a onclick="showPage('profile')">Profile</a><button class="btn-primary" onclick="handleLogout()">Logout</button>`;
+            // MOBILE: PROFILE TAB IS HERE
+            mobile.innerHTML = `<a onclick="showPage('market', this)" class="nav-item active">${iMarket} Market</a><a onclick="showPage('portfolio', this)" class="nav-item">${iPort} Portfolio</a><a onclick="showPage('profile', this)" class="nav-item">${iUser} Profile</a>`;
+        } else {
+            badge.innerText = "Guest";
+            desktop.innerHTML = `<a onclick="showPage('market')">Market</a><button class="btn-primary" onclick="showPage('auth')">Login</button>`;
+            mobile.innerHTML = `<a onclick="showPage('market', this)" class="nav-item active">${iMarket} Market</a><a onclick="showPage('auth', this)" class="nav-item">${iUser} Login</a>`;
+        }
+    }
 
-		let { data, error } = await sbClient
-			.from('tblpricelog')
-			.select(`
-				price, buyback_price, weight_grams, log_date, created_date,
-				tblbrand ( brand_name, brand_code ) 
-			`)
-			.gt('log_date', dateLimitStr) 
-			.order('log_date', { ascending: false });
-
-		const tbody = document.getElementById('price-table');
-		
-		if (error || !data || data.length === 0) {
-			tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--dim)">No recent data.</td></tr>`;
-			return;
-		}
-
-		const uniqueMap = new Map();
-		data.forEach(item => {
-			const key = `${item.tblbrand?.brand_code}_${item.weight_grams}`;
-			if (!uniqueMap.has(key)) uniqueMap.set(key, item);
-		});
-		
-		const latestData = Array.from(uniqueMap.values()).sort((a, b) => {
-			const brandA = a.tblbrand?.brand_name || "";
-			const brandB = b.tblbrand?.brand_name || "";
-			if (brandA !== brandB) return brandA.localeCompare(brandB);
-			return a.weight_grams - b.weight_grams;
-		});
-
-		tbody.innerHTML = latestData.map(item => {
-			const rawTime = item.created_date;
-
-			const dateObj = new Date(rawTime);
-			const todayObj = new Date();
-			const isToday = dateObj.toDateString() === todayObj.toDateString();
-			const dateColor = isToday ? 'var(--success)' : 'var(--danger)';
-			const cleanTime = formatTimestamp(rawTime);
-
-			return `
-				<tr>
-					<td><span class="brand-badge">${item.tblbrand?.brand_name}</span></td>
-					<td>${item.weight_grams}g</td>
-					<td class="price-cell">Rp ${item.price.toLocaleString('id-ID')}</td>
-					<td class="price-cell" style="color:var(--dim)">Rp ${item.buyback_price.toLocaleString('id-ID')}</td>
-					<td style="text-align:right">
-						<div class="time-badge" style="justify-content:flex-end; color: ${dateColor}; font-weight:600;">
-							${cleanTime}
-						</div>
-					</td>
-				</tr>
-			`;
-		}).join('');
-	}
-
-	async function handleLogin(event) {
-		if (event) event.preventDefault();
-
-		const email = document.getElementById('l-email').value;
-		const password = document.getElementById('l-password').value;
-		const errEl = document.getElementById('l-error');
-
-		errEl.style.display = 'none';
-
-		const { error } = await sbClient.auth.signInWithPassword({ email, password });
-		
-		if (error) {
-			errEl.innerText = error.message;
-			errEl.style.display = 'block';
-		} else {
-			showPage('market'); 
-		}
-	}
-
-	async function handleRegister() {
-		const email = document.getElementById('r-email').value;
-		const password = document.getElementById('r-password').value;
-		const name = document.getElementById('r-name').value;
-		const { error } = await sbClient.auth.signUp({ 
-			email, password, options: { data: { full_name: name } } 
-		});
-		if (error) {
-			document.getElementById('r-error').innerText = error.message;
-			document.getElementById('r-error').style.display = 'block';
-		} else {
-			alert("Check email for verification!");
-			toggleAuthMode();
-		}
-	}
-
-	async function handleLogout() {
-		await sbClient.auth.signOut();
-		showPage('market');
-	}
-
-	function formatTimestamp(isoString) {
-		if (!isoString) return "-";
-		const date = new Date(isoString);
-		
-		if (isNaN(date.getTime())) return isoString;
-
-		const day = String(date.getDate()).padStart(2, '0');
-		const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-		const month = months[date.getMonth()];
-		const year = date.getFullYear();
-		
-		const hours = String(date.getHours()).padStart(2, '0');
-		const minutes = String(date.getMinutes()).padStart(2, '0');
-		const seconds = String(date.getSeconds()).padStart(2, '0');
-
-		return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
-	}
-
+    // --- 6. UTILS ---
+    function showPage(pageId, navEl) {
+        document.querySelectorAll('.section').forEach(el => el.classList.remove('active-section'));
+        document.getElementById(`page-${pageId}`).classList.add('active-section');
+        if(navEl) { document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); navEl.classList.add('active'); }
+    }
+    function toggleAuth() {
+        const l = document.getElementById('login-box'); const r = document.getElementById('register-box');
+        if(l.style.display==='none'){l.style.display='block';r.style.display='none'}else{l.style.display='none';r.style.display='block'}
+    }
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('l-email').value; const password = document.getElementById('l-password').value;
+        const { error } = await sbClient.auth.signInWithPassword({ email, password });
+        if (error) {document.getElementById('l-error').innerText=error.message;document.getElementById('l-error').style.display='block'} else showPage('portfolio');
+    }
+    async function handleRegister(e) {
+        e.preventDefault();
+        const name=document.getElementById('r-name').value; const email=document.getElementById('r-email').value; const password=document.getElementById('r-password').value;
+        const {error}=await sbClient.auth.signUp({email,password,options:{data:{full_name:name}}});
+        if(error){document.getElementById('r-error').innerText=error.message;document.getElementById('r-error').style.display='block'}
+        else{alert("Success! Check email.");toggleAuth();}
+    }
+    async function handleLogout() { await sbClient.auth.signOut(); showPage('market'); }
+    function formatTime(item) {
+        const raw=item.created_date||item.log_date;const d=new Date(raw);
+        const isToday=d.toDateString()===new Date().toDateString();
+        const m=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
+        return {time:isToday?`Today, ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}`:`${d.getDate().toString().padStart(2,'0')} ${m}`,color:isToday?'var(--success)':'var(--danger)'};
+    }
 </script>
 </body>
 </html>
