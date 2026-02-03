@@ -26,8 +26,7 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        // const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, emasAntamHTML, ubsPagesFixed, ubsPages ] = await Promise.all([
-		const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed] = await Promise.all([
+        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed, ubsPages ] = await Promise.all([
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
             fetchWithTimeout("https://idbullion.com/").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
@@ -35,8 +34,8 @@ export default async function handler(req, res) {
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
 			fetchWithTimeout("https://www.kinghalim.com/goldbarwithamala").catch(() => ""),
 			// fetchWithTimeout("https://emasantam.id/harga-emas-hari-ini/").catch(() => ""),
-            fetchUBSFixed().catch(() => ({}))
-			// fetchUBS().catch(() => ({}))
+            fetchUBSFixed().catch(() => ({})),
+			fetchUBS().catch(() => ({}))
         ]);
 
         const rawData = [
@@ -45,8 +44,8 @@ export default async function handler(req, res) {
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
 			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
 			// ...(emasAntamHTML ? parseEmasAntamOfficial(emasAntamHTML) : []),
-			...parseUBSLifestyleFixed(ubsPagesFixed)
-            // ...parseUBSLifestyle(ubsPages)
+			...parseUBSLifestyleFixed(ubsPagesFixed),
+            ...parseUBSLifestyle(ubsPages)
         ];
 
 		const filteredData = rawData.filter(item => {
@@ -179,7 +178,7 @@ function parseEmasKita(html) {
     const updateEl = doc.querySelector(".d-flex.justify-content-center.mt-3");
     const lUpdate = formatGaleriDate(updateEl?.textContent || "");
 
-    rows.forEach((row) => {
+    rows.forEach((row, index) => {
         const cols = row.querySelectorAll("td");
         if (cols.length >= 4) {
             const gramValue = cols[0].textContent.trim().toLowerCase().replace("gr", "").replace(",", ".").trim();
@@ -207,17 +206,20 @@ function parseKingHalim(html) {
         const doc = window.document;
         const result = [];
 
+        // Safety check for update element
         const updateEl = doc.querySelector('.kv-ee-section-subtitle.kv-ee-section-subtitle--sm');
         const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
 
 		const buyBackPrice = doc.querySelector('.kv-ee-section-description.kv-ee-description.kv-ee-body--md').textContent.trim().split('.')[0].replace(/[^\d]/g, "");
 
+        // Target the items
         const items = doc.querySelectorAll('.kv-ee-item');
 
         items.forEach((item) => {
             const titleEl = item.querySelector('.kv-ee-title.kv-ee-title--md');
             const priceEl = item.querySelector('.kv-ee-price.kv-ee-section-title--lg');
 
+            // Senior Move: Only process if BOTH elements exist
             if (titleEl && priceEl) {
                 const gramRaw = titleEl.textContent.trim();
                 const jualRaw = priceEl.textContent.trim();
@@ -239,22 +241,20 @@ function parseKingHalim(html) {
             }
         });
 
-        window.close();
+        window.close(); // Critical for Vercel memory management
         return result;
     } catch (e) {
         console.error("King Halim Parse Error:", e.message);
-        return [];
+        return []; // Return empty array instead of crashing the API
     }
 }
 
 async function fetchUBSFixed() {
     const urls = {
-		"0.1": "https://ubslifestyle.com/ubs-logam-mulia-disney-mickey-minnie-mouse-thank-you-0-1-gr/",
-		"0.25": "https://ubslifestyle.com/ubs-logam-mulia-disney-minnie-mouse-daisy-duck-thank-you-0-25-gr/",
         "0.5": "https://ubslifestyle.com/fine-gold-0.5gram/",
         "1": "https://ubslifestyle.com/fine-gold-1gram/",
+        // "3": "https://ubslifestyle.com/fine-gold-3gram/",
 		"2": "https://ubslifestyle.com/ubs-gold-logam-mulia-new-born-baby-girl-2-gr/",
-		// "3": "https://ubslifestyle.com/fine-gold-3gram/",
 		"3": "https://ubslifestyle.com/ubs-gold-logam-mulia-new-born-baby-boy-3-gr/",
 		"4": "https://ubslifestyle.com/fine-gold-4gram/",
         // "5": "https://ubslifestyle.com/fine-gold-5gram/",
@@ -306,7 +306,7 @@ function parseUBSLifestyleFixed(pages) {
     return data;
 }
 
-/* async function fetchUBS() {
+async function fetchUBS() {
     const baseUrl = "https://ubslifestyle.com/fine-gold/page/";
     const buybackUrl = "https://ubslifestyle.com/harga-buyback-hari-ini/";
 
@@ -403,7 +403,7 @@ function parseUBSLifestyle(ubsData) {
     });
 
     return result;
-} */
+}
 
 /* function parseEmasAntamOfficial(html) {
     if (!html) return [];
@@ -455,6 +455,7 @@ function parseUBSLifestyle(ubsData) {
     }
 } */
 
+// Global Formatter
 function formatGaleriDate(text) {
     let str = String(text || "").trim();
     if (!str) return null;
