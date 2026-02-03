@@ -161,7 +161,7 @@ function parseBullion(bullionHtml, sampoernaHtml, lotusHtml) {
         });
     };
 
-    processTable("modalAntam", "ANTAM");
+    // processTable("modalAntam", "ANTAM");
     processTable("modalLotus", "LOTUS ARCHI", lotusUpdate);
     processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate);
 
@@ -251,12 +251,15 @@ async function fetchUBSFixed() {
     const urls = {
         "0.5": "https://ubslifestyle.com/fine-gold-0.5gram/",
         "1": "https://ubslifestyle.com/fine-gold-1gram/",
-        "3": "https://ubslifestyle.com/fine-gold-3gram/",
+        // "3": "https://ubslifestyle.com/fine-gold-3gram/",
+		"2": "https://ubslifestyle.com/ubs-gold-logam-mulia-new-born-baby-girl-2-gr/",
 		"3": "https://ubslifestyle.com/ubs-gold-logam-mulia-new-born-baby-boy-3-gr/",
-        "5": "https://ubslifestyle.com/fine-gold-5gram/",
+		"4": "https://ubslifestyle.com/fine-gold-4gram/",
+        // "5": "https://ubslifestyle.com/fine-gold-5gram/",
+		"5": "https://ubslifestyle.com/fine-gold-disney-5-gr-donald-duck/",
         "10": "https://ubslifestyle.com/fine-gold-10gram/",
         "25": "https://ubslifestyle.com/ubs-logam-mulia-25-gram-classic/",
-        "50": "https://ubslifestyle.com/ubs-logam-mulia-50-gram-classic/",
+        // "50": "https://ubslifestyle.com/ubs-logam-mulia-50-gram-classic/",
         "buyback": "https://ubslifestyle.com/harga-buyback-hari-ini/"
     };
     const keys = Object.keys(urls);
