@@ -352,13 +352,12 @@ async function fetchUBS() {
 }
 
 function parseUBSLifestyle(ubsData) {
-    if (!ubsData.allListHTMLs || ubsData.allListHTMLs.length === 0) return [];
+    if (!ubsData) return [];
     
     const result = [];
     const buybackMap = {};
     let ubsUpdate = "";
 
-    // 1. Map Buyback (Remains the same for lookup)
     if (ubsData.buybackHTML) {
         const bDoc = new JSDOM(ubsData.buybackHTML).window.document;
         ubsUpdate = formatGaleriDate(bDoc.querySelector('.text-xs.font-semibold')?.textContent || "");
@@ -371,42 +370,59 @@ function parseUBSLifestyle(ubsData) {
         });
     }
 
-    // 2. Loop through every page fetched
-    ubsData.allListHTMLs.forEach(html => {
-        if (!html) return;
-        const { window } = new JSDOM(html);
-        const doc = window.document;
-
+    const extractFromDoc = (doc) => {
         const containers = doc.querySelectorAll('.as-producttile-info');
-        containers.forEach(container => {
-            const titleEl = container.querySelector('.ase-truncate-title');
-            const priceEl = container.querySelector('.woocommerce-Price-amount.amount');
+        
+        if (containers.length === 0) {
+            const titleEl = doc.querySelector('.as-productdetail-title, .product_title');
+            const priceEl = doc.querySelector('.as-price-currentprice, .product_price');
+            processItem(titleEl, priceEl);
+        } else {
+            containers.forEach(container => {
+                const titleEl = container.querySelector('.ase-truncate-title');
+                const priceEl = container.querySelector('.woocommerce-Price-amount.amount');
+                processItem(titleEl, priceEl);
+            });
+        }
+    };
 
-            if (titleEl && priceEl) {
-                const titleText = titleEl.textContent.trim();
-                const priceText = priceEl.textContent.trim();
+    function processItem(titleEl, priceEl) {
+        if (titleEl && priceEl) {
+            const titleText = titleEl.textContent.trim();
+            const priceText = priceEl.textContent.trim();
+            if (priceText.includes("NaN") || !priceText) return;
 
-                if (priceText.includes("NaN") || !priceText) return;
+            const gramMatch = titleText.toLowerCase().match(/(\d+[.,]?\d*)\s*(gr|gram)/);
+            if (gramMatch) {
+                const gramValue = gramMatch[1].replace(",", ".");
+                const priceValue = priceText.replace(/[^\d]/g, "");
 
-                const gramMatch = titleText.toLowerCase().match(/(\d+[.,]?\d*)\s*(gr|gram)/);
-                if (gramMatch) {
-                    const gramValue = gramMatch[1].replace(",", ".");
-                    const priceValue = priceText.replace(/[^\d]/g, "");
-
-                    if (priceValue && priceValue !== "0") {
-                        result.push({
-                            code: "UBS" + gramValue.replace(".", ""),
-                            category: "UBS",
-                            gram: gramValue,
-                            jual: priceValue,
-                            buyback: buybackMap[gramValue] || "",
-                            last_update: ubsUpdate
-                        });
-                    }
+                if (priceValue && priceValue !== "0") {
+                    result.push({
+                        code: "UBS" + gramValue.replace(".", ""),
+                        category: "UBS",
+                        gram: gramValue,
+                        jual: priceValue,
+                        buyback: buybackMap[gramValue] || "",
+                        last_update: ubsUpdate
+                    });
                 }
             }
-        });
-        window.close(); // Important for memory!
+        }
+    }
+
+    ubsData.allListHTMLs.forEach(html => {
+        if (!html) return;
+        const dom = new JSDOM(html);
+        extractFromDoc(dom.window.document);
+        dom.window.close();
+    });
+
+    ubsData.fixedHTMLs.forEach(html => {
+        if (!html) return;
+        const dom = new JSDOM(html);
+        extractFromDoc(dom.window.document);
+        dom.window.close();
     });
 
     return result;
