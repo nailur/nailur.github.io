@@ -26,13 +26,14 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed, ubsPages ] = await Promise.all([
+        const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, emasAntamHTML, ubsPagesFixed, ubsPages ] = await Promise.all([
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
             fetchWithTimeout("https://idbullion.com/").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
 			fetchWithTimeout("https://www.kinghalim.com/goldbarwithamala").catch(() => ""),
+			fetchWithTimeout("https://emasantam.id/harga-emas-hari-ini/").catch(() => ""),
             fetchUBSFixed().catch(() => ({})),
 			fetchUBS().catch(() => ({}))
         ]);
@@ -42,6 +43,7 @@ export default async function handler(req, res) {
             ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
 			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
+			...(emasAntamHTML ? parseEmasAntamOfficial(emasAntamHTML) : []),
 			...parseUBSLifestyleFixed(ubsPagesFixed),
             ...parseUBSLifestyle(ubsPages)
         ];
@@ -401,6 +403,53 @@ function parseUBSLifestyle(ubsData) {
     });
 
     return result;
+}
+
+function parseEmasAntamOfficial(html) {
+    if (!html) return [];
+    try {
+        const { window } = new JSDOM(html);
+        const doc = window.document;
+        const result = [];
+
+        // 1. Get the Update Date (usually at the top of the price section)
+        const updateEl = doc.querySelector('.price-date, .updated-at');
+        const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
+
+        // 2. Select the rows (they usually use standard table structures)
+        const rows = doc.querySelectorAll('table tr');
+
+        rows.forEach((row, index) => {
+            // Skip header row if it exists
+            const cols = row.querySelectorAll('td');
+            if (cols.length >= 2) {
+                const gramRaw = cols[0].textContent.trim(); // e.g. "1 gr"
+                const priceRaw = cols[1].textContent.trim(); // e.g. "Rp 3.027.000"
+                const buybackRaw = cols[2] ? cols[2].textContent.trim() : "";
+
+                const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
+                const priceValue = priceRaw.replace(/[^\d]/g, "");
+                const buybackValue = buybackRaw.replace(/[^\d]/g, "");
+
+                // Filter out non-numeric header garbage
+                if (gramValue && priceValue && !isNaN(parseFloat(gramValue))) {
+                    result.push({
+                        code: "ANTAM" + gramValue.replace(".", ""),
+                        category: "ANTAM",
+                        gram: gramValue,
+                        jual: priceValue,
+                        buyback: buybackValue || 0,
+                        last_update: formattedUpdate
+                    });
+                }
+            }
+        });
+
+        window.close();
+        return result;
+    } catch (e) {
+        return [];
+    }
 }
 
 // Global Formatter
