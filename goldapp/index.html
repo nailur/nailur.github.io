@@ -796,7 +796,6 @@
 	let currentTarget = null;
 
 	function handleTouchStart(e) {
-		// Reset any other open swipe items first
 		document.querySelectorAll('.crypto-row-swipeable').forEach(el => {
 			if (el !== e.currentTarget) el.classList.remove('swiped');
 		});
@@ -808,11 +807,9 @@
 		let moveX = e.touches[0].clientX;
 		let diff = startX - moveX;
 
-		// If swiping left more than 30px
 		if (diff > 30) {
 			currentTarget.classList.add('swiped');
 		} 
-		// If swiping right
 		else if (diff < -30) {
 			currentTarget.classList.remove('swiped');
 		}
