@@ -128,6 +128,8 @@
         <div style="display: flex; align-items: center; gap: 8px;">
 			<div class="logo" onclick="nav('market')">NTGold</div>
 			<span id="desktop-sub-badge" class="sub-badge"></span>
+			<button onclick="toggleLang('en')" style="background:none; border:1px solid var(--border); color:var(--accent); padding:4px 8px; border-radius:5px; cursor:pointer; font-size:10px; font-weight:bold">EN</button>
+			<button onclick="toggleLang('id')" style="background:none; border:1px solid var(--border); color:var(--accent); padding:4px 8px; border-radius:5px; cursor:pointer; font-size:10px; font-weight:bold">ID</button>
 		</div>
         <div class="nav-links" id="desktop-links"></div>
     </nav>
@@ -145,7 +147,7 @@
     <div class="container">
         
         <div id="page-market" class="active-section section">
-			<h2 style="margin-top:0; font-size:16px; color:var(--text-sub); margin-bottom:15px">Today's Market</h2>
+			<h2 data-i18n="today_market" style="margin-top:0; font-size:16px; color:var(--text-sub); margin-bottom:15px">Today's Market</h2>
 
 			<div id="market-summary-container" style="margin-bottom: 30px; display: none;">
 				<div id="summary-cards-list" style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;"></div>
@@ -153,7 +155,7 @@
             
             <div class="desktop-table-container">
                 <table>
-                    <thead><tr><th>Brand</th><th>Weight</th><th style="text-align:right">Price</th><th style="text-align:right">Buyback</th><th style="text-align:right">Updated</th></tr></thead>
+                    <thead><tr><th data-i18n="brand">Brand</th><th data-i18n="weight">Weight</th><th data-i18n="price" style="text-align:right">Price</th><th data-i18n="buyback" style="text-align:right">Buyback</th><th data-i18n="updated" style="text-align:right">Updated</th></tr></thead>
                     <tbody id="desktop-tbody"><tr><td colspan="5" style="text-align:center; padding:40px">Loading...</td></tr></tbody>
                 </table>
             </div>
@@ -163,11 +165,11 @@
 
         <div id="page-portfolio" class="section">
             <div style="background:linear-gradient(135deg, #F5C518 0%, #D4A017 100%); padding:25px; border-radius:20px; color:black; margin-bottom:20px; box-shadow: 0 10px 30px rgba(245, 197, 24, 0.15);">
-				<div style="font-size:11px; font-weight:700; opacity:0.7; letter-spacing:1px; text-transform:uppercase">Total Net Worth</div>
+				<div data-i18n="net_worth" style="font-size:11px; font-weight:700; opacity:0.7; letter-spacing:1px; text-transform:uppercase">Total Net Worth</div>
 				<div style="font-size:32px; font-weight:800; margin:5px 0" id="pf-total">Rp 0</div>
 				
 				<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 10px;">
-					<div id="pf-grams" style="font-size:13px; font-weight:600">0.00 Grams</div>
+					<div id="pf-grams" style="font-size:13px; font-weight:600">0.00 Gram</div>
 					<div id="pf-pl" style="font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px; background: rgba(255,255,255,0.2);">
 						+Rp 0 (0%)
 					</div>
@@ -179,17 +181,17 @@
 					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-sub)" stroke-width="2.5"><path d="M3 6h18M6 12h12m-9 6h6"/></svg>
 					<select id="portfolio-sort" onchange="fetchPortfolio(currentSessionUser)" 
 						style="background: transparent; border: none; color: var(--text-sub); font-size: 11px; font-weight: 700; text-transform: uppercase; outline: none; cursor: pointer;">
-						<option value="pdate-desc" selected>Date (Newest)</option>
-						<option value="pdate-asc">Date (Oldest)</option>
-						<option value="weight-desc">Weight (High)</option>
-						<option value="weight-asc">Weight (Low)</option>
+						<option data-i18n="date_newest" value="pdate-desc" selected>Date (Newest)</option>
+						<option data-i18n="date_oldest" value="pdate-asc">Date (Oldest)</option>
+						<option data-i18n="weight_high" value="weight-desc">Weight (High)</option>
+						<option data-i18n="weight_low" value="weight-asc">Weight (Low)</option>
 						<option value="brand-asc">Brand (A-Z)</option>
 						<option value="brand-desc">Brand (Z-A)</option>
 					</select>
 				</div>
 
 				<div style="display: flex; align-items: center; gap: 8px;">
-					<span style="font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.5px;">Buyback</span>
+					<span data-i18n="buyback" style="font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.5px;">Buyback</span>
 					<label class="switch">
 						<input type="checkbox" id="buyback-toggle" onchange="fetchPortfolio(currentSessionUser)">
 						<span class="slider"></span>
@@ -211,12 +213,12 @@
 					<table>
 						<thead>
 							<tr>
-								<th>Brand</th>
-								<th>Purchase Date</th>
-								<th style="text-align:right">Weight</th>
+								<th data-i18n="brand" >Brand</th>
+								<th >Purchase Date</th>
+								<th data-i18n="weight" style="text-align:right">Weight</th>
 								<th style="text-align:right">Buy Price</th>
 								<th style="text-align:right">Market Value</th>
-								<th style="text-align:right">Profit/Loss</th>
+								<th data-i18n="pl" style="text-align:right">Profit/Loss</th>
 							</tr>
 						</thead>
 						<tbody id="portfolio-desktop-tbody"></tbody>
@@ -284,10 +286,30 @@
     const { createClient } = supabase;
     const sbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+	function toggleLang(flag) {
+		// currentLang = currentLang === 'en' ? 'id' : 'en';
+		currentLang = flag;
+		localStorage.setItem('lang', currentLang);
+		location.reload(); // Simplest way to re-render everything
+	}
+
+	function t(key) {
+		return i18n[currentLang][key] || key;
+	}
+
+	function applyLang() {
+		document.querySelectorAll('[data-i18n]').forEach(el => {
+			const key = el.getAttribute('data-i18n');
+			el.innerText = t(key);
+		});
+		// document.getElementById('lang-btn').innerText = currentLang.toUpperCase();
+	}
+
     // GLOBAL DATA STORE
     let latestPricesMap = new Map(); // Store prices here for easy lookup
 
     window.onload = async () => {
+		applyLang();
         await fetchMarketData(); // Need prices first
         const { data: { session } } = await sbClient.auth.getSession();
         updateUI(session);
@@ -606,6 +628,55 @@
         const t = `${d.getDate()} ${m} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}`;
         return { time: isToday ? `${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}` : t, color: isToday ? 'var(--success)' : 'var(--danger)', isToday };
     }
+
+	const i18n = {
+		en: {
+			market: "Market",
+			portfolio: "Portfolio",
+			wallet: "Wallet",
+			profile: "Profile",
+			today_market: "Today's Market",
+			best_value: "BEST VALUE",
+			net_worth: "Total Net Worth",
+			buyback: "Buyback",
+			sign_out: "Sign Out",
+			save_changes: "Save Changes",
+			brand: "Brand",
+			weight: "Weight",
+			price: "Price",
+			updated: "Updated",
+			cost: "Buy Price",
+			pl: "Profit/Loss",
+			date_newest: "Date (Newest)",
+			date_oldest: "Date (Oldest)",
+			weight_high: "Weight (High)",
+			weight_low: "Weight (Low)"
+		},
+		id: {
+			market: "Pasar",
+			portfolio: "Portofolio",
+			wallet: "Aset",
+			profile: "Profil",
+			today_market: "Harga Hari Ini",
+			best_value: "Harga Terbaik",
+			net_worth: "Total Kekayaan",
+			buyback: "Buyback",
+			sign_out: "Keluar",
+			save_changes: "Simpan Perubahan",
+			brand: "Merk",
+			weight: "Berat",
+			price: "Harga",
+			updated: "Terupdate",
+			cost: "Harga Beli",
+			pl: "Untung/Rugi",
+			date_newest: "Tanggal (Terbaru)",
+			date_oldest: "Tanggal (Terlama)",
+			weight_high: "Berat (Tertinggi)",
+			weight_low: "Berat (Terendah)"
+		}
+	};
+
+	let currentLang = localStorage.getItem('lang') || 'en';
 </script>
 </body>
 </html>
