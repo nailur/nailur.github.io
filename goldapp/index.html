@@ -146,7 +146,7 @@
         
         <div id="page-market" class="active-section section">
 			<h2 style="margin-top:0; font-size:16px; color:var(--text-sub); margin-bottom:15px">Today's Market</h2>
-			
+
 			<div id="market-summary-container" style="margin-bottom: 30px; display: none;">
 				<div id="summary-cards-list" style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;"></div>
 			</div>
@@ -363,10 +363,10 @@
 						<img src="${getBrandLogo(brandName)}" style="width:20px; height:20px; border-radius:50%; background:#fff;">
 						<span style="font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${brandName}</span>
 					</div>
-					<div class="price-font" style="font-size:16px; font-weight:800; color:${isCheapest ? 'var(--accent)' : 'var(--text-main)'}">
+					<div class="price-font" style="font-size:14px; font-weight:800; color:${isCheapest ? 'var(--accent)' : 'var(--text-main)'}">
 						Rp ${item.price.toLocaleString('id-ID')}
 					</div>
-					<div style="font-size:10px; color:var(--text-sub); margin-top:4px;">1 Gram Price</div>
+					<!--<div style="font-size:10px; color:var(--text-sub); margin-top:4px;">1 gram price</div>-->
 				</div>`;
 			}).join('');
 		}
