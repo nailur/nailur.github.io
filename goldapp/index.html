@@ -145,6 +145,11 @@
     <div class="container">
         
         <div id="page-market" class="active-section section">
+			<div id="market-summary-container" style="margin-bottom: 30px; display: none;">
+				<h2 style="margin-top:0; font-size:12px; color:var(--text-sub); margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">Today's Best 1g Entry</h2>
+				<div id="summary-cards-list" style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;"></div>
+			</div>
+			
             <h2 style="margin-top:0; font-size:16px; color:var(--text-sub); margin-bottom:15px">Today's Market</h2>
             
             <div class="desktop-table-container">
@@ -210,7 +215,7 @@
 								<th>Brand</th>
 								<th>Purchase Date</th>
 								<th style="text-align:right">Weight</th>
-								<th style="text-align:right">Cost</th>
+								<th style="text-align:right">Buy Price</th>
 								<th style="text-align:right">Market Value</th>
 								<th style="text-align:right">Profit/Loss</th>
 							</tr>
@@ -335,6 +340,37 @@
             const brandA = a.tblbrand?.brand_name || ""; const brandB = b.tblbrand?.brand_name || "";
             return brandA.localeCompare(brandB) || a.weight_grams - b.weight_grams;
         });
+
+		const summaryContainer = document.getElementById('market-summary-container');
+		const summaryList = document.getElementById('summary-cards-list');
+		const excludedBrands = ['antam series', 'antam retro', 'ubs old'];
+
+		const summaryItems = items
+			.filter(item => {
+				const name = item.tblbrand?.brand_name?.toLowerCase() || "";
+				return item.weight_grams === 1 && !excludedBrands.includes(name);
+			})
+			.sort((a, b) => a.price - b.price);
+
+		if (summaryItems.length > 0) {
+			summaryContainer.style.display = 'block';
+			summaryList.innerHTML = summaryItems.map((item, index) => {
+				const brandName = item.tblbrand?.brand_name || "Unknown";
+				const isCheapest = index === 0;
+				return `
+				<div style="flex: 0 0 160px; scroll-snap-align: start; background: var(--card-bg); border: 1px solid ${isCheapest ? 'var(--accent)' : 'var(--border)'}; padding: 16px; border-radius: 16px; position: relative;">
+					${isCheapest ? `<div style="position:absolute; top:0; right:0; background:var(--accent); color:#000; font-size:8px; font-weight:900; padding:2px 6px; border-bottom-left-radius:8px;">BEST VALUE</div>` : ''}
+					<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+						<img src="${getBrandLogo(brandName)}" style="width:20px; height:20px; border-radius:50%; background:#fff;">
+						<span style="font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${brandName}</span>
+					</div>
+					<div class="price-font" style="font-size:16px; font-weight:800; color:${isCheapest ? 'var(--accent)' : 'var(--text-main)'}">
+						Rp ${item.price.toLocaleString('id-ID')}
+					</div>
+					<div style="font-size:10px; color:var(--text-sub); margin-top:4px;">1 Gram Price</div>
+				</div>`;
+			}).join('');
+		}
 
         // RENDER MARKET
         document.getElementById('desktop-tbody').innerHTML = items.map(item => {
