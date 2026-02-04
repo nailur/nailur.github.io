@@ -81,7 +81,7 @@
         /* PROFILE UI */
         .profile-card { background: var(--card-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 15px; }
         .input-label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 8px; }
-        input { width: 100%; background: #000; border: 1px solid var(--border); color: #fff; padding: 14px; border-radius: 12px; font-size: 16px; outline: none; margin-bottom: 15px; }
+		input, select { width: 100%; background: #000; border: 1px solid var(--border); color: #fff; padding: 14px; border-radius: 12px; font-size: 16px; outline: none; margin-bottom: 15px; appearance: none; }
         input:focus { border-color: var(--accent); }
 
         /* USER AVATAR */
@@ -120,16 +120,26 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
 		.wallet-desktop-view { display: block; }
+
+		.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; backdrop-filter: blur(5px); justify-content: center; align-items: center; }
+        .modal-content { background: var(--card-bg); width: 90%; max-width: 400px; padding: 25px; border-radius: 20px; border: 1px solid var(--border); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .fab-add { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; background: var(--accent); color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 4px 15px rgba(245, 197, 24, 0.3); cursor: pointer; z-index: 90; transition: transform 0.2s; }
+        .fab-add:active { transform: scale(0.9); }
+
+		#ptr-spinner { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--accent); animation: spin 1s linear infinite; display: none; z-index: 999; }
+        @keyframes spin { 100% { transform: translateX(-50%) rotate(360deg); } }
     </style>
 </head>
 <body>
+
+	<div id="ptr-spinner"></div>
 
     <nav class="desktop-nav">
         <div style="display: flex; align-items: center; gap: 8px;">
 			<div class="logo" onclick="nav('market')">NTGold</div>
 			<span id="desktop-sub-badge" class="sub-badge"></span>
-			<button onclick="toggleLang('en')" style="background:none; border:1px solid var(--border); color:var(--accent); padding:4px 8px; border-radius:5px; cursor:pointer; font-size:10px; font-weight:bold">EN</button>
-			<button onclick="toggleLang('id')" style="background:none; border:1px solid var(--border); color:var(--accent); padding:4px 8px; border-radius:5px; cursor:pointer; font-size:10px; font-weight:bold">ID</button>
+			<!-- <button onclick="toggleLang('en')" style="background:none; border:1px solid var(--border); color:var(--accent); padding:4px 8px; border-radius:5px; cursor:pointer; font-size:10px; font-weight:bold">EN</button> -->
+			<!-- <button onclick="toggleLang('id')" style="background:none; border:1px solid var(--border); color:var(--accent); padding:4px 8px; border-radius:5px; cursor:pointer; font-size:10px; font-weight:bold">ID</button> -->
 		</div>
         <div class="nav-links" id="desktop-links"></div>
     </nav>
@@ -213,11 +223,11 @@
 					<table>
 						<thead>
 							<tr>
-								<th data-i18n="brand" >Brand</th>
-								<th >Purchase Date</th>
+								<th data-i18n="brand">Brand</th>
+								<th data-i18n="purchase_date">Purchase Date</th>
 								<th data-i18n="weight" style="text-align:right">Weight</th>
-								<th style="text-align:right">Buy Price</th>
-								<th style="text-align:right">Market Value</th>
+								<th data-i18n="cost" style="text-align:right">Buy Price</th>
+								<th data-i18n="market_value" style="text-align:right">Market Value</th>
 								<th data-i18n="pl" style="text-align:right">Profit/Loss</th>
 							</tr>
 						</thead>
@@ -232,6 +242,8 @@
                     <p>Loading your vault...</p>
                 </div>
             </div>
+
+			<div class="fab-add" onclick="toggleAddModal()">+</div>
         </div>
 
         <div id="page-profile" class="section">
@@ -241,18 +253,23 @@
             </div>
             
             <div class="profile-card">
-                <label class="input-label">Email Address</label>
+                <label data-i18n="email_address" class="input-label">Email Address</label>
                 <input type="text" id="prof-email" disabled style="opacity:0.5">
-                <label class="input-label">Full Name</label>
+                <label data-i18n="full_name" class="input-label">Full Name</label>
                 <input type="text" id="prof-name" placeholder="Enter your name">
-                <button class="btn-primary" onclick="updateName()">Save Changes</button>
+				<label data-i18n="lang_pref" class="input-label">Language Preference</label>
+                <select id="lang_select">
+                    <option value="en">English (US)</option>
+                    <option value="id">Bahasa Indonesia</option>
+                </select>
+                <button data-i18n="update_profile_btn" class="btn-primary" onclick="updateName()">Save Changes</button>
             </div>
             <div class="profile-card">
-                <label class="input-label">Change Password</label>
+                <label data-i18n="change_pass" class="input-label">Change Password</label>
                 <input type="password" id="prof-pass" placeholder="New password">
-                <button class="btn-primary" style="background:#222; color:#fff; border:1px solid #333" onclick="updatePassword()">Update Password</button>
+                <button data-i18n="change_pass_btn" class="btn-primary" style="background:#222; color:#fff; border:1px solid #333" onclick="updatePassword()">Update Password</button>
             </div>
-            <button class="btn-primary" style="background:rgba(255,77,77,0.1); color:var(--danger); margin-top:10px" onclick="handleLogout()">Sign Out</button>
+            <button data-i18n="logout" class="btn-primary" style="background:rgba(255,77,77,0.1); color:var(--danger); margin-top:10px" onclick="handleLogout()">Sign Out</button>
         </div>
 
         <div id="page-auth" class="section">
@@ -275,7 +292,26 @@
                 </div>
             </div>
         </div>
+    </div>
 
+	<div id="add-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 data-i18n="add_item" style="margin-top:0">Add New Item</h3>
+            <label class="input-label" data-i18n="brand">Brand</label>
+            <select id="add-brand"></select>
+            
+            <label class="input-label" data-i18n="weight">Weight (Grams)</label>
+            <select id="add-weight"></select>
+            
+            <label class="input-label" data-i18n="cost">Buy Price</label>
+            <input type="number" id="add-price" placeholder="e.g 1500000">
+            <label class="input-label" data-i18n="purchase_date">Purchase Date</label>
+            <input type="date" id="add-date">
+            <div style="display:flex; gap:10px; margin-top:20px">
+                <button class="btn-primary" style="background:#333; color:#fff" onclick="toggleAddModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveInventory()">Save</button>
+            </div>
+        </div>
     </div>
 
     <div class="bottom-nav" id="mobile-nav"></div>
@@ -286,48 +322,147 @@
     const { createClient } = supabase;
     const sbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-	function toggleLang(flag) {
-		// currentLang = currentLang === 'en' ? 'id' : 'en';
-		currentLang = flag;
-		localStorage.setItem('lang', currentLang);
-		location.reload(); // Simplest way to re-render everything
-	}
-
-	function t(key) {
-		return i18n[currentLang][key] || key;
-	}
-
-	function applyLang() {
-		document.querySelectorAll('[data-i18n]').forEach(el => {
-			const key = el.getAttribute('data-i18n');
-			el.innerText = t(key);
-		});
-		// document.getElementById('lang-btn').innerText = currentLang.toUpperCase();
-	}
-
-    // GLOBAL DATA STORE
-    let latestPricesMap = new Map(); // Store prices here for easy lookup
+    let latestPricesMap = new Map();
 
     window.onload = async () => {
-		applyLang();
-        await fetchMarketData(); // Need prices first
+		document.getElementById('lang_select').value = currentLang;
+
+        await fetchMarketData(); 
         const { data: { session } } = await sbClient.auth.getSession();
-        updateUI(session);
-        if(session) {
+        
+		updateUI(session);
+		
+		const savedPage = localStorage.getItem('last_page') || 'market';
+        
+		if(session) {
             loadProfile(session.user);
             fetchPortfolio(session.user);
-        }
+			nav(savedPage);
+        } else {
+			nav('market');
+		}
         
         sbClient.auth.onAuthStateChange((event, session) => { 
             updateUI(session);
             if(session) {
                 loadProfile(session.user);
                 fetchPortfolio(session.user);
+
+				if(event === 'SIGNED_IN') nav('market');
             }
         });
+
+		applyLang();
     };
 
-    // --- BRAND LOGO HELPER ---
+	// Pull to refresh
+	let touchStartY = 0;
+    const ptrSpinner = document.getElementById('ptr-spinner');
+    document.addEventListener('touchstart', e => { touchStartY = e.touches[0].pageY; }, {passive: true});
+    document.addEventListener('touchmove', e => {
+        const y = e.touches[0].pageY;
+        if (document.documentElement.scrollTop === 0 && y > touchStartY + 100) {
+            ptrSpinner.style.display = 'block';
+        }
+    }, {passive: true});
+    document.addEventListener('touchend', e => {
+        if (ptrSpinner.style.display === 'block') {
+            location.reload();
+        }
+    });
+
+	function updateUI(session) {
+        const desktop = document.getElementById('desktop-links');
+        const mobileNav = document.getElementById('mobile-nav');
+        const avatarContainer = document.getElementById('mobile-avatar-container');
+        const avatarImg = document.getElementById('mobile-avatar-img');
+        const profilePageImg = document.getElementById('profile-page-img');
+        const profilePageName = document.getElementById('profile-page-name');
+
+		const desktopBadge = document.getElementById('desktop-sub-badge');
+    	const mobileBadge = document.getElementById('mobile-sub-badge');
+
+        const iconHome = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>`;
+		const iconPort = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12V7a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2h14a2 2 0 002-2v-1M21 12a2 2 0 00-2-2h-1a2 2 0 00-2 2v0a2 2 0 002 2h1a2 2 0 002-2z" /></svg>`;
+        const iconUser = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`;
+
+        if (session) {
+            avatarContainer.style.display = 'block';
+            const seed = session.user.email.split('@')[0];
+            const avatarUrl = `https://ui-avatars.com/api/?name=${seed}&background=F5C518&color=000&rounded=true&bold=true`;
+            avatarImg.src = avatarUrl; profilePageImg.src = avatarUrl; profilePageName.innerText = seed;
+
+            desktop.innerHTML = `<a onclick="nav('market')" data-page="market" data-i18n="market">Market</a><a onclick="nav('portfolio')" data-page="portfolio" data-i18n="portfolio">Portfolio</a><a onclick="nav('profile')" data-page="profile" data-i18n="profile">Profile</a>`;
+            mobileNav.innerHTML = `<a onclick="nav('market', this)" data-page="market" class="nav-item">${iconHome}<div data-i18n="market">Market</div></a><a onclick="nav('portfolio', this)" data-page="portfolio" class="nav-item">${iconPort}<div data-i18n="wallet">Wallet</div></a><a onclick="nav('profile', this)" data-page="profile" class="nav-item">${iconUser}<div data-i18n="profile">Profile</div></a>`;
+        } else {
+            avatarContainer.style.display = 'none';
+            desktop.innerHTML = `<a onclick="nav('market')">Market</a><button class="btn-primary" style="width:auto; padding:8px 20px" onclick="nav('auth')" data-i18n="login">Login</button>`;
+            mobileNav.innerHTML = `<a onclick="nav('market', this)" data-page="market" class="nav-item">${iconHome}<div data-i18n="market">Market</div></a><a onclick="nav('auth', this)" data-page="auth" class="nav-item">${iconUser}<div data-i18n="login">Login</div></a>`;
+
+			// By Default is blank when no session
+			const badges = [document.getElementById('desktop-sub-badge'), document.getElementById('mobile-sub-badge')];
+
+			badges.forEach(badge => {
+				badge.innerText = '';
+			});
+        }
+    }
+
+	function nav(page, el) {
+		// Save current page state
+		localStorage.setItem('last_page', page);
+
+		// Toggle Section Visibility
+		document.querySelectorAll('.section').forEach(e => e.classList.remove('active-section'));
+		const target = document.getElementById(`page-${page}`);
+		if(target) target.classList.add('active-section');
+
+		// Toggle Navigation Active State
+		document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+		
+		if (el) {
+			el.classList.add('active');
+		} else {
+			// Find the mobile nav item that matches the page ID
+			const targetBtn = document.querySelector(`.nav-item[data-page="${page}"]`);
+			if (targetBtn) targetBtn.classList.add('active');
+		}
+	}
+
+	/*function nav(pageId, el) {
+		localStorage.setItem('last_page', page);
+
+        document.querySelectorAll('.section').forEach(e => e.classList.remove('active-section'));
+		document.getElementById(`page-${page}`).classList.add('active-section');
+		const targetPage = document.getElementById(`page-${pageId}`);
+		if (targetPage) targetPage.classList.add('active-section');
+
+		document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+
+		if (el) {
+			el.classList.add('active');
+		} else {
+			const navButtons = document.querySelectorAll('.nav-item');
+			navButtons.forEach(btn => {
+				if (btn.innerText.toLowerCase().includes(pageId.toLowerCase())) {
+					btn.classList.add('active');
+				}
+			});
+		}
+    }*/
+
+	function setSubBadge(type) {
+		const badges = [document.getElementById('desktop-sub-badge'), document.getElementById('mobile-sub-badge')];
+		const isPro = type?.toLowerCase() === 'pro';
+
+		badges.forEach(badge => {
+			if (!badge) return;
+			badge.innerText = isPro ? 'Pro' : 'Free';
+			badge.className = isPro ? 'sub-badge sub-badge-pro' : 'sub-badge sub-badge-free';
+		});
+	}
+
+    // Brand Logo
     function getBrandLogo(brandName) {
         const lower = brandName.toLowerCase();
         if(lower.includes('antam')) return './logos/antam.jpg';
@@ -340,21 +475,41 @@
         return 'https://cdn-icons-png.flaticon.com/512/217/217853.png';
     }
 
-    // --- 1. MARKET DATA ---
+    // Market Data
     async function fetchMarketData() {
         const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 5);
         const { data } = await sbClient.from('tblpricelog')
-            .select(`price, buyback_price, weight_grams, log_date, created_date, tblbrand(brand_name)`)
+            .select(`price, buyback_price, weight_grams, log_date, created_date, tblbrand(brand_name,brand_id)`)
             .gt('log_date', dateLimit.toISOString().split('T')[0]).order('log_date', { ascending: false });
 
         if (!data) return;
+
+		// Populate Modal Select
+		const map = new Map();
+        const brands = new Set();
+		const distinctWeights = new Set();
+
+		data.forEach(i => {
+            const k = `${i.tblbrand.brand_name}_${i.weight_grams}`;
+            if (!map.has(k)) map.set(k, i);
+            brands.add(i.tblbrand.brand_id + "|" + i.tblbrand.brand_name);
+            distinctWeights.add(i.weight_grams);
+        });
+
+		brandList = Array.from(brands).map(s => {const[brand_id,name]=s.split("|"); return{brand_id,name}}).sort((a,b)=>a.name.localeCompare(b.name));
+		const brandSelect = document.getElementById('add-brand');
+        brandSelect.innerHTML = brandList.map(b => `<option value="${b.brand_id}">${b.name}</option>`).join('');
+
+		const weightSelect = document.getElementById('add-weight');
+        const sortedWeights = Array.from(distinctWeights).sort((a, b) => a - b);
+        weightSelect.innerHTML = sortedWeights.map(w => `<option value="${w}">${w} Gram</option>`).join('');
+		
         const uniqueMap = new Map();
         data.forEach(item => {
             const key = `${item.tblbrand?.brand_name}_${item.weight_grams}`;
             if (!uniqueMap.has(key)) uniqueMap.set(key, item);
         });
-        
-        // SAVE FOR GLOBAL USE
+
         latestPricesMap = uniqueMap;
 
         const items = Array.from(uniqueMap.values()).sort((a, b) => {
@@ -362,6 +517,7 @@
             return brandA.localeCompare(brandB) || a.weight_grams - b.weight_grams;
         });
 
+		// Render Summary Lowest Price
 		const summaryContainer = document.getElementById('market-summary-container');
 		const summaryList = document.getElementById('summary-cards-list');
 		const excludedBrands = ['antam series', 'antam retro', 'ubs old'];
@@ -393,7 +549,7 @@
 			}).join('');
 		}
 
-        // RENDER MARKET
+        // Render Market Desktop
         document.getElementById('desktop-tbody').innerHTML = items.map(item => {
             const { time, color } = formatTime(item);
             return `<tr>
@@ -405,6 +561,7 @@
             </tr>`;
         }).join('');
 
+		// Render Market Mobile
         document.getElementById('mobile-list').innerHTML = items.map(item => {
             const { time, isToday } = formatTime(item);
             const updateBadge = isToday ? `<span class="pill-update">Today</span>` : "";
@@ -427,9 +584,8 @@
         }).join('');
     }
 
-    // --- 2. PORTFOLIO DATA (NEW) ---
-	let currentSessionUser = null; 
-
+    // Portfolio Data
+	let currentSessionUser = null;
 	async function fetchPortfolio(user) {
 		if (!user) return;
 		currentSessionUser = user;
@@ -441,7 +597,6 @@
 		const totalEl = document.getElementById('pf-total');
 		const plEl = document.getElementById('pf-pl');
 
-		// Parse Sorting
 		let sortCol = 'purchase_date';
 		let sortAsc = false;
 
@@ -449,8 +604,6 @@
 		if (sortVal.startsWith('brand')) sortCol = 'tblbrand(brand_name)';
 		if (sortVal.endsWith('asc')) sortAsc = true;
 
-		// Fetch from tblinventory with dynamic sorting
-		// Note: To sort by brand name, we join tblbrand
 		const { data: assets, error } = await sbClient
 			.from('tblinventory')
 			.select(`inventory_id, weight_grams, purchase_price, purchase_date, tblbrand(brand_name)`)
@@ -485,6 +638,7 @@
 			const diff = activePrice - cost;
 			const color = diff >= 0 ? 'var(--success)' : 'var(--danger)';
 
+			// Render Detail Wallet Desktop
 			desktopHTML += `
 				<tr>
 					<td><img src="${getBrandLogo(brand)}" style="width:24px; vertical-align:middle; margin-right:10px;"> <b>${brand}</b></td>
@@ -495,6 +649,7 @@
 					<td style="text-align:right; color:${color}; font-weight:700">${diff >= 0 ? '+' : ''}Rp ${diff.toLocaleString('id-ID')}</td>
 				</tr>`;
 
+			// Render Detail Wallet Mobile
 			mobileHTML += `
 				<div class="crypto-row">
 					<div class="row-left">
@@ -515,7 +670,7 @@
 		tableEl.innerHTML = desktopHTML;
 		listEl.innerHTML = mobileHTML;
 
-		// Summary Calculations
+		// Total Net Worth
 		totalEl.innerText = `Rp ${totalCurrentValue.toLocaleString('id-ID')}`;
 		const totalDiff = totalCurrentValue - totalPurchaseCost;
 		const totalPercent = totalPurchaseCost > 0 ? ((totalDiff / totalPurchaseCost) * 100).toFixed(2) : 0;
@@ -526,100 +681,137 @@
 		document.getElementById('pf-grams').innerText = `${totalGrams.toFixed(2)} Grams`;
 	}
 
-    // --- 3. UI & AUTH ---
-	function setSubBadge(type) {
-		const badges = [document.getElementById('desktop-sub-badge'), document.getElementById('mobile-sub-badge')];
-		const isPro = type?.toLowerCase() === 'pro';
+	function toggleAddModal() {
+        const m = document.getElementById('add-modal');
+        m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+        if(m.style.display === 'flex') document.getElementById('add-date').valueAsDate = new Date();
+    }
 
-		badges.forEach(badge => {
-			if (!badge) return;
-			badge.innerText = isPro ? 'Pro' : 'Free';
-			badge.className = isPro ? 'sub-badge sub-badge-pro' : 'sub-badge sub-badge-free';
-		});
-	}
+    async function saveInventory() {
+        if(!currentSessionUser) return alert("Please login first");
+        const b = document.getElementById('add-brand').value;
+        const w = parseFloat(document.getElementById('add-weight').value);
+        const p = parseFloat(document.getElementById('add-price').value);
+        const d = document.getElementById('add-date').value;
 
-    function updateUI(session) {
-        const desktop = document.getElementById('desktop-links');
-        const mobileNav = document.getElementById('mobile-nav');
-        const avatarContainer = document.getElementById('mobile-avatar-container');
-        const avatarImg = document.getElementById('mobile-avatar-img');
-        const profilePageImg = document.getElementById('profile-page-img');
-        const profilePageName = document.getElementById('profile-page-name');
+        if(!b || !w || !p) return alert("Please fill all fields");
 
-		const desktopBadge = document.getElementById('desktop-sub-badge');
-    	const mobileBadge = document.getElementById('mobile-sub-badge');
+        const { error } = await sbClient.from('tblinventory').insert({
+            user_id: currentSessionUser.id,
+            brand_id: b,
+            weight_grams: w,
+            purchase_price: p,
+            purchase_date: d
+        });
 
-        const iconHome = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>`;
-		const iconPort = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12V7a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2h14a2 2 0 002-2v-1M21 12a2 2 0 00-2-2h-1a2 2 0 00-2 2v0a2 2 0 002 2h1a2 2 0 002-2z" /></svg>`;
-        const iconUser = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`;
-
-        if (session) {
-            avatarContainer.style.display = 'block';
-            const seed = session.user.email.split('@')[0];
-            const avatarUrl = `https://ui-avatars.com/api/?name=${seed}&background=F5C518&color=000&rounded=true&bold=true`;
-            avatarImg.src = avatarUrl; profilePageImg.src = avatarUrl; profilePageName.innerText = seed;
-
-            desktop.innerHTML = `<a onclick="nav('market')">Market</a><a onclick="nav('portfolio')">Portfolio</a><a onclick="nav('profile')">Profile</a>`;
-            mobileNav.innerHTML = `<a onclick="nav('market', this)" class="nav-item active">${iconHome}Market</a><a onclick="nav('portfolio', this)" class="nav-item">${iconPort}Wallet</a><a onclick="nav('profile', this)" class="nav-item">${iconUser}Profile</a>`;
-        } else {
-            avatarContainer.style.display = 'none';
-            desktop.innerHTML = `<a onclick="nav('market')">Market</a><button class="btn-primary" style="width:auto; padding:8px 20px" onclick="nav('auth')">Login</button>`;
-            mobileNav.innerHTML = `<a onclick="nav('market', this)" class="nav-item active">${iconHome}Market</a><a onclick="nav('auth', this)" class="nav-item">${iconUser}Login</a>`;
-
-			// By Default is blank when no session
-			const badges = [document.getElementById('desktop-sub-badge'), document.getElementById('mobile-sub-badge')];
-
-			badges.forEach(badge => {
-				badge.innerText = '';
-			});
+        if(error) alert("Error: " + error.message);
+        else {
+            alert("Added successfully!");
+            toggleAddModal();
+            fetchPortfolio(currentSessionUser);
         }
     }
-
-    function nav(pageId, el) {
-        document.querySelectorAll('.section').forEach(e => e.classList.remove('active-section'));
-		const targetPage = document.getElementById(`page-${pageId}`);
-		if (targetPage) targetPage.classList.add('active-section');
-
-		// 2. Clear all active nav states
-		document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-
-		// 3. Update the active nav button
-		if (el) {
-			// If a nav button was clicked directly, use it
-			el.classList.add('active');
-		} else {
-			// If triggered by Avatar or Logic, find the matching nav button
-			// We look for a nav-item that contains the text of the pageId (e.g., "Profile")
-			const navButtons = document.querySelectorAll('.nav-item');
-			navButtons.forEach(btn => {
-				if (btn.innerText.toLowerCase().includes(pageId.toLowerCase())) {
-					btn.classList.add('active');
-				}
-			});
-		}
-    }
     
-    function toggleAuth(){ const l=document.getElementById('login-box'),r=document.getElementById('register-box'); if(l.style.display==='none'){l.style.display='block';r.style.display='none'}else{l.style.display='none';r.style.display='block'} }
-    async function handleLogin(){ const e=document.getElementById('l-email').value, p=document.getElementById('l-password').value; const{error}=await sbClient.auth.signInWithPassword({email:e,password:p}); if(error)alert(error.message);else nav('market');}
-    async function handleRegister(){ const n=document.getElementById('r-name').value, e=document.getElementById('r-email').value, p=document.getElementById('r-password').value; const{error}=await sbClient.auth.signUp({email:e,password:p,options:{data:{full_name:n}}}); if(error)alert(error.message);else{alert("Check Email");toggleAuth();} }
-    async function handleLogout(){ await sbClient.auth.signOut(); nav('market'); }
-    async function loadProfile(user){
-		document.getElementById('prof-email').value=user.email;
-		const{data}=await sbClient
+    function toggleAuth(){
+		const l = document.getElementById('login-box'), r = document.getElementById('register-box');
+		
+		if (l.style.display === 'none') {
+			l.style.display = 'block';
+			r.style.display = 'none'
+		} else {
+			l.style.display = 'none';
+			r.style.display = 'block'
+		}
+	}
+
+    async function handleLogin() {
+		const e = document.getElementById('l-email').value, p = document.getElementById('l-password').value;
+		const {error} = await sbClient.auth.signInWithPassword({email:e,password:p});
+		
+		if (error) alert(error.message);
+		else nav('market');
+	}
+
+    async function handleRegister() {
+		const n = document.getElementById('r-name').value, e = document.getElementById('r-email').value, p = document.getElementById('r-password').value;
+		const {error} = await sbClient.auth.signUp({
+			email : e,
+			password : p,
+			options : {
+				data: {
+					full_name : n
+				}
+			}
+		});
+		
+		if (error) alert(error.message);
+		else {
+			alert("Registration Successful\nYour account has been created");
+			toggleAuth();
+		}
+	}
+
+    async function handleLogout() {
+		await sbClient.auth.signOut();
+		nav('market');
+	}
+
+    async function loadProfile(user) {
+		document.getElementById('prof-email').value = user.email;
+		
+		const{data} = await sbClient
 			.from('tbluser')
-			.select('full_name, subscription_tier')
+			.select('full_name, user_type, tbllang(lang_code,lang_id)')
 			.eq('id',user.id)
 			.single();
 		
-		if(data){
-			document.getElementById('prof-name').value=data.full_name||'';
-			document.getElementById('profile-page-name').innerText=data.full_name||user.email.split('@')[0];
-
-			setSubBadge(data.subscription_tier);
+		if (data) {
+			document.getElementById('prof-name').value = data.full_name || '';
+			document.getElementById('profile-page-name').innerText = data.full_name || user.email.split('@')[0];
+			document.getElementById('lang_select').value = data.tbllang.lang_code.toLowerCase();
+			
+			setSubBadge(data.user_type);
+			toggleLang(data.tbllang.lang_code.toLowerCase());
+			applyLang();
 		}
 	}
-    async function updateName(){const n=document.getElementById('prof-name').value; const{data:{user}}=await sbClient.auth.getUser(); await sbClient.from('tbluser').update({full_name:n}).eq('id',user.id); alert("Updated"); loadProfile(user);}
-    async function updatePassword(){const p=document.getElementById('prof-pass').value; if(p){await sbClient.auth.updateUser({password:p}); alert("Updated");}}
+
+    async function updateName() {
+		const n = document.getElementById('prof-name').value;
+		const l = document.getElementById('lang_select').value;
+		const {data:{user}} = await sbClient.auth.getUser();
+
+		const{data: lang} = await sbClient
+			.from('tbllang')
+			.select('lang_id')
+			.eq('lang_code',l.toUpperCase());
+
+		let langid = "";
+
+		lang.forEach((asset) => {
+			const lang = asset.lang_id;
+			langid += `${lang}`;
+		});
+
+		await sbClient
+			.from('tbluser')
+			.update({full_name : n, lang_id : langid})
+			.eq('id',user.id);
+			
+		alert("Your profile has been updated");
+
+		loadProfile(user);
+		location.reload();
+	}
+
+    async function updatePassword() {
+		const p = document.getElementById('prof-pass').value;
+		if (p) {
+			await sbClient.auth.updateUser({password : p});
+			
+			alert("Your password has been changed");
+		}
+	}
 
     function formatTime(item) {
         const d = new Date(item.created_date || item.log_date);
@@ -628,6 +820,25 @@
         const t = `${d.getDate()} ${m} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}`;
         return { time: isToday ? `${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}` : t, color: isToday ? 'var(--success)' : 'var(--danger)', isToday };
     }
+
+	// Multi-language
+	let currentLang = localStorage.getItem('lang') || 'en';
+
+	function toggleLang(flag) {
+		currentLang = flag;
+		localStorage.setItem('lang', currentLang);
+	}
+
+	function t(key) {
+		return i18n[currentLang][key] || key;
+	}
+
+	function applyLang() {
+		document.querySelectorAll('[data-i18n]').forEach(el => {
+			const key = el.getAttribute('data-i18n');
+			el.innerText = t(key);
+		});
+	}
 
 	const i18n = {
 		en: {
@@ -646,11 +857,23 @@
 			price: "Price",
 			updated: "Updated",
 			cost: "Buy Price",
+			market_value: "Market Value",
 			pl: "Profit/Loss",
+			purchase_date: "Purchase Date",
 			date_newest: "Date (Newest)",
 			date_oldest: "Date (Oldest)",
 			weight_high: "Weight (High)",
-			weight_low: "Weight (Low)"
+			weight_low: "Weight (Low)",
+			lang_pref: "Language Preference",
+			change_pass: "Change Password",
+			change_pass_btn: "Update Password",
+			email_address: "Email Address",
+			full_name: "Full Name",
+			update_profile_btn: "Save Changes",
+			english: "English",
+			indonesian: "Indonesian",
+			logout: "Logout",
+			add_item: "Add New Item"
 		},
 		id: {
 			market: "Pasar",
@@ -660,23 +883,33 @@
 			today_market: "Harga Hari Ini",
 			best_value: "Harga Terbaik",
 			net_worth: "Total Kekayaan",
-			buyback: "Buyback",
+			buyback: "Harga Jual Kembali",
 			sign_out: "Keluar",
 			save_changes: "Simpan Perubahan",
 			brand: "Merk",
 			weight: "Berat",
 			price: "Harga",
-			updated: "Terupdate",
-			cost: "Harga Beli",
+			updated: "Data Update",
+			cost: "Harga Pembelian",
+			market_value: "Harga Pasar",
 			pl: "Untung/Rugi",
+			purchase_date: "Tanggal Pembelian",
 			date_newest: "Tanggal (Terbaru)",
 			date_oldest: "Tanggal (Terlama)",
 			weight_high: "Berat (Tertinggi)",
-			weight_low: "Berat (Terendah)"
+			weight_low: "Berat (Terendah)",
+			lang_pref: "Preferensi Bahasa",
+			change_pass: "Ubah Kata Sandi",
+			change_pass_btn: "Atur Kata Sandi",
+			email_address: "Alamat Email",
+			full_name: "Nama Lengkap",
+			update_profile_btn: "Simpan Perubahan",
+			english: "Bahasa Inggris",
+			indonesian: "Bahasa Indonesia",
+			logout: "Keluar",
+			add_item: "Tambah Aset"
 		}
 	};
-
-	let currentLang = localStorage.getItem('lang') || 'en';
 </script>
 </body>
 </html>
