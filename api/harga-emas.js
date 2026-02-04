@@ -299,7 +299,7 @@ async function fetchUBSFixed() {
         "0.1": "https://ubslifestyle.com/ubs-logam-mulia-disney-mickey-minnie-mouse-thank-you-0-1-gr/",
 		"0.25": "https://ubslifestyle.com/ubs-logam-mulia-disney-minnie-mouse-daisy-duck-thank-you-0-25-gr/",
         // "0.5": "https://ubslifestyle.com/fine-gold-0.5gram/",
-		"0.5", "https://ubslifestyle.com/ubs-logam-mulia-new-born-0-5-gr/",
+		"0.5": "https://ubslifestyle.com/ubs-logam-mulia-new-born-0-5-gr/",
         "1": "https://ubslifestyle.com/fine-gold-1gram/",
 		"2": "https://ubslifestyle.com/ubs-gold-logam-mulia-new-born-baby-girl-2-gr/",
 		// "3": "https://ubslifestyle.com/fine-gold-3gram/",
