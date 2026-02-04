@@ -73,7 +73,7 @@
         
         .coin-name { font-weight: 700; font-size: 15px; color: var(--text-main); }
         .coin-weight { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
-        .row-right { text-align: right; }
+        .row-right { display: flex; flex-direction: column; justify-content: center; }
         .coin-price { font-size: 15px; font-weight: 600; color: var(--text-main); }
         .coin-sub { font-size: 11px; color: var(--text-sub); margin-top: 4px; }
         .pill-update { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(39, 201, 110, 0.1); color: var(--success); margin-left: 6px; }
@@ -128,6 +128,44 @@
 
 		#ptr-spinner { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--accent); animation: spin 1s linear infinite; display: none; z-index: 999; }
         @keyframes spin { 100% { transform: translateX(-50%) rotate(360deg); } }
+
+		.swipe-container {
+			position: relative;
+			overflow: hidden;
+			border-radius: 16px;
+			margin-bottom: 12px;
+		}
+
+		/* The Background (Hidden Delete Button) */
+		.swipe-action-bg {
+			position: absolute;
+			top: 0;
+			right: 0;
+			width: 80px;
+			height: 100%;
+			background: var(--danger);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			color: white;
+			z-index: 1;
+			border-radius: 0 16px 16px 0;
+		}
+
+		/* The Foreground Card */
+		.crypto-row-swipeable {
+			position: relative;
+			z-index: 2;
+			background: var(--card-bg);
+			transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+			margin-bottom: 0 !important; /* Managed by container */
+			touch-action: pan-y; /* Allows vertical scrolling while swiping horizontally */
+		}
+
+		/* When swiped left */
+		.swiped {
+			transform: translateX(-80px);
+		}
     </style>
 </head>
 <body>
@@ -622,6 +660,8 @@
 		let desktopHTML = "";
     	let mobileHTML = "";
 
+		const trashIcon = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>`;
+
 		assets.forEach((asset) => {
 			const brand = asset.tblbrand?.brand_name || "Unknown";
 			const weight = asset.weight_grams || 0;
@@ -647,10 +687,11 @@
 					<td style="text-align:right">Rp ${cost.toLocaleString('id-ID')}</td>
 					<td style="text-align:right" class="price-font">Rp ${activePrice.toLocaleString('id-ID')}</td>
 					<td style="text-align:right; color:${color}; font-weight:700">${diff >= 0 ? '+' : ''}Rp ${diff.toLocaleString('id-ID')}</td>
+					<td style="text-align:right"><button onclick="deleteInventory('${asset.inventory_id}')" style="background:none; border:none; color:var(--text-sub); cursor:pointer; padding:5px;">${trashIcon}</button></td>
 				</tr>`;
 
 			// Render Detail Wallet Mobile
-			mobileHTML += `
+			/*mobileHTML += `
 				<div class="crypto-row">
 					<div class="row-left">
 						<img src="${getBrandLogo(brand)}" class="brand-logo-img">
@@ -663,6 +704,29 @@
 					<div class="row-right">
 						<div class="coin-price price-font">Rp ${activePrice.toLocaleString('id-ID')}</div>
 						<div class="coin-sub" style="color:${color}; font-weight:700">Rp ${diff.toLocaleString('id-ID')}</div>
+					</div>
+				</div>`;*/
+			mobileHTML += `
+				<div class="swipe-container">
+					<div class="swipe-action-bg" onclick="deleteInventory('${asset.inventory_id}')">
+						${trashIcon}
+					</div>
+					<div class="crypto-row crypto-row-swipeable" 
+						ontouchstart="handleTouchStart(event)" 
+						ontouchmove="handleTouchMove(event)" 
+						ontouchend="handleTouchEnd(event)">
+						<div class="row-left">
+							<img src="${getBrandLogo(brand)}" class="brand-logo-img">
+							<div>
+								<div class="coin-name">${brand} <span style="font-size:12px; opacity:.5">${weight}g</span></div>
+								<div class="coin-weight">Buy: Rp ${cost.toLocaleString('id-ID')}</div>
+								<div class="coin-weight">${pDate}</div>
+							</div>
+						</div>
+						<div class="row-right">
+							<div class="coin-price price-font">Rp ${activePrice.toLocaleString('id-ID')}</div>
+							<div class="coin-sub" style="color:${color};font-weight:700">Rp ${diff.toLocaleString('id-ID')}</div>
+						</div>
 					</div>
 				</div>`;
 		});
@@ -712,6 +776,53 @@
         }
     }
     
+	async function deleteInventory(id) {
+		const confirmMsg = currentLang === 'en' ? "Are you sure want to delete this?" : "Apakah kamu yakin akan menghapus ini?";
+		if (!confirm(confirmMsg)) return;
+
+		const { error } = await sbClient
+			.from('tblinventory')
+			.delete()
+			.eq('inventory_id', id);
+
+		if (error) {
+			alert("Error: " + error.message);
+		} else {
+			fetchPortfolio(currentSessionUser);
+		}
+	}
+
+	let startX = 0;
+	let currentTarget = null;
+
+	function handleTouchStart(e) {
+		// Reset any other open swipe items first
+		document.querySelectorAll('.crypto-row-swipeable').forEach(el => {
+			if (el !== e.currentTarget) el.classList.remove('swiped');
+		});
+		startX = e.touches[0].clientX;
+		currentTarget = e.currentTarget;
+	}
+
+	function handleTouchMove(e) {
+		let moveX = e.touches[0].clientX;
+		let diff = startX - moveX;
+
+		// If swiping left more than 30px
+		if (diff > 30) {
+			currentTarget.classList.add('swiped');
+		} 
+		// If swiping right
+		else if (diff < -30) {
+			currentTarget.classList.remove('swiped');
+		}
+	}
+
+	function handleTouchEnd(e) {
+		// Logic is handled by classes, but we reset the target
+		currentTarget = null;
+	}
+
     function toggleAuth(){
 		const l = document.getElementById('login-box'), r = document.getElementById('register-box');
 		
