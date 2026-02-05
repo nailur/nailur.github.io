@@ -166,6 +166,71 @@
 		.swiped {
 			transform: translateX(-80px);
 		}
+
+		#toast-container {
+			position: fixed;
+			bottom: 100px; /* Above the bottom nav */
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 9999;
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			pointer-events: none;
+		}
+
+		.toast {
+			background: var(--card-bg);
+			color: var(--text-main);
+			padding: 12px 20px;
+			border-radius: 12px;
+			border: 1px solid var(--border);
+			font-size: 14px;
+			font-weight: 600;
+			box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+			animation: slideUpToast 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.toast-success { border-left: 4px solid var(--success); }
+		.toast-error { border-left: 4px solid var(--danger); }
+
+		@keyframes slideUpToast {
+			from { transform: translateY(20px); opacity: 0; }
+			to { transform: translateY(0); opacity: 1; }
+		}
+		@keyframes fadeOut {
+			to { opacity: 0; transform: translateY(-10px); }
+		}
+
+		#confirm-modal {
+			display: none;
+			position: fixed;
+			top: 0; left: 0; width: 100%; height: 100%;
+			background: rgba(0,0,0,0.8);
+			backdrop-filter: blur(4px);
+			z-index: 10000;
+			justify-content: center;
+			align-items: flex-end; /* Modern bottom-sheet style */
+		}
+
+		.confirm-box {
+			background: var(--card-bg);
+			width: 100%;
+			max-width: 500px;
+			padding: 30px;
+			border-radius: 24px 24px 0 0;
+			border-top: 1px solid var(--border);
+			text-align: center;
+			animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+
+		@keyframes slideUpSheet {
+			from { transform: translateY(100%); }
+			to { transform: translateY(0); }
+		}
     </style>
 </head>
 <body>
@@ -346,11 +411,24 @@
             <label class="input-label" data-i18n="purchase_date">Purchase Date</label>
             <input type="date" id="add-date">
             <div style="display:flex; gap:10px; margin-top:20px">
-                <button class="btn-primary" style="background:#333; color:#fff" onclick="toggleAddModal()">Cancel</button>
-                <button class="btn-primary" onclick="saveInventory()">Save</button>
+                <button class="btn-primary" style="background:#333; color:#fff" onclick="toggleAddModal()" data-i18n="cancel">Cancel</button>
+                <button class="btn-primary" onclick="saveInventory()" data-i18n="save">Save</button>
             </div>
         </div>
     </div>
+
+	<div id="toast-container"></div>
+
+	<div id="confirm-modal" onclick="closeConfirm()">
+		<div class="confirm-box" onclick="event.stopPropagation()">
+			<h3 id="confirm-title" style="margin-top:0" data-i18n="areyousure">Are you sure?</h3>
+			<p id="confirm-msg" style="color:var(--text-sub); margin-bottom:25px"></p>
+			<div style="display:flex; gap:12px">
+				<button class="btn-primary" style="background:#333; color:#fff" onclick="closeConfirm()" data-i18n="cancel">Cancel</button>
+				<button id="confirm-exec-btn" class="btn-primary" style="background:var(--danger); color:#fff" data-i18n="delete">Delete</button>
+			</div>
+		</div>
+	</div>
 
     <div class="bottom-nav" id="mobile-nav"></div>
 
@@ -776,13 +854,13 @@
     }
 
     async function saveInventory() {
-        if(!currentSessionUser) return alert("Please login first");
+        if(!currentSessionUser) return showToast(currentLang === 'en' ? "Please login first" : "Mohon login terlebih dahulu", "failed");
         const b = document.getElementById('add-brand').value;
         const w = parseFloat(document.getElementById('add-weight').value);
         const p = parseFloat(document.getElementById('add-price').value);
         const d = document.getElementById('add-date').value;
 
-        if(!b || !w || !p) return alert("Please fill all fields");
+        if(!b || !w || !p) return showToast(currentLang === 'en' ? "Please fill all fields" : "Mohon isi semua kolom", "failed");
 
         const { error } = await sbClient.from('tblinventory').insert({
             user_id: currentSessionUser.id,
@@ -792,28 +870,38 @@
             purchase_date: d
         });
 
-        if(error) alert("Error: " + error.message);
+        if(error) showToast("Error: " + error.message, "failed");
         else {
-            alert("Added successfully!");
+			showToast(currentLang === 'en' ? "Added successfully" : "Berhasil menambahkan");
             toggleAddModal();
             fetchPortfolio(currentSessionUser);
         }
     }
     
+	let deleteTargetId = null;
 	async function deleteInventory(id) {
-		const confirmMsg = currentLang === 'en' ? "Are you sure want to delete this?" : "Apakah kamu yakin akan menghapus ini?";
-		if (!confirm(confirmMsg)) return;
+		// const confirmMsg = currentLang === 'en' ? "Are you sure want to delete this?" : "Apakah kamu yakin akan menghapus ini?";
+		deleteTargetId = id;
+		const modal = document.getElementById('confirm-modal');
+		document.getElementById('confirm-msg').innerText = currentLang === 'en' ? "Are you sure want to delete this ?" : "Apakah kamu yakin akan menghapus ini ?";
+		
+		modal.style.display = 'flex';
 
-		const { error } = await sbClient
-			.from('tblinventory')
-			.delete()
-			.eq('inventory_id', id);
+		document.getElementById('confirm-exec-btn').onclick = async () => {
+			const { error } = await sbClient.from('tblinventory').delete().eq('inventory_id', deleteTargetId);
+			if (error) {
+				showToast("Error :" + error.message, "failed");
+			} else {
+				showToast(currentLang === 'en' ? "Item deleted" : "Aset dihapus");
+				closeConfirm();
+				fetchPortfolio(currentSessionUser);
+			}
+		};
+	}
 
-		if (error) {
-			alert("Error: " + error.message);
-		} else {
-			fetchPortfolio(currentSessionUser);
-		}
+	function closeConfirm() {
+		document.getElementById('confirm-modal').style.display = 'none';
+		deleteTargetId = null;
 	}
 
 	let startX = 0;
@@ -860,7 +948,7 @@
 		const e = document.getElementById('l-email').value, p = document.getElementById('l-password').value;
 		const {error} = await sbClient.auth.signInWithPassword({email:e,password:p});
 		
-		if (error) alert(error.message);
+		if (error) showToast("Error: " + error.message, "failed");
 		else nav('market');
 	}
 
@@ -876,9 +964,9 @@
 			}
 		});
 		
-		if (error) alert(error.message);
+		if (error) showToast("Error: " + error.message, "failed");
 		else {
-			alert("Registration Successful\nYour account has been created");
+			showToast(currentLang === 'en' ? "Registration Successful. Your account has been created" : "Registrasi berhasil. Akunmu telah terbuat");
 			toggleAuth();
 		}
 	}
@@ -929,8 +1017,8 @@
 			.from('tbluser')
 			.update({full_name : n, lang_id : langid})
 			.eq('id',user.id);
-			
-		alert("Your profile has been updated");
+		
+		showToast(currentLang === 'en' ? "Your profile has been updated" : "Profil berhasil diperbarui");
 
 		loadProfile(user);
 		location.reload();
@@ -941,7 +1029,7 @@
 		if (p) {
 			await sbClient.auth.updateUser({password : p});
 			
-			alert("Your password has been changed");
+			showToast(currentLang === 'en' ? "Your password has been changed" : "Password berhasil diganti");
 		}
 	}
 
@@ -952,6 +1040,20 @@
         const t = `${d.getDate()} ${m} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}`;
         return { time: isToday ? `${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}` : t, color: isToday ? 'var(--success)' : 'var(--danger)', isToday };
     }
+
+	function showToast(msg, type = 'success') {
+		const container = document.getElementById('toast-container');
+		const toast = document.createElement('div');
+		toast.className = `toast toast-${type}`;
+		
+		// Simple icon logic
+		// const icon = type === 'success' ? '✅' : '❌';
+		// toast.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+		toast.innerHTML = `<span>${msg}</span>`;
+		
+		container.appendChild(toast);
+		setTimeout(() => toast.remove(), 3000);
+	}
 
 	// Multi-language
 	let currentLang = localStorage.getItem('lang') || 'en';
@@ -1005,7 +1107,11 @@
 			english: "English",
 			indonesian: "Indonesian",
 			logout: "Logout",
-			add_item: "Add New Item"
+			add_item: "Add New Item",
+			save: "Save",
+			cancel: "Cancel",
+			delete: "Delete",
+			areyousure: "Are you sure ?"
 		},
 		id: {
 			market: "Pasar",
@@ -1039,7 +1145,11 @@
 			english: "Bahasa Inggris",
 			indonesian: "Bahasa Indonesia",
 			logout: "Keluar",
-			add_item: "Tambah Aset"
+			add_item: "Tambah Aset",
+			save: "Simpan",
+			cancel: "Batal",
+			delete: "Hapus",
+			areyousure: "Apakah kamu yakin ?"
 		}
 	};
 </script>
