@@ -589,13 +589,17 @@
 
 				const colorTrend = diff > 0 ? 'var(--success)' : diff < 0 ? 'var(--danger)' : 'var(--text-sub)';
             	const arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '•';
+				const { time, color } = formatTime(item);
 				
 				return `
 				<div style="flex: 0 0 160px; scroll-snap-align: start; background: var(--card-bg); border: 1px solid ${isCheapest ? 'var(--accent)' : 'var(--border)'}; padding: 16px; border-radius: 16px; position: relative;">
 					${isCheapest ? `<div style="position:absolute; top:0; right:0; background:var(--accent); color:#000; font-size:8px; font-weight:900; padding:2px 6px; border-bottom-left-radius:8px;">BEST VALUE</div>` : ''}
 					<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
 						<img src="${getBrandLogo(brandName)}" style="width:20px; height:20px; border-radius:50%; background:#fff;">
-						<span style="font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${brandName}</span>
+						<span style="font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+							${brandName}<br>
+							<text style="font-size:8px; opacity:0.5">Last Update : ${time}</text>
+						</span>
 					</div>
 					<div class="price-font" style="font-size:14px; font-weight:800; color:${isCheapest ? 'var(--accent)' : 'var(--text-main)'}">
 						Rp ${item.price.toLocaleString('id-ID')}
