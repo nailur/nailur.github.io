@@ -515,25 +515,40 @@
 
     // Market Data
     async function fetchMarketData() {
-        const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 5);
+        const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 7);
         const { data } = await sbClient.from('tblpricelog')
-            .select(`price, buyback_price, weight_grams, log_date, created_date, tblbrand(brand_name,brand_id)`)
-            .gt('log_date', dateLimit.toISOString().split('T')[0]).order('log_date', { ascending: false });
+            .select(`*, tblbrand(brand_name,brand_id)`)
+            .gt('log_date', dateLimit.toISOString().split('T')[0])
+			.order('log_date', { ascending: false });
 
         if (!data) return;
+
+
 
 		// Populate Modal Select
 		const map = new Map();
         const brands = new Set();
+		const uniqueMap = new Map();   // Stores the latest price
+		const historyMap = new Map();  // Stores the second latest price
 		const distinctWeights = new Set();
+		
+        data.forEach(item => {
+			const key = `${item.tblbrand?.brand_name}_${item.weight_grams}`;
+			
+			if (!uniqueMap.has(key)) {
+				// First time seeing this brand/weight = Latest Data
+				uniqueMap.set(key, item);
+				brands.add(item.tblbrand.brand_id + "|" + item.tblbrand.brand_name);
+				distinctWeights.add(item.weight_grams);
+			} else if (!historyMap.has(key)) {
+				// Second time seeing this brand/weight = Previous Data
+				historyMap.set(key, item);
+			}
+		});
 
-		data.forEach(i => {
-            const k = `${i.tblbrand.brand_name}_${i.weight_grams}`;
-            if (!map.has(k)) map.set(k, i);
-            brands.add(i.tblbrand.brand_id + "|" + i.tblbrand.brand_name);
-            distinctWeights.add(i.weight_grams);
-        });
+        latestPricesMap = uniqueMap;
 
+		// Populate Modal Select
 		brandList = Array.from(brands).map(s => {const[brand_id,name]=s.split("|"); return{brand_id,name}}).sort((a,b)=>a.name.localeCompare(b.name));
 		const brandSelect = document.getElementById('add-brand');
         brandSelect.innerHTML = brandList.map(b => `<option value="${b.brand_id}">${b.name}</option>`).join('');
@@ -541,14 +556,6 @@
 		const weightSelect = document.getElementById('add-weight');
         const sortedWeights = Array.from(distinctWeights).sort((a, b) => a - b);
         weightSelect.innerHTML = sortedWeights.map(w => `<option value="${w}">${w} Gram</option>`).join('');
-		
-        const uniqueMap = new Map();
-        data.forEach(item => {
-            const key = `${item.tblbrand?.brand_name}_${item.weight_grams}`;
-            if (!uniqueMap.has(key)) uniqueMap.set(key, item);
-        });
-
-        latestPricesMap = uniqueMap;
 
         const items = Array.from(uniqueMap.values()).sort((a, b) => {
             const brandA = a.tblbrand?.brand_name || ""; const brandB = b.tblbrand?.brand_name || "";
@@ -572,6 +579,16 @@
 			summaryList.innerHTML = summaryItems.map((item, index) => {
 				const brandName = item.tblbrand?.brand_name || "Unknown";
 				const isCheapest = index === 0;
+
+				const key = `${brandName}_${item.weight_grams}`;
+				const prevData = historyMap.get(key);
+				const prevPrice = prevData ? prevData.price : item.price;
+				const diff = item.price - prevPrice;
+				const diffPer = prevPrice > 0 ? ((diff / prevPrice) * 100).toFixed(2) : 0;
+
+				const colorTrend = diff > 0 ? 'var(--success)' : diff < 0 ? 'var(--danger)' : 'var(--text-sub)';
+            	const arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '•';
+				
 				return `
 				<div style="flex: 0 0 160px; scroll-snap-align: start; background: var(--card-bg); border: 1px solid ${isCheapest ? 'var(--accent)' : 'var(--border)'}; padding: 16px; border-radius: 16px; position: relative;">
 					${isCheapest ? `<div style="position:absolute; top:0; right:0; background:var(--accent); color:#000; font-size:8px; font-weight:900; padding:2px 6px; border-bottom-left-radius:8px;">BEST VALUE</div>` : ''}
@@ -582,7 +599,9 @@
 					<div class="price-font" style="font-size:14px; font-weight:800; color:${isCheapest ? 'var(--accent)' : 'var(--text-main)'}">
 						Rp ${item.price.toLocaleString('id-ID')}
 					</div>
-					<!--<div style="font-size:10px; color:var(--text-sub); margin-top:4px;">1 gram price</div>-->
+					<div style="font-size:10px; font-weight:700; color:${colorTrend}; margin-top:4px;">
+						${arrow} Rp ${Math.abs(diff).toLocaleString('id-ID')} (${diffPer}%)
+					</div>
 				</div>`;
 			}).join('');
 		}
