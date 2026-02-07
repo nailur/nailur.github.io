@@ -733,7 +733,7 @@ const i18n = {
 	},
 	id: {
 		market: "Pasar",
-		portfolio: "Portofolio",
+		portfolio: "Aset",
 		wallet: "Aset",
 		profile: "Profil",
 		today_market: "Harga Hari Ini",
