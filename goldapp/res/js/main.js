@@ -33,18 +33,49 @@ window.onload = async () => {
 
 // Pull to refresh
 let touchStartY = 0;
+let isRefreshing = false;
 const ptrSpinner = document.getElementById('ptr-spinner');
-document.addEventListener('touchstart', e => { touchStartY = e.touches[0].pageY; }, {passive: true});
-document.addEventListener('touchmove', e => {
-	const y = e.touches[0].pageY;
-	if (document.documentElement.scrollTop === 0 && y > touchStartY + 100) {
-		ptrSpinner.style.display = 'block';
-	}
+
+document.addEventListener('touchstart', e => { 
+    if (document.documentElement.scrollTop === 0) {
+        touchStartY = e.touches[0].pageY; 
+    }
 }, {passive: true});
-document.addEventListener('touchend', e => {
-	if (ptrSpinner.style.display === 'block') {
-		location.reload();
-	}
+
+document.addEventListener('touchmove', e => {
+    if (isRefreshing || document.documentElement.scrollTop > 0) return;
+
+    const y = e.touches[0].pageY;
+    const pullDistance = y - touchStartY;
+
+    if (pullDistance > 0 && pullDistance < 150) {
+        ptrSpinner.style.display = 'flex';
+        ptrSpinner.style.top = `${Math.min(pullDistance - 50, 70)}px`;
+        ptrSpinner.style.transform = `translateX(-50%) rotate(${pullDistance * 2}deg)`;
+    }
+}, {passive: true});
+
+document.addEventListener('touchend', async () => {
+    const currentTop = parseInt(ptrSpinner.style.top);
+    
+    if (currentTop >= 60 && !isRefreshing) {
+        isRefreshing = true;
+        ptrSpinner.style.top = '70px';
+        
+        await Promise.all([
+            fetchMarketData(),
+            fetchPortfolio(currentSessionUser)
+        ]);
+
+        showToast(currentLang === 'en' ? "Data Updated" : "Data Diperbarui");
+        
+        setTimeout(() => {
+            ptrSpinner.style.top = '-50px';
+            isRefreshing = false;
+        }, 500);
+    } else {
+        ptrSpinner.style.top = '-50px';
+    }
 });
 
 function updateUI(session) {
@@ -394,22 +425,6 @@ async function fetchPortfolio(user) {
 				<td style="text-align:right"><button onclick="deleteInventory('${asset.inventory_id}')" style="background:none; border:none; color:var(--text-sub); cursor:pointer; padding:5px;">${trashIcon}</button></td>
 			</tr>`;
 
-		// Render Detail Wallet Mobile
-		/*mobileHTML += `
-			<div class="crypto-row">
-				<div class="row-left">
-					<img src="${getBrandLogo(brand)}" class="brand-logo-img">
-					<div>
-						<div class="coin-name">${brand} <span style="font-size:12px; opacity:0.5;">${weight}g</span></div>
-						<div class="coin-weight">Buy: Rp ${cost.toLocaleString('id-ID')}</div>
-						<div class="coin-weight">${pDate}</div>
-					</div>
-				</div>
-				<div class="row-right">
-					<div class="coin-price price-font">Rp ${activePrice.toLocaleString('id-ID')}</div>
-					<div class="coin-sub" style="color:${color}; font-weight:700">Rp ${diff.toLocaleString('id-ID')}</div>
-				</div>
-			</div>`;*/
 		mobileHTML += `
 			<div class="swipe-container">
 				<div class="swipe-action-bg" onclick="deleteInventory('${asset.inventory_id}')">
@@ -423,7 +438,7 @@ async function fetchPortfolio(user) {
 						<img src="${getBrandLogo(brand)}" class="brand-logo-img">
 						<div>
 							<div class="coin-name">${brand} <span style="font-size:12px; opacity:.5">${weight}g</span></div>
-							<div class="coin-weight">Buy: Rp ${cost.toLocaleString('id-ID')}</div>
+							<div class="coin-weight"><span data-i18n="buy">Buy</span>: Rp ${cost.toLocaleString('id-ID')}</div>
 							<div class="coin-weight">${pDate}</div>
 						</div>
 					</div>
@@ -713,7 +728,8 @@ const i18n = {
 		save: "Save",
 		cancel: "Cancel",
 		delete: "Delete",
-		areyousure: "Are you sure ?"
+		areyousure: "Are you sure ?",
+		buy: "Buy"
 	},
 	id: {
 		market: "Pasar",
@@ -751,6 +767,7 @@ const i18n = {
 		save: "Simpan",
 		cancel: "Batal",
 		delete: "Hapus",
-		areyousure: "Apakah kamu yakin ?"
+		areyousure: "Apakah kamu yakin ?",
+		buy: "Beli"
 	}
 };

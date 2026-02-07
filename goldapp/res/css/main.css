@@ -101,8 +101,32 @@ input:focus { border-color: var(--accent); }
 }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-#ptr-spinner { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--accent); animation: spin 1s linear infinite; display: none; z-index: 999; }
-@keyframes spin { 100% { transform: translateX(-50%) rotate(360deg); } }
+#ptr-spinner {
+    position: fixed;
+    top: -50px; /* Start hidden above the screen */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 35px;
+    height: 35px;
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: top 0.2s ease, transform 0.1s linear;
+}
+
+#ptr-spinner svg {
+    width: 20px;
+    height: 20px;
+    color: var(--accent);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
 
 .swipe-container { position: relative; overflow: hidden; border-radius: 16px; margin-bottom: 12px; }
 
