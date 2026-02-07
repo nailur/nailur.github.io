@@ -54,15 +54,21 @@
         </div>
 
         <div id="page-portfolio" class="section">
-            <div style="background:linear-gradient(135deg, #F5C518 0%, #D4A017 100%); padding:25px; border-radius:20px; color:black; margin-bottom:20px; box-shadow: 0 10px 30px rgba(245, 197, 24, 0.15);">
-				<div data-i18n="net_worth" style="font-size:11px; font-weight:700; opacity:0.7; letter-spacing:1px; text-transform:uppercase">Total Net Worth</div>
+            <div style="background:linear-gradient(135deg, #F5C518 0%, #D4A017 100%); padding:25px; border-radius:20px; color:black; margin-bottom:20px; position:relative;">
+				<div style="display: flex; justify-content: space-between; align-items: center;">
+					<div data-i18n="net_worth" style="font-size:11px; font-weight:700; opacity:0.7; letter-spacing:1px; text-transform:uppercase">Total Net Worth</div>
+					<button class="hide-toggle" onclick="toggleAmountVisibility()">
+						<span id="eye-icon">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+						</span>
+					</button>
+				</div>
+				
 				<div style="font-size:32px; font-weight:800; margin:5px 0" id="pf-total">Rp 0</div>
 				
 				<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 10px;">
 					<div id="pf-grams" style="font-size:13px; font-weight:600">0.00 Gram</div>
-					<div id="pf-pl" style="font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px; background: rgba(255,255,255,0.2);">
-						+Rp 0 (0%)
-					</div>
+					<div id="pf-pl" style="font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px;">+Rp 0 (0%)</div>
 				</div>
 			</div>
 
