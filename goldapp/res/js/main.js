@@ -13,14 +13,9 @@ window.onload = async () => {
 	
 	updateUI(session);
 	
-	const savedPage = localStorage.getItem('last_page') || 'market';
-	
 	if(session) {
 		loadProfile(session.user);
 		fetchPortfolio(session.user);
-		nav(savedPage);
-	} else {
-		nav('market');
 	}
 	
 	sbClient.auth.onAuthStateChange((event, session) => { 
@@ -60,9 +55,6 @@ function updateUI(session) {
 	const profilePageImg = document.getElementById('profile-page-img');
 	const profilePageName = document.getElementById('profile-page-name');
 
-	const desktopBadge = document.getElementById('desktop-sub-badge');
-	const mobileBadge = document.getElementById('mobile-sub-badge');
-
 	const iconHome = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>`;
 	const iconPort = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12V7a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2h14a2 2 0 002-2v-1M21 12a2 2 0 00-2-2h-1a2 2 0 00-2 2v0a2 2 0 002 2h1a2 2 0 002-2z" /></svg>`;
 	const iconUser = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`;
@@ -73,12 +65,23 @@ function updateUI(session) {
 		const avatarUrl = `https://ui-avatars.com/api/?name=${seed}&background=F5C518&color=000&rounded=true&bold=true`;
 		avatarImg.src = avatarUrl; profilePageImg.src = avatarUrl; profilePageName.innerText = seed;
 
-		desktop.innerHTML = `<a onclick="nav('market')" data-page="market" data-i18n="market">Market</a><a onclick="nav('portfolio')" data-page="portfolio" data-i18n="portfolio">Portfolio</a><a onclick="nav('profile')" data-page="profile" data-i18n="profile">Profile</a>`;
-		mobileNav.innerHTML = `<a onclick="nav('market', this)" data-page="market" class="nav-item">${iconHome}<div data-i18n="market">Market</div></a><a onclick="nav('portfolio', this)" data-page="portfolio" class="nav-item">${iconPort}<div data-i18n="wallet">Wallet</div></a><a onclick="nav('profile', this)" data-page="profile" class="nav-item">${iconUser}<div data-i18n="profile">Profile</div></a>`;
+		desktop.innerHTML = `
+			<a onclick="nav('market')" class="nav-item" data-page="market" data-i18n="market">${t('market')}</a>
+			<a onclick="nav('portfolio')" class="nav-item" data-page="portfolio" data-i18n="portfolio">${t('portfolio')}</a>
+			<a onclick="nav('profile')" class="nav-item" data-page="profile" data-i18n="profile">${t('profile')}</a>`;
+		mobileNav.innerHTML = `
+			<a onclick="nav('market', this)" data-page="market" class="nav-item">${iconHome}<div data-i18n="market">${t('market')}</div></a>
+			<a onclick="nav('portfolio', this)" data-page="portfolio" class="nav-item">${iconPort}<div data-i18n="portfolio">${t('portfolio')}</div></a>
+			<a onclick="nav('profile', this)" data-page="profile" class="nav-item">${iconUser}<div data-i18n="profile">${t('profile')}</div></a>`;
+
+		const savedPage = localStorage.getItem('last_page') || 'market';
+        nav(savedPage);
 	} else {
 		avatarContainer.style.display = 'none';
 		desktop.innerHTML = `<a onclick="nav('market')">Market</a><button class="btn-primary" style="width:auto; padding:8px 20px" onclick="nav('auth')" data-i18n="login">Login</button>`;
 		mobileNav.innerHTML = `<a onclick="nav('market', this)" data-page="market" class="nav-item">${iconHome}<div data-i18n="market">Market</div></a><a onclick="nav('auth', this)" data-page="auth" class="nav-item">${iconUser}<div data-i18n="login">Login</div></a>`;
+
+		nav('market');
 
 		// By Default is blank when no session
 		const badges = [document.getElementById('desktop-sub-badge'), document.getElementById('mobile-sub-badge')];
@@ -99,38 +102,16 @@ function nav(page, el) {
 	if(target) target.classList.add('active-section');
 
 	// Toggle Navigation Active State
-	document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+	document.querySelectorAll('[data-page]').forEach(e => e.classList.remove('active'));
 	
 	if (el) {
 		el.classList.add('active');
 	} else {
 		// Find the mobile nav item that matches the page ID
-		const targetBtn = document.querySelector(`.nav-item[data-page="${page}"]`);
-		if (targetBtn) targetBtn.classList.add('active');
+		const targetButtons = document.querySelectorAll(`[data-page="${page}"]`);
+        targetButtons.forEach(btn => btn.classList.add('active'));
 	}
 }
-
-/*function nav(pageId, el) {
-	localStorage.setItem('last_page', page);
-
-	document.querySelectorAll('.section').forEach(e => e.classList.remove('active-section'));
-	document.getElementById(`page-${page}`).classList.add('active-section');
-	const targetPage = document.getElementById(`page-${pageId}`);
-	if (targetPage) targetPage.classList.add('active-section');
-
-	document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-
-	if (el) {
-		el.classList.add('active');
-	} else {
-		const navButtons = document.querySelectorAll('.nav-item');
-		navButtons.forEach(btn => {
-			if (btn.innerText.toLowerCase().includes(pageId.toLowerCase())) {
-				btn.classList.add('active');
-			}
-		});
-	}
-}*/
 
 function setSubBadge(type) {
 	const badges = [document.getElementById('desktop-sub-badge'), document.getElementById('mobile-sub-badge')];
