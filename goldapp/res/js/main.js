@@ -738,7 +738,7 @@ const i18n = {
 		profile: "Profil",
 		today_market: "Harga Hari Ini",
 		best_value: "Harga Terbaik",
-		net_worth: "Total Kekayaan",
+		net_worth: "Total Aset Anda",
 		buyback: "Harga Jual Kembali",
 		sign_out: "Keluar",
 		save_changes: "Simpan Perubahan",
