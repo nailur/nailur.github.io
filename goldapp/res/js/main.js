@@ -169,6 +169,8 @@ function getBrandUrl(brandName) {
 }
 
 // Market Data
+let brandWeightMap = {};
+
 async function fetchMarketData() {
 	const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 7);
 	const { data } = await sbClient.from('tblpricelog')
@@ -179,23 +181,32 @@ async function fetchMarketData() {
 
 	if (!data) return;
 
-
-
 	// Populate Modal Select
 	const map = new Map();
 	const brands = new Set();
 	const uniqueMap = new Map();   // Stores the latest price
 	const historyMap = new Map();  // Stores the second latest price
 	const distinctWeights = new Set();
+
+	brandWeightMap = {};
 	
 	data.forEach(item => {
-		const key = `${item.tblbrand?.brand_name}_${item.weight_grams}`;
+		const brandId = item.tblbrand.brand_id;
+        const brandName = item.tblbrand.brand_name;
+        const weight = item.weight_grams;
+        const key = `${brandName}_${weight}`;
 		
 		if (!uniqueMap.has(key)) {
 			// First time seeing this brand/weight = Latest Data
 			uniqueMap.set(key, item);
-			brands.add(item.tblbrand.brand_id + "|" + item.tblbrand.brand_name);
+			brands.add(brandId + "|" + brandName);
 			distinctWeights.add(item.weight_grams);
+
+			// Build the Brand -> Weight mapping
+			if (!brandWeightMap[brandId]) {
+                brandWeightMap[brandId] = new Set();
+            }
+            brandWeightMap[brandId].add(weight);
 		} else if (!historyMap.has(key)) {
 			// Second time seeing this brand/weight = Previous Data
 			historyMap.set(key, item);
@@ -205,18 +216,34 @@ async function fetchMarketData() {
 	latestPricesMap = uniqueMap;
 
 	// Populate Modal Select
-	brandList = Array.from(brands).map(s => {const[brand_id,name]=s.split("|"); return{brand_id,name}}).sort((a,b)=>a.name.localeCompare(b.name));
+	brandList = Array.from(brands).map(s => {
+        const [brand_id, name] = s.split("|"); 
+        return { brand_id, name };
+    }).sort((a, b) => a.name.localeCompare(b.name));
 	const brandSelect = document.getElementById('add-brand');
 	brandSelect.innerHTML = brandList.map(b => `<option value="${b.brand_id}">${b.name}</option>`).join('');
 
-	const weightSelect = document.getElementById('add-weight');
-	const sortedWeights = Array.from(distinctWeights).sort((a, b) => a - b);
-	weightSelect.innerHTML = sortedWeights.map(w => `<option value="${w}">${w} Gram</option>`).join('');
+	// Trigger initial weight population for the first brand in the list
+    if (brandList.length > 0) {
+        updateWeightOptions(brandList[0].brand_id);
+    }
 
-	const items = Array.from(uniqueMap.values()).sort((a, b) => {
-		const brandA = a.tblbrand?.brand_name || ""; const brandB = b.tblbrand?.brand_name || "";
-		return brandA.localeCompare(brandB) || a.weight_grams - b.weight_grams;
-	});
+	// const weightSelect = document.getElementById('add-weight');
+	// const sortedWeights = Array.from(distinctWeights).sort((a, b) => a - b);
+	// weightSelect.innerHTML = sortedWeights.map(w => `<option value="${w}">${w} Gram</option>`).join('');
+
+	const excludedMain = ['antam retro', 'ubs old'];
+	const items = Array.from(uniqueMap.values())
+		.filter(item => {
+			const name = item.tblbrand?.brand_name?.toLowerCase() || "";
+			// This removes the brand from Desktop, Mobile, and Summary lists
+			return !excludedMain.includes(name); 
+		})
+		.sort((a, b) => {
+			const brandA = a.tblbrand?.brand_name || ""; 
+			const brandB = b.tblbrand?.brand_name || "";
+			return brandA.localeCompare(brandB) || a.weight_grams - b.weight_grams;
+		});
 
 	// Render Summary Lowest Price
 	const summaryContainer = document.getElementById('market-summary-container');
@@ -301,6 +328,21 @@ async function fetchMarketData() {
 			</div>
 		</div>`;
 	}).join('');
+}
+
+function updateWeightOptions(brandId) {
+    const weightSelect = document.getElementById('add-weight');
+    
+    // Get weights for this brand from our map and sort them
+    const weights = Array.from(brandWeightMap[brandId] || []).sort((a, b) => a - b);
+    
+    if (weights.length > 0) {
+        weightSelect.innerHTML = weights.map(w => 
+            `<option value="${w}">${w} Gram</option>`
+        ).join('');
+    } else {
+        weightSelect.innerHTML = `<option value="">No weights available</option>`;
+    }
 }
 
 // Portfolio Data

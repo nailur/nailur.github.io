@@ -84,6 +84,7 @@
 					</label>
 				</div>
 			</div>
+			
 			<style>
 				/* Modern Toggle Switch Styling */
 				.switch { position: relative; display: inline-block; width: 40px; height: 22px; }
@@ -94,6 +95,7 @@
 				input:checked + .slider:before { transform: translateX(18px); }
 			</style>
 
+			<!-- Desktop Wallet List-->
 			<div class="wallet-desktop-view">
 				<div class="desktop-table-container">
 					<table>
@@ -112,6 +114,7 @@
 				</div>
 			</div>
             
+			<!-- Mobile Wallet List -->
             <div id="portfolio-list" class="mobile-list-container">
                 <div style="text-align:center; padding:60px 20px; border:2px dashed var(--border); border-radius:16px; color:var(--text-sub);">
                     <div style="font-size:40px; margin-bottom:10px">✨</div>
@@ -122,6 +125,7 @@
 			<div class="fab-add" onclick="toggleAddModal()">+</div>
         </div>
 
+		<!-- Profile -->
         <div id="page-profile" class="section">
             <div style="text-align:center; margin-bottom:20px">
                 <img id="profile-page-img" class="user-avatar" style="width:80px; height:80px; margin:0 auto 10px auto; display:block" src="">
@@ -148,6 +152,7 @@
             <button data-i18n="logout" class="btn-primary" style="background:rgba(255,77,77,0.1); color:var(--danger); margin-top:10px" onclick="handleLogout()">Sign Out</button>
         </div>
 
+		<!-- Login and Register -->
         <div id="page-auth" class="section">
             <div style="max-width:400px; margin:40px auto; text-align:center">
                 <h1 style="color:var(--accent); margin-bottom:40px">NTGold</h1>
@@ -158,6 +163,7 @@
                     <p style="margin-top:20px; font-size:13px; color:var(--text-sub)">New here? <span style="color:var(--accent); cursor:pointer" onclick="toggleAuth()">Create Account</span></p>
                     <p id="l-error" style="color:var(--danger); font-size:12px; display:none"></p>
                 </div>
+
                 <div id="register-box" style="display:none">
                     <input type="text" id="r-name" placeholder="Full Name">
                     <input type="email" id="r-email" placeholder="Email">
@@ -170,11 +176,12 @@
         </div>
     </div>
 
+	<!-- Modal Add Wallet -->
 	<div id="add-modal" class="modal-overlay">
         <div class="modal-content">
             <h3 data-i18n="add_item" style="margin-top:0">Add New Item</h3>
             <label class="input-label" data-i18n="brand">Brand</label>
-            <select id="add-brand"></select>
+            <select id="add-brand" onchange="updateWeightOptions(this.value)"></select>
             
             <label class="input-label" data-i18n="weight">Weight (Grams)</label>
             <select id="add-weight"></select>
