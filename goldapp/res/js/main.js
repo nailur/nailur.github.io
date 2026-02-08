@@ -78,8 +78,6 @@ document.addEventListener('touchend', async () => {
             handleRefresh()
         ]);
 
-        showToast(currentLang === 'en' ? "Data Updated" : "Data Diperbarui");
-        
         setTimeout(() => {
             ptrSpinner.style.top = '-50px';
             isRefreshing = false;
