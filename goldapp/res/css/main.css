@@ -38,6 +38,32 @@ td a:hover { text-decoration: underline !important;opacity: 1; }
 
 .wallet-desktop-view { display: block; }
 
+.goal-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+.goal-card:active { transform: scale(0.98); }
+
+.progress-container {
+    height: 8px;
+    background: #2A2A2A;
+    border-radius: 4px;
+    margin: 12px 0;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    width: 0%; /* Dynamic */
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Mobile List */
 .mobile-list-container { display: none; flex-direction: column; gap: 12px; }
 .crypto-row { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border); }
@@ -73,6 +99,14 @@ input:focus { border-color: var(--accent); }
 
 .fab-add { position: fixed; bottom: 15px; right: 20px; width: 56px; height: 56px; background: var(--accent); color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 4px 15px rgba(245, 197, 24, 0.3); cursor: pointer; z-index: 90; transition: transform 0.2s; }
 .fab-add:active { transform: scale(0.9); }
+
+/* Modern Toggle Switch Styling */
+.switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border); transition: .3s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--accent); }
+input:checked + .slider:before { transform: translateX(18px); }
 
 /* Mobile Overrides */
 .mobile-header, .bottom-nav { display: none; }

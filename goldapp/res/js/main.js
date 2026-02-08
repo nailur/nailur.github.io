@@ -5,26 +5,38 @@ const sbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let latestPricesMap = new Map();
 
+let currentWalletId = null;
+let currentWalletName = "";
+
 window.onload = async () => {
 	document.getElementById('lang_select').value = currentLang;
 
 	await fetchMarketData(); 
 	const { data: { session } } = await sbClient.auth.getSession();
 	
-	updateUI(session);
-	
 	if(session) {
+		currentSessionUser = session.user;
+		
+		updateUI(session);
 		loadProfile(session.user);
-		fetchPortfolio(session.user);
+		// fetchPortfolio(session.user);
+		fetchGoals();
+	} else {
+		updateUI(null);
+		nav('market');
 	}
 	
 	sbClient.auth.onAuthStateChange((event, session) => { 
 		updateUI(session);
 		if(session) {
 			loadProfile(session.user);
-			fetchPortfolio(session.user);
+			// fetchPortfolio(session.user);
+			fetchGoals();
 
-			if(event === 'SIGNED_IN') nav('market');
+			// if(event === 'SIGNED_IN') nav('market');
+		} else {
+			updateUI(null);
+			nav('market');
 		}
 	});
 
@@ -63,8 +75,7 @@ document.addEventListener('touchend', async () => {
         ptrSpinner.style.top = '70px';
         
         await Promise.all([
-            fetchMarketData(),
-            fetchPortfolio(currentSessionUser)
+            handleRefresh()
         ]);
 
         showToast(currentLang === 'en' ? "Data Updated" : "Data Diperbarui");
@@ -77,6 +88,29 @@ document.addEventListener('touchend', async () => {
         ptrSpinner.style.top = '-50px';
     }
 });
+
+async function handleRefresh() {
+    const spinner = document.getElementById('ptr-spinner');
+    spinner.classList.add('refreshing');
+
+    try {
+        await fetchMarketData();
+
+        if (currentSessionUser) {
+            await fetchGoals(); 
+            
+            if (localStorage.getItem('last_page') === 'wallet-detail') {
+                await fetchPortfolio(currentSessionUser, currentWalletId);
+            }
+        }
+        
+		showToast(currentLang === 'en' ? "Data Updated" : "Data Diperbarui");
+    } catch (err) {
+        showToast("Refresh failed", "error");
+    } finally {
+        spinner.classList.remove('refreshing');
+    }
+}
 
 function updateUI(session) {
 	const desktop = document.getElementById('desktop-links');
@@ -142,6 +176,15 @@ function nav(page, el) {
 		const targetButtons = document.querySelectorAll(`[data-page="${page}"]`);
         targetButtons.forEach(btn => btn.classList.add('active'));
 	}
+
+	if (page === 'portfolio') {
+        if (currentSessionUser) {
+            fetchGoals();
+        } else {
+            // If they aren't logged in, redirect them to auth or market
+            nav('auth'); 
+        }
+    }
 }
 
 function setSubBadge(type) {
@@ -358,49 +401,262 @@ function updateWeightOptions(brandId) {
 }
 
 // Portfolio Data
+async function fetchGoals() {
+    if (!currentSessionUser || !currentSessionUser.id) {return;}
+
+	const isBuybackMode = document.getElementById('goal-buyback-toggle').checked;
+    
+    const { data: goals } = await sbClient
+        .from('tblwallet')
+        .select('*')
+        .eq('user_id', currentSessionUser.id)
+		.order('created_date', { ascending: true });
+
+    const { data: allItems } = await sbClient
+        .from('tblinventory')
+        .select('weight_grams, purchase_price, wallet_id, tblbrand(brand_name)')
+        .eq('user_id', currentSessionUser.id);
+
+    const goalContainer = document.getElementById('goal-list-container');
+
+	let grandTotalValue = 0;
+    let grandTotalGrams = 0;
+	let grandTotalCost = 0;
+    
+    if (!goals || goals.length === 0) {
+        goalContainer.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-sub);" data-i18n="no_goals">Portfolio is empty.</div>`;
+		updateGrandTotalDisplay(0, 0, 0);
+        return;
+    }
+
+    goalContainer.innerHTML = goals.map(goal => {
+        // Calculate total market value for items in THIS wallet
+        const walletItems = allItems ? allItems.filter(i => i.wallet_id === goal.wallet_id) : [];
+		
+		const walletValue = walletItems.reduce((acc, item) => {
+            const mData = latestPricesMap.get(`${item.tblbrand.brand_name}_${item.weight_grams}`);
+            const priceToUse = isBuybackMode ? (mData?.buyback_price || 0) : (mData?.price || 0);
+            
+            grandTotalGrams += item.weight_grams;
+			grandTotalCost += (item.purchase_price || 0);
+            return acc + priceToUse;
+        }, 0);
+
+		grandTotalValue += walletValue;
+        const progress = Math.min((walletValue / goal.goal_amount) * 100, 100).toFixed(1);
+
+		const displayProgress = isAmountHidden ? "••%" : `${progress}%`;
+		const displayValue = isAmountHidden ? "••••••••" : `Rp ${walletValue.toLocaleString('id-ID')}`;
+		const displayTarget = isAmountHidden ? "••••••••" : `Rp ${goal.goal_amount.toLocaleString('id-ID')}`;
+		const barWidth = isAmountHidden ? "0" : progress;
+
+        return `
+			<div class="goal-card" onclick="openWalletDetail('${goal.wallet_id}', '${goal.wallet_name}')">
+				<div style="display:flex; justify-content:space-between; align-items:center;">
+					<span style="font-weight:700; font-size:16px;">${goal.wallet_name}</span>
+					<span style="color:var(--accent); font-weight:800; font-size:12px;">${displayProgress}</span>
+				</div>
+				<div class="progress-container">
+					<div class="progress-bar" style="width: ${barWidth}%"></div>
+				</div>
+				<div style="display:flex; justify-content:space-between; font-size:12px;">
+					<span class="price-font">${displayValue}</span>
+					<span style="color:var(--text-sub)">Target: ${displayTarget}</span>
+				</div>
+			</div>`;
+	}).join('');
+
+    updateGrandTotalDisplay(grandTotalValue, grandTotalGrams, grandTotalCost);
+}
+
+function updateGrandTotalDisplay(value, grams, cost) {
+    const totalEl = document.getElementById('goal-grand-total');
+    const gramsEl = document.getElementById('goal-grand-grams');
+	const plEl = document.getElementById('goal-grand-pl');
+    
+    const diff = value - cost;
+    const percent = cost > 0 ? ((diff / cost) * 100).toFixed(2) : 0;
+
+    if (isAmountHidden) {
+        totalEl.innerText = "Rp ••••••••";
+        gramsEl.innerText = "••• Grams";
+		plEl.innerText = "••••••••";
+        plEl.style.color = "inherit";
+    } else {
+        totalEl.innerText = `Rp ${value.toLocaleString('id-ID')}`;
+        gramsEl.innerText = `${grams.toFixed(2)} Grams`;
+
+		const color = diff >= 0 ? '#268851' : 'var(--danger)';
+        plEl.style.color = color;
+        plEl.innerText = `${diff >= 0 ? '+' : ''}Rp ${diff.toLocaleString('id-ID')} (${percent}%)`;
+    }
+}
+
+document.getElementById('goal-buyback-toggle').addEventListener('change', (e) => {
+    document.getElementById('buyback-toggle').checked = e.target.checked;
+});
+
+document.getElementById('buyback-toggle').addEventListener('change', (e) => {
+    document.getElementById('goal-buyback-toggle').checked = e.target.checked;
+});
+
+function openWalletDetail(id, name) {
+    currentWalletId = id;
+    currentWalletName = name;
+    localStorage.setItem('current_wallet_id', id);
+    localStorage.setItem('current_wallet_name', name);
+    
+    document.getElementById('wallet-name-display').innerText = name;
+    nav('wallet-detail');
+    fetchPortfolio(currentSessionUser, id);
+}
+
+function toggleGoalModal() {
+    const m = document.getElementById('goal-modal');
+    m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+}
+
+async function saveGoal() {
+	if (!currentSessionUser) return showToast("Please login", "failed");
+	
+    const name = document.getElementById('goal-name').value;
+    const target = document.getElementById('goal-target').value;
+    if(!name || !target) return showToast(t('fill_all'), "failed");
+
+    const { error } = await sbClient.from('tblwallet').insert({
+        user_id: currentSessionUser.id,
+        wallet_name: name,
+        goal_amount: parseFloat(target)
+    });
+
+    if(error) showToast(error.message, "failed");
+    else {
+        showToast(t('save_success'));
+        toggleGoalModal();
+        fetchGoals();
+    }
+}
+
+function openEditGoalModal() {
+	const modal = document.getElementById('goal-modal');
+    const submitBtn = document.getElementById('goal-modal-submit-btn');
+	
+    // Fill the modal with current values
+    document.getElementById('goal-name').value = currentWalletName;
+    document.getElementById('goal-target').value = currentGoalTarget;
+    
+    // Change modal title and button text for context
+    modal.querySelector('h3').innerText = "Edit Goal";
+	submitBtn.innerText = "Update Goal";
+    
+    // Update the button to call an 'updateGoal' function instead of 'saveGoal'
+	submitBtn.onclick = function() { updateGoal(); };
+    
+    toggleGoalModal();
+}
+
+async function updateGoal() {
+    const newName = document.getElementById('goal-name').value;
+    const newTarget = document.getElementById('goal-target').value;
+
+    if(!newName || !newTarget) return showToast("Fields cannot be empty", "error");
+
+    const { error } = await sbClient
+        .from('tblwallet')
+        .update({ wallet_name: newName, goal_amount: parseFloat(newTarget) })
+        .eq('wallet_id', currentWalletId);
+
+    if (error) {
+        showToast(error.message, "error");
+    } else {
+        showToast("Goal updated successfully!");
+
+		currentWalletName = newName;
+		currentGoalTarget = parseFloat(newTarget);
+		
+        toggleGoalModal();
+		
+        document.getElementById('wallet-name-display').innerText = newName;
+        fetchPortfolio(currentSessionUser, currentWalletId);
+    }
+}
+
+// Portfolio Data
 let isAmountHidden = localStorage.getItem('hide_amount') === 'true';
 let rawNetWorth = "Rp 0";
 let rawGrams = "0.00 Grams";
 let rawPL = "Rp 0 (0%)";
 
+let rawColor = "var(--text-sub)";
+let rawColorSum = "var(--text-sub)";
+let rawBackground = "rgba(255, 255, 255, 0.05)";
+
+let rawGrandTotal = 0;
+let rawGrandGrams = 0;
+let rawGrandPL = 0;
+
+let rawInvGram = 0;
+let rawInvBuy = 0;
+let rawInvPrice = 0;
+let rawInvDiff = 0;
+
 let currentSessionUser = null;
-async function fetchPortfolio(user) {
+let currentGoalTarget = 0;
+let rawProgress = "0%";
+let rawTargetLabel = "Target: Rp 0";
+
+async function fetchPortfolio(user, walletId = null) {
 	if (!user) return;
-	currentSessionUser = user;
-	
-	const isBuybackMode = document.getElementById('buyback-toggle').checked;
-	const sortVal = document.getElementById('portfolio-sort').value;
+	const activeWalletId = walletId || currentWalletId;
+	if (!activeWalletId) return;
+
+	currentWalletId = activeWalletId;
+
+	let totalCurrentValue = 0;
+    let totalPurchaseCost = 0;
+    let totalGrams = 0;
+	rawNetWorth = "Rp 0";
+    rawGrams = "0.00 Grams";
+    rawPL = "Rp 0 (0%)";
+	rawProgress = "0%";
+    rawTargetLabel = "Target: Rp 0";
+
 	const listEl = document.getElementById('portfolio-list');
 	const tableEl = document.getElementById('portfolio-desktop-tbody');
-	const totalEl = document.getElementById('pf-total');
-	const plEl = document.getElementById('pf-pl');
+	const isBuybackMode = document.getElementById('buyback-toggle').checked;
 
-	let sortCol = 'purchase_date';
+	const { data: goalData } = await sbClient.from('tblwallet').select('*').eq('wallet_id', activeWalletId).single();
+    if (goalData) {
+        currentGoalTarget = goalData.goal_amount;
+        currentWalletName = goalData.wallet_name;
+        document.getElementById('wallet-name-display').innerText = goalData.wallet_name;
+    }
+
+	const sortVal = document.getElementById('portfolio-sort').value;
 	let sortAsc = false;
+	let sortCol = 'purchase_date';
 
 	if (sortVal.startsWith('weight')) sortCol = 'weight_grams';
 	if (sortVal.startsWith('brand')) sortCol = 'tblbrand(brand_name)';
 	if (sortVal.endsWith('asc')) sortAsc = true;
 
 	const { data: assets, error } = await sbClient
-		.from('tblinventory')
-		.select(`inventory_id, weight_grams, purchase_price, purchase_date, tblbrand(brand_name)`)
+        .from('tblinventory')
+        .select('*, tblbrand(brand_name)')
 		.eq('user_id', user.id)
+        .eq('wallet_id', activeWalletId)
 		.order(sortCol, { ascending: sortAsc });
 
-	if(error || !assets || assets.length === 0) {
-		listEl.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-sub);">Vault is empty.</div>`;
-		return;
-	}
-
-	let totalCurrentValue = 0;
-	let totalPurchaseCost = 0;
-	let totalGrams = 0;
+	if (error || !assets || assets.length === 0) {
+        listEl.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-sub);">${t('vaultisempty')}</div>`;
+        if (tableEl) tableEl.innerHTML = "";
+        updatePortfolioDisplay();
+        updateProgressBar(0);
+        return;
+    }
 
 	let desktopHTML = "";
 	let mobileHTML = "";
-
-	const trashIcon = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>`;
 
 	assets.forEach((asset) => {
 		const brand = asset.tblbrand?.brand_name || "Unknown";
@@ -418,15 +674,21 @@ async function fetchPortfolio(user) {
 		const diff = activePrice - cost;
 		const color = diff >= 0 ? 'var(--success)' : 'var(--danger)';
 
-		// Render Detail Wallet Desktop
+		rawInvGram = weight;
+		rawInvBuy = cost;
+		rawInvPrice = activePrice;
+		rawInvDiff = diff;
+
+		const trashIcon = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>`;
+
 		desktopHTML += `
 			<tr>
 				<td><img src="${getBrandLogo(brand)}" style="width:24px; vertical-align:middle; margin-right:10px;"> <b>${brand}</b></td>
 				<td style="color:var(--text-sub)">${pDate}</td>
-				<td style="text-align:right">${weight}g</td>
-				<td style="text-align:right">Rp ${cost.toLocaleString('id-ID')}</td>
-				<td style="text-align:right" class="price-font">Rp ${activePrice.toLocaleString('id-ID')}</td>
-				<td style="text-align:right; color:${color}; font-weight:700">${diff >= 0 ? '+' : ''}Rp ${diff.toLocaleString('id-ID')}</td>
+				<td style="text-align:right">${isAmountHidden ? "•" : weight}g</td>
+				<td style="text-align:right">Rp ${isAmountHidden ? "••••••••" : cost.toLocaleString('id-ID')}</td>
+				<td style="text-align:right" class="price-font">Rp ${isAmountHidden ? "••••••••" : activePrice.toLocaleString('id-ID')}</td>
+				<td style="text-align:right; color:${isAmountHidden ? "--var(text-sub)" : color}; font-weight:700">${isAmountHidden ? "Rp" : diff >= 0 ? '+Rp' : 'Rp'} ${isAmountHidden ? "••••••••" : diff.toLocaleString('id-ID')}</td>
 				<td style="text-align:right"><button onclick="deleteInventory('${asset.inventory_id}')" style="background:none; border:none; color:var(--text-sub); cursor:pointer; padding:5px;">${trashIcon}</button></td>
 			</tr>`;
 
@@ -442,14 +704,14 @@ async function fetchPortfolio(user) {
 					<div class="row-left">
 						<img src="${getBrandLogo(brand)}" class="brand-logo-img">
 						<div>
-							<div class="coin-name">${brand} <span style="font-size:12px; opacity:.5">${weight}g</span></div>
-							<div class="coin-weight"><span data-i18n="buy">Buy</span>: Rp ${cost.toLocaleString('id-ID')}</div>
+							<div class="coin-name">${brand} <span style="font-size:12px; opacity:.5" id="invent-weight">${isAmountHidden ? "•" : weight}g</span></div>
+							<div class="coin-weight"><span data-i18n="buy">Buy</span>: <text id="invent-buy">Rp ${isAmountHidden ? "••••••••" : cost.toLocaleString('id-ID')}</text></div>
 							<div class="coin-weight">${pDate}</div>
 						</div>
 					</div>
 					<div class="row-right">
-						<div class="coin-price price-font">Rp ${activePrice.toLocaleString('id-ID')}</div>
-						<div class="coin-sub" style="color:${color};font-weight:700">Rp ${diff.toLocaleString('id-ID')}</div>
+						<div class="coin-price price-font" id="invent-price">Rp ${isAmountHidden ? "••••••••" : activePrice.toLocaleString('id-ID')}</div>
+						<div class="coin-sub" style="color:${isAmountHidden ? "--var(text-sub)" : color};font-weight:700" id="invent-diff">${isAmountHidden ? "Rp" : diff >= 0 ? '+Rp' : 'Rp'} ${isAmountHidden ? "••••••••" : diff.toLocaleString('id-ID')}</div>
 					</div>
 				</div>
 			</div>`;
@@ -459,50 +721,117 @@ async function fetchPortfolio(user) {
 	listEl.innerHTML = mobileHTML;
 
 	// Total Net Worth
+	const totalEl = document.getElementById('pf-total');
+	const plEl = document.getElementById('pf-pl');
+
 	totalEl.innerText = `Rp ${totalCurrentValue.toLocaleString('id-ID')}`;
 	const totalDiff = totalCurrentValue - totalPurchaseCost;
 	const totalPercent = totalPurchaseCost > 0 ? ((totalDiff / totalPurchaseCost) * 100).toFixed(2) : 0;
+	const progressPercent = currentGoalTarget > 0 ? (totalCurrentValue / currentGoalTarget) * 100 : 0;
+
+	rawNetWorth = `Rp ${totalCurrentValue.toLocaleString('id-ID')}`;
+    rawGrams = `${totalGrams.toFixed(2)} Grams`;
+    rawPL = `${totalDiff >= 0 ? '+' : ''}Rp ${totalDiff.toLocaleString('id-ID')} (${totalPercent}%)`;
+	rawProgress = `${Math.min(progressPercent, 100).toFixed(1)}%`;
+    rawTargetLabel = `Target: Rp ${currentGoalTarget.toLocaleString('id-ID')}`;
 	
-	plEl.style.color = totalDiff >= 0 ? '#268851' : 'var(--danger)';
-	plEl.style.background = totalDiff >= 0 ? 'rgba(39, 201, 110, 0.1)' : 'rgba(255, 77, 77, 0.1)';
+	rawColor = totalDiff >= 0 ? 'var(--success)' : 'var(--danger)';
+	rawColorSum = totalDiff >= 0 ? 'rgb(38, 136, 81)' : 'var(--danger)';
+	rawBackground = totalDiff >= 0 ? 'rgba(39, 201, 110, 0.1)' : 'rgba(255, 77, 77, 0.1)';
 	plEl.innerText = `${totalDiff >= 0 ? '+' : ''}Rp ${totalDiff.toLocaleString('id-ID')} (${totalPercent}%)`;
 	document.getElementById('pf-grams').innerText = `${totalGrams.toFixed(2)} Grams`;
 
-	// At the bottom of fetchPortfolio(user)...
-	rawNetWorth = `Rp ${totalCurrentValue.toLocaleString('id-ID')}`;
-	rawGrams = `${totalGrams.toFixed(2)} Grams`;
-	rawPL = `${totalDiff >= 0 ? '+' : ''}Rp ${totalDiff.toLocaleString('id-ID')} (${totalPercent}%)`;
-
-	// Apply values based on privacy state
 	updatePortfolioDisplay();
+	updateProgressBar(progressPercent);
 }
 
 function toggleAmountVisibility() {
     isAmountHidden = !isAmountHidden;
     localStorage.setItem('hide_amount', isAmountHidden);
-    updatePortfolioDisplay();
+    
+	updatePortfolioDisplay();
+
+	if (localStorage.getItem('last_page') === 'portfolio') {
+        fetchGoals(); 
+    }
 }
 
 function updatePortfolioDisplay() {
     const totalEl = document.getElementById('pf-total');
     const gramsEl = document.getElementById('pf-grams');
     const plEl = document.getElementById('pf-pl');
-    const eyeIconEl = document.getElementById('eye-icon');
+
+	const goalGrandTotalEl = document.getElementById('goal-grand-total');
+    const goalGrandGramsEl = document.getElementById('goal-grand-grams');
+    const goalGrandPLEl = document.getElementById('goal-grand-pl');
+
+	const progressPercentEl = document.getElementById('progress-percent');
+    const progressTargetEl = document.getElementById('progress-target');
+    const barFill = document.getElementById('progress-bar-fill');
+
+	const inventWeightEl = document.getElementById('invent-weight');
+	const inventBuyEl = document.getElementById('invent-buy');
+	const inventPriceEl = document.getElementById('invent-price');
+	const inventDiffEl = document.getElementById('invent-diff');
 
     const mask = "••••••••";
 
     if (isAmountHidden) {
-        totalEl.innerText = "Rp " + mask;
-        gramsEl.innerText = "••• Grams";
-        plEl.innerText = "Rp " + mask;
-        // Hidden Eye Icon
-        eyeIconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+		if(totalEl) totalEl.innerText = mask;
+        if(gramsEl) gramsEl.innerText = "••• Grams";
+        if(plEl) plEl.innerText = mask;
+		if(plEl) plEl.style.color = 'var(--text-sub)';
+		if(plEl) plEl.style.background = 'rgba(255, 255, 255, 0.05)';
+
+        if(goalGrandTotalEl) goalGrandTotalEl.innerText = mask;
+        if(goalGrandGramsEl) goalGrandGramsEl.innerText = "••• Grams";
+        if(goalGrandPLEl) goalGrandPLEl.innerText = mask;
+
+		if(progressPercentEl) progressPercentEl.innerText = "••%";
+        if(progressTargetEl) progressTargetEl.innerText = "Target: ••••••";
+        if(barFill) barFill.style.width = "0%";
+
+		if(inventWeightEl) inventWeightEl.innerText = "•g";
+		if(inventBuyEl) inventBuyEl.innerText = "Rp ••••••";
+		if(inventPriceEl) inventPriceEl.innerText = "Rp ••••••";
+		if(inventDiffEl) inventDiffEl.innerText = "••••••";
+		if(inventDiffEl) inventDiffEl.style.color = 'rgba(255, 255, 255, 0.05)';
+
+        document.querySelectorAll('.eye-icon-all, #eye-icon').forEach(el => {
+            el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+        });
     } else {
-        totalEl.innerText = rawNetWorth;
-        gramsEl.innerText = rawGrams;
-        plEl.innerText = rawPL;
-        // Visible Eye Icon
-        eyeIconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+		if(totalEl) totalEl.innerText = rawNetWorth;
+        if(gramsEl) gramsEl.innerText = rawGrams;
+        if(plEl) plEl.innerText = rawPL;
+		if(plEl) plEl.style.color = rawColorSum;
+		if(plEl) plEl.style.background = rawBackground;
+
+		if(goalGrandTotalEl) goalGrandTotalEl.innerText = rawGrandTotal;
+        if(goalGrandGramsEl) goalGrandGramsEl.innerText = rawGrandGrams;
+        if(goalGrandPLEl) goalGrandPLEl.innerText = rawGrandPL;
+
+		if(progressPercentEl) progressPercentEl.innerText = rawProgress;
+        if(progressTargetEl) progressTargetEl.innerText = rawTargetLabel;
+
+		if(inventWeightEl) inventWeightEl.innerText = rawInvGram;
+		if(inventBuyEl) inventBuyEl.innerText = "Rp " + rawInvBuy.toLocaleString('id-ID');
+		if(inventPriceEl) inventPriceEl.innerText = "Rp " + rawInvPrice.toLocaleString('id-ID');
+		if(inventDiffEl) inventDiffEl.innerText = "Rp " + rawInvDiff.toLocaleString('id-ID');
+		if(inventDiffEl) inventDiffEl.style.color = rawColor;
+
+		document.querySelectorAll('.eye-icon-all, #eye-icon').forEach(el => {
+            el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+        });
+    }
+}
+
+function updateProgressBar(percent) {
+    const barFill = document.getElementById('progress-bar-fill');
+    if (!barFill) return;
+    
+    if (!isAmountHidden) {
+        barFill.style.width = `${Math.min(percent, 100)}%`;
     }
 }
 
@@ -510,6 +839,8 @@ function toggleAddModal() {
 	const m = document.getElementById('add-modal');
 	m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
 	if(m.style.display === 'flex') document.getElementById('add-date').valueAsDate = new Date();
+
+	// document.getElementById('modal-wallet-name').innerText = currentWalletName;
 }
 
 async function saveInventory() {
@@ -526,7 +857,8 @@ async function saveInventory() {
 		brand_id: b,
 		weight_grams: w,
 		purchase_price: p,
-		purchase_date: d
+		purchase_date: d,
+		wallet_id: currentWalletId
 	});
 
 	if(error) showToast("Error: " + error.message, "failed");
@@ -539,7 +871,6 @@ async function saveInventory() {
 
 let deleteTargetId = null;
 async function deleteInventory(id) {
-	// const confirmMsg = currentLang === 'en' ? "Are you sure want to delete this?" : "Apakah kamu yakin akan menghapus ini?";
 	deleteTargetId = id;
 	const modal = document.getElementById('confirm-modal');
 	document.getElementById('confirm-msg').innerText = currentLang === 'en' ? "Are you sure want to delete this ?" : "Apakah kamu yakin akan menghapus ini ?";
@@ -770,12 +1101,17 @@ const i18n = {
 		save: "Save",
 		cancel: "Cancel",
 		delete: "Delete",
-		areyousure: "Are you sure ?",
-		buy: "Buy"
+		delete_portfolio: "Confirm Delete Portfolio",
+		buy: "Buy",
+		vaultisempty: "Vault is empty",
+		setnewgoal: "Add New Portfolio",
+		add_new_goal: "Add New Portfolio",
+		goal_name: "Portfolio Name",
+		goal_target: "Goal Target"
 	},
 	id: {
 		market: "Pasar",
-		portfolio: "Aset",
+		portfolio: "Portofolio",
 		wallet: "Aset",
 		profile: "Profil",
 		today_market: "Harga Hari Ini",
@@ -809,7 +1145,12 @@ const i18n = {
 		save: "Simpan",
 		cancel: "Batal",
 		delete: "Hapus",
-		areyousure: "Apakah kamu yakin ?",
-		buy: "Beli"
+		delete_portfolio: "Konfirmasi Hapus Aset",
+		buy: "Beli",
+		vaultisempty: "Tidak ada aset",
+		setnewgoal: "Tambah Portofolio",
+		add_new_goal: "Tambah Portofolio Baru",
+		goal_name: "Portofolio Name",
+		goal_target: "Target Goal"
 	}
 };
