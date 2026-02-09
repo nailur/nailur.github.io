@@ -881,7 +881,7 @@ async function saveInventory() {
 	if(!currentSessionUser) return showToast(currentLang === 'en' ? "Please login first" : "Mohon login terlebih dahulu", "failed");
 	const b = document.getElementById('add-brand').value;
 	const w = parseFloat(document.getElementById('add-weight').value);
-	const p = parseFloat(document.getElementById('add-price').value.replace(/\./g, ''););
+	const p = parseFloat(document.getElementById('add-price').value.replace(/\./g, ''));
 	const d = document.getElementById('add-date').value;
 
 	if(!b || !w || !p) return showToast(currentLang === 'en' ? "Please fill all fields" : "Mohon isi semua kolom", "failed");
