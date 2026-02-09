@@ -518,12 +518,12 @@ function openWalletDetail(id, name, count) {
 	const deleteContainer = document.getElementById('modal-delete-container');
 
 	if (count === 0) {
-        deleteContainer.innerHTML = "";
-    } else {
         deleteContainer.innerHTML = `
-            <span style="color:#999; font-size:12px;">
+            <span style="color:#999; font-size:12px;" onclick="deleteGoal('${id}')">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
             </span>`;
+    } else {
+        deleteContainer.innerHTML = "";
     }
     
     document.getElementById('wallet-name-display').innerText = name;
@@ -531,16 +531,38 @@ function openWalletDetail(id, name, count) {
     fetchPortfolio(currentSessionUser, id);
 }
 
-function toggleGoalModal() {
-    const m = document.getElementById('goal-modal');
-    m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+function toggleGoalModal(action, gname = "", gtarget = 0) {
+    const modal = document.getElementById('goal-modal');
+	const submitBtn = document.getElementById('goal-modal-submit-btn');
+
+    modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+
+	if (action === "update") {
+		document.getElementById('goal-name').value = gname;
+		document.getElementById('goal-target').value = gtarget;
+		formatRupiahInput(document.getElementById('goal-target'));
+
+		document.getElementById("modal-delete-container").style.display = "";
+		modal.querySelector('h3').innerText = "Edit Portfolio";
+		submitBtn.innerText = "Update";
+		submitBtn.onclick = function() { updateGoal(); };
+	} else {
+		document.getElementById("modal-delete-container").style.display = "none";
+		document.getElementById('goal-name').value = "";
+		document.getElementById('goal-target').value = "";
+	
+		modal.querySelector('h3').innerText = "Add New Portfolio";
+		submitBtn.innerText = "Save";
+		submitBtn.onclick = function() { saveGoal(); };
+	}
+	
 }
 
 async function saveGoal() {
 	if (!currentSessionUser) return showToast("Please login", "failed");
 	
     const name = document.getElementById('goal-name').value;
-    const target = document.getElementById('goal-target').value;
+    const target = document.getElementById('goal-target').value.replace(/\./g, '');
     if(!name || !target) return showToast(t('fill_all'), "failed");
 
     const { error } = await sbClient.from('tblwallet').insert({
@@ -551,33 +573,41 @@ async function saveGoal() {
 
     if(error) showToast(error.message, "failed");
     else {
-        showToast(t('save_success'));
+        // showToast(t('save_success'));
+		showToast(currentLang === 'en' ? "Portfolio successfully added" : "Portofolio berhasil ditambahkan");
         toggleGoalModal();
         fetchGoals();
     }
 }
 
-function openEditGoalModal() {
-	const modal = document.getElementById('goal-modal');
-    const submitBtn = document.getElementById('goal-modal-submit-btn');
+async function deleteGoal(id) {
+	deleteTargetId = id;
+	const modal = document.getElementById('confirm-modal');
+	document.getElementById('confirm-msg').innerText = currentLang === 'en' ? "Are you sure want to delete this ?" : "Apakah kamu yakin akan menghapus ini ?";
 	
-    // Fill the modal with current values
-    document.getElementById('goal-name').value = currentWalletName;
-    document.getElementById('goal-target').value = currentGoalTarget;
-    
-    // Change modal title and button text for context
-    modal.querySelector('h3').innerText = "Edit Goal";
-	submitBtn.innerText = "Update Goal";
-    
-    // Update the button to call an 'updateGoal' function instead of 'saveGoal'
-	submitBtn.onclick = function() { updateGoal(); };
-    
-    toggleGoalModal();
+	modal.style.display = 'flex';
+
+	document.getElementById('confirm-exec-btn').onclick = async () => {
+		const { error } = await sbClient.from('tblwallet').delete().eq('wallet_id', deleteTargetId);
+		if (error) {
+			showToast("Error :" + error.message, "failed");
+		} else {
+			showToast(currentLang === 'en' ? "Portfolio deleted" : "Portfolio dihapus");
+			toggleGoalModal();
+			closeConfirm();
+			nav('portfolio');
+			fetchGoals();
+		}
+	};
+}
+
+function openEditGoalModal() {
+    toggleGoalModal("update", currentWalletName, currentGoalTarget);
 }
 
 async function updateGoal() {
     const newName = document.getElementById('goal-name').value;
-    const newTarget = document.getElementById('goal-target').value;
+    const newTarget = document.getElementById('goal-target').value.replace(/\./g, '');
 
     if(!newName || !newTarget) return showToast("Fields cannot be empty", "error");
 
@@ -603,6 +633,7 @@ async function updateGoal() {
 
 // Portfolio Data
 let isAmountHidden = localStorage.getItem('hide_amount') === 'true';
+
 let rawNetWorth = "Rp 0";
 let rawGrams = "0.00 Grams";
 let rawPL = "Rp 0 (0%)";
@@ -635,6 +666,7 @@ async function fetchPortfolio(user, walletId = null) {
 	let totalCurrentValue = 0;
     let totalPurchaseCost = 0;
     let totalGrams = 0;
+
 	rawNetWorth = "Rp 0";
     rawGrams = "0.00 Grams";
     rawPL = "Rp 0 (0%)";
@@ -650,6 +682,7 @@ async function fetchPortfolio(user, walletId = null) {
         currentGoalTarget = goalData.goal_amount;
         currentWalletName = goalData.wallet_name;
         document.getElementById('wallet-name-display').innerText = goalData.wallet_name;
+		rawTargetLabel = `Target: Rp ${goalData.goal_amount.toLocaleString('id-ID')}`;
     }
 
 	const sortVal = document.getElementById('portfolio-sort').value;
@@ -670,8 +703,9 @@ async function fetchPortfolio(user, walletId = null) {
 	if (error || !assets || assets.length === 0) {
         listEl.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-sub);">${t('vaultisempty')}</div>`;
         if (tableEl) tableEl.innerHTML = "";
-        // updatePortfolioDisplay();
-        // updateProgressBar(0);
+        updatePortfolioDisplay();
+        updateProgressBar(0);
+		
         return;
     }
 
@@ -741,10 +775,6 @@ async function fetchPortfolio(user, walletId = null) {
 	listEl.innerHTML = mobileHTML;
 
 	// Total Net Worth
-	const totalEl = document.getElementById('pf-total');
-	const plEl = document.getElementById('pf-pl');
-
-	totalEl.innerText = `Rp ${totalCurrentValue.toLocaleString('id-ID')}`;
 	const totalDiff = totalCurrentValue - totalPurchaseCost;
 	const totalPercent = totalPurchaseCost > 0 ? ((totalDiff / totalPurchaseCost) * 100).toFixed(2) : 0;
 	const progressPercent = currentGoalTarget > 0 ? (totalCurrentValue / currentGoalTarget) * 100 : 0;
@@ -753,12 +783,11 @@ async function fetchPortfolio(user, walletId = null) {
     rawGrams = `${totalGrams.toFixed(2)} Grams`;
     rawPL = `${totalDiff >= 0 ? '+' : ''}Rp ${totalDiff.toLocaleString('id-ID')} (${totalPercent}%)`;
 	rawProgress = `${Math.min(progressPercent, 100).toFixed(1)}%`;
-    rawTargetLabel = `Target: Rp ${currentGoalTarget.toLocaleString('id-ID')}`;
 	
 	rawColor = totalDiff >= 0 ? 'var(--success)' : 'var(--danger)';
 	rawColorSum = totalDiff >= 0 ? 'rgb(38, 136, 81)' : 'var(--danger)';
 	rawBackground = totalDiff >= 0 ? 'rgba(39, 201, 110, 0.1)' : 'rgba(255, 77, 77, 0.1)';
-	plEl.innerText = `${totalDiff >= 0 ? '+' : ''}Rp ${totalDiff.toLocaleString('id-ID')} (${totalPercent}%)`;
+	
 	document.getElementById('pf-grams').innerText = `${totalGrams.toFixed(2)} Grams`;
 
 	updatePortfolioDisplay();
