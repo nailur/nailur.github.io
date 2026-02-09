@@ -899,6 +899,7 @@ async function saveInventory() {
 	else {
 		showToast(currentLang === 'en' ? "Added successfully" : "Berhasil menambahkan");
 		toggleAddModal();
+		document.getElementById('add-price').value = ""; // Reset
 		fetchPortfolio(currentSessionUser);
 	}
 }
