@@ -1,3 +1,10 @@
+.flex-center { display: flex; align-items: center; }
+.flex-gap-sm { gap: 8px; }
+.flex-gap-md { gap: 12px; }
+.flex-between { justify-content: space-between; }
+.text-sub { color: var(--text-sub); }
+.no-margin { margin: 0; }
+
 :root { --bg: #000000; --card-bg: #121212; --border: #2A2A2A; --accent: #F5C518; --text-main: #FFFFFF; --text-sub: #888888; --success: #27C96E; --danger: #FF4D4D; }
 
 html, body { height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }

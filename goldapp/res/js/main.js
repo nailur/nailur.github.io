@@ -8,38 +8,37 @@ let latestPricesMap = new Map();
 let currentWalletId = null;
 let currentWalletName = "";
 
-window.onload = async () => {
+document.addEventListener('DOMContentLoaded', async () => {
 	document.getElementById('lang_select').value = currentLang;
 
 	await fetchMarketData(); 
+
+	// Check session
 	const { data: { session } } = await sbClient.auth.getSession();
 	
 	if(session) {
-		currentSessionUser = session.user;
-		
-		updateUI(session);
-		loadProfile(session.user);
-		// fetchPortfolio(session.user);
-		fetchGoals();
-	} else {
-		updateUI(null);
-		nav('market');
-	}
+        currentSessionUser = session.user;
+        updateUI(session);
+        loadProfile(session.user);
+        fetchGoals();
+    } else {
+        updateUI(null);
+        nav('market');
+    }
 	
-	sbClient.auth.onAuthStateChange((event, session) => { 
-		currentSessionUser = session ? session.user : null;
-
-		updateUI(session);
-		if(session) {
-			loadProfile(session.user);
-			fetchGoals();
-
-			if(event === 'SIGNED_IN') nav('market');
-		} else {
-			updateUI(null);
-			nav('market');
-		}
-	});
+	// Setup Auth Listener
+    sbClient.auth.onAuthStateChange((event, session) => { 
+        currentSessionUser = session ? session.user : null;
+        updateUI(session);
+        if(session) {
+            loadProfile(session.user);
+            fetchGoals();
+            if(event === 'SIGNED_IN') nav('market');
+        } else {
+            updateUI(null);
+            nav('market');
+        }
+    });
 
 	applyLang();
 };
@@ -208,29 +207,27 @@ function setSubBadge(type) {
 }
 
 // Brand Logo
-function getBrandLogo(brandName) {
-	const lower = brandName.toLowerCase();
-	if(lower.includes('antam')) return './logos/antam.jpg';
-	if(lower.includes('emas kita')) return './logos/emaskita.jpg';
-	if(lower.includes('galeri24')) return './logos/galeri24.jpg';
-	if(lower.includes('king halim')) return './logos/kinghalim.jpg';
-	if(lower.includes('lotus archi')) return './logos/lotusarchi.jpg';
-	if(lower.includes('sampoerna')) return './logos/sampoerna.jpg';
-	if(lower.includes('ubs')) return './logos/ubs.jpg';
-	return 'https://cdn-icons-png.flaticon.com/512/217/217853.png';
+
+const BRAND_CONFIG = {
+    'antam': { logo: './logos/antam.jpg', url: 'https://www.logammulia.com/id/harga-emas-hari-ini' },
+    'emas kita': { logo: './logos/emaskita.jpg', url: 'https://emaskita.id/Harga_emas' },
+    'galeri24': { logo: './logos/galeri24.jpg', url: 'https://galeri24.co.id/harga-emas' },
+    'king halim': { logo: './logos/kinghalim.jpg', url: 'https://www.kinghalim.com/goldbarwithamala' },
+    'lotus archi': { logo: './logos/lotusarchi.jpg', url: 'https://lotusarchi.com/pricing' },
+    'sampoerna': { logo: './logos/sampoerna.jpg', url: 'https://sampoernagold.com' },
+    'ubs': { logo: './logos/ubs.jpg', url: 'https://ubslifestyle.com/fine-gold/' }
+};
+
+const DEFAULT_BRAND = { logo: 'https://cdn-icons-png.flaticon.com/512/217/217853.png', url: '#' };
+
+function getBrandInfo(name) {
+    if (!name) return DEFAULT_BRAND;
+    const key = Object.keys(BRAND_CONFIG).find(k => name.toLowerCase().includes(k));
+    return BRAND_CONFIG[key] || DEFAULT_BRAND;
 }
 
-function getBrandUrl(brandName) {
-	const l = brandName.toLowerCase();
-	if (l.includes('antam')) return 'https://www.logammulia.com/id/harga-emas-hari-ini';
-	if (l.includes('ubs')) return 'https://ubslifestyle.com/fine-gold/';
-	if (l.includes('galeri24')) return 'https://galeri24.co.id/harga-emas';
-	if (l.includes('lotus archi')) return 'https://lotusarchi.com/pricing';
-	if (l.includes('emas kita')) return 'https://emaskita.id/Harga_emas';
-	if (l.includes('sampoerna')) return 'https://sampoernagold.com';
-	if (l.includes('king halim')) return 'https://www.kinghalim.com/goldbarwithamala';
-	return '#';
-}
+function getBrandLogo(brandName) { return getBrandInfo(brandName).logo; }
+function getBrandUrl(brandName) { return getBrandInfo(brandName).url; }
 
 // Market Data
 let brandWeightMap = {};
