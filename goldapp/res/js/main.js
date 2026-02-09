@@ -27,13 +27,14 @@ window.onload = async () => {
 	}
 	
 	sbClient.auth.onAuthStateChange((event, session) => { 
+		currentSessionUser = session ? session.user : null;
+
 		updateUI(session);
 		if(session) {
 			loadProfile(session.user);
-			// fetchPortfolio(session.user);
 			fetchGoals();
 
-			// if(event === 'SIGNED_IN') nav('market');
+			if(event === 'SIGNED_IN') nav('market');
 		} else {
 			updateUI(null);
 			nav('market');
@@ -89,24 +90,34 @@ document.addEventListener('touchend', async () => {
 
 async function handleRefresh() {
     const spinner = document.getElementById('ptr-spinner');
+    if(!spinner) return;
+
     spinner.classList.add('refreshing');
 
     try {
+        // STEP 1: Always update market first
         await fetchMarketData();
 
+        // STEP 2: Only proceed if user is valid
         if (currentSessionUser) {
+            // We await these so the browser doesn't try to render 
+            // 100 things at once
             await fetchGoals(); 
             
-            if (localStorage.getItem('last_page') === 'wallet-detail') {
+            const lastPage = localStorage.getItem('last_page');
+            if (lastPage === 'wallet-detail' && currentWalletId) {
                 await fetchPortfolio(currentSessionUser, currentWalletId);
             }
         }
-        
-		showToast(currentLang === 'en' ? "Data Updated" : "Data Diperbarui");
-    } catch (err) {
-        showToast("Refresh failed", "error");
+    } catch (error) {
+        console.error("Critical Sync Error:", error);
+        showToast("Sync Error", "error");
     } finally {
         spinner.classList.remove('refreshing');
+        // Reset PTR variables
+        pullDistance = 0;
+        isPTRActive = false;
+        spinner.style.transform = `translateY(-50px) rotate(0deg)`;
     }
 }
 
@@ -449,7 +460,7 @@ async function fetchGoals() {
 		const barWidth = isAmountHidden ? "0" : progress;
 
         return `
-			<div class="goal-card" onclick="openWalletDetail('${goal.wallet_id}', '${goal.wallet_name}')">
+			<div class="goal-card" onclick="openWalletDetail('${goal.wallet_id}', '${goal.wallet_name}', ${walletItems.length})">
 				<div style="display:flex; justify-content:space-between; align-items:center;">
 					<span style="font-weight:700; font-size:16px;">${goal.wallet_name}</span>
 					<span style="color:var(--accent); font-weight:800; font-size:12px;">${displayProgress}</span>
@@ -498,11 +509,22 @@ document.getElementById('buyback-toggle').addEventListener('change', (e) => {
     document.getElementById('goal-buyback-toggle').checked = e.target.checked;
 });
 
-function openWalletDetail(id, name) {
+function openWalletDetail(id, name, count) {
     currentWalletId = id;
     currentWalletName = name;
     localStorage.setItem('current_wallet_id', id);
     localStorage.setItem('current_wallet_name', name);
+
+	const deleteContainer = document.getElementById('modal-delete-container');
+
+	if (count === 0) {
+        deleteContainer.innerHTML = "";
+    } else {
+        deleteContainer.innerHTML = `
+            <span style="color:#999; font-size:12px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            </span>`;
+    }
     
     document.getElementById('wallet-name-display').innerText = name;
     nav('wallet-detail');
@@ -648,8 +670,8 @@ async function fetchPortfolio(user, walletId = null) {
 	if (error || !assets || assets.length === 0) {
         listEl.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-sub);">${t('vaultisempty')}</div>`;
         if (tableEl) tableEl.innerHTML = "";
-        updatePortfolioDisplay();
-        updateProgressBar(0);
+        // updatePortfolioDisplay();
+        // updateProgressBar(0);
         return;
     }
 
@@ -708,7 +730,7 @@ async function fetchPortfolio(user, walletId = null) {
 						</div>
 					</div>
 					<div class="row-right">
-						<div class="coin-price price-font" id="invent-price">Rp ${isAmountHidden ? "••••••••" : activePrice.toLocaleString('id-ID')}</div>
+						<div class="coin-price price-font">Rp ${isAmountHidden ? "••••••••" : activePrice.toLocaleString('id-ID')}</div>
 						<div class="coin-sub" style="color:${isAmountHidden ? "--var(text-sub)" : color};font-weight:700" id="invent-diff">${isAmountHidden ? "Rp" : diff >= 0 ? '+Rp' : 'Rp'} ${isAmountHidden ? "••••••••" : diff.toLocaleString('id-ID')}</div>
 					</div>
 				</div>
@@ -751,6 +773,8 @@ function toggleAmountVisibility() {
 
 	if (localStorage.getItem('last_page') === 'portfolio') {
         fetchGoals(); 
+		
+		if(currentSessionUser) fetchPortfolio(currentSessionUser);
     }
 }
 
@@ -766,11 +790,6 @@ function updatePortfolioDisplay() {
 	const progressPercentEl = document.getElementById('progress-percent');
     const progressTargetEl = document.getElementById('progress-target');
     const barFill = document.getElementById('progress-bar-fill');
-
-	const inventWeightEl = document.getElementById('invent-weight');
-	const inventBuyEl = document.getElementById('invent-buy');
-	const inventPriceEl = document.getElementById('invent-price');
-	const inventDiffEl = document.getElementById('invent-diff');
 
     const mask = "••••••••";
 
@@ -789,12 +808,6 @@ function updatePortfolioDisplay() {
         if(progressTargetEl) progressTargetEl.innerText = "Target: ••••••";
         if(barFill) barFill.style.width = "0%";
 
-		if(inventWeightEl) inventWeightEl.innerText = "•g";
-		if(inventBuyEl) inventBuyEl.innerText = "Rp ••••••";
-		if(inventPriceEl) inventPriceEl.innerText = "Rp ••••••";
-		if(inventDiffEl) inventDiffEl.innerText = "••••••";
-		if(inventDiffEl) inventDiffEl.style.color = 'rgba(255, 255, 255, 0.05)';
-
         document.querySelectorAll('.eye-icon-all, #eye-icon').forEach(el => {
             el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
         });
@@ -811,12 +824,6 @@ function updatePortfolioDisplay() {
 
 		if(progressPercentEl) progressPercentEl.innerText = rawProgress;
         if(progressTargetEl) progressTargetEl.innerText = rawTargetLabel;
-
-		if(inventWeightEl) inventWeightEl.innerText = rawInvGram;
-		if(inventBuyEl) inventBuyEl.innerText = "Rp " + rawInvBuy.toLocaleString('id-ID');
-		if(inventPriceEl) inventPriceEl.innerText = "Rp " + rawInvPrice.toLocaleString('id-ID');
-		if(inventDiffEl) inventDiffEl.innerText = "Rp " + rawInvDiff.toLocaleString('id-ID');
-		if(inventDiffEl) inventDiffEl.style.color = rawColor;
 
 		document.querySelectorAll('.eye-icon-all, #eye-icon').forEach(el => {
             el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
@@ -1041,6 +1048,18 @@ function showToast(msg, type = 'success') {
 	
 	container.appendChild(toast);
 	setTimeout(() => toast.remove(), 3000);
+}
+
+function formatRupiahInput(input) {
+    // 1. Remove any character that is NOT a number
+    let plainNumber = input.value.replace(/[^0-9]/g, '');
+    
+    // 2. Format it with Indonesian dots (Active locale)
+    if (plainNumber) {
+        input.value = parseInt(plainNumber, 10).toLocaleString('id-ID');
+    } else {
+        input.value = '';
+    }
 }
 
 // Multi-language

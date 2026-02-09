@@ -91,8 +91,9 @@
 				<label class="input-label" data-i18n="goal_name">Goal Name</label>
 				<input type="text" id="goal-name" placeholder="e.g. Rumah Baru">
 				<label class="input-label" data-i18n="goal_target">Target Amount (Rp)</label>
-				<input type="number" id="goal-target" placeholder="e.g. 500000000">
+				<input type="tel" id="goal-target" placeholder="e.g. 500.000.000" oninput="formatRupiahInput(this)">
 				<div style="display:flex; gap:10px; margin-top:20px">
+					<div id="modal-delete-container" style="margin:5px; display: flex;  justify-content: center;  align-items: center; "></div>
 					<button class="btn-primary" style="background:#333; color:#fff" onclick="toggleGoalModal()" data-i18n="cancel">Cancel</button>
 					<button id="goal-modal-submit-btn" class="btn-primary" onclick="saveGoal()" data-i18n="save">Save</button>
 				</div>
@@ -253,7 +254,7 @@
             <select id="add-weight"></select>
             
             <label class="input-label" data-i18n="cost">Buy Price</label>
-            <input type="number" id="add-price" placeholder="e.g 1500000">
+            <input type="tel" id="add-price" placeholder="e.g 1.500.000" oninput="formatRupiahInput(this)">
             <label class="input-label" data-i18n="purchase_date">Purchase Date</label>
             <input type="date" id="add-date">
             <div style="display:flex; gap:10px; margin-top:20px">
