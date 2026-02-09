@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
 	applyLang();
-};
+});
 
 // Pull to refresh
 let touchStartY = 0;
