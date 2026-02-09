@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NTGold | Market Price | Manage Portofolio</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-	<link href="./res/css/main.css" rel="stylesheet">
+	<link href="./res/css/main.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -17,33 +19,33 @@
 	</div>
 
     <nav class="desktop-nav">
-        <div class="flex-center flex-gap-sm">
+		<div class="flex items-center gap-sm">
 			<div class="logo" onclick="nav('market')">NTGold</div>
 			<span id="desktop-sub-badge" class="sub-badge"></span>
 		</div>
-        <div class="nav-links" id="desktop-links"></div>
-    </nav>
+		<div class="nav-links" id="desktop-links"></div>
+	</nav>
 
     <header class="mobile-header">
-        <div style="display: flex; align-items: center; gap: 6px;">
+		<div class="flex items-center gap-xs">
 			<h1 class="mobile-title" onclick="nav('market')">NTGold</h1>
 			<span id="mobile-sub-badge" class="sub-badge"></span>
 		</div>
-        <div id="mobile-avatar-container" style="display:none">
-            <img id="mobile-avatar-img" class="user-avatar" src="" alt="Profile" onclick="nav('profile')">
-        </div>
-    </header>
+		<div id="mobile-avatar-container" style="display:none">
+			<img id="mobile-avatar-img" class="user-avatar" src="" alt="Profile" onclick="nav('profile')">
+		</div>
+	</header>
 
     <div class="container">
         
 		<!-- Page Market -->
-        <div id="page-market" class="active-section section">
-			<h2 data-i18n="today_market" style="margin-top:0; font-size:16px; color:var(--text-sub); margin-bottom:15px">Today's Market</h2>
+		<div id="page-market" class="active-section section">
+			<h2 data-i18n="today_market" class="text-sub mt-0 mb-15" style="font-size:16px;">Today's Market</h2>
 
-			<div id="market-summary-container" style="margin-bottom: 30px; display: none;">
-				<div id="summary-cards-list" style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;"></div>
+			<div id="market-summary-container" class="mb-30" style="display: none;">
+				<div id="summary-cards-list" class="flex gap-md" style="overflow-x: auto; padding-bottom: 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;"></div>
 			</div>
-            
+
             <div class="desktop-table-container">
                 <table>
                     <thead><tr><th data-i18n="brand">Brand</th><th data-i18n="weight">Weight</th><th data-i18n="price" style="text-align:right">Price</th><th data-i18n="buyback" style="text-align:right">Buyback</th><th data-i18n="updated" style="text-align:right">Updated</th></tr></thead>
@@ -279,6 +281,6 @@
 
     <div class="bottom-nav" id="mobile-nav"></div>
 
-	<script src="./res/js/main.js"></script>
+	<script src="./res/js/main.min.js"></script>
 </body>
 </html>

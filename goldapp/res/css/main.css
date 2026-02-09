@@ -216,3 +216,24 @@ input:checked + .slider:before { transform: translateX(18px); }
 .confirm-box { background: var(--card-bg); width: 100%; max-width: 500px; padding: 30px; border-radius: 24px 24px 0 0; border-top: 1px solid var(--border); text-align: center; animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 
 @keyframes slideUpSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+
+.gap-xs { gap: 6px; }
+.gap-sm { gap: 8px; }
+.gap-md { gap: 12px; }
+.gap-lg { gap: 30px; }
+
+.text-sub { color: var(--text-sub); }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+/* Margins */
+.mt-0 { margin-top: 0; }
+.mb-5 { margin-bottom: 5px; }
+.mb-15 { margin-bottom: 15px; }
+.mb-25 { margin-bottom: 25px; }
+.mb-30 { margin-bottom: 30px; }
