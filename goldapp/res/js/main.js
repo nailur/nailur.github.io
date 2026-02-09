@@ -687,7 +687,7 @@ async function fetchPortfolio(user, walletId = null) {
 
 	const sortVal = document.getElementById('portfolio-sort').value;
 	let sortAsc = false;
-	let sortCol = 'purchase_date';
+	let sortCol = 'created_date';
 
 	if (sortVal.startsWith('weight')) sortCol = 'weight_grams';
 	if (sortVal.startsWith('brand')) sortCol = 'tblbrand(brand_name)';
