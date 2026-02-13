@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
     try {
         // const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed, ubsPages ] = await Promise.all([
-		const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed ] = await Promise.all([
+		const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, webSPARK, ubsPagesFixed ] = await Promise.all([
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
             fetchWithTimeout("https://idbullion.com/").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
@@ -35,6 +35,7 @@ export default async function handler(req, res) {
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
 			fetchWithTimeout("https://www.kinghalim.com/goldbarwithamala").catch(() => ""),
 			// fetchWithTimeout("https://emasantam.id/harga-emas-hari-ini/").catch(() => ""),
+			fetchWithTimeout("https://webspark.chr1786.com/sf6/").catch(() => ""),
             fetchUBSFixed().catch(() => ({}))
 			// fetchUBS().catch(() => ({}))
         ]);
@@ -47,6 +48,7 @@ export default async function handler(req, res) {
 			...(sampoernaHTML ? parseSampoerna(sampoernaHTML) : []),
 			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
 			// ...(emasAntamHTML ? parseEmasAntamOfficial(emasAntamHTML) : []),
+			...(webSPARK ? parseSPARK(webSPARK) : []),
 			...parseUBSLifestyleFixed(ubsPagesFixed)
             // ...parseUBSLifestyle(ubsPages)
         ];
@@ -95,6 +97,13 @@ export default async function handler(req, res) {
     } catch (e) {
 		res.status(500).json({ success: false, error: e.message, stack: e.stack });
     }
+}
+
+function parseSPARK(html) {
+	if (!html) return [];
+    const { window } = new JSDOM(html);
+    const doc = window.document;
+    console.log(doc);
 }
 
 function parseGaleri24(html) {
