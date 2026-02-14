@@ -8,7 +8,7 @@ const REQUEST_HEADERS = {
     'Referer': 'https://www.google.com/',
     'Cache-Control': 'no-cache',
     'Pragma': 'no-cache',
-    'Upgrade-Insecure-Requests': '1'
+    'Upgrade-Insecure-Requests': '1' 
 };
 
 const fetchWithTimeout = async (url, ms = 15000) => {
