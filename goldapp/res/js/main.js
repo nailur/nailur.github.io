@@ -387,13 +387,11 @@ async function fetchMarketData() {
 	}).join('');
 }
 */
-
 async function fetchMarketData() {
     let apiData = null;
     
-    // 1. Ambil data dari API IDBullion via Google Apps Script Proxy Pribadi (Anti-CORS & Anti-Blokir)
+    // 1. Ambil data dari Cloudflare Worker Proxy Pribadi
     try {
-        // GANTI DENGAN URL CLOUDFLARE WORKER MILIKMU SENDIRI
         const cloudflareWorkerUrl = "https://api-gold.nailur-rohman29.workers.dev/";
         
         const response = await fetch(cloudflareWorkerUrl);
@@ -401,7 +399,7 @@ async function fetchMarketData() {
         if (response.ok) {
             const allData = await response.json();
             
-            // FILTER: Hanya ambil data yang vendor.type === "physical"
+            // FILTER: Karena data di Worker sudah bersih, langsung filter type 'physical'
             if (Array.isArray(allData)) {
                 apiData = allData.filter(apiItem => {
                     return apiItem.vendor && apiItem.vendor.type === 'physical';
@@ -432,7 +430,7 @@ async function fetchMarketData() {
     
     brandWeightMap = {};
 
-    // 3. Ambil data dari DB Supabase terlebih dahulu untuk keperluan historical data (Yesterday) & Fallback
+    // 3. Ambil data dari DB Supabase terlebih dahulu untuk keperluan historical data (Yesterday)
     if (dbData) {
         dbData.forEach(item => {
             if (!item.tblbrand) return;
@@ -453,7 +451,7 @@ async function fetchMarketData() {
         });
     }
 
-    // 4. Timpa data Hari Ini (Today) menggunakan data fresh dari API + Mapping UUID brand_id yang presisi
+    // 4. Timpa data Hari Ini (Today) menggunakan data fresh dari API Worker + Mapping UUID yang sesuai
     if (apiData && Array.isArray(apiData)) {
         // Bersihkan map utama hari ini agar murni diisi data fresh dari API
         uniqueMap.clear();
@@ -461,8 +459,9 @@ async function fetchMarketData() {
         apiData.forEach(apiItem => {
             if (!apiItem.product || !apiItem.vendor) return;
 
-            const vendorId = apiItem.vendor.id;
-            const apiBrandId = apiItem.product.brand_id;
+            // Mengambil data sesuai dengan struktur JSON dari Worker kamu
+            const vendorId = Number(apiItem.vendor.id);
+            const apiBrandId = Number(apiItem.product.brand_id);
             const weight = Number(apiItem.product.weight || 0);
             const brandName = apiItem.vendor.name || "EMAS"; 
 
@@ -482,20 +481,19 @@ async function fetchMarketData() {
             } else if (vendorId === 5 && apiBrandId === 10) {
                 mappedBrandId = "98d9bd41-5015-40ab-9778-eeae03978627";
             } else {
-                // Fallback otomatis jika ada data brand baru yang belum ter-mapping manual
+                // Fallback otomatis jika ada brand lain
                 const matchedDbItem = dbData ? dbData.find(d => d.tblbrand && d.tblbrand.brand_name === brandName) : null;
                 mappedBrandId = matchedDbItem ? matchedDbItem.tblbrand.brand_id : `api-fallback-${apiBrandId}`;
             }
 
             const key = `${brandName}_${weight}`;
 
-            // Ambil format tanggal murni dari price_date API
+            // Ambil tanggal murni
             let dateStr = new Date().toISOString().split('T')[0];
             if (apiItem.price_date) {
                 dateStr = apiItem.price_date.split('T')[0];
             }
 
-            // Membangun struktur objek yang sama persis dengan tabel tblpricelog milikmu
             const formattedItem = {
                 id: key, 
                 weight_grams: weight,
@@ -518,7 +516,7 @@ async function fetchMarketData() {
 
     latestPricesMap = uniqueMap;
 
-    // --- 5. Proses Rendering ke HTML UI (Desktop & Mobile) ---
+    // --- 5. Proses Rendering ke HTML UI ---
     brandList = Array.from(brands).map(s => {
         const [brand_id, name] = s.split("|"); 
         return { brand_id, name };
