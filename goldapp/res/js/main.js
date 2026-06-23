@@ -600,7 +600,6 @@ async function fetchMarketData() {
     });
 
     if (typeof applyLang === 'function') applyLang();
-    updatePortfolioUI();
 }
 
 function updateWeightOptions(brandId) {
