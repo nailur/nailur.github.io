@@ -393,47 +393,25 @@ async function fetchMarketData() {
     
     // 1. Ambil data dari API IDBullion via Google Apps Script Proxy Pribadi (Anti-CORS & Anti-Blokir)
     try {
-        apiData = await new Promise((resolve, reject) => {
-            // Tentukan nama fungsi callback unik
-            const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+        // GANTI DENGAN URL CLOUDFLARE WORKER MILIKMU SENDIRI
+        const cloudflareWorkerUrl = "https://api-gold.nailur-rohman29.workers.dev/";
+        
+        const response = await fetch(cloudflareWorkerUrl);
+        
+        if (response.ok) {
+            const allData = await response.json();
             
-            // Siapkan URL Google Apps Script milikmu (Tambahkan parameter ?callback=)
-            const googleProxyUrl = "https://script.google.com/macros/s/AKfycbx-OO1lsIy0IuqlknZAgGLybPf5fBukRHMG02yljDain0wo08jBHQw4MzcsvVRS9GWMng/exec";
-            const jsonpUrl = `${googleProxyUrl}?callback=${callbackName}`;
-            
-            // Daftarkan fungsi global sementara untuk menangkap datanya
-            window[callbackName] = function(data) {
-                // Hapus script dan fungsi global setelah data didapatkan agar bersih
-                delete window[callbackName];
-                document.body.removeChild(script);
-                
-                if (data && !data.error) {
-                    // FILTER: Hanya ambil data yang vendor.type === "physical"
-                    if (Array.isArray(data)) {
-                        const filtered = data.filter(apiItem => apiItem.vendor && apiItem.vendor.type === 'physical');
-                        resolve(filtered);
-                    } else {
-                        resolve(null);
-                    }
-                } else {
-                    console.warn("Google JSONP Error:", data ? data.error : "No data");
-                    resolve(null);
-                }
-            };
-            
-            // Buat tag <script> dinamis untuk memicu pemanggilan URL ke Google
-            const script = document.createElement('script');
-            script.src = jsonpUrl;
-            script.onerror = () => {
-                delete window[callbackName];
-                if (script.parentNode) document.body.removeChild(script);
-                reject(new Error("Gagal memuat JSONP Script dari Google"));
-            };
-            
-            document.body.appendChild(script);
-        });
+            // FILTER: Hanya ambil data yang vendor.type === "physical"
+            if (Array.isArray(allData)) {
+                apiData = allData.filter(apiItem => {
+                    return apiItem.vendor && apiItem.vendor.type === 'physical';
+                });
+            }
+        } else {
+            console.warn("Cloudflare Worker merespons dengan status:", response.status);
+        }
     } catch (error) {
-        console.error("Gagal mengambil data via Google JSONP Proxy (Menggunakan Fallback DB):", error);
+        console.error("Gagal mengambil data via Cloudflare Worker (Menggunakan Fallback DB):", error);
     }
 
     // 2. Ambil data historis dari database Supabase sebagai pembanding harga kemarin (Yesterday)
