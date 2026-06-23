@@ -566,11 +566,11 @@ async function fetchMarketData() {
                 <td>${weight}g</td>
                 <td>
                     <div class="flex items-center gap-xs">
-                        <span style="font-weight:600">Rp ${formatRupiahInput(item.price || 0)}</span>
+                        <span style="font-weight:600">Rp ${item.price.toLocaleString("id-ID")}</span>
                         <span class="badge ${badgeClass}">${badgeText}</span>
                     </div>
                 </td>
-                <td style="color:var(--text-sub)">Rp ${formatRupiahInput(item.buyback_price || 0)}</td>
+                <td style="color:var(--text-sub)">Rp ${item.buyback_price.toLocaleString("id-ID")}</td>
             `;
             tbody.appendChild(tr);
         }
@@ -588,11 +588,11 @@ async function fetchMarketData() {
                 </div>
                 <div class="flex justify-between" style="font-size:13px">
                     <span style="color:var(--text-sub)" data-i18n="price">Price</span>
-                    <span style="font-weight:600">Rp ${formatRupiahInput(item.price || 0)}</span>
+                    <span style="font-weight:600">Rp ${item.price.toLocaleString("id-ID")}</span>
                 </div>
                 <div class="flex justify-between" style="font-size:13px; margin-top:4px">
                     <span style="color:var(--text-sub)" data-i18n="buyback">Buyback</span>
-                    <span style="color:var(--text-sub)">Rp ${formatRupiahInput(item.buyback_price || 0)}</span>
+                    <span style="color:var(--text-sub)">Rp ${item.buyback_price.toLocaleString("id-ID")}</span>
                 </div>
             `;
             mobileList.appendChild(div);
