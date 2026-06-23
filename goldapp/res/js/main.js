@@ -227,6 +227,7 @@ function getBrandUrl(brandName) { return getBrandInfo(brandName).url; }
 // Market Data
 let brandWeightMap = {};
 
+/* Old Fetch
 async function fetchMarketData() {
 	//const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 90);
 	const { data } = await sbClient.from('tblpricelog')
@@ -384,6 +385,222 @@ async function fetchMarketData() {
 			</div>
 		</div>`;
 	}).join('');
+}
+*/
+
+async function fetchMarketData() {
+    let apiData = null;
+    
+    // 1. Ambil data dari API IDBullion via Google Apps Script Proxy Pribadi (Anti-CORS & Anti-Blokir)
+    try {
+        // GANTI URL DI BAWAH INI DENGAN WEB APP URL YANG KAMU COPY DARI GOOGLE APPS SCRIPT
+        const googleProxyUrl = "https://script.google.com/macros/s/AKfycbx-OO1lsIy0IuqlknZAgGLybPf5fBukRHMG02yljDain0wo08jBHQw4MzcsvVRS9GWMng/exec";
+        
+        const response = await fetch(googleProxyUrl);
+        
+        if (response.ok) {
+            const allData = await response.json();
+            
+            // FILTER: Hanya ambil data yang vendor.type === "physical"
+            if (Array.isArray(allData)) {
+                apiData = allData.filter(apiItem => {
+                    return apiItem.vendor && apiItem.vendor.type === 'physical';
+                });
+            }
+        } else {
+            console.warn("Google Proxy merespons dengan status:", response.status);
+        }
+    } catch (error) {
+        console.error("Gagal mengambil data via Google Proxy (Menggunakan Fallback DB):", error);
+    }
+
+    // 2. Ambil data historis dari database Supabase sebagai pembanding harga kemarin (Yesterday)
+    const { data: dbData, error: dbError } = await sbClient.from('tblpricelog')
+        .select(`*, tblbrand(brand_name,brand_id)`)
+        .order('log_date', { ascending: false })
+        .order('created_date', { ascending: false });
+
+    if (dbError) {
+        console.error("Gagal mengambil data dari Supabase:", dbError);
+    }
+
+    if (!dbData && !apiData) return;
+
+    const brands = new Set();
+    const uniqueMap = new Map();   // Menyimpan data harga Hari Ini (Today)
+    const historyMap = new Map();  // Menyimpan data harga Kemarin/Sebelumnya (Yesterday)
+    
+    brandWeightMap = {};
+
+    // 3. Ambil data dari DB Supabase terlebih dahulu untuk keperluan historical data (Yesterday) & Fallback
+    if (dbData) {
+        dbData.forEach(item => {
+            if (!item.tblbrand) return;
+
+            const brandId = item.tblbrand.brand_id;
+            const brandName = item.tblbrand.brand_name;
+            const weight = item.weight_grams;
+            const key = `${brandName}_${weight}`;
+
+            if (!uniqueMap.has(key)) {
+                uniqueMap.set(key, item); 
+                brands.add(brandId + "|" + brandName);
+                if (!brandWeightMap[brandId]) brandWeightMap[brandId] = new Set();
+                brandWeightMap[brandId].add(weight);
+            } else if (!historyMap.has(key)) {
+                historyMap.set(key, item); 
+            }
+        });
+    }
+
+    // 4. Timpa data Hari Ini (Today) menggunakan data fresh dari API + Mapping UUID brand_id yang presisi
+    if (apiData && Array.isArray(apiData)) {
+        // Bersihkan map utama hari ini agar murni diisi data fresh dari API
+        uniqueMap.clear();
+
+        apiData.forEach(apiItem => {
+            if (!apiItem.product || !apiItem.vendor) return;
+
+            const vendorId = apiItem.vendor.id;
+            const apiBrandId = apiItem.product.brand_id;
+            const weight = Number(apiItem.product.weight || 0);
+            const brandName = apiItem.vendor.name || "EMAS"; 
+
+            // ==========================================
+            // MAPPING MANUAL VENDOR & BRAND KE UUID KAMU
+            // ==========================================
+            let mappedBrandId = null;
+
+            if (vendorId === 3 && apiBrandId === 2) {
+                mappedBrandId = "33dcc18e-4b76-402c-aed4-0c3607add5ce"; 
+            } else if (vendorId === 19 && apiBrandId === 14) {
+                mappedBrandId = "cf86cb5a-df2c-4458-98da-c64c152ea435";
+            } else if (vendorId === 2 && apiBrandId === 3) {
+                mappedBrandId = "2b6c36a6-8c7d-45bf-a9cc-e765e5536045";
+            } else if (vendorId === 4 && apiBrandId === 5) {
+                mappedBrandId = "22a84a56-4a8f-4919-b664-ab24257b38d3";
+            } else if (vendorId === 5 && apiBrandId === 10) {
+                mappedBrandId = "98d9bd41-5015-40ab-9778-eeae03978627";
+            } else {
+                // Fallback otomatis jika ada data brand baru yang belum ter-mapping manual
+                const matchedDbItem = dbData ? dbData.find(d => d.tblbrand && d.tblbrand.brand_name === brandName) : null;
+                mappedBrandId = matchedDbItem ? matchedDbItem.tblbrand.brand_id : `api-fallback-${apiBrandId}`;
+            }
+
+            const key = `${brandName}_${weight}`;
+
+            // Ambil format tanggal murni dari price_date API
+            let dateStr = new Date().toISOString().split('T')[0];
+            if (apiItem.price_date) {
+                dateStr = apiItem.price_date.split('T')[0];
+            }
+
+            // Membangun struktur objek yang sama persis dengan tabel tblpricelog milikmu
+            const formattedItem = {
+                id: key, 
+                weight_grams: weight,
+                price: Number(apiItem.buy_price || 0), 
+                buyback_price: Number(apiItem.buyback_price || 0), 
+                log_date: dateStr,
+                tblbrand: {
+                    brand_id: mappedBrandId,
+                    brand_name: brandName
+                }
+            };
+
+            uniqueMap.set(key, formattedItem);
+            brands.add(mappedBrandId + "|" + brandName);
+            
+            if (!brandWeightMap[mappedBrandId]) brandWeightMap[mappedBrandId] = new Set();
+            brandWeightMap[mappedBrandId].add(weight);
+        });
+    }
+
+    latestPricesMap = uniqueMap;
+
+    // --- 5. Proses Rendering ke HTML UI (Desktop & Mobile) ---
+    brandList = Array.from(brands).map(s => {
+        const [brand_id, name] = s.split("|"); 
+        return { brand_id, name };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+    
+    const brandSelect = document.getElementById('add-brand');
+    if (brandSelect) {
+        brandSelect.innerHTML = brandList.map(b => `<option value="${b.brand_id}">${b.name}</option>`).join('');
+    }
+
+    const tbody = document.getElementById('desktop-tbody');
+    const mobileList = document.getElementById('mobile-list');
+    if (tbody) tbody.innerHTML = '';
+    if (mobileList) mobileList.innerHTML = '';
+
+    latestPricesMap.forEach((item) => {
+        const brandName = item.tblbrand?.brand_name || '';
+        const weight = item.weight_grams;
+        const key = `${brandName}_${weight}`;
+        
+        const prevItem = historyMap.get(key);
+        const prevPrice = prevItem ? prevItem.price : item.price;
+
+        const diff = item.price - prevPrice;
+        let pct = 0;
+        if (prevPrice > 0) pct = (diff / prevPrice) * 100;
+
+        let badgeClass = 'badge-neutral';
+        let badgeText = '0.00%';
+        if (diff > 0) {
+            badgeClass = 'badge-up';
+            badgeText = `+${pct.toFixed(2)}%`;
+        } else if (diff < 0) {
+            badgeClass = 'badge-down';
+            badgeText = `${pct.toFixed(2)}%`;
+        }
+
+        if (tbody) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div style="font-weight:600">${brandName}</div>
+                    <div style="font-size:12px; color:var(--text-sub)">${item.log_date || ''}</div>
+                </td>
+                <td>${weight}g</td>
+                <td>
+                    <div class="flex items-center gap-xs">
+                        <span style="font-weight:600">Rp ${formatRupiah(item.price)}</span>
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                </td>
+                <td style="color:var(--text-sub)">Rp ${formatRupiah(item.buyback_price || 0)}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        if (mobileList) {
+            const div = document.createElement('div');
+            div.className = 'mobile-card';
+            div.innerHTML = `
+                <div class="flex justify-between items-start" style="margin-bottom:10px">
+                    <div>
+                        <div style="font-weight:600; font-size:15px">${brandName} ${weight}g</div>
+                        <div style="font-size:12px; color:var(--text-sub)">${item.log_date || ''}</div>
+                    </div>
+                    <span class="badge ${badgeClass}">${badgeText}</span>
+                </div>
+                <div class="flex justify-between" style="font-size:13px">
+                    <span style="color:var(--text-sub)" data-i18n="price">Price</span>
+                    <span style="font-weight:600">Rp ${formatRupiah(item.price)}</span>
+                </div>
+                <div class="flex justify-between" style="font-size:13px; margin-top:4px">
+                    <span style="color:var(--text-sub)" data-i18n="buyback">Buyback</span>
+                    <span style="color:var(--text-sub)">Rp ${formatRupiah(item.buyback_price || 0)}</span>
+                </div>
+            `;
+            mobileList.appendChild(div);
+        }
+    });
+
+    if (typeof applyLang === 'function') applyLang();
+    updatePortfolioUI();
 }
 
 function updateWeightOptions(brandId) {
