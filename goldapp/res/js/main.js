@@ -227,6 +227,7 @@ function getBrandUrl(brandName) { return getBrandInfo(brandName).url; }
 // Market Data
 let brandWeightMap = {};
 
+/* Old Fetch Market
 async function fetchMarketData() {
 	//const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 90);
 	const { data } = await sbClient.from('tblpricelog')
@@ -384,6 +385,180 @@ async function fetchMarketData() {
 			</div>
 		</div>`;
 	}).join('');
+}*/
+
+async function fetchMarketData() {
+    let apiData = null;
+    
+    // 1. Ambil data harga hari ini dari API external secara real-time
+    try {
+        const response = await fetch("https://idbullion.com/api/gold");
+        if (response.ok) {
+            apiData = await response.json();
+        } else {
+            console.warn("API IDBullion merespons dengan status:", response.status);
+        }
+    } catch (error) {
+        console.error("Gagal mengambil data dari IDBullion API (Menggunakan Fallback DB):", error);
+    }
+
+    // 2. Ambil seluruh data historis dari database Supabase untuk pembanding (Yesterday/History)
+    const { data: dbData, error: dbError } = await sbClient.from('tblpricelog')
+        .select(`*, tblbrand(brand_name,brand_id)`)
+        .order('log_date', { ascending: false })
+        .order('created_date', { ascending: false });
+
+    if (dbError) {
+        console.error("Gagal mengambil data dari Supabase:", dbError);
+    }
+
+    if (!dbData && !apiData) return;
+
+    const brands = new Set();
+    const uniqueMap = new Map();   // Menyimpan data harga Hari Ini (Today)
+    const historyMap = new Map();  // Menyimpan data harga Kemarin/Sebelumnya (Yesterday)
+    
+    brandWeightMap = {};
+
+    // 3. Ekstrak data dari DB Supabase untuk mengisi data 'Yesterday' (Log kedua terbaru)
+    if (dbData) {
+        dbData.forEach(item => {
+            if (!item.tblbrand) return; // Proteksi jika relasi tblbrand kosong
+
+            const brandId = item.tblbrand.brand_id;
+            const brandName = item.tblbrand.brand_name;
+            const weight = item.weight_grams;
+            const key = `${brandName}_${weight}`;
+
+            // Jika key belum ada di uniqueMap, berarti ini adalah log paling baru di DB.
+            // Kita masukkan sementara ke uniqueMap (sebagai fallback jika API down).
+            if (!uniqueMap.has(key)) {
+                uniqueMap.set(key, item); 
+                brands.add(brandId + "|" + brandName);
+                if (!brandWeightMap[brandId]) brandWeightMap[brandId] = new Set();
+                brandWeightMap[brandId].add(weight);
+            } 
+            // Jika key sudah ada di uniqueMap tapi belum ada di historyMap, 
+            // berarti ini adalah log KEDUA terbaru di DB -> Berfungsi sebagai data "Yesterday"
+            else if (!historyMap.has(key)) {
+                historyMap.set(key, item);
+            }
+        });
+    }
+
+    // 4. Timpa data Hari Ini (uniqueMap) menggunakan data fresh langsung dari API
+    if (apiData && Array.isArray(apiData)) {
+        apiData.forEach(apiItem => {
+            // NOTE: Sesuaikan nama properti (brand_name, weight_grams, dll) jika struktur JSON API berbeda
+            const brandName = apiItem.brand_name; 
+            const weight = apiItem.weight_grams;
+            const key = `${brandName}_${weight}`;
+
+            // Ambil data acuan dari DB (jika ada) untuk mempertahankan struktur objek bawaan (seperti brand_id)
+            const fallbackItem = uniqueMap.get(key) || {};
+
+            const updatedItem = {
+                ...fallbackItem,
+                price: Number(apiItem.price) || fallbackItem.price, 
+                buyback_price: Number(apiItem.buyback_price) || fallbackItem.buyback_price,
+                log_date: apiItem.log_date || new Date().toISOString().split('T')[0]
+            };
+
+            // Update uniqueMap dengan harga paling segar dari API
+            uniqueMap.set(key, updatedItem);
+        });
+    }
+
+    // Simpan hasil penggabungan ke global variable aplikasi kamu
+    latestPricesMap = uniqueMap;
+
+    // --- 5. Bagian Rendering ke UI (Sesuai dengan logika asli aplikasi kamu) ---
+    brandList = Array.from(brands).map(s => {
+        const [brand_id, name] = s.split("|"); 
+        return { brand_id, name };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+    
+    const brandSelect = document.getElementById('add-brand');
+    if (brandSelect) {
+        brandSelect.innerHTML = brandList.map(b => `<option value="${b.brand_id}">${b.name}</option>`).join('');
+    }
+
+    const tbody = document.getElementById('desktop-tbody');
+    const mobileList = document.getElementById('mobile-list');
+    if (tbody) tbody.innerHTML = '';
+    if (mobileList) mobileList.innerHTML = '';
+
+    // Render baris data ke tabel desktop dan list mobile
+    latestPricesMap.forEach((item) => {
+        const brandName = item.tblbrand?.brand_name || '';
+        const weight = item.weight_grams;
+        const key = `${brandName}_${weight}`;
+        
+        // Ambil harga pembanding kemarin dari historyMap (Log kedua di database)
+        const prevItem = historyMap.get(key);
+        const prevPrice = prevItem ? prevItem.price : item.price;
+
+        const diff = item.price - prevPrice;
+        let pct = 0;
+        if (prevPrice > 0) pct = (diff / prevPrice) * 100;
+
+        let badgeClass = 'badge-neutral';
+        let badgeText = '0.00%';
+        if (diff > 0) {
+            badgeClass = 'badge-up';
+            badgeText = `+${pct.toFixed(2)}%`;
+        } else if (diff < 0) {
+            badgeClass = 'badge-down';
+            badgeText = `${pct.toFixed(2)}%`;
+        }
+
+        // Tampilan Desktop
+        if (tbody) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div style="font-weight:600">${brandName}</div>
+                    <div style="font-size:12px; color:var(--text-sub)">${item.log_date || ''}</div>
+                </td>
+                <td>${weight}g</td>
+                <td>
+                    <div class="flex items-center gap-xs">
+                        <span style="font-weight:600">Rp ${formatRupiah(item.price)}</span>
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                </td>
+                <td style="color:var(--text-sub)">Rp ${formatRupiah(item.buyback_price || 0)}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        // Tampilan Mobile
+        if (mobileList) {
+            const div = document.createElement('div');
+            div.className = 'mobile-card';
+            div.innerHTML = `
+                <div class="flex justify-between items-start" style="margin-bottom:10px">
+                    <div>
+                        <div style="font-weight:600; font-size:15px">${brandName} ${weight}g</div>
+                        <div style="font-size:12px; color:var(--text-sub)">${item.log_date || ''}</div>
+                    </div>
+                    <span class="badge ${badgeClass}">${badgeText}</span>
+                </div>
+                <div class="flex justify-between" style="font-size:13px">
+                    <span style="color:var(--text-sub)" data-i18n="price">Price</span>
+                    <span style="font-weight:600">Rp ${formatRupiah(item.price)}</span>
+                </div>
+                <div class="flex justify-between" style="font-size:13px; margin-top:4px">
+                    <span style="color:var(--text-sub)" data-i18n="buyback">Buyback</span>
+                    <span style="color:var(--text-sub)">Rp ${formatRupiah(item.buyback_price || 0)}</span>
+                </div>
+            `;
+            mobileList.appendChild(div);
+        }
+    });
+
+    if (typeof applyLang === 'function') applyLang();
+    updatePortfolioUI();
 }
 
 function updateWeightOptions(brandId) {
