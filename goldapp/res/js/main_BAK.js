@@ -228,10 +228,10 @@ function getBrandUrl(brandName) { return getBrandInfo(brandName).url; }
 let brandWeightMap = {};
 
 async function fetchMarketData() {
-	const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 7);
+	//const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 90);
 	const { data } = await sbClient.from('tblpricelog')
 		.select(`*, tblbrand(brand_name,brand_id)`)
-		.gt('log_date', dateLimit.toISOString().split('T')[0])
+		//.gt('log_date', dateLimit.toISOString().split('T')[0])
 		.order('log_date', { ascending: false })
 		.order('created_date', { ascending: false });
 

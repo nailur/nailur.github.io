@@ -400,11 +400,10 @@ async function fetchMarketData() {
         if (response.ok) {
             const allData = await response.json();
             
-            // FILTER: Karena data dari Worker berbentuk flat array, langsung pastikan typenya physical (jika ada properti vendor_type)
             if (Array.isArray(allData)) {
                 apiData = allData.filter(apiItem => {
-                    // Proteksi jika properti vendor_type ada, jika tidak ada langsung loloskan
-                    return !apiItem.vendor_type || apiItem.vendor_type === 'physical';
+                    const type = (apiItem.vendor && apiItem.vendor.type);
+                    return String(type).toLowerCase() === 'physical';
                 });
             }
         } else {
