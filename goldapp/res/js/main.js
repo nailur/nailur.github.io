@@ -566,7 +566,7 @@ async function fetchMarketData() {
                 <td>${weight}g</td>
                 <td>
                     <div class="flex items-center gap-xs">
-                        <span style="font-weight:600">Rp ${formatRupiahInput(item.price)}</span>
+                        <span style="font-weight:600">Rp ${formatRupiahInput(item.price || 0)}</span>
                         <span class="badge ${badgeClass}">${badgeText}</span>
                     </div>
                 </td>
@@ -588,7 +588,7 @@ async function fetchMarketData() {
                 </div>
                 <div class="flex justify-between" style="font-size:13px">
                     <span style="color:var(--text-sub)" data-i18n="price">Price</span>
-                    <span style="font-weight:600">Rp ${formatRupiahInput(item.price)}</span>
+                    <span style="font-weight:600">Rp ${formatRupiahInput(item.price || 0)}</span>
                 </div>
                 <div class="flex justify-between" style="font-size:13px; margin-top:4px">
                     <span style="color:var(--text-sub)" data-i18n="buyback">Buyback</span>
