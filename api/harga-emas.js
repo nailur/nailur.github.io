@@ -27,9 +27,10 @@ export default async function handler(req, res) {
 
     try {
         // const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed, ubsPages ] = await Promise.all([
-		const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed ] = await Promise.all([
+		// const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed ] = await Promise.all([
+		const [galeriHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed ] = await Promise.all([
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
-            fetchWithTimeout("https://idbullion.com/").catch(() => ""),
+            // fetchWithTimeout("https://idbullion.com/").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
@@ -42,7 +43,7 @@ export default async function handler(req, res) {
         const rawData = [
             ...(galeriHTML ? parseGaleri24(galeriHTML) : []),
             // ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
-			...(bullionHTML ? parseBullion(bullionHTML, lotusHTML) : []),
+			// ...(bullionHTML ? parseBullion(bullionHTML, lotusHTML) : []),
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
 			...(sampoernaHTML ? parseSampoerna(sampoernaHTML) : []),
 			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
@@ -130,7 +131,8 @@ function parseGaleri24(html) {
     return result;
 }
 
-function parseBullion(bullionHtml, lotusHtml) {
+/* Old Bullion Website */
+/* function parseBullion(bullionHtml, lotusHtml) {
     if (!bullionHtml) return [];
     const doc = new JSDOM(bullionHtml).window.document;
 
@@ -171,7 +173,7 @@ function parseBullion(bullionHtml, lotusHtml) {
     // processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate);
 
     return data;
-}
+} */
 
 function parseEmasKita(html) {
     if (!html) return [];
