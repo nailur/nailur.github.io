@@ -387,10 +387,11 @@ async function fetchMarketData() {
 	}).join('');
 }
 */
+
 async function fetchMarketData() {
     let apiData = null;
     
-    // 1. Ambil data dari Cloudflare Worker Proxy Pribadi
+    // 1. Ambil data murni dari Cloudflare Worker Proxy Pribadi
     try {
         const cloudflareWorkerUrl = "https://api-gold.nailur-rohman29.workers.dev/";
         
@@ -399,10 +400,11 @@ async function fetchMarketData() {
         if (response.ok) {
             const allData = await response.json();
             
-            // FILTER: Karena data di Worker sudah bersih, langsung filter type 'physical'
+            // FILTER: Karena data dari Worker berbentuk flat array, langsung pastikan typenya physical (jika ada properti vendor_type)
             if (Array.isArray(allData)) {
                 apiData = allData.filter(apiItem => {
-                    return apiItem.vendor && apiItem.vendor.type === 'physical';
+                    // Proteksi jika properti vendor_type ada, jika tidak ada langsung loloskan
+                    return !apiItem.vendor_type || apiItem.vendor_type === 'physical';
                 });
             }
         } else {
@@ -451,19 +453,17 @@ async function fetchMarketData() {
         });
     }
 
-    // 4. Timpa data Hari Ini (Today) menggunakan data fresh dari API Worker + Mapping UUID yang sesuai
+    // 4. Timpa data Hari Ini (Today) menggunakan struktur FLAT JSON dari Worker + Mapping UUID
     if (apiData && Array.isArray(apiData)) {
-        // Bersihkan map utama hari ini agar murni diisi data fresh dari API
+        // Bersihkan map utama hari ini agar murni menggunakan data fresh dari API Worker
         uniqueMap.clear();
 
         apiData.forEach(apiItem => {
-            if (!apiItem.product || !apiItem.vendor) return;
-
-            // Mengambil data sesuai dengan struktur JSON dari Worker kamu
-            const vendorId = Number(apiItem.vendor.id);
-            const apiBrandId = Number(apiItem.product.brand_id);
-            const weight = Number(apiItem.product.weight || 0);
-            const brandName = apiItem.vendor.name || "EMAS"; 
+            // Menyesuaikan dengan properti FLAT dari Cloudflare Worker kamu
+            const vendorId = Number(apiItem.vendor_id || 0);
+            const apiBrandId = Number(apiItem.brand_id || 0);
+            const weight = Number(apiItem.weight || 0);
+            const brandName = apiItem.vendor_name || "EMAS"; 
 
             // ==========================================
             // MAPPING MANUAL VENDOR & BRAND KE UUID KAMU
@@ -481,23 +481,25 @@ async function fetchMarketData() {
             } else if (vendorId === 5 && apiBrandId === 10) {
                 mappedBrandId = "98d9bd41-5015-40ab-9778-eeae03978627";
             } else {
-                // Fallback otomatis jika ada brand lain
+                // Fallback otomatis jika ada brand lain berdasarkan kecocokan nama di DB
                 const matchedDbItem = dbData ? dbData.find(d => d.tblbrand && d.tblbrand.brand_name === brandName) : null;
                 mappedBrandId = matchedDbItem ? matchedDbItem.tblbrand.brand_id : `api-fallback-${apiBrandId}`;
             }
 
             const key = `${brandName}_${weight}`;
 
-            // Ambil tanggal murni
+            // Ambil format tanggal log_date/price_date murni
             let dateStr = new Date().toISOString().split('T')[0];
             if (apiItem.price_date) {
                 dateStr = apiItem.price_date.split('T')[0];
+            } else if (apiItem.log_date) {
+                dateStr = apiItem.log_date.split('T')[0];
             }
 
             const formattedItem = {
                 id: key, 
                 weight_grams: weight,
-                price: Number(apiItem.buy_price || 0), 
+                price: Number(apiItem.buy_price || apiItem.price || 0), 
                 buyback_price: Number(apiItem.buyback_price || 0), 
                 log_date: dateStr,
                 tblbrand: {
@@ -516,7 +518,7 @@ async function fetchMarketData() {
 
     latestPricesMap = uniqueMap;
 
-    // --- 5. Proses Rendering ke HTML UI ---
+    // --- 5. Proses Rendering ke HTML UI (Desktop & Mobile) ---
     brandList = Array.from(brands).map(s => {
         const [brand_id, name] = s.split("|"); 
         return { brand_id, name };
