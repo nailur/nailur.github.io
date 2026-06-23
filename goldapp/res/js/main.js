@@ -391,11 +391,16 @@ async function fetchMarketData() {
 async function fetchMarketData() {
     let apiData = null;
     
-    // 1. Ambil data harga hari ini dari API external secara real-time
+    // 1. Ambil data harga hari ini menggunakan AllOrigins Proxy untuk bypass CORS
     try {
-        const response = await fetch("https://idbullion.com/api/gold");
+        const targetUrl = "https://idbullion.com/api/gold";
+        // Menggunakan allorigins.win yang lebih stabil dan bebas blokir aktivasi
+        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+        
         if (response.ok) {
-            const allData = await response.json();
+            const wrapper = await response.json();
+            // AllOrigins membungkus string JSON aslinya di dalam properti wrapper.contents
+            const allData = JSON.parse(wrapper.contents);
             
             // FILTER: Hanya ambil data yang vendor.type === "physical"
             if (Array.isArray(allData)) {
@@ -404,10 +409,10 @@ async function fetchMarketData() {
                 });
             }
         } else {
-            console.warn("API IDBullion merespons dengan status:", response.status);
+            console.warn("Proxy AllOrigins merespons dengan status:", response.status);
         }
     } catch (error) {
-        console.error("Gagal mengambil data dari IDBullion API:", error);
+        console.error("Gagal mengambil data dari IDBullion API via Proxy:", error);
     }
 
     // 2. Ambil data historis dari database Supabase sebagai backup & pembanding harga kemarin (Yesterday)
@@ -455,30 +460,25 @@ async function fetchMarketData() {
         uniqueMap.clear();
 
         apiData.forEach(apiItem => {
-            // Abaikan jika properti product tidak ditemukan di item ini
             if (!apiItem.product) return;
 
-            // Mengambil data dari nested object sesuai format API kamu
             const brandName = apiItem.vendor ? apiItem.vendor.name : "EMAS"; 
             const weight = Number(apiItem.product.weight || 0);
             const key = `${brandName}_${weight}`;
 
-            // Ambil tanggal dari price_date (misal: "2026-06-23T00:00:00Z" di-split ambil tanggalnya saja)
             let dateStr = new Date().toISOString().split('T')[0];
             if (apiItem.price_date) {
                 dateStr = apiItem.price_date.split('T')[0];
             }
 
-            // Cari kecocokan data DB untuk mengambil brand_id asli agar fitur portofolio tidak rusak
             const matchedDbItem = dbData ? dbData.find(d => d.tblbrand && d.tblbrand.brand_name === brandName && d.weight_grams === weight) : null;
             const fallbackBrandId = matchedDbItem ? matchedDbItem.tblbrand.brand_id : "API_" + (apiItem.product.brand_id || "BRAND");
 
-            // Format objek disesuaikan dengan kebutuhan rendering aplikasi kamu
             const formattedItem = {
                 id: matchedDbItem ? matchedDbItem.id : key,
                 weight_grams: weight,
-                price: Number(apiItem.buy_price || 0), // Menggunakan buy_price dari API sebagai harga beli user hari ini
-                buyback_price: Number(apiItem.buyback_price || 0), // Menggunakan buyback_price dari API
+                price: Number(apiItem.buy_price || 0), 
+                buyback_price: Number(apiItem.buyback_price || 0), 
                 log_date: dateStr,
                 tblbrand: {
                     brand_id: fallbackBrandId,
@@ -494,7 +494,6 @@ async function fetchMarketData() {
         });
     }
 
-    // Set map global aplikasi dengan data terefresh
     latestPricesMap = uniqueMap;
 
     // --- 5. Proses Rendering ke HTML UI (Desktop & Mobile) ---
@@ -513,13 +512,11 @@ async function fetchMarketData() {
     if (tbody) tbody.innerHTML = '';
     if (mobileList) mobileList.innerHTML = '';
 
-    // Render baris data ke tabel desktop dan list mobile
     latestPricesMap.forEach((item) => {
         const brandName = item.tblbrand?.brand_name || '';
         const weight = item.weight_grams;
         const key = `${brandName}_${weight}`;
         
-        // Mengambil harga pembanding kemarin (Yesterday) dari database
         const prevItem = historyMap.get(key);
         const prevPrice = prevItem ? prevItem.price : item.price;
 
@@ -537,7 +534,6 @@ async function fetchMarketData() {
             badgeText = `${pct.toFixed(2)}%`;
         }
 
-        // Tampilan Desktop
         if (tbody) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -557,7 +553,6 @@ async function fetchMarketData() {
             tbody.appendChild(tr);
         }
 
-        // Tampilan Mobile
         if (mobileList) {
             const div = document.createElement('div');
             div.className = 'mobile-card';
