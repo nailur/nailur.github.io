@@ -396,7 +396,11 @@ async function fetchMarketData() {
         // GANTI URL DI BAWAH INI DENGAN WEB APP URL YANG KAMU COPY DARI GOOGLE APPS SCRIPT
         const googleProxyUrl = "https://script.google.com/macros/s/AKfycbx-OO1lsIy0IuqlknZAgGLybPf5fBukRHMG02yljDain0wo08jBHQw4MzcsvVRS9GWMng/exec";
         
-        const response = await fetch(googleProxyUrl);
+		const response = await fetch(googleProxyUrl, {
+            method: "GET",
+            mode: "cors",       // Memastikan browser tahu ini request lintas origin
+            redirect: "follow"  // WAJIB: Memaksa browser mengikuti URL Google yang berubah/redirect tadi
+        });
         
         if (response.ok) {
             const allData = await response.json();
