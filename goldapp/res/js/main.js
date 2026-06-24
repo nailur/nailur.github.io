@@ -227,6 +227,15 @@ function getBrandUrl(brandName) { return getBrandInfo(brandName).url; }
 // Market Data
 let brandWeightMap = {};
 
+// API to Database Brand Mapping
+const apiBrandMap = {
+	"3_2": "Antam",
+	"19_14": "Emas Kita",
+	"2_3": "Galeri24",
+	"4_5": "Lotus Archi",
+	"5_10": "Sampoerna"
+};
+
 async function fetchMarketData() {
 	let apiData = null;
 
@@ -264,8 +273,11 @@ async function fetchMarketData() {
 
 	apiData.forEach(apiItem => {
 		const weight = Number(apiItem.product?.weight || 0);
-		const brandName = apiItem.product?.name || "GOLD";
-		const key = `${brandName}_${weight}`;
+		const productName = apiItem.product?.name || "GOLD";
+		const key = `${productName}_${weight}`;
+
+		const mappingKey = `${apiItem.vendor?.id}_${apiItem.product?.brand_id}`;
+		const brandName = apiBrandMap[mappingKey] || apiItem.vendor?.name || "GOLD";
 
 		const formattedItem = {
 			id: key,
@@ -274,8 +286,8 @@ async function fetchMarketData() {
 			buyback_price: Number(apiItem.buyback_price || apiItem.buy_price || 0),
 			log_date: apiItem.price_date || new Date().toISOString(),
 			tblbrand: {
-				brand_id: apiItem.vendor?.id || apiItem.vendor?.slug,
-				brand_name: apiItem.vendor?.name || "GOLD"
+				brand_id: mappingKey,
+				brand_name: brandName
 			}
 		};
 
