@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "deploy": "npm run build && cp -r dist/* . && echo '✅ Deployed!'",
     "lint": "oxlint",
     "preview": "vite preview"
   },
