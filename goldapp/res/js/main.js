@@ -399,9 +399,10 @@ async function fetchMarketData() {
         
         if (response.ok) {
             const allData = await response.json();
-            
-            if (Array.isArray(allData)) {
-                apiData = allData.filter(apiItem => {
+            const itemsArray = Array.isArray(allData) ? allData : (allData.data || []);
+
+            if (Array.isArray(itemsArray)) {
+                apiData = itemsArray.filter(apiItem => {
                     const type = (apiItem.vendor && apiItem.vendor.type);
                     return String(type).toLowerCase() === 'physical';
                 });
