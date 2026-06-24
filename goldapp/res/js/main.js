@@ -277,7 +277,10 @@ async function fetchMarketData() {
 		const key = `${productName}_${weight}`;
 
 		const mappingKey = `${apiItem.vendor?.id}_${apiItem.product?.brand_id}`;
-		const brandName = apiBrandMap[mappingKey] || apiItem.vendor?.name || "GOLD";
+		const brandName = apiBrandMap[mappingKey];
+
+		// Only include items that match the exact mapping
+		if (!brandName) return;
 
 		const formattedItem = {
 			id: key,
