@@ -238,6 +238,40 @@ const apiBrandMap = {
 
 async function fetchMarketData() {
 	let apiData = null;
+	let dbPrices = new Map();
+	let allBrands = new Map();
+
+	try {
+		// Fetch all brands from database
+		const { data: brandsData, error: brandsError } = await sbClient
+			.from('tblbrand')
+			.select('*');
+
+		if (brandsData) {
+			brandsData.forEach(brand => {
+				allBrands.set(brand.id, brand.brand_name);
+			});
+		}
+
+		// Fetch latest prices from database (most recent price_date per brand/weight)
+		const { data: pricesData, error: pricesError } = await sbClient
+			.from('tblpricelog')
+			.select('*')
+			.order('created_date', { ascending: false });
+
+		if (pricesData) {
+			const priceMap = new Map();
+			pricesData.forEach(price => {
+				const key = `${price.brand_id}_${price.weight_grams}`;
+				if (!priceMap.has(key)) {
+					priceMap.set(key, price);
+					dbPrices.set(key, price);
+				}
+			});
+		}
+	} catch (error) {
+		console.error("Failed to fetch database data:", error);
+	}
 
 	try {
 		const cloudflareWorkerUrl = "https://api-gold.nailur-rohman29.workers.dev/";
@@ -260,47 +294,71 @@ async function fetchMarketData() {
 		console.error("Failed to fetch API data:", error);
 	}
 
-	if (!apiData || apiData.length === 0) {
-		console.warn("No API data available");
-		return;
-	}
-
 	const brands = new Set();
 	const uniqueMap = new Map();
 	const historyMap = new Map();
 
 	brandWeightMap = {};
 
-	apiData.forEach(apiItem => {
-		const weight = Number(apiItem.product?.weight || 0);
-		const productName = apiItem.product?.name || "GOLD";
-		const key = `${productName}_${weight}`;
+	// Process API data with mapping
+	if (apiData && apiData.length > 0) {
+		apiData.forEach(apiItem => {
+			const weight = Number(apiItem.product?.weight || 0);
+			const productName = apiItem.product?.name || "GOLD";
+			const key = `${productName}_${weight}`;
 
-		const mappingKey = `${apiItem.vendor?.id}_${apiItem.product?.brand_id}`;
-		const brandName = apiBrandMap[mappingKey];
+			const mappingKey = `${apiItem.vendor?.id}_${apiItem.product?.brand_id}`;
+			const brandName = apiBrandMap[mappingKey];
 
-		// Only include items that match the exact mapping
-		if (!brandName) return;
+			if (!brandName) return;
 
-		const formattedItem = {
-			id: key,
-			weight_grams: weight,
-			price: Number(apiItem.buy_price || 0),
-			buyback_price: Number(apiItem.buyback_price || apiItem.buy_price || 0),
-			log_date: apiItem.price_date || new Date().toISOString(),
-			tblbrand: {
-				brand_id: mappingKey,
-				brand_name: brandName
+			const formattedItem = {
+				id: key,
+				weight_grams: weight,
+				price: Number(apiItem.buy_price || 0),
+				buyback_price: Number(apiItem.buyback_price || apiItem.buy_price || 0),
+				log_date: apiItem.price_date || new Date().toISOString(),
+				tblbrand: {
+					brand_id: mappingKey,
+					brand_name: brandName
+				}
+			};
+
+			if (!uniqueMap.has(key)) {
+				uniqueMap.set(key, formattedItem);
+				brands.add(formattedItem.tblbrand.brand_id + "|" + formattedItem.tblbrand.brand_name);
+				if (!brandWeightMap[formattedItem.tblbrand.brand_id]) {
+					brandWeightMap[formattedItem.tblbrand.brand_id] = new Set();
+				}
+				brandWeightMap[formattedItem.tblbrand.brand_id].add(weight);
 			}
-		};
+		});
+	}
 
-		if (!uniqueMap.has(key)) {
-			uniqueMap.set(key, formattedItem);
-			brands.add(formattedItem.tblbrand.brand_id + "|" + formattedItem.tblbrand.brand_name);
-			if (!brandWeightMap[formattedItem.tblbrand.brand_id]) {
-				brandWeightMap[formattedItem.tblbrand.brand_id] = new Set();
+	// Add database brands that don't have API data
+	dbPrices.forEach((price, key) => {
+		const [brandId, weight] = key.split('_');
+		const brandName = allBrands.get(brandId);
+
+		if (brandName && !uniqueMap.has(`${brandName}_${weight}`)) {
+			const formattedItem = {
+				id: `${brandName}_${weight}`,
+				weight_grams: Number(weight),
+				price: Number(price.price || 0),
+				buyback_price: Number(price.buyback_price || 0),
+				log_date: price.created_date || new Date().toISOString(),
+				tblbrand: {
+					brand_id: brandId,
+					brand_name: brandName
+				}
+			};
+
+			uniqueMap.set(`${brandName}_${weight}`, formattedItem);
+			brands.add(brandId + "|" + brandName);
+			if (!brandWeightMap[brandId]) {
+				brandWeightMap[brandId] = new Set();
 			}
-			brandWeightMap[formattedItem.tblbrand.brand_id].add(weight);
+			brandWeightMap[brandId].add(Number(weight));
 		}
 	});
 
