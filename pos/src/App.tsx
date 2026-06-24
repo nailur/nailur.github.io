@@ -1,34 +1,74 @@
 import { useState, useEffect } from 'react';
-import { sampleProducts, TAX_RATE } from './data';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { loadProducts, subscribeToProducts, TAX_RATE } from './data';
 import type { CartItem, Transaction, Product } from './types';
 import { loadTransactions, saveTransaction, deleteAllTransactions, subscribeToTransactions } from './storage';
 import { ProductCatalog } from './components/ProductCatalog';
 import { Cart } from './components/Cart';
 import { Checkout } from './components/Checkout';
 import { SalesHistory } from './components/SalesHistory';
+import { ProductManager } from './components/ProductManager';
+import { OutletManager } from './components/OutletManager';
+import { UserManager } from './components/UserManager';
+import { LoginPage } from './components/LoginPage';
 import './App.css';
 
-function App() {
+type TabId = 'sale' | 'history' | 'products' | 'outlets' | 'users';
+
+interface TabDef {
+  id: TabId;
+  label: string;
+  icon: string;
+  superadminOnly?: boolean;
+}
+
+const TABS: TabDef[] = [
+  { id: 'sale', label: 'Sale', icon: '🛒' },
+  { id: 'history', label: 'History', icon: '📊' },
+  { id: 'products', label: 'Products', icon: '📦' },
+  { id: 'outlets', label: 'Outlets', icon: '🏪', superadminOnly: true },
+  { id: 'users', label: 'Users', icon: '👥', superadminOnly: true },
+];
+
+function PosApp() {
+  const { user, logout } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [activeTab, setActiveTab] = useState<'sale' | 'history'>('sale');
+  const [activeTab, setActiveTab] = useState<TabId>('sale');
   const [loading, setLoading] = useState(true);
 
+  const outletId = user?.outletId || '';
+  const isSuperadmin = user?.role === 'superadmin';
+
   useEffect(() => {
-    const initTransactions = async () => {
-      const data = await loadTransactions();
-      setTransactions(data);
+    if (!user) return;
+
+    const initData = async () => {
+      const [productsData, transactionsData] = await Promise.all([
+        loadProducts(outletId || undefined),
+        loadTransactions(outletId || undefined),
+      ]);
+      setProducts(productsData);
+      setTransactions(transactionsData);
       setLoading(false);
     };
 
-    initTransactions();
+    initData();
 
-    const unsubscribe = subscribeToTransactions((updated) => {
+    const unsubscribeProducts = subscribeToProducts((updated) => {
+      setProducts(updated);
+    }, outletId || undefined);
+
+    const unsubscribeTransactions = subscribeToTransactions((updated) => {
       setTransactions(updated);
-    });
+    }, outletId || undefined);
 
-    return () => unsubscribe();
-  }, []);
+    return () => {
+      unsubscribeProducts();
+      unsubscribeTransactions();
+    };
+  }, [user, outletId]);
 
   const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const tax = subtotal * TAX_RATE;
@@ -65,6 +105,11 @@ function App() {
   };
 
   const handleCheckout = async () => {
+    if (!outletId && !isSuperadmin) {
+      alert('No outlet assigned. Contact your superadmin.');
+      return;
+    }
+
     const transaction: Transaction = {
       id: Date.now().toString(),
       items: [...cart],
@@ -72,13 +117,14 @@ function App() {
       tax,
       total,
       timestamp: Date.now(),
+      outlet_id: outletId,
     };
 
     try {
       await saveTransaction(transaction);
       setCart([]);
       alert(`Sale completed! Total: $${total.toFixed(2)}`);
-    } catch (error) {
+    } catch {
       alert('Failed to save transaction. Please try again.');
     }
   };
@@ -86,44 +132,33 @@ function App() {
   const handleClearHistory = async () => {
     if (window.confirm('Clear all transaction history? This cannot be undone.')) {
       try {
-        await deleteAllTransactions();
+        await deleteAllTransactions(outletId || undefined);
         setTransactions([]);
-      } catch (error) {
+      } catch {
         alert('Failed to clear history. Please try again.');
       }
     }
   };
 
-  return (
-    <div className="app">
-      <header className="header">
-        <h1>Simple POS System</h1>
-        <div className="tabs">
-          <button
-            className={`tab ${activeTab === 'sale' ? 'active' : ''}`}
-            onClick={() => setActiveTab('sale')}
-          >
-            Sale
-          </button>
-          <button
-            className={`tab ${activeTab === 'history' ? 'active' : ''}`}
-            onClick={() => setActiveTab('history')}
-          >
-            History
-          </button>
-        </div>
-      </header>
+  const visibleTabs = TABS.filter(tab => isSuperadmin || !tab.superadminOnly);
 
-      <div className="container">
-        {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <p>Loading...</p>
-          </div>
-        ) : activeTab === 'sale' ? (
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="loading-state">
+          <div className="loading-spinner" />
+          <p>Loading data...</p>
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case 'sale':
+        return (
           <div className="sale-layout">
             <div className="products-section">
               <ProductCatalog
-                products={sampleProducts}
+                products={products}
                 onAddToCart={handleAddToCart}
               />
             </div>
@@ -143,15 +178,109 @@ function App() {
               />
             </div>
           </div>
-        ) : (
+        );
+      case 'history':
+        return (
           <SalesHistory
             transactions={transactions}
             onClearHistory={handleClearHistory}
           />
-        )}
+        );
+      case 'products':
+        return (
+          <ProductManager
+            products={products}
+            outletId={outletId}
+          />
+        );
+      case 'outlets':
+        return isSuperadmin ? <OutletManager /> : null;
+      case 'users':
+        return isSuperadmin ? <UserManager /> : null;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="app">
+      <header className="header">
+        <div className="header-top">
+          <div className="header-brand">
+            <svg className="header-logo" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <path d="M16 10a4 4 0 01-8 0" />
+            </svg>
+            <div>
+              <h1>POS System</h1>
+              {user?.outletName && (
+                <span className="header-outlet">{user.outletName}</span>
+              )}
+            </div>
+          </div>
+          <div className="header-user">
+            <div className="header-user-info">
+              <span className="header-email">{user?.email}</span>
+              <span className={`header-role ${user?.role === 'superadmin' ? 'role-super' : 'role-admin'}`}>
+                {user?.role}
+              </span>
+            </div>
+            <button onClick={logout} className="logout-btn" title="Sign out">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <nav className="tabs">
+          {visibleTabs.map(tab => (
+            <button
+              key={tab.id}
+              className={`tab ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <span className="tab-icon">{tab.icon}</span>
+              <span className="tab-label">{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      <div className="container">
+        {renderContent()}
       </div>
     </div>
   );
 }
 
-export default App;
+function App() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="app-loading">
+        <div className="loading-spinner" />
+        <p>Initializing...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  return <PosApp />;
+}
+
+function AppWrapper() {
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}
+
+export default AppWrapper;
