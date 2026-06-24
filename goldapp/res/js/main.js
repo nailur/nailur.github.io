@@ -272,7 +272,7 @@ async function fetchMarketData() {
 			weight_grams: weight,
 			price: Number(apiItem.buy_price || 0),
 			buyback_price: Number(apiItem.buyback_price || apiItem.buy_price || 0),
-			log_date: apiItem.price_date ? apiItem.price_date.split('T')[0] : new Date().toISOString().split('T')[0],
+			log_date: apiItem.price_date || new Date().toISOString(),
 			tblbrand: {
 				brand_id: apiItem.vendor?.id || apiItem.vendor?.slug,
 				brand_name: apiItem.vendor?.name || "GOLD"
