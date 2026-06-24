@@ -228,44 +228,64 @@ function getBrandUrl(brandName) { return getBrandInfo(brandName).url; }
 let brandWeightMap = {};
 
 async function fetchMarketData() {
-	//const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 90);
-	const { data } = await sbClient.from('tblpricelog')
-		.select(`*, tblbrand(brand_name,brand_id)`)
-		//.gt('log_date', dateLimit.toISOString().split('T')[0])
-		.order('log_date', { ascending: false })
-		.order('created_date', { ascending: false });
+	let apiData = null;
 
-	if (!data) return;
+	try {
+		const cloudflareWorkerUrl = "https://api-gold.nailur-rohman29.workers.dev/";
+		const response = await fetch(cloudflareWorkerUrl);
 
-	// Populate Modal Select
-	const map = new Map();
+		if (response.ok) {
+			const allData = await response.json();
+			const itemsArray = Array.isArray(allData) ? allData : (allData.data || []);
+
+			if (Array.isArray(itemsArray)) {
+				apiData = itemsArray.filter(apiItem => {
+					const type = (apiItem.vendor && apiItem.vendor.type);
+					return String(type).toLowerCase() === 'physical';
+				});
+			}
+		} else {
+			console.warn("API returned status:", response.status);
+		}
+	} catch (error) {
+		console.error("Failed to fetch API data:", error);
+	}
+
+	if (!apiData || apiData.length === 0) {
+		console.warn("No API data available");
+		return;
+	}
+
 	const brands = new Set();
-	const uniqueMap = new Map();   // Stores the latest price
-	const historyMap = new Map();  // Stores the second latest price
-	const distinctWeights = new Set();
+	const uniqueMap = new Map();
+	const historyMap = new Map();
 
 	brandWeightMap = {};
-	
-	data.forEach(item => {
-		const brandId = item.tblbrand.brand_id;
-        const brandName = item.tblbrand.brand_name;
-        const weight = item.weight_grams;
-        const key = `${brandName}_${weight}`;
-		
-		if (!uniqueMap.has(key)) {
-			// First time seeing this brand/weight = Latest Data
-			uniqueMap.set(key, item);
-			brands.add(brandId + "|" + brandName);
-			distinctWeights.add(item.weight_grams);
 
-			// Build the Brand -> Weight mapping
-			if (!brandWeightMap[brandId]) {
-                brandWeightMap[brandId] = new Set();
-            }
-            brandWeightMap[brandId].add(weight);
-		} else if (!historyMap.has(key)) {
-			// Second time seeing this brand/weight = Previous Data
-			historyMap.set(key, item);
+	apiData.forEach(apiItem => {
+		const weight = Number(apiItem.product?.weight || 0);
+		const brandName = apiItem.product?.name || "GOLD";
+		const key = `${brandName}_${weight}`;
+
+		const formattedItem = {
+			id: key,
+			weight_grams: weight,
+			price: Number(apiItem.buy_price || 0),
+			buyback_price: Number(apiItem.buyback_price || apiItem.buy_price || 0),
+			log_date: apiItem.price_date ? apiItem.price_date.split('T')[0] : new Date().toISOString().split('T')[0],
+			tblbrand: {
+				brand_id: apiItem.vendor?.id || apiItem.vendor?.slug,
+				brand_name: apiItem.vendor?.name || "GOLD"
+			}
+		};
+
+		if (!uniqueMap.has(key)) {
+			uniqueMap.set(key, formattedItem);
+			brands.add(formattedItem.tblbrand.brand_id + "|" + formattedItem.tblbrand.brand_name);
+			if (!brandWeightMap[formattedItem.tblbrand.brand_id]) {
+				brandWeightMap[formattedItem.tblbrand.brand_id] = new Set();
+			}
+			brandWeightMap[formattedItem.tblbrand.brand_id].add(weight);
 		}
 	});
 
@@ -273,11 +293,13 @@ async function fetchMarketData() {
 
 	// Populate Modal Select
 	brandList = Array.from(brands).map(s => {
-        const [brand_id, name] = s.split("|"); 
+        const [brand_id, name] = s.split("|");
         return { brand_id, name };
     }).sort((a, b) => a.name.localeCompare(b.name));
 	const brandSelect = document.getElementById('add-brand');
-	brandSelect.innerHTML = brandList.map(b => `<option value="${b.brand_id}">${b.name}</option>`).join('');
+	if (brandSelect) {
+		brandSelect.innerHTML = brandList.map(b => `<option value="${b.brand_id}">${b.name}</option>`).join('');
+	}
 
 	// Trigger initial weight population for the first brand in the list
     if (brandList.length > 0) {
@@ -349,7 +371,10 @@ async function fetchMarketData() {
 				</div>
 			</div>`;
 		}).join('');
+
+	if (typeof applyLang === 'function') applyLang();
 	}
+
 
 	// Render Market Desktop
 	document.getElementById('desktop-tbody').innerHTML = items.map(item => {
