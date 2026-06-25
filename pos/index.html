@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium POS System</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons for modern icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./style-modals.css">
+</head>
+<body>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container">
+
+        <!-- ======================= -->
+        <!-- 1. LOGIN VIEW -->
+        <!-- ======================= -->
+        <section id="login-view" class="view-section active">
+            <div class="login-wrapper glass-panel">
+                <div class="login-header">
+                    <i class="ph-duotone ph-storefront"></i>
+                    <h2>POS System</h2>
+                    <p>Silakan masuk ke akun Anda</p>
+                </div>
+                <form id="login-form">
+                    <div class="input-group">
+                        <label for="email">Email</label>
+                        <div class="input-icon">
+                            <i class="ph ph-envelope"></i>
+                            <input type="email" id="email" required placeholder="admin@pos.com">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <div class="input-icon">
+                            <i class="ph ph-lock-key"></i>
+                            <input type="password" id="password" required placeholder="••••••••">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" id="login-btn">
+                        <span>Masuk</span>
+                        <i class="ph ph-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+
+        <!-- ======================= -->
+        <!-- 2. SUPERADMIN DASHBOARD -->
+        <!-- ======================= -->
+        <section id="superadmin-view" class="view-section hidden">
+            <nav class="top-nav glass-panel">
+                <div class="nav-brand">
+                    <i class="ph-fill ph-crown"></i>
+                    <span>Superadmin Panel</span>
+                </div>
+                <div class="nav-actions">
+                    <span id="sa-user-info" class="user-badge">Superadmin</span>
+                    <button class="btn btn-icon btn-logout" title="Logout">
+                        <i class="ph ph-sign-out"></i>
+                    </button>
+                </div>
+            </nav>
+
+            <main class="dashboard-content">
+                <header class="page-header">
+                    <h1>Manajemen Sistem</h1>
+                </header>
+
+                <div class="tabs">
+                    <button class="tab-btn active" data-target="outlets-tab">Kelola Outlets</button>
+                    <button class="tab-btn" data-target="users-tab">Kelola Users</button>
+                </div>
+
+                <div class="tab-content">
+                    <!-- OUTLETS TAB -->
+                    <div id="outlets-tab" class="tab-pane active">
+                        <div class="action-bar">
+                            <h3>Daftar Outlet</h3>
+                            <button class="btn btn-primary" id="btn-add-outlet">
+                                <i class="ph ph-plus"></i> Tambah Outlet
+                            </button>
+                        </div>
+                        <div class="table-responsive glass-panel">
+                            <table class="data-table" id="outlets-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Outlet</th>
+                                        <th>Alamat</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Outlet rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- USERS TAB -->
+                    <div id="users-tab" class="tab-pane hidden">
+                        <div class="action-bar">
+                            <h3>Daftar Pegawai</h3>
+                            <button class="btn btn-primary" id="btn-add-user">
+                                <i class="ph ph-plus"></i> Tambah Pegawai
+                            </button>
+                        </div>
+                        <div class="table-responsive glass-panel">
+                            <table class="data-table" id="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Outlet</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- User rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+
+        <!-- ======================= -->
+        <!-- 3. POS VIEW (ADMIN) -->
+        <!-- ======================= -->
+        <section id="pos-view" class="view-section hidden pos-layout">
+            
+            <!-- Left Side: Product Catalog -->
+            <div class="pos-catalog">
+                <nav class="pos-nav glass-panel">
+                    <div class="nav-brand">
+                        <i class="ph-duotone ph-storefront"></i>
+                        <span id="pos-outlet-name">Loading...</span>
+                    </div>
+                    <div class="search-bar">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="text" id="product-search" placeholder="Cari produk...">
+                    </div>
+                    <div class="nav-actions">
+                        <!-- Only for Kepala Toko -->
+                        <button class="btn btn-primary hidden" id="btn-add-product" title="Tambah Produk">
+                            <i class="ph ph-plus"></i> <span class="hide-mobile">Produk</span>
+                        </button>
+                        <button class="btn btn-icon btn-logout" title="Logout">
+                            <i class="ph ph-sign-out"></i>
+                        </button>
+                    </div>
+                </nav>
+
+                <div class="catalog-grid" id="product-grid">
+                    <!-- Product cards injected here -->
+                    <div class="loading-state">Memuat produk...</div>
+                </div>
+            </div>
+
+            <!-- Right Side: Cart / Checkout -->
+            <div class="pos-cart glass-panel">
+                <div class="cart-header">
+                    <h2>Pesanan Saat Ini</h2>
+                    <span class="order-id" id="current-order-id">#ORD-...</span>
+                </div>
+                
+                <div class="cart-items" id="cart-items-container">
+                    <div class="empty-cart">
+                        <i class="ph-duotone ph-shopping-cart"></i>
+                        <p>Keranjang kosong</p>
+                    </div>
+                    <!-- Cart items injected here -->
+                </div>
+
+                <div class="cart-summary">
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="cart-subtotal">Rp 0</span>
+                    </div>
+                    <div class="summary-row total-row">
+                        <span>Total</span>
+                        <span id="cart-total">Rp 0</span>
+                    </div>
+
+                    <div class="payment-section">
+                        <label>Tunai Diterima</label>
+                        <input type="number" id="cash-received" placeholder="0" class="input-lg">
+                    </div>
+                    <div class="summary-row">
+                        <span>Kembalian</span>
+                        <span id="cart-change" class="text-success">Rp 0</span>
+                    </div>
+
+                    <button class="btn btn-primary btn-block btn-checkout" id="btn-checkout" disabled>
+                        Bayar & Cetak
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </div> <!-- END APP CONTAINER -->
+
+    <!-- ======================= -->
+    <!-- MODALS -->
+    <!-- ======================= -->
+    
+    <!-- Modal Tambah Outlet -->
+    <div id="modal-outlet" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3>Tambah Outlet Baru</h3>
+                <button class="btn-close" data-close="modal-outlet"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-outlet">
+                <div class="input-group">
+                    <label for="outlet-name">Nama Outlet</label>
+                    <input type="text" id="outlet-name" required placeholder="Cabang Jakarta">
+                </div>
+                <div class="input-group">
+                    <label for="outlet-address">Alamat</label>
+                    <textarea id="outlet-address" rows="3" placeholder="Jl. Sudirman No. 1"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="modal-outlet">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-outlet">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tambah User -->
+    <div id="modal-user" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3>Tambah Pegawai Baru</h3>
+                <button class="btn-close" data-close="modal-user"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-user">
+                <div class="input-group">
+                    <label for="user-email">Email</label>
+                    <input type="email" id="user-email" required placeholder="pegawai@pos.com">
+                </div>
+                <div class="input-group">
+                    <label for="user-password">Password Sementara</label>
+                    <input type="password" id="user-password" required placeholder="Minimal 6 karakter">
+                </div>
+                <div class="input-group">
+                    <label for="user-role">Jabatan</label>
+                    <select id="user-role" required>
+                        <option value="kasir">Kasir</option>
+                        <option value="kepala_toko">Kepala Toko</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="user-outlet">Outlet Penempatan</label>
+                    <select id="user-outlet" required>
+                        <!-- Options injected via JS -->
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="modal-user">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-user">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tambah/Edit Produk -->
+    <div id="modal-product" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3 id="product-modal-title">Tambah Produk</h3>
+                <button class="btn-close" data-close="modal-product"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-product">
+                <input type="hidden" id="product-id">
+                <div class="input-group">
+                    <label for="product-name">Nama Produk</label>
+                    <input type="text" id="product-name" required placeholder="Kopi Susu">
+                </div>
+                <div class="input-group">
+                    <label for="product-price">Harga (Rp)</label>
+                    <input type="number" id="product-price" required placeholder="15000">
+                </div>
+                <div class="input-group">
+                    <label for="product-stock">Stok</label>
+                    <input type="number" id="product-stock" required placeholder="100">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="modal-product">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-product">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ======================= -->
+    <!-- 4. RECEIPT PRINT VIEW (58mm) -->
+    <!-- ======================= -->
+    <div id="receipt-view" class="receipt-container">
+        <div class="receipt">
+            <div class="receipt-header">
+                <h3 id="receipt-store-name">NAMA TOKO</h3>
+                <p id="receipt-store-address">Alamat Toko</p>
+                <div class="receipt-divider"></div>
+            </div>
+            
+            <div class="receipt-info">
+                <div class="info-row">
+                    <span>Tgl: <span id="receipt-date"></span></span>
+                </div>
+                <div class="info-row">
+                    <span>No: <span id="receipt-id"></span></span>
+                </div>
+                <div class="info-row">
+                    <span>Kasir: <span id="receipt-cashier"></span></span>
+                </div>
+            </div>
+            
+            <div class="receipt-divider"></div>
+            
+            <table class="receipt-items" id="receipt-items">
+                <!-- 
+                <tr>
+                    <td colspan="3">Nama Produk</td>
+                </tr>
+                <tr>
+                    <td>2x</td>
+                    <td>10000</td>
+                    <td class="text-right">20000</td>
+                </tr>
+                -->
+            </table>
+            
+            <div class="receipt-divider"></div>
+            
+            <div class="receipt-summary">
+                <div class="summary-row">
+                    <span>Total:</span>
+                    <span id="receipt-total">0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tunai:</span>
+                    <span id="receipt-cash">0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Kembali:</span>
+                    <span id="receipt-change">0</span>
+                </div>
+            </div>
+            
+            <div class="receipt-divider"></div>
+            
+            <div class="receipt-footer">
+                <p>Terima Kasih</p>
+                <p>Selamat Belanja Kembali</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN SCRIPT (ES MODULE) -->
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
