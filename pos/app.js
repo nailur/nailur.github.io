@@ -114,7 +114,15 @@ async function initPosMultiOutlet(profile) {
         selector.classList.remove('hidden');
         nameLabel.classList.add('hidden');
         selector.innerHTML = posOutletsList.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
-        activeOutletId = posOutletsList[0].id;
+        
+        const savedOutletId = localStorage.getItem('pos_active_outlet_id');
+        if (savedOutletId && posOutletsList.find(o => o.id === savedOutletId)) {
+            activeOutletId = savedOutletId;
+            selector.value = savedOutletId;
+        } else {
+            activeOutletId = posOutletsList[0].id;
+            localStorage.setItem('pos_active_outlet_id', activeOutletId);
+        }
     } else {
         nameLabel.textContent = 'Tidak ada outlet';
     }
@@ -184,6 +192,7 @@ function setupEventListeners() {
     if (outletSelector) {
         outletSelector.addEventListener('change', (e) => {
             activeOutletId = e.target.value;
+            localStorage.setItem('pos_active_outlet_id', activeOutletId);
             generateOrderId();
             loadProducts();
             if(!document.getElementById('history-tab-content').classList.contains('hidden')) {
@@ -209,6 +218,7 @@ function setupEventListeners() {
     document.getElementById('btn-add-user').addEventListener('click', () => {
         document.getElementById('form-user').reset();
         document.getElementById('user-id').value = '';
+        document.getElementById('user-name').value = '';
         document.getElementById('user-email').disabled = false;
         document.getElementById('user-password').placeholder = 'Minimal 6 karakter';
         document.getElementById('user-password').setAttribute('required', 'true');
@@ -260,6 +270,14 @@ function setupEventListeners() {
     document.getElementById('payment-method').addEventListener('change', calculateChange);
     document.getElementById('cash-received').addEventListener('input', calculateChange);
     document.getElementById('btn-checkout').addEventListener('click', checkout);
+    
+    // Set default history date to today
+    const historyDate = document.getElementById('history-date');
+    if (historyDate) {
+        const today = new Date().toISOString().split('T')[0];
+        historyDate.value = today;
+        historyDate.addEventListener('change', loadHistory);
+    }
 }
 
 function handleRoleSelectionChange() {
@@ -328,6 +346,7 @@ async function loadUsers() {
     const tbody = document.querySelector('#users-table tbody');
     tbody.innerHTML = data.map(u => `
         <tr>
+            <td>${u.name || '-'}</td>
             <td>${u.email}</td>
             <td><span class="user-badge">${u.role}</span></td>
             <td>${u.role === 'kepala_cabang' ? (u.branches?.name || '-') : (u.outlets?.name || '-')}</td>
@@ -409,6 +428,7 @@ async function handleAddUser(e) {
     e.preventDefault();
     const id = document.getElementById('user-id').value;
     const email = document.getElementById('user-email').value;
+    const name = document.getElementById('user-name').value;
     const password = document.getElementById('user-password').value;
     const role = document.getElementById('user-role').value;
     let branch_id = null;
@@ -423,7 +443,7 @@ async function handleAddUser(e) {
 
     if (id) {
         // Edit User (hanya profile, email/password tidak diubah dari UI ini)
-        const { error } = await supabase.from('profiles').update({ role, branch_id, outlet_id }).eq('id', id);
+        const { error } = await supabase.from('profiles').update({ name, role, branch_id, outlet_id }).eq('id', id);
         if (error) showToast('Gagal update: ' + error.message, 'error');
         else { showToast('Pegawai diperbarui!', 'success'); document.getElementById('modal-user').classList.add('hidden'); loadUsers(); }
         btn.disabled = false; btn.textContent = 'Simpan';
@@ -442,7 +462,7 @@ async function handleAddUser(e) {
 
         setTimeout(async () => {
             const { error: updateError } = await supabase.from('profiles')
-                .update({ role, branch_id, outlet_id })
+                .update({ name, role, branch_id, outlet_id })
                 .eq('id', authData.user.id);
                 
             if (updateError) showToast('Gagal set profile: ' + updateError.message, 'error');
@@ -459,6 +479,7 @@ window.editUser = async (id) => {
     
     document.getElementById('user-id').value = data.id;
     document.getElementById('user-email').value = data.email;
+    document.getElementById('user-name').value = data.name || '';
     document.getElementById('user-email').disabled = true; // Email disabled on edit
     document.getElementById('user-password').value = ''; // Leave blank, not supported for edit here
     document.getElementById('user-password').placeholder = '(Tidak bisa diubah dari sini)';
@@ -765,8 +786,8 @@ async function checkout() {
     btn.textContent = 'Bayar & Cetak';
 }
 
-function printReceipt(trxId, cartItems, total, received, method) {
-    const dateStr = new Date().toLocaleString('id-ID');
+function printReceipt(trxId, cartItems, total, received, method, trxDate = null, cashierName = null) {
+    const dateStr = trxDate ? new Date(trxDate).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
     const change = received - total;
     const outletName = document.getElementById('pos-outlet-name').textContent !== 'Loading...' 
         ? document.getElementById('pos-outlet-name').textContent 
@@ -776,7 +797,14 @@ function printReceipt(trxId, cartItems, total, received, method) {
     document.getElementById('receipt-store-address').textContent = '';
     document.getElementById('receipt-date').textContent = dateStr;
     document.getElementById('receipt-id').textContent = trxId.substring(0,8);
-    document.getElementById('receipt-cashier').textContent = getCurrentUser().email;
+    
+    // Gunakan nama kasir jika diberikan, jika tidak gunakan dari profil yang sedang login
+    let displayName = cashierName;
+    if (!displayName) {
+        const profile = getCurrentProfile();
+        displayName = profile.name || profile.email;
+    }
+    document.getElementById('receipt-cashier').textContent = displayName;
     document.getElementById('receipt-method').textContent = method;
 
     const itemsHtml = cartItems.map(item => `
@@ -797,10 +825,20 @@ function printReceipt(trxId, cartItems, total, received, method) {
 
 async function loadHistory() {
     if (!activeOutletId) return;
-    const { data, error } = await supabase.from('transactions')
-        .select('*, profiles(email)')
+    
+    let query = supabase.from('transactions')
+        .select('*, profiles(email, name)')
         .eq('outlet_id', activeOutletId)
         .order('created_at', { ascending: false });
+
+    const historyDate = document.getElementById('history-date');
+    if (historyDate && historyDate.value) {
+        const dateStr = historyDate.value;
+        query = query.gte('created_at', dateStr + 'T00:00:00')
+                     .lte('created_at', dateStr + 'T23:59:59.999');
+    }
+
+    const { data, error } = await query;
 
     if (error) {
         showToast('Gagal memuat riwayat', 'error');
@@ -809,7 +847,7 @@ async function loadHistory() {
 
     const tbody = document.querySelector('#history-table tbody');
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Belum ada transaksi</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada transaksi</td></tr>';
         return;
     }
 
@@ -819,9 +857,56 @@ async function loadHistory() {
             <td>${trx.id.substring(0,8)}</td>
             <td>Rp ${trx.total_amount.toLocaleString('id-ID')}</td>
             <td>${trx.payment_method}</td>
-            <td>${trx.profiles?.email || '-'}</td>
+            <td>${trx.profiles?.name || trx.profiles?.email || '-'}</td>
+            <td>
+                <button class="btn btn-icon" style="color:var(--primary);" onclick="viewTransactionDetails('${trx.id}')" title="Detail"><i class="ph ph-eye"></i></button>
+            </td>
         </tr>
     `).join('');
+}
+
+async function viewTransactionDetails(trxId) {
+    const { data: trx, error: trxError } = await supabase.from('transactions')
+        .select('*, profiles(email, name)')
+        .eq('id', trxId)
+        .single();
+        
+    const { data: items, error: itemsError } = await supabase.from('transaction_items')
+        .select('*, products(name)')
+        .eq('transaction_id', trxId);
+        
+    if (trxError || itemsError) return showToast('Gagal memuat detail transaksi', 'error');
+
+    document.getElementById('detail-trx-id').textContent = trx.id.substring(0,8);
+    document.getElementById('detail-trx-date').textContent = new Date(trx.created_at).toLocaleString('id-ID');
+    document.getElementById('detail-trx-cashier').textContent = trx.profiles?.name || trx.profiles?.email || '-';
+    document.getElementById('detail-trx-method').textContent = trx.payment_method;
+    
+    const tbody = document.getElementById('detail-trx-items');
+    tbody.innerHTML = items.map(item => `
+        <tr>
+            <td>${item.products?.name || 'Produk Terhapus'}</td>
+            <td style="text-align: right;">${item.quantity}</td>
+            <td style="text-align: right;">${item.price.toLocaleString('id-ID')}</td>
+            <td style="text-align: right;">${(item.quantity * item.price).toLocaleString('id-ID')}</td>
+        </tr>
+    `).join('');
+    
+    document.getElementById('detail-trx-total').textContent = `Rp ${trx.total_amount.toLocaleString('id-ID')}`;
+    
+    document.getElementById('btn-reprint-trx').onclick = () => reprintReceipt(trx, items);
+    document.getElementById('modal-transaction-details').classList.remove('hidden');
+}
+
+function reprintReceipt(trx, items) {
+    const cartItems = items.map(item => ({
+        name: item.products?.name || 'Produk Terhapus',
+        quantity: item.quantity,
+        price: item.price
+    }));
+    
+    const cashierName = trx.profiles?.name || trx.profiles?.email || '-';
+    printReceipt(trx.id, cartItems, trx.total_amount, trx.total_amount, trx.payment_method, trx.created_at, cashierName);
 }
 
 // Start App

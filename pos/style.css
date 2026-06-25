@@ -304,6 +304,11 @@ body {
     letter-spacing: 0.05em;
 }
 .data-table tr:last-child td { border-bottom: none; }
+.action-col {
+    width: 100px;
+    text-align: center !important;
+    white-space: nowrap;
+}
 
 /* =========================================
    POS VIEW (ADMIN)
