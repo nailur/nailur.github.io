@@ -78,13 +78,37 @@
                 </header>
 
                 <div class="tabs">
-                    <button class="tab-btn active" data-target="outlets-tab">Kelola Outlets</button>
+                    <button class="tab-btn active" data-target="branches-tab">Kelola Cabang</button>
+                    <button class="tab-btn" data-target="outlets-tab">Kelola Outlets</button>
                     <button class="tab-btn" data-target="users-tab">Kelola Users</button>
                 </div>
 
                 <div class="tab-content">
+                    <!-- BRANCHES TAB -->
+                    <div id="branches-tab" class="tab-pane active">
+                        <div class="action-bar">
+                            <h3>Daftar Cabang</h3>
+                            <button class="btn btn-primary" id="btn-add-branch">
+                                <i class="ph ph-plus"></i> Tambah Cabang
+                            </button>
+                        </div>
+                        <div class="table-responsive glass-panel">
+                            <table class="data-table" id="branches-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Cabang</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Branch rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- OUTLETS TAB -->
-                    <div id="outlets-tab" class="tab-pane active">
+                    <div id="outlets-tab" class="tab-pane hidden">
                         <div class="action-bar">
                             <h3>Daftar Outlet</h3>
                             <button class="btn btn-primary" id="btn-add-outlet">
@@ -96,6 +120,7 @@
                                 <thead>
                                     <tr>
                                         <th>Nama Outlet</th>
+                                        <th>Cabang</th>
                                         <th>Alamat</th>
                                         <th>Aksi</th>
                                     </tr>
@@ -121,7 +146,7 @@
                                     <tr>
                                         <th>Email</th>
                                         <th>Role</th>
-                                        <th>Outlet</th>
+                                        <th>Penempatan</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -139,73 +164,106 @@
         <!-- ======================= -->
         <!-- 3. POS VIEW (ADMIN) -->
         <!-- ======================= -->
-        <section id="pos-view" class="view-section hidden pos-layout">
-            
-            <!-- Left Side: Product Catalog -->
-            <div class="pos-catalog">
-                <nav class="pos-nav glass-panel">
+        <section id="pos-view" class="view-section hidden" style="display: flex; flex-direction: column; height: 100vh;">
+            <!-- Top Navbar (Spans full width) -->
+            <nav class="pos-nav glass-panel" style="margin: 20px; display: flex; align-items: center; justify-content: space-between; padding: 10px 20px;">
+                <div class="nav-left" style="display: flex; align-items: center; gap: 20px;">
                     <div class="nav-brand">
                         <i class="ph-duotone ph-storefront"></i>
                         <span id="pos-outlet-name">Loading...</span>
+                        <select id="active-outlet-selector" class="input-sm hidden" style="margin-left: 10px;"></select>
                     </div>
-                    <div class="search-bar">
+                    <div class="pos-tabs-nav" style="display:flex; gap:10px;">
+                        <button class="pos-nav-btn active" data-target="pos-tab-content">POS (Kasir)</button>
+                        <button class="pos-nav-btn" data-target="history-tab-content">Riwayat Transaksi</button>
+                    </div>
+                </div>
+                
+                <div class="nav-right" style="display: flex; align-items: center; gap: 15px;">
+                    <div class="search-bar" id="pos-search-container">
                         <i class="ph ph-magnifying-glass"></i>
                         <input type="text" id="product-search" placeholder="Cari produk...">
                     </div>
-                    <div class="nav-actions">
-                        <!-- Only for Kepala Toko -->
-                        <button class="btn btn-primary hidden" id="btn-add-product" title="Tambah Produk">
-                            <i class="ph ph-plus"></i> <span class="hide-mobile">Produk</span>
-                        </button>
-                        <button class="btn btn-icon btn-logout" title="Logout">
-                            <i class="ph ph-sign-out"></i>
-                        </button>
-                    </div>
-                </nav>
-
-                <div class="catalog-grid" id="product-grid">
-                    <!-- Product cards injected here -->
-                    <div class="loading-state">Memuat produk...</div>
-                </div>
-            </div>
-
-            <!-- Right Side: Cart / Checkout -->
-            <div class="pos-cart glass-panel">
-                <div class="cart-header">
-                    <h2>Pesanan Saat Ini</h2>
-                    <span class="order-id" id="current-order-id">#ORD-...</span>
-                </div>
-                
-                <div class="cart-items" id="cart-items-container">
-                    <div class="empty-cart">
-                        <i class="ph-duotone ph-shopping-cart"></i>
-                        <p>Keranjang kosong</p>
-                    </div>
-                    <!-- Cart items injected here -->
-                </div>
-
-                <div class="cart-summary">
-                    <div class="summary-row">
-                        <span>Subtotal</span>
-                        <span id="cart-subtotal">Rp 0</span>
-                    </div>
-                    <div class="summary-row total-row">
-                        <span>Total</span>
-                        <span id="cart-total">Rp 0</span>
-                    </div>
-
-                    <div class="payment-section">
-                        <label>Tunai Diterima</label>
-                        <input type="number" id="cash-received" placeholder="0" class="input-lg">
-                    </div>
-                    <div class="summary-row">
-                        <span>Kembalian</span>
-                        <span id="cart-change" class="text-success">Rp 0</span>
-                    </div>
-
-                    <button class="btn btn-primary btn-block btn-checkout" id="btn-checkout" disabled>
-                        Bayar & Cetak
+                    <button class="btn btn-primary hidden" id="btn-add-product" title="Tambah Produk">
+                        <i class="ph ph-plus"></i> <span class="hide-mobile">Produk</span>
                     </button>
+                    <button class="btn btn-icon btn-logout" title="Logout">
+                        <i class="ph ph-sign-out"></i>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- TAB POS -->
+            <div id="pos-tab-content" class="pos-tab-pane active pos-layout" style="flex: 1; overflow: hidden;">
+                <!-- Left Side: Product Catalog -->
+                <div class="pos-catalog" style="padding-top: 0;">
+                    <div class="catalog-grid" id="product-grid">
+                        <!-- Product cards injected here -->
+                        <div class="loading-state">Memuat produk...</div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Cart / Checkout -->
+                <div class="pos-cart glass-panel" style="margin-top: 0;">
+                    <div class="cart-header">
+                        <h2>Pesanan Saat Ini</h2>
+                        <span class="order-id" id="current-order-id">#ORD-...</span>
+                    </div>
+                    
+                    <div class="cart-items" id="cart-items-container">
+                        <div class="empty-cart">
+                            <i class="ph-duotone ph-shopping-cart"></i>
+                            <p>Keranjang kosong</p>
+                        </div>
+                        <!-- Cart items injected here -->
+                    </div>
+
+                    <div class="cart-summary">
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span id="cart-subtotal">Rp 0</span>
+                        </div>
+                        <div class="summary-row total-row">
+                            <span>Total</span>
+                            <span id="cart-total">Rp 0</span>
+                        </div>
+
+                        <div class="payment-section">
+                            <label>Tunai Diterima</label>
+                            <input type="number" id="cash-received" placeholder="0" class="input-lg">
+                        </div>
+                        <div class="summary-row">
+                            <span>Kembalian</span>
+                            <span id="cart-change" class="text-success">Rp 0</span>
+                        </div>
+
+                        <button class="btn btn-primary btn-block btn-checkout" id="btn-checkout" disabled>
+                            Bayar & Cetak
+                        </button>
+                    </div>
+                </div>
+            </div> <!-- END TAB POS -->
+
+            <!-- TAB HISTORY -->
+            <div id="history-tab-content" class="pos-tab-pane hidden glass-panel" style="flex: 1; margin: 0 20px 20px 20px; padding: 20px; overflow-y: auto;">
+                <div class="action-bar">
+                    <h2>Riwayat Transaksi</h2>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="history-table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>ID Transaksi</th>
+                                <th>Total</th>
+                                <th>Metode Pembayaran</th>
+                                <th>Kasir</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- History rows injected here -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
@@ -216,6 +274,26 @@
     <!-- MODALS -->
     <!-- ======================= -->
     
+    <!-- Modal Tambah Cabang -->
+    <div id="modal-branch" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3>Tambah Cabang Baru</h3>
+                <button class="btn-close" data-close="modal-branch"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-branch">
+                <div class="input-group">
+                    <label for="branch-name">Nama Cabang</label>
+                    <input type="text" id="branch-name" required placeholder="Cabang Jakarta Raya">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="modal-branch">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-branch">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal Tambah Outlet -->
     <div id="modal-outlet" class="modal-overlay hidden">
         <div class="modal-content glass-panel">
@@ -226,7 +304,13 @@
             <form id="form-outlet">
                 <div class="input-group">
                     <label for="outlet-name">Nama Outlet</label>
-                    <input type="text" id="outlet-name" required placeholder="Cabang Jakarta">
+                    <input type="text" id="outlet-name" required placeholder="Outlet Thamrin">
+                </div>
+                <div class="input-group">
+                    <label for="outlet-branch">Cabang Induk</label>
+                    <select id="outlet-branch" required>
+                        <!-- Options injected via JS -->
+                    </select>
                 </div>
                 <div class="input-group">
                     <label for="outlet-address">Alamat</label>
@@ -259,13 +343,21 @@
                 <div class="input-group">
                     <label for="user-role">Jabatan</label>
                     <select id="user-role" required>
-                        <option value="kasir">Kasir</option>
+                        <option value="owner">Owner Bisnis</option>
+                        <option value="kepala_cabang">Kepala Cabang</option>
                         <option value="kepala_toko">Kepala Toko</option>
+                        <option value="kasir">Kasir</option>
                     </select>
                 </div>
-                <div class="input-group">
+                <div class="input-group hidden" id="group-user-branch">
+                    <label for="user-branch">Cabang Penempatan</label>
+                    <select id="user-branch">
+                        <!-- Options injected via JS -->
+                    </select>
+                </div>
+                <div class="input-group hidden" id="group-user-outlet">
                     <label for="user-outlet">Outlet Penempatan</label>
-                    <select id="user-outlet" required>
+                    <select id="user-outlet">
                         <!-- Options injected via JS -->
                     </select>
                 </div>
