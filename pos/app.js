@@ -184,6 +184,7 @@ function setupEventListeners() {
             const tabEl = document.getElementById(targetId);
             tabEl.classList.remove('hidden');
             if(targetId === 'history-tab-content') loadHistory();
+            if(targetId === 'dashboard-tab-content') loadDashboard();
         });
     });
 
@@ -197,6 +198,9 @@ function setupEventListeners() {
             loadProducts();
             if(!document.getElementById('history-tab-content').classList.contains('hidden')) {
                 loadHistory();
+            }
+            if(!document.getElementById('dashboard-tab-content').classList.contains('hidden')) {
+                loadDashboard();
             }
         });
     }
@@ -277,6 +281,14 @@ function setupEventListeners() {
         const today = new Date().toISOString().split('T')[0];
         historyDate.value = today;
         historyDate.addEventListener('change', loadHistory);
+    }
+    
+    // Set default dashboard date to today
+    const dashboardDate = document.getElementById('dashboard-date');
+    if (dashboardDate) {
+        const today = new Date().toISOString().split('T')[0];
+        dashboardDate.value = today;
+        dashboardDate.addEventListener('change', loadDashboard);
     }
     
     document.getElementById('btn-export-excel')?.addEventListener('click', exportToExcel);
@@ -1011,6 +1023,61 @@ function reprintReceipt(trx, items) {
     
     const cashierName = trx.profiles?.name || trx.profiles?.email || '-';
     printReceipt(trx.id, cartItems, trx.total_amount, trx.total_amount, trx.payment_method, trx.created_at, cashierName);
+}
+
+async function loadDashboard() {
+    if (!activeOutletId) return;
+    
+    const dashboardDate = document.getElementById('dashboard-date');
+    if (!dashboardDate || !dashboardDate.value) return;
+
+    const dateStr = dashboardDate.value;
+
+    const { data, error } = await supabase.from('transactions')
+        .select('*')
+        .eq('outlet_id', activeOutletId)
+        .gte('created_at', dateStr + 'T00:00:00')
+        .lte('created_at', dateStr + 'T23:59:59.999');
+
+    if (error) {
+        showToast('Gagal memuat data dashboard', 'error');
+        return;
+    }
+
+    const summary = {};
+    let totalRevenue = 0;
+    let totalTrx = data ? data.length : 0;
+
+    if (data) {
+        data.forEach(trx => {
+            const method = trx.payment_method || 'Lainnya';
+            totalRevenue += trx.total_amount;
+
+            if (!summary[method]) {
+                summary[method] = { count: 0, total: 0 };
+            }
+            summary[method].count++;
+            summary[method].total += trx.total_amount;
+        });
+    }
+
+    document.getElementById('dash-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
+    document.getElementById('dash-total-trx').textContent = totalTrx;
+
+    const tbody = document.querySelector('#dashboard-method-table tbody');
+    
+    if (Object.keys(summary).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center">Belum ada transaksi</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = Object.entries(summary).map(([method, stats]) => `
+        <tr>
+            <td><strong>${method}</strong></td>
+            <td style="text-align: right;">${stats.count}</td>
+            <td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td>
+        </tr>
+    `).join('');
 }
 
 // Start App

@@ -183,6 +183,7 @@
                     <div class="pos-tabs-nav">
                         <button class="pos-nav-btn active" data-target="pos-tab-content">POS (Kasir)</button>
                         <button class="pos-nav-btn" data-target="history-tab-content">Riwayat Transaksi</button>
+                        <button class="pos-nav-btn" data-target="dashboard-tab-content">Dashboard</button>
                     </div>
                 </div>
                 
@@ -288,6 +289,44 @@
                         </thead>
                         <tbody>
                             <!-- History rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB DASHBOARD -->
+            <div id="dashboard-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
+                <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                    <h2>Dashboard Harian</h2>
+                    <div style="display:flex; gap: 10px; align-items:center;">
+                        <label for="dashboard-date">Pilih Tanggal:</label>
+                        <input type="date" id="dashboard-date" class="input-sm">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="glass-panel" style="padding: 15px; text-align: center;">
+                        <h4 style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Total Pendapatan</h4>
+                        <div id="dash-total-revenue" style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-top: 5px;">Rp 0</div>
+                    </div>
+                    <div class="glass-panel" style="padding: 15px; text-align: center;">
+                        <h4 style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Total Transaksi</h4>
+                        <div id="dash-total-trx" style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-top: 5px;">0</div>
+                    </div>
+                </div>
+
+                <h3>Rincian per Metode Pembayaran</h3>
+                <div class="table-responsive" style="margin-top: 10px;">
+                    <table class="data-table" id="dashboard-method-table">
+                        <thead>
+                            <tr>
+                                <th>Metode Pembayaran</th>
+                                <th style="text-align: right;">Jumlah Transaksi</th>
+                                <th style="text-align: right;">Total Pendapatan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Rows injected here -->
                         </tbody>
                     </table>
                 </div>
