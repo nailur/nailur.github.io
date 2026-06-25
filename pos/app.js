@@ -865,7 +865,7 @@ async function loadHistory() {
     `).join('');
 }
 
-async function viewTransactionDetails(trxId) {
+window.viewTransactionDetails = async (trxId) => {
     const { data: trx, error: trxError } = await supabase.from('transactions')
         .select('*, profiles(email, name)')
         .eq('id', trxId)
