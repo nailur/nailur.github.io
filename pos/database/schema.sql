@@ -64,7 +64,18 @@ CREATE POLICY "Enable read for authenticated users" ON public.outlets FOR SELECT
 CREATE POLICY "Enable ALL for superadmin" ON public.outlets FOR ALL TO authenticated USING ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'superadmin' );
 
 CREATE POLICY "Enable read profiles" ON public.profiles FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Enable ALL profiles for superadmin" ON public.profiles FOR ALL TO authenticated USING ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'superadmin' );
+
+-- Gunakan SECURITY DEFINER function untuk mencegah infinite recursion saat mengecek role
+CREATE OR REPLACE FUNCTION public.get_my_role()
+RETURNS TEXT
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT role FROM profiles WHERE id = auth.uid();
+$$;
+
+CREATE POLICY "Enable ALL profiles for superadmin" ON public.profiles FOR ALL TO authenticated USING ( public.get_my_role() = 'superadmin' );
 -- Supaya user bisa insert profilenya sendiri saat sign up (lewat trigger)
 CREATE FUNCTION public.handle_new_user() 
 RETURNS TRIGGER AS $$
