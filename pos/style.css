@@ -560,14 +560,14 @@ body {
 }
 
 @media print {
-    body > * {
-        display: none !important;
-    }
-    
     body {
         margin: 0;
         padding: 0;
         background: #fff;
+    }
+
+    #app-container, #toast-container, .modal-overlay {
+        display: none !important;
     }
 
     #receipt-view {
