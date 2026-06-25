@@ -229,6 +229,7 @@ body {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 .tab-btn {
     padding: 10px 20px;
@@ -272,10 +273,16 @@ body {
 /* =========================================
    POS VIEW (ADMIN)
    ========================================= */
+.pos-view-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
 .pos-layout {
     display: grid;
     grid-template-columns: 1fr 400px;
-    height: 100vh;
+    flex: 1;
     overflow: hidden;
 }
 
@@ -291,8 +298,29 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 12px 24px;
-    margin-bottom: 16px;
+    margin: 16px;
 }
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.pos-tabs-nav {
+    display: flex;
+    gap: 10px;
+}
+.history-panel {
+    flex: 1;
+    margin: 0 16px 16px 16px;
+    padding: 20px;
+    overflow-y: auto;
+}
+
 .search-bar {
     position: relative;
     width: 300px;
@@ -526,6 +554,79 @@ body {
     .receipt-summary .summary-row { font-weight: bold; }
     
     .receipt-footer { text-align: center; margin-top: 10px; font-size: 9px; }
+}
+
+/* =========================================
+   RESPONSIVE (MEDIA QUERIES)
+   ========================================= */
+@media (max-width: 1024px) {
+    .pos-layout {
+        grid-template-columns: 1fr 300px;
+    }
+    .catalog-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    /* Stack layout vertically */
+    .pos-layout {
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+    .pos-catalog {
+        flex: none; /* Auto height based on content */
+        overflow: visible;
+        padding-bottom: 20px;
+    }
+    .catalog-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        overflow: visible; /* Let whole page scroll */
+    }
+    .pos-cart {
+        margin: 0 16px 16px 16px;
+        flex: none;
+    }
+    
+    /* Make Navbar wrap nicely */
+    .pos-nav {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 16px;
+    }
+    .nav-left, .nav-right {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        width: 100%;
+    }
+    .nav-brand {
+        justify-content: center;
+        margin-bottom: 8px;
+    }
+    .pos-tabs-nav {
+        justify-content: center;
+        width: 100%;
+    }
+    .pos-tabs-nav .pos-nav-btn {
+        flex: 1;
+    }
+    .search-bar {
+        width: 100%;
+    }
+    
+    /* Superadmin adjustments */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    .top-nav {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
 }
 
 /* Toast */

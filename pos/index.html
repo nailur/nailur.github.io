@@ -164,22 +164,22 @@
         <!-- ======================= -->
         <!-- 3. POS VIEW (ADMIN) -->
         <!-- ======================= -->
-        <section id="pos-view" class="view-section hidden" style="display: flex; flex-direction: column; height: 100vh;">
+        <section id="pos-view" class="view-section hidden pos-view-container">
             <!-- Top Navbar (Spans full width) -->
-            <nav class="pos-nav glass-panel" style="margin: 20px; display: flex; align-items: center; justify-content: space-between; padding: 10px 20px;">
-                <div class="nav-left" style="display: flex; align-items: center; gap: 20px;">
+            <nav class="pos-nav glass-panel">
+                <div class="nav-left">
                     <div class="nav-brand">
                         <i class="ph-duotone ph-storefront"></i>
                         <span id="pos-outlet-name">Loading...</span>
                         <select id="active-outlet-selector" class="input-sm hidden" style="margin-left: 10px;"></select>
                     </div>
-                    <div class="pos-tabs-nav" style="display:flex; gap:10px;">
+                    <div class="pos-tabs-nav">
                         <button class="pos-nav-btn active" data-target="pos-tab-content">POS (Kasir)</button>
                         <button class="pos-nav-btn" data-target="history-tab-content">Riwayat Transaksi</button>
                     </div>
                 </div>
                 
-                <div class="nav-right" style="display: flex; align-items: center; gap: 15px;">
+                <div class="nav-right">
                     <div class="search-bar" id="pos-search-container">
                         <i class="ph ph-magnifying-glass"></i>
                         <input type="text" id="product-search" placeholder="Cari produk...">
@@ -194,9 +194,9 @@
             </nav>
 
             <!-- TAB POS -->
-            <div id="pos-tab-content" class="pos-tab-pane active pos-layout" style="flex: 1; overflow: hidden;">
+            <div id="pos-tab-content" class="pos-tab-pane active pos-layout">
                 <!-- Left Side: Product Catalog -->
-                <div class="pos-catalog" style="padding-top: 0;">
+                <div class="pos-catalog">
                     <div class="catalog-grid" id="product-grid">
                         <!-- Product cards injected here -->
                         <div class="loading-state">Memuat produk...</div>
@@ -204,7 +204,7 @@
                 </div>
 
                 <!-- Right Side: Cart / Checkout -->
-                <div class="pos-cart glass-panel" style="margin-top: 0;">
+                <div class="pos-cart glass-panel">
                     <div class="cart-header">
                         <h2>Pesanan Saat Ini</h2>
                         <span class="order-id" id="current-order-id">#ORD-...</span>
@@ -245,7 +245,7 @@
             </div> <!-- END TAB POS -->
 
             <!-- TAB HISTORY -->
-            <div id="history-tab-content" class="pos-tab-pane hidden glass-panel" style="flex: 1; margin: 0 20px 20px 20px; padding: 20px; overflow-y: auto;">
+            <div id="history-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="action-bar">
                     <h2>Riwayat Transaksi</h2>
                 </div>
