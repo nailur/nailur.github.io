@@ -171,9 +171,9 @@ function setupEventListeners() {
 
     // Edit Profile Modals
     const openEditProfile = () => {
-        const user = getCurrentUser();
-        if(user) {
-            document.getElementById('my-name').value = user.name || '';
+        const profile = getCurrentProfile();
+        if(profile) {
+            document.getElementById('my-name').value = profile.name || '';
             document.getElementById('my-password').value = '';
             document.getElementById('modal-edit-profile').classList.remove('hidden');
         }
@@ -189,14 +189,13 @@ function setupEventListeners() {
         
         const newName = document.getElementById('my-name').value;
         const newPassword = document.getElementById('my-password').value;
-        const user = getCurrentUser();
+        const profile = getCurrentProfile();
         
         try {
-            if(newName !== user.name) {
-                const { error } = await supabase.from('profiles').update({ name: newName }).eq('id', user.id);
+            if(newName !== profile.name) {
+                const { error } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
                 if(error) throw error;
-                user.name = newName;
-                localStorage.setItem('pos_session', JSON.stringify({ session: getSession().session, profile: user }));
+                profile.name = newName; // Update local state directly
             }
             if(newPassword) {
                 const { error } = await supabase.auth.updateUser({ password: newPassword });
@@ -905,6 +904,10 @@ async function exportToExcel() {
     
     const historyDate = document.getElementById('history-date').value;
     if (!historyDate) return showToast('Pilih tanggal terlebih dahulu', 'error');
+    
+    // Konversi ke UTC
+    const startOfDay = new Date(`${historyDate}T00:00:00`).toISOString();
+    const endOfDay = new Date(`${historyDate}T23:59:59.999`).toISOString();
 
     const btn = document.getElementById('btn-export-excel');
     const originalHtml = btn.innerHTML;
@@ -916,8 +919,8 @@ async function exportToExcel() {
         const { data: trxData, error: trxError } = await supabase.from('transactions')
             .select('*, profiles(email, name)')
             .eq('outlet_id', activeOutletId)
-            .gte('created_at', historyDate + 'T00:00:00')
-            .lte('created_at', historyDate + 'T23:59:59.999')
+            .gte('created_at', startOfDay)
+            .lte('created_at', endOfDay)
             .order('created_at', { ascending: true });
 
         if (trxError) throw trxError;
@@ -1013,8 +1016,11 @@ async function loadHistory() {
     const historyDate = document.getElementById('history-date');
     if (historyDate && historyDate.value) {
         const dateStr = historyDate.value;
-        query = query.gte('created_at', dateStr + 'T00:00:00')
-                     .lte('created_at', dateStr + 'T23:59:59.999');
+        const startOfDay = new Date(`${dateStr}T00:00:00`).toISOString();
+        const endOfDay = new Date(`${dateStr}T23:59:59.999`).toISOString();
+        
+        query = query.gte('created_at', startOfDay)
+                     .lte('created_at', endOfDay);
     }
 
     const { data, error } = await query;
@@ -1095,12 +1101,14 @@ async function loadDashboard() {
     if (!dashboardDate || !dashboardDate.value) return;
 
     const dateStr = dashboardDate.value;
+    const startOfDay = new Date(`${dateStr}T00:00:00`).toISOString();
+    const endOfDay = new Date(`${dateStr}T23:59:59.999`).toISOString();
 
     const { data: trxData, error: trxError } = await supabase.from('transactions')
         .select('*')
         .eq('outlet_id', activeOutletId)
-        .gte('created_at', dateStr + 'T00:00:00')
-        .lte('created_at', dateStr + 'T23:59:59.999');
+        .gte('created_at', startOfDay)
+        .lte('created_at', endOfDay);
 
     if (trxError) {
         showToast('Gagal memuat data dashboard', 'error');

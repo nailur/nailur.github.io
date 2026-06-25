@@ -523,7 +523,7 @@ body {
 .qty-display { font-weight: 600; min-width: 20px; text-align: center; }
 
 .cart-summary {
-    padding: 20px;
+    padding: 12px 20px;
     background: #fff;
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     border-top: 1px solid var(--border);
@@ -531,7 +531,7 @@ body {
 .summary-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     font-weight: 500;
 }
 .total-row {
@@ -539,11 +539,11 @@ body {
     font-weight: 700;
     color: var(--primary);
     border-top: 1px dashed var(--border);
-    padding-top: 12px;
-    margin-top: 12px;
-    margin-bottom: 20px;
+    padding-top: 8px;
+    margin-top: 8px;
+    margin-bottom: 12px;
 }
-.payment-section { margin-bottom: 16px; }
+.payment-section { margin-bottom: 12px; }
 .payment-section label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;}
 
 .btn-checkout {
@@ -560,8 +560,8 @@ body {
 }
 
 @media print {
-    body * {
-        visibility: hidden;
+    body > * {
+        display: none !important;
     }
     
     body {
@@ -570,20 +570,14 @@ body {
         background: #fff;
     }
 
-    #app-container { display: none !important; }
-    
     #receipt-view {
         display: block !important;
         position: absolute;
         left: 0;
         top: 0;
         width: 58mm; /* Ukuran kertas kasir kecil */
-        visibility: visible;
         margin: 0;
         padding: 0;
-    }
-    #receipt-view * {
-        visibility: visible;
     }
     
     .receipt {
