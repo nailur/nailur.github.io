@@ -257,6 +257,7 @@ function setupEventListeners() {
     document.getElementById('form-product').addEventListener('submit', handleSaveProduct);
     document.getElementById('product-search').addEventListener('input', (e) => renderProducts(e.target.value));
     
+    document.getElementById('payment-method').addEventListener('change', calculateChange);
     document.getElementById('cash-received').addEventListener('input', calculateChange);
     document.getElementById('btn-checkout').addEventListener('click', checkout);
 }
@@ -686,28 +687,44 @@ function renderCart() {
 
 function calculateChange() {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const receivedStr = document.getElementById('cash-received').value;
-    const received = receivedStr ? parseFloat(receivedStr) : 0;
-    const change = received - total;
+    const method = document.getElementById('payment-method').value;
+    const cashGroup = document.getElementById('cash-input-group');
     const changeEl = document.getElementById('cart-change');
     const btn = document.getElementById('btn-checkout');
     
-    if (received >= total && total > 0) {
-        changeEl.textContent = `Rp ${change.toLocaleString('id-ID')}`;
-        changeEl.className = 'text-success';
-        btn.disabled = false;
+    if (method === 'Tunai') {
+        cashGroup.classList.remove('hidden');
+        const receivedStr = document.getElementById('cash-received').value;
+        const received = receivedStr ? parseFloat(receivedStr) : 0;
+        const change = received - total;
+        
+        if (received >= total && total > 0) {
+            changeEl.textContent = `Rp ${change.toLocaleString('id-ID')}`;
+            changeEl.className = 'text-success';
+            btn.disabled = false;
+        } else {
+            changeEl.textContent = `Kurang Rp ${Math.abs(change).toLocaleString('id-ID')}`;
+            changeEl.className = 'text-muted';
+            btn.disabled = true;
+        }
     } else {
-        changeEl.textContent = `Kurang Rp ${Math.abs(change).toLocaleString('id-ID')}`;
-        changeEl.className = 'text-muted';
-        btn.disabled = true;
+        cashGroup.classList.add('hidden');
+        changeEl.textContent = 'Rp 0';
+        changeEl.className = 'text-success';
+        btn.disabled = total <= 0;
     }
 }
 
 async function checkout() {
     if (cart.length === 0 || !activeOutletId) return;
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const received = parseFloat(document.getElementById('cash-received').value) || 0;
-    if (received < total) return showToast('Uang tunai kurang!', 'error');
+    const method = document.getElementById('payment-method').value;
+    let received = total;
+    
+    if (method === 'Tunai') {
+        received = parseFloat(document.getElementById('cash-received').value) || 0;
+        if (received < total) return showToast('Uang tunai kurang!', 'error');
+    }
 
     const btn = document.getElementById('btn-checkout');
     btn.disabled = true;
@@ -719,7 +736,7 @@ async function checkout() {
         outlet_id: activeOutletId,
         cashier_id: profile.id,
         total_amount: total,
-        payment_method: 'cash'
+        payment_method: method
     }]).select().single();
 
     if (trxError) {
@@ -741,14 +758,14 @@ async function checkout() {
         if (product) await supabase.from('products').update({ stock: product.stock - item.quantity }).eq('id', item.product_id);
     }
 
-    printReceipt(trxData.id, cart, total, received);
+    printReceipt(trxData.id, cart, total, received, method);
     showToast('Transaksi Berhasil!', 'success');
     generateOrderId();
     await loadProducts();
     btn.textContent = 'Bayar & Cetak';
 }
 
-function printReceipt(trxId, cartItems, total, received) {
+function printReceipt(trxId, cartItems, total, received, method) {
     const dateStr = new Date().toLocaleString('id-ID');
     const change = received - total;
     const outletName = document.getElementById('pos-outlet-name').textContent !== 'Loading...' 
@@ -760,6 +777,7 @@ function printReceipt(trxId, cartItems, total, received) {
     document.getElementById('receipt-date').textContent = dateStr;
     document.getElementById('receipt-id').textContent = trxId.substring(0,8);
     document.getElementById('receipt-cashier').textContent = getCurrentUser().email;
+    document.getElementById('receipt-method').textContent = method;
 
     const itemsHtml = cartItems.map(item => `
         <tr><td colspan="3">${item.name}</td></tr>
