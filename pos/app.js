@@ -8,6 +8,12 @@ const loginView = document.getElementById('login-view');
 const superadminView = document.getElementById('superadmin-view');
 const posView = document.getElementById('pos-view');
 
+function getLocalToday() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().split('T')[0];
+}
+
 // Toasts
 export function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
@@ -163,6 +169,49 @@ function setupEventListeners() {
         });
     });
 
+    // Edit Profile Modals
+    const openEditProfile = () => {
+        const user = getCurrentUser();
+        if(user) {
+            document.getElementById('my-name').value = user.name || '';
+            document.getElementById('my-password').value = '';
+            document.getElementById('modal-edit-profile').classList.remove('hidden');
+        }
+    };
+    document.getElementById('btn-edit-profile-sa')?.addEventListener('click', openEditProfile);
+    document.getElementById('btn-edit-profile-pos')?.addEventListener('click', openEditProfile);
+    
+    document.getElementById('form-edit-profile')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-save-my-profile');
+        btn.disabled = true;
+        btn.innerHTML = 'Menyimpan...';
+        
+        const newName = document.getElementById('my-name').value;
+        const newPassword = document.getElementById('my-password').value;
+        const user = getCurrentUser();
+        
+        try {
+            if(newName !== user.name) {
+                const { error } = await supabase.from('profiles').update({ name: newName }).eq('id', user.id);
+                if(error) throw error;
+                user.name = newName;
+                localStorage.setItem('pos_session', JSON.stringify({ session: getSession().session, profile: user }));
+            }
+            if(newPassword) {
+                const { error } = await supabase.auth.updateUser({ password: newPassword });
+                if(error) throw error;
+            }
+            showToast('Profil berhasil diperbarui', 'success');
+            document.getElementById('modal-edit-profile').classList.add('hidden');
+        } catch (err) {
+            showToast('Gagal: ' + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Simpan';
+        }
+    });
+
     // Main Tabs (Superadmin)
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -183,6 +232,15 @@ function setupEventListeners() {
             const targetId = e.currentTarget.getAttribute('data-target');
             const tabEl = document.getElementById(targetId);
             tabEl.classList.remove('hidden');
+            
+            // Show/Hide Add Product Button
+            const btnAdd = document.getElementById('btn-add-product');
+            if (btnAdd && !btnAdd.classList.contains('hidden') || getCurrentUser()?.role === 'kepala_toko' || getCurrentUser()?.role === 'owner' || getCurrentUser()?.role === 'kepala_cabang') {
+                 btnAdd.style.display = (targetId === 'pos-tab-content') ? 'block' : 'none';
+            }
+            
+            localStorage.setItem('pos_active_tab', targetId);
+            
             if(targetId === 'history-tab-content') loadHistory();
             if(targetId === 'dashboard-tab-content') loadDashboard();
         });
@@ -278,7 +336,7 @@ function setupEventListeners() {
     // Set default history date to today
     const historyDate = document.getElementById('history-date');
     if (historyDate) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalToday();
         historyDate.value = today;
         historyDate.addEventListener('change', loadHistory);
     }
@@ -286,7 +344,7 @@ function setupEventListeners() {
     // Set default dashboard date to today
     const dashboardDate = document.getElementById('dashboard-date');
     if (dashboardDate) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalToday();
         dashboardDate.value = today;
         dashboardDate.addEventListener('change', loadDashboard);
     }
@@ -529,6 +587,11 @@ window.deleteUser = async (id) => {
 async function initPos() {
     generateOrderId();
     if (activeOutletId) await loadProducts();
+    
+    // Restore active tab
+    const savedTab = localStorage.getItem('pos_active_tab') || 'pos-tab-content';
+    const btn = document.querySelector(`.pos-nav-btn[data-target="${savedTab}"]`);
+    if(btn) btn.click();
 }
 
 function generateOrderId() {

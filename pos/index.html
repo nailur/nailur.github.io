@@ -72,6 +72,9 @@
                 </div>
                 <div class="nav-actions">
                     <span id="sa-user-info" class="user-badge">Superadmin</span>
+                    <button class="btn btn-icon" id="btn-edit-profile-sa" title="Edit Profile">
+                        <i class="ph ph-user-circle"></i>
+                    </button>
                     <button class="btn btn-icon btn-logout" title="Logout">
                         <i class="ph ph-sign-out"></i>
                     </button>
@@ -194,6 +197,9 @@
                     </div>
                     <button class="btn btn-primary hidden" id="btn-add-product" title="Tambah Produk">
                         <i class="ph ph-plus"></i> <span class="hide-mobile">Produk</span>
+                    </button>
+                    <button class="btn btn-icon" id="btn-edit-profile-pos" title="Edit Profile">
+                        <i class="ph ph-user-circle"></i>
                     </button>
                     <button class="btn btn-icon btn-logout" title="Logout">
                         <i class="ph ph-sign-out"></i>
@@ -534,6 +540,30 @@
                 <button type="button" class="btn btn-secondary" data-close="modal-transaction-details">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btn-reprint-trx">Cetak Ulang</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Profile (Sendiri) -->
+    <div id="modal-edit-profile" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3>Edit Profile Saya</h3>
+                <button class="btn-close" data-close="modal-edit-profile"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-edit-profile">
+                <div class="input-group">
+                    <label for="my-name">Nama Lengkap</label>
+                    <input type="text" id="my-name" required placeholder="Nama Anda">
+                </div>
+                <div class="input-group">
+                    <label for="my-password">Password Baru (Opsional)</label>
+                    <input type="password" id="my-password" placeholder="Isi jika ingin ganti password">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="modal-edit-profile">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-my-profile">Simpan</button>
+                </div>
+            </form>
         </div>
     </div>
 
