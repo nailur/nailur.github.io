@@ -1033,51 +1033,84 @@ async function loadDashboard() {
 
     const dateStr = dashboardDate.value;
 
-    const { data, error } = await supabase.from('transactions')
+    const { data: trxData, error: trxError } = await supabase.from('transactions')
         .select('*')
         .eq('outlet_id', activeOutletId)
         .gte('created_at', dateStr + 'T00:00:00')
         .lte('created_at', dateStr + 'T23:59:59.999');
 
-    if (error) {
+    if (trxError) {
         showToast('Gagal memuat data dashboard', 'error');
         return;
     }
 
-    const summary = {};
-    let totalRevenue = 0;
-    let totalTrx = data ? data.length : 0;
+    // Default methods with 0 values
+    const ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];
+    const methodSummary = {};
+    ALL_PAYMENT_METHODS.forEach(m => methodSummary[m] = { count: 0, total: 0 });
 
-    if (data) {
-        data.forEach(trx => {
-            const method = trx.payment_method || 'Lainnya';
+    const productSummary = {};
+    let totalRevenue = 0;
+    let totalTrx = trxData ? trxData.length : 0;
+
+    if (trxData && trxData.length > 0) {
+        // Fetch items
+        const trxIds = trxData.map(t => t.id);
+        const { data: itemsData, error: itemsError } = await supabase.from('transaction_items')
+            .select('*, products(name)')
+            .in('transaction_id', trxIds);
+
+        trxData.forEach(trx => {
+            const method = trx.payment_method || 'Tunai';
             totalRevenue += trx.total_amount;
 
-            if (!summary[method]) {
-                summary[method] = { count: 0, total: 0 };
+            if (!methodSummary[method]) {
+                methodSummary[method] = { count: 0, total: 0 };
             }
-            summary[method].count++;
-            summary[method].total += trx.total_amount;
+            methodSummary[method].count++;
+            methodSummary[method].total += trx.total_amount;
         });
+
+        if (itemsData) {
+            itemsData.forEach(item => {
+                const pName = item.products?.name || 'Produk Terhapus';
+                if (!productSummary[pName]) {
+                    productSummary[pName] = { qty: 0, revenue: 0 };
+                }
+                productSummary[pName].qty += item.quantity;
+                productSummary[pName].revenue += (item.quantity * item.price);
+            });
+        }
     }
 
     document.getElementById('dash-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
     document.getElementById('dash-total-trx').textContent = totalTrx;
 
-    const tbody = document.querySelector('#dashboard-method-table tbody');
-    
-    if (Object.keys(summary).length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center">Belum ada transaksi</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = Object.entries(summary).map(([method, stats]) => `
+    const tbodyMethod = document.querySelector('#dashboard-method-table tbody');
+    tbodyMethod.innerHTML = Object.entries(methodSummary)
+        .sort((a,b) => b[1].total - a[1].total) // Sort by total descending
+        .map(([method, stats]) => `
         <tr>
             <td><strong>${method}</strong></td>
             <td style="text-align: right;">${stats.count}</td>
             <td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td>
         </tr>
     `).join('');
+
+    const tbodyProduct = document.querySelector('#dashboard-product-table tbody');
+    if (Object.keys(productSummary).length === 0) {
+        tbodyProduct.innerHTML = '<tr><td colspan="3" class="text-center">Belum ada data</td></tr>';
+    } else {
+        tbodyProduct.innerHTML = Object.entries(productSummary)
+            .sort((a,b) => b[1].qty - a[1].qty) // Sort by qty descending
+            .map(([name, stats]) => `
+            <tr>
+                <td>${name}</td>
+                <td style="text-align: right;">${stats.qty}</td>
+                <td style="text-align: right;">Rp ${stats.revenue.toLocaleString('id-ID')}</td>
+            </tr>
+        `).join('');
+    }
 }
 
 // Start App

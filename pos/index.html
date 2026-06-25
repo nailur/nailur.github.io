@@ -315,20 +315,41 @@
                     </div>
                 </div>
 
-                <h3>Rincian per Metode Pembayaran</h3>
-                <div class="table-responsive" style="margin-top: 10px;">
-                    <table class="data-table" id="dashboard-method-table">
-                        <thead>
-                            <tr>
-                                <th>Metode Pembayaran</th>
-                                <th style="text-align: right;">Jumlah Transaksi</th>
-                                <th style="text-align: right;">Total Pendapatan</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Rows injected here -->
-                        </tbody>
-                    </table>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                    <div>
+                        <h3>Metode Pembayaran</h3>
+                        <div class="table-responsive" style="margin-top: 10px;">
+                            <table class="data-table" id="dashboard-method-table">
+                                <thead>
+                                    <tr>
+                                        <th>Metode Pembayaran</th>
+                                        <th style="text-align: right;">Trx</th>
+                                        <th style="text-align: right;">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Produk Terjual</h3>
+                        <div class="table-responsive" style="margin-top: 10px;">
+                            <table class="data-table" id="dashboard-product-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Produk</th>
+                                        <th style="text-align: right;">Qty</th>
+                                        <th style="text-align: right;">Omzet</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
