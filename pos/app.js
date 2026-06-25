@@ -526,8 +526,8 @@ function renderProducts(search = '') {
 
     grid.innerHTML = filtered.map(p => `
         <div class="product-card" onclick="addToCart('${p.id}')">
-            ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" class="product-image">` : `<div class="product-image" style="display:flex;align-items:center;justify-content:center;color:#ccc;"><i class="ph-duotone ph-image" style="font-size:3rem;"></i></div>`}
-            <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+            ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" class="product-image">` : `<div class="product-image" style="display:flex;align-items:center;justify-content:center;color:#ccc;"><i class="ph-duotone ph-image" style="font-size:2.5rem;"></i></div>`}
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-start;">
                 <div class="product-name">${p.name}</div>
                 <div class="product-price">Rp ${p.price.toLocaleString('id-ID')}</div>
                 <div class="text-sm text-muted">Stok: ${p.stock}</div>
