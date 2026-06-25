@@ -195,17 +195,23 @@ function setupEventListeners() {
     // Superadmin Actions
     document.getElementById('btn-add-branch').addEventListener('click', () => {
         document.getElementById('form-branch').reset();
+        document.getElementById('branch-id').value = '';
         document.getElementById('modal-branch').classList.remove('hidden');
     });
 
     document.getElementById('btn-add-outlet').addEventListener('click', () => {
         document.getElementById('form-outlet').reset();
+        document.getElementById('outlet-id').value = '';
         document.getElementById('outlet-branch').innerHTML = branchesList.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
         document.getElementById('modal-outlet').classList.remove('hidden');
     });
 
     document.getElementById('btn-add-user').addEventListener('click', () => {
         document.getElementById('form-user').reset();
+        document.getElementById('user-id').value = '';
+        document.getElementById('user-email').disabled = false;
+        document.getElementById('user-password').placeholder = 'Minimal 6 karakter';
+        document.getElementById('user-password').setAttribute('required', 'true');
         document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
         document.getElementById('user-outlet').innerHTML = outletsList.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
         document.getElementById('modal-user').classList.remove('hidden');
@@ -268,7 +274,10 @@ async function loadBranches() {
     tbody.innerHTML = data.map(b => `
         <tr>
             <td><strong>${b.name}</strong></td>
-            <td></td>
+            <td>
+                <button class="btn btn-icon" style="color:var(--primary)" onclick="editBranch('${b.id}')"><i class="ph ph-pencil-simple"></i></button>
+                <button class="btn btn-icon" onclick="deleteBranch('${b.id}')"><i class="ph ph-trash"></i></button>
+            </td>
         </tr>
     `).join('');
 }
@@ -283,7 +292,10 @@ async function loadOutlets() {
             <td><strong>${o.name}</strong></td>
             <td>${o.branches?.name || '-'}</td>
             <td>${o.address || '-'}</td>
-            <td></td>
+            <td>
+                <button class="btn btn-icon" style="color:var(--primary)" onclick="editOutlet('${o.id}')"><i class="ph ph-pencil-simple"></i></button>
+                <button class="btn btn-icon" onclick="deleteOutlet('${o.id}')"><i class="ph ph-trash"></i></button>
+            </td>
         </tr>
     `).join('');
 }
@@ -297,32 +309,83 @@ async function loadUsers() {
             <td>${u.email}</td>
             <td><span class="user-badge">${u.role}</span></td>
             <td>${u.role === 'kepala_cabang' ? (u.branches?.name || '-') : (u.outlets?.name || '-')}</td>
-            <td></td>
+            <td>
+                <button class="btn btn-icon" style="color:var(--primary)" onclick="editUser('${u.id}')"><i class="ph ph-pencil-simple"></i></button>
+                <button class="btn btn-icon" onclick="deleteUser('${u.id}')"><i class="ph ph-trash"></i></button>
+            </td>
         </tr>
     `).join('');
 }
 
 async function handleAddBranch(e) {
     e.preventDefault();
+    const id = document.getElementById('branch-id').value;
     const name = document.getElementById('branch-name').value;
-    const { error } = await supabase.from('branches').insert([{ name }]);
-    if (error) showToast(error.message, 'error');
-    else { showToast('Cabang ditambahkan!', 'success'); document.getElementById('modal-branch').classList.add('hidden'); loadBranches(); }
+    
+    if (id) {
+        const { error } = await supabase.from('branches').update({ name }).eq('id', id);
+        if (error) showToast(error.message, 'error');
+        else { showToast('Cabang diperbarui!', 'success'); document.getElementById('modal-branch').classList.add('hidden'); loadBranches(); }
+    } else {
+        const { error } = await supabase.from('branches').insert([{ name }]);
+        if (error) showToast(error.message, 'error');
+        else { showToast('Cabang ditambahkan!', 'success'); document.getElementById('modal-branch').classList.add('hidden'); loadBranches(); }
+    }
 }
+
+window.editBranch = (id) => {
+    const b = branchesList.find(x => x.id === id);
+    if (!b) return;
+    document.getElementById('branch-id').value = b.id;
+    document.getElementById('branch-name').value = b.name;
+    document.getElementById('modal-branch').classList.remove('hidden');
+};
+
+window.deleteBranch = async (id) => {
+    if(!confirm('Hapus cabang ini? (Semua outlet di dalamnya mungkin terpengaruh)')) return;
+    const { error } = await supabase.from('branches').delete().eq('id', id);
+    if(error) showToast(error.message, 'error');
+    else loadBranches();
+};
 
 async function handleAddOutlet(e) {
     e.preventDefault();
+    const id = document.getElementById('outlet-id').value;
     const name = document.getElementById('outlet-name').value;
     const branch_id = document.getElementById('outlet-branch').value;
     const address = document.getElementById('outlet-address').value;
 
-    const { error } = await supabase.from('outlets').insert([{ name, address, branch_id }]);
-    if (error) showToast(error.message, 'error');
-    else { showToast('Outlet ditambahkan!', 'success'); document.getElementById('modal-outlet').classList.add('hidden'); loadOutlets(); }
+    if (id) {
+        const { error } = await supabase.from('outlets').update({ name, address, branch_id }).eq('id', id);
+        if (error) showToast(error.message, 'error');
+        else { showToast('Outlet diperbarui!', 'success'); document.getElementById('modal-outlet').classList.add('hidden'); loadOutlets(); }
+    } else {
+        const { error } = await supabase.from('outlets').insert([{ name, address, branch_id }]);
+        if (error) showToast(error.message, 'error');
+        else { showToast('Outlet ditambahkan!', 'success'); document.getElementById('modal-outlet').classList.add('hidden'); loadOutlets(); }
+    }
 }
+
+window.editOutlet = (id) => {
+    const o = outletsList.find(x => x.id === id);
+    if (!o) return;
+    document.getElementById('outlet-id').value = o.id;
+    document.getElementById('outlet-name').value = o.name;
+    document.getElementById('outlet-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id===o.branch_id?'selected':''}>${b.name}</option>`).join('');
+    document.getElementById('outlet-address').value = o.address;
+    document.getElementById('modal-outlet').classList.remove('hidden');
+};
+
+window.deleteOutlet = async (id) => {
+    if(!confirm('Hapus outlet ini? (Semua transaksi & produk di dalamnya akan ikut terhapus)')) return;
+    const { error } = await supabase.from('outlets').delete().eq('id', id);
+    if(error) showToast(error.message, 'error');
+    else loadOutlets();
+};
 
 async function handleAddUser(e) {
     e.preventDefault();
+    const id = document.getElementById('user-id').value;
     const email = document.getElementById('user-email').value;
     const password = document.getElementById('user-password').value;
     const role = document.getElementById('user-role').value;
@@ -336,22 +399,71 @@ async function handleAddUser(e) {
     btn.disabled = true;
     btn.textContent = 'Menyimpan...';
 
-    const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({ email, password });
-    if (authError) {
-        showToast(authError.message, 'error');
-        btn.disabled = false; btn.textContent = 'Simpan'; return;
-    }
-
-    setTimeout(async () => {
-        const { error: updateError } = await supabase.from('profiles')
-            .update({ role, branch_id, outlet_id })
-            .eq('id', authData.user.id);
-            
-        if (updateError) showToast('Gagal set profile: ' + updateError.message, 'error');
-        else { showToast('Pegawai berhasil ditambahkan!', 'success'); document.getElementById('modal-user').classList.add('hidden'); loadUsers(); }
+    if (id) {
+        // Edit User (hanya profile, email/password tidak diubah dari UI ini)
+        const { error } = await supabase.from('profiles').update({ role, branch_id, outlet_id }).eq('id', id);
+        if (error) showToast('Gagal update: ' + error.message, 'error');
+        else { showToast('Pegawai diperbarui!', 'success'); document.getElementById('modal-user').classList.add('hidden'); loadUsers(); }
         btn.disabled = false; btn.textContent = 'Simpan';
-    }, 1000);
+    } else {
+        // Create User
+        if (!password) {
+            showToast('Password wajib diisi untuk pengguna baru', 'error');
+            btn.disabled = false; btn.textContent = 'Simpan';
+            return;
+        }
+        const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({ email, password });
+        if (authError) {
+            showToast(authError.message, 'error');
+            btn.disabled = false; btn.textContent = 'Simpan'; return;
+        }
+
+        setTimeout(async () => {
+            const { error: updateError } = await supabase.from('profiles')
+                .update({ role, branch_id, outlet_id })
+                .eq('id', authData.user.id);
+                
+            if (updateError) showToast('Gagal set profile: ' + updateError.message, 'error');
+            else { showToast('Pegawai berhasil ditambahkan!', 'success'); document.getElementById('modal-user').classList.add('hidden'); loadUsers(); }
+            btn.disabled = false; btn.textContent = 'Simpan';
+        }, 1000);
+    }
 }
+
+window.editUser = async (id) => {
+    // Fetch user details from DB
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', id).single();
+    if (error || !data) return showToast('Gagal memuat profil', 'error');
+    
+    document.getElementById('user-id').value = data.id;
+    document.getElementById('user-email').value = data.email;
+    document.getElementById('user-email').disabled = true; // Email disabled on edit
+    document.getElementById('user-password').value = ''; // Leave blank, not supported for edit here
+    document.getElementById('user-password').placeholder = '(Tidak bisa diubah dari sini)';
+    document.getElementById('user-password').removeAttribute('required');
+    
+    document.getElementById('user-role').value = data.role;
+    document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id===data.branch_id?'selected':''}>${b.name}</option>`).join('');
+    document.getElementById('user-outlet').innerHTML = outletsList.map(o => `<option value="${o.id}" ${o.id===data.outlet_id?'selected':''}>${o.name}</option>`).join('');
+    
+    handleRoleSelectionChange();
+    document.getElementById('modal-user').classList.remove('hidden');
+};
+
+window.deleteUser = async (id) => {
+    if(!confirm('Hapus pegawai ini? Aksesnya akan dicabut.')) return;
+    // We try to delete from auth.admin if available, otherwise just delete profile
+    try {
+        if (supabaseAdmin.auth.admin) {
+            await supabaseAdmin.auth.admin.deleteUser(id);
+        }
+    } catch(e) { console.warn('Supabase admin delete unsupported, deleting profile only'); }
+    
+    // Deleting profile triggers CASCADE if set, but if not we just delete profile
+    const { error } = await supabase.from('profiles').delete().eq('id', id);
+    if(error) showToast(error.message, 'error');
+    else loadUsers();
+};
 
 
 // ------------------------------
