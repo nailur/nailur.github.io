@@ -225,10 +225,31 @@ function setupEventListeners() {
     document.getElementById('form-user').addEventListener('submit', handleAddUser);
 
     // POS Actions
+    // Image Preview for Product
+    document.getElementById('product-image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const previewContainer = document.getElementById('product-image-preview-container');
+        const previewImg = document.getElementById('product-image-preview');
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewContainer.classList.remove('hidden');
+            }
+            reader.readAsDataURL(file);
+        } else {
+            previewContainer.classList.add('hidden');
+            previewImg.src = '';
+        }
+    });
+
     document.getElementById('btn-add-product').addEventListener('click', () => {
         if (!activeOutletId) { showToast('Pilih outlet dulu', 'error'); return; }
         document.getElementById('form-product').reset();
         document.getElementById('product-id').value = '';
+        document.getElementById('product-image').value = '';
+        document.getElementById('product-image-preview-container').classList.add('hidden');
+        document.getElementById('product-image-preview').src = '';
         document.getElementById('product-modal-title').textContent = 'Tambah Produk';
         document.getElementById('modal-product').classList.remove('hidden');
     });
@@ -504,6 +525,7 @@ function renderProducts(search = '') {
 
     grid.innerHTML = filtered.map(p => `
         <div class="product-card" onclick="addToCart('${p.id}')">
+            ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" class="product-image">` : `<div class="product-image" style="display:flex;align-items:center;justify-content:center;color:#ccc;"><i class="ph-duotone ph-image" style="font-size:3rem;"></i></div>`}
             <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
                 <div class="product-name">${p.name}</div>
                 <div class="product-price">Rp ${p.price.toLocaleString('id-ID')}</div>
@@ -522,19 +544,57 @@ function renderProducts(search = '') {
 async function handleSaveProduct(e) {
     e.preventDefault();
     if (!activeOutletId) return;
+    
+    const btn = document.getElementById('btn-save-product');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
     const id = document.getElementById('product-id').value;
     const name = document.getElementById('product-name').value;
     const price = document.getElementById('product-price').value;
     const stock = document.getElementById('product-stock').value;
+    const imageInput = document.getElementById('product-image');
+    let image_url = null;
 
-    if (id) {
-        const { error } = await supabase.from('products').update({ name, price, stock }).eq('id', id);
-        if (error) showToast(error.message, 'error');
-        else { showToast('Produk diperbarui', 'success'); document.getElementById('modal-product').classList.add('hidden'); loadProducts(); }
-    } else {
-        const { error } = await supabase.from('products').insert([{ name, price, stock, outlet_id: activeOutletId }]);
-        if (error) showToast(error.message, 'error');
-        else { showToast('Produk ditambahkan', 'success'); document.getElementById('modal-product').classList.add('hidden'); loadProducts(); }
+    try {
+        if (imageInput.files && imageInput.files[0]) {
+            const file = imageInput.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+            
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('product-images')
+                .upload(fileName, file);
+                
+            if (uploadError) throw new Error('Gagal mengunggah foto: ' + uploadError.message);
+            
+            const { data: publicUrlData } = supabase.storage
+                .from('product-images')
+                .getPublicUrl(fileName);
+                
+            image_url = publicUrlData.publicUrl;
+        }
+
+        const payload = { name, price, stock, outlet_id: activeOutletId };
+        if (image_url) payload.image_url = image_url; // Only update image_url if a new one is uploaded
+
+        if (id) {
+            const { error } = await supabase.from('products').update(payload).eq('id', id);
+            if (error) throw new Error(error.message);
+            showToast('Produk diperbarui', 'success');
+        } else {
+            const { error } = await supabase.from('products').insert([payload]);
+            if (error) throw new Error(error.message);
+            showToast('Produk ditambahkan', 'success');
+        }
+        
+        document.getElementById('modal-product').classList.add('hidden');
+        loadProducts();
+    } catch (error) {
+        showToast(error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Simpan';
     }
 }
 
@@ -545,6 +605,16 @@ window.editProduct = (id) => {
     document.getElementById('product-name').value = p.name;
     document.getElementById('product-price').value = p.price;
     document.getElementById('product-stock').value = p.stock;
+    document.getElementById('product-image').value = '';
+    
+    if (p.image_url) {
+        document.getElementById('product-image-preview').src = p.image_url;
+        document.getElementById('product-image-preview-container').classList.remove('hidden');
+    } else {
+        document.getElementById('product-image-preview').src = '';
+        document.getElementById('product-image-preview-container').classList.add('hidden');
+    }
+
     document.getElementById('product-modal-title').textContent = 'Edit Produk';
     document.getElementById('modal-product').classList.remove('hidden');
 };

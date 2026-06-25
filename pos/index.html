@@ -393,6 +393,13 @@
                     <label for="product-stock">Stok</label>
                     <input type="number" id="product-stock" required placeholder="100">
                 </div>
+                <div class="input-group">
+                    <label for="product-image">Foto Produk (Opsional)</label>
+                    <input type="file" id="product-image" accept="image/*" style="padding: 8px;">
+                    <div id="product-image-preview-container" class="hidden" style="margin-top: 10px; text-align: center;">
+                        <img id="product-image-preview" src="" alt="Preview" style="max-height: 120px; border-radius: 8px; border: 1px solid var(--border);">
+                    </div>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" data-close="modal-product">Batal</button>
                     <button type="submit" class="btn btn-primary" id="btn-save-product">Simpan</button>
