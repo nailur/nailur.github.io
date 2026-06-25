@@ -10,6 +10,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Phosphor Icons for modern icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="./style-modals.css">
 </head>
@@ -263,6 +269,9 @@
                     <div style="display:flex; gap: 10px; align-items:center;">
                         <label for="history-date">Pilih Tanggal:</label>
                         <input type="date" id="history-date" class="input-sm">
+                        <button class="btn btn-secondary" id="btn-export-excel" style="display: flex; align-items: center; gap: 5px;">
+                            <i class="ph ph-file-xls"></i> Export Excel
+                        </button>
                     </div>
                 </div>
                 <div class="table-responsive">

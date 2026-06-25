@@ -278,6 +278,8 @@ function setupEventListeners() {
         historyDate.value = today;
         historyDate.addEventListener('change', loadHistory);
     }
+    
+    document.getElementById('btn-export-excel')?.addEventListener('click', exportToExcel);
 }
 
 function handleRoleSelectionChange() {
@@ -821,6 +823,108 @@ function printReceipt(trxId, cartItems, total, received, method, trxDate = null,
     document.getElementById('receipt-change').textContent = change.toLocaleString('id-ID');
 
     window.print();
+}
+
+async function exportToExcel() {
+    if (!activeOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
+    
+    const historyDate = document.getElementById('history-date').value;
+    if (!historyDate) return showToast('Pilih tanggal terlebih dahulu', 'error');
+
+    const btn = document.getElementById('btn-export-excel');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengekspor...';
+
+    try {
+        // 1. Fetch Transactions
+        const { data: trxData, error: trxError } = await supabase.from('transactions')
+            .select('*, profiles(email, name)')
+            .eq('outlet_id', activeOutletId)
+            .gte('created_at', historyDate + 'T00:00:00')
+            .lte('created_at', historyDate + 'T23:59:59.999')
+            .order('created_at', { ascending: true });
+
+        if (trxError) throw trxError;
+        if (!trxData || trxData.length === 0) {
+            showToast('Tidak ada data transaksi untuk diekspor', 'error');
+            return;
+        }
+
+        // 2. Fetch Transaction Items for those transactions
+        const trxIds = trxData.map(t => t.id);
+        const { data: itemsData, error: itemsError } = await supabase.from('transaction_items')
+            .select('*, products(name)')
+            .in('transaction_id', trxIds);
+
+        if (itemsError) throw itemsError;
+
+        // 3. Flatten data for Excel
+        const exportRows = [];
+        
+        for (const trx of trxData) {
+            const cashierName = trx.profiles?.name || trx.profiles?.email || '-';
+            const trxItems = itemsData.filter(i => i.transaction_id === trx.id);
+            
+            if (trxItems.length === 0) {
+                // If somehow no items
+                exportRows.push({
+                    'ID Transaksi': trx.id.substring(0, 8),
+                    'Tanggal': new Date(trx.created_at).toLocaleString('id-ID'),
+                    'Kasir': cashierName,
+                    'Metode Pembayaran': trx.payment_method,
+                    'Produk': '-',
+                    'Kuantitas': 0,
+                    'Harga Satuan': 0,
+                    'Subtotal Produk': 0,
+                    'Total Transaksi': trx.total_amount
+                });
+            } else {
+                for (const item of trxItems) {
+                    exportRows.push({
+                        'ID Transaksi': trx.id.substring(0, 8),
+                        'Tanggal': new Date(trx.created_at).toLocaleString('id-ID'),
+                        'Kasir': cashierName,
+                        'Metode Pembayaran': trx.payment_method,
+                        'Produk': item.products?.name || 'Produk Terhapus',
+                        'Kuantitas': item.quantity,
+                        'Harga Satuan': item.price,
+                        'Subtotal Produk': item.quantity * item.price,
+                        'Total Transaksi': trx.total_amount // Total of the whole transaction
+                    });
+                }
+            }
+        }
+
+        // 4. Generate Excel using SheetJS
+        const worksheet = XLSX.utils.json_to_sheet(exportRows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Transaksi");
+        
+        // Adjust column widths automatically
+        const colWidths = [
+            { wch: 15 }, // ID
+            { wch: 20 }, // Tanggal
+            { wch: 25 }, // Kasir
+            { wch: 15 }, // Metode
+            { wch: 25 }, // Produk
+            { wch: 10 }, // Qty
+            { wch: 15 }, // Harga
+            { wch: 15 }, // Subtotal
+            { wch: 15 }  // Total
+        ];
+        worksheet['!cols'] = colWidths;
+
+        XLSX.writeFile(workbook, `Laporan_Transaksi_${historyDate}.xlsx`);
+        showToast('Berhasil mengunduh Excel', 'success');
+
+    } catch (e) {
+        console.error(e);
+        showToast('Gagal mengekspor Excel', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
 }
 
 async function loadHistory() {
