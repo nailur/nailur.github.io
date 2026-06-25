@@ -631,7 +631,8 @@ body {
         overflow: hidden; /* Keep scroll within children */
     }
     .pos-catalog {
-        flex: 1; /* Auto height based on content */
+        flex: 1; 
+        min-height: 0; /* CRITICAL: allows flex child to scroll */
         overflow-y: auto;
         padding-bottom: 20px;
     }
@@ -643,6 +644,7 @@ body {
     .pos-cart {
         margin: 0;
         flex: 1; /* Take bottom 50% */
+        min-height: 0; /* CRITICAL: allows flex child to scroll */
         overflow-y: auto;
         border-radius: 24px 24px 0 0;
         box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
