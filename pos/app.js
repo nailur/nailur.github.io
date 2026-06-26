@@ -111,9 +111,6 @@ async function routeUser(profile) {
 }
 
 async function initPosMultiOutlet(profile) {
-    startAttendanceClock();
-    checkAttendanceStatus();
-    
     document.getElementById('btn-add-product').classList.remove('hidden');
     
     // Load accessible outlets
@@ -817,6 +814,8 @@ window.deleteUser = async (id) => {
 // POS / ADMIN LOGIC
 // ------------------------------
 async function initPos() {
+    startAttendanceClock();
+    checkAttendanceStatus();
     generateOrderId();
     if (activeOutletId) await loadProducts();
     
@@ -1172,6 +1171,11 @@ window.updateQty = (id, delta) => {
     
     item.quantity += delta;
     if (item.quantity <= 0) cart = cart.filter(i => i.product_id !== id);
+    renderCart();
+};
+
+window.emptyCart = () => {
+    cart = [];
     renderCart();
 };
 
