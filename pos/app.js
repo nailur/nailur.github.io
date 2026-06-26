@@ -883,7 +883,7 @@ async function checkAttendanceStatus() {
     const profile = getCurrentProfile();
     if (!profile || !activeOutletId) return;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalToday();
     
     const { data, error } = await supabase
         .from('attendance')
@@ -926,7 +926,7 @@ async function handleClockIn() {
     btn.disabled = true;
     btn.textContent = 'Menyimpan...';
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalToday();
     const now = new Date().toISOString();
 
     const { data, error } = await supabase
