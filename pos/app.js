@@ -123,19 +123,33 @@ async function initPosMultiOutlet(profile) {
     const nameLabel = document.getElementById('pos-outlet-name');
     const mobileNameLabel = document.getElementById('mobile-pos-outlet-name');
     const selector = document.getElementById('active-outlet-selector');
+    const mobileSelector = document.getElementById('mobile-active-outlet-selector');
     
     if (posOutletsList.length > 1) {
         nameLabel.classList.add('hidden');
         if(mobileNameLabel) mobileNameLabel.classList.add('hidden'); // Also hide mobile label if using dropdown
         selector.classList.remove('hidden');
-        selector.innerHTML = posOutletsList.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+        if(mobileSelector) mobileSelector.classList.remove('hidden');
+        
+        const optionsHtml = posOutletsList.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+        selector.innerHTML = optionsHtml;
+        if(mobileSelector) mobileSelector.innerHTML = optionsHtml;
+        
         selector.value = activeOutletId;
-        selector.addEventListener('change', (e) => {
+        if(mobileSelector) mobileSelector.value = activeOutletId;
+        
+        const handleChange = (e) => {
             activeOutletId = e.target.value;
+            selector.value = activeOutletId;
+            if(mobileSelector) mobileSelector.value = activeOutletId;
+            localStorage.setItem('pos_active_outlet_id', activeOutletId);
             loadProducts();
             loadHistory();
             loadDashboard();
-        });
+        };
+        
+        selector.addEventListener('change', handleChange);
+        if(mobileSelector) mobileSelector.addEventListener('change', handleChange);
     } else {
         const outlet = posOutletsList.find(o => o.id === activeOutletId);
         if (outlet) {
@@ -145,15 +159,19 @@ async function initPosMultiOutlet(profile) {
         nameLabel.classList.remove('hidden');
         if(mobileNameLabel) mobileNameLabel.classList.remove('hidden');
         selector.classList.add('hidden');
+        if(mobileSelector) mobileSelector.classList.add('hidden');
     }
     
     const savedOutletId = localStorage.getItem('pos_active_outlet_id');
     if (savedOutletId && posOutletsList.find(o => o.id === savedOutletId)) {
         activeOutletId = savedOutletId;
         selector.value = savedOutletId;
+        if(mobileSelector) mobileSelector.value = savedOutletId;
     } else if (posOutletsList.length > 0) {
         activeOutletId = posOutletsList[0].id;
         localStorage.setItem('pos_active_outlet_id', activeOutletId);
+        selector.value = activeOutletId;
+        if(mobileSelector) mobileSelector.value = activeOutletId;
     }
     
     initPos();
@@ -222,7 +240,24 @@ function setupEventListeners() {
         });
     }
 
-    // Modals Close
+    // Toggle List/Grid View
+    const btnToggleLayout = document.getElementById('btn-toggle-layout');
+    const productGrid = document.getElementById('product-grid');
+    if (btnToggleLayout && productGrid) {
+        btnToggleLayout.addEventListener('click', () => {
+            productGrid.classList.toggle('list-view');
+            const icon = btnToggleLayout.querySelector('i');
+            if (productGrid.classList.contains('list-view')) {
+                icon.classList.remove('ph-list-dashes');
+                icon.classList.add('ph-squares-four');
+            } else {
+                icon.classList.add('ph-list-dashes');
+                icon.classList.remove('ph-squares-four');
+            }
+        });
+    }
+
+    // Modal Close
     document.querySelectorAll('[data-close]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const modalId = e.currentTarget.getAttribute('data-close');

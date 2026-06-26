@@ -413,6 +413,31 @@ body {
 .catalog-grid::-webkit-scrollbar { width: 6px; }
 .catalog-grid::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
 
+.catalog-grid.list-view {
+    display: flex;
+    flex-direction: column;
+}
+.catalog-grid.list-view .product-card {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    height: 70px;
+    padding: 8px 12px;
+}
+.catalog-grid.list-view .product-image {
+    width: 50px;
+    height: 50px;
+    margin: 0 12px 0 0;
+}
+.catalog-grid.list-view .product-name {
+    margin: 0;
+    font-size: 0.95rem;
+    flex: 1;
+}
+.catalog-grid.list-view .product-price {
+    margin: 0;
+}
+
 .product-card {
     background: #fff;
     border-radius: var(--radius-md);
