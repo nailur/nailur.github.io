@@ -8,7 +8,15 @@ export async function checkSession() {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (session) {
         currentUser = session.user;
-        await loadProfile(currentUser.id);
+        
+        // Cek apakah ada profil di localStorage (hemat database query)
+        const cachedProfile = localStorage.getItem('pos_profile');
+        if (cachedProfile) {
+            currentProfile = JSON.parse(cachedProfile);
+        } else {
+            await loadProfile(currentUser.id);
+        }
+        
         return { user: currentUser, profile: currentProfile };
     }
     return null;
@@ -26,6 +34,7 @@ export async function loadProfile(userId) {
         return null;
     }
     currentProfile = data;
+    localStorage.setItem('pos_profile', JSON.stringify(currentProfile)); // Cache ke localStorage
     return currentProfile;
 }
 
@@ -49,10 +58,12 @@ export async function logout() {
     const { error } = await supabase.auth.signOut();
     if (error) {
         showToast(error.message, 'error');
+    } else {
+        currentUser = null;
+        currentProfile = null;
+        localStorage.removeItem('pos_profile');
+        window.location.reload();
     }
-    currentUser = null;
-    currentProfile = null;
-    window.location.reload();
 }
 
 export function getCurrentUser() {

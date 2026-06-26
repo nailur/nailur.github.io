@@ -205,6 +205,7 @@ function setupEventListeners() {
                 const { error } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
                 if(error) throw error;
                 profile.name = newName; // Update local state directly
+                localStorage.setItem('pos_profile', JSON.stringify(profile)); // Update cache
             }
             if(newPassword) {
                 const { error } = await supabase.auth.updateUser({ password: newPassword });
