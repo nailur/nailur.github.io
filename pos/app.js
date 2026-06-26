@@ -77,7 +77,7 @@ async function routeUser(profile) {
         if (profile.role === 'superadmin') {
             showView('superadmin');
             document.getElementById('sa-user-info').textContent = 'Superadmin';
-            initSuperadmin();
+            initManagement();
         } else {
             // Owner
             showView('pos');
@@ -99,6 +99,13 @@ async function routeUser(profile) {
     } else {
         showToast('Role tidak valid', 'error');
         logout();
+    }
+    
+    // Tampilkan tombol manajemen untuk role manajerial
+    if (['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(profile.role)) {
+        document.getElementById('btn-management').classList.remove('hidden');
+    } else {
+        document.getElementById('btn-management').classList.add('hidden');
     }
 }
 
@@ -154,6 +161,17 @@ function setupEventListeners() {
         
         btn.disabled = false;
         btn.innerHTML = '<span>Masuk</span><i class="ph ph-arrow-right"></i>';
+    });
+
+    // Navigasi POS <-> Manajemen
+    document.getElementById('btn-management').addEventListener('click', () => {
+        showView('superadmin');
+        const role = getCurrentProfile()?.role;
+        document.getElementById('sa-user-info').textContent = role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        initManagement();
+    });
+    document.getElementById('btn-back-pos').addEventListener('click', () => {
+        showView('pos');
     });
 
     // Logout
@@ -294,7 +312,31 @@ function setupEventListeners() {
         document.getElementById('user-password').placeholder = 'Minimal 6 karakter';
         document.getElementById('user-password').setAttribute('required', 'true');
         document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-        document.getElementById('user-outlet').innerHTML = outletsList.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+        
+        // Filter options based on role
+        const role = getCurrentProfile()?.role;
+        const roleSelect = document.getElementById('user-role');
+        Array.from(roleSelect.options).forEach(opt => opt.style.display = 'block');
+        if (role === 'kepala_cabang') {
+            Array.from(roleSelect.options).forEach(opt => {
+                if(!['kepala_toko', 'kasir'].includes(opt.value)) opt.style.display = 'none';
+            });
+            roleSelect.value = 'kepala_toko';
+        } else if (role === 'kepala_toko') {
+            Array.from(roleSelect.options).forEach(opt => {
+                if(!['kasir'].includes(opt.value)) opt.style.display = 'none';
+            });
+            roleSelect.value = 'kasir';
+        } else {
+            roleSelect.value = 'owner';
+        }
+        
+        let filteredOutlets = outletsList;
+        if (role === 'kepala_cabang') {
+            filteredOutlets = outletsList.filter(o => o.branch_id === getCurrentProfile().branch_id);
+        }
+        document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+        
         document.getElementById('modal-user').classList.remove('hidden');
         handleRoleSelectionChange();
     });
@@ -365,25 +407,59 @@ function handleRoleSelectionChange() {
     const role = document.getElementById('user-role').value;
     const branchGroup = document.getElementById('group-user-branch');
     const outletGroup = document.getElementById('group-user-outlet');
+    const myRole = getCurrentProfile()?.role;
     
     if (role === 'owner' || role === 'superadmin') {
         branchGroup.classList.add('hidden');
         outletGroup.classList.add('hidden');
     } else if (role === 'kepala_cabang') {
-        branchGroup.classList.remove('hidden');
+        if(myRole === 'superadmin' || myRole === 'owner') branchGroup.classList.remove('hidden');
+        else branchGroup.classList.add('hidden');
         outletGroup.classList.add('hidden');
     } else {
-        branchGroup.classList.add('hidden');
-        outletGroup.classList.remove('hidden');
+        if(myRole === 'superadmin' || myRole === 'owner') branchGroup.classList.remove('hidden');
+        else branchGroup.classList.add('hidden');
+        if(myRole === 'kepala_toko') outletGroup.classList.add('hidden'); // Kepala toko can't change outlet
+        else outletGroup.classList.remove('hidden');
     }
 }
 
 // ------------------------------
-// SUPERADMIN LOGIC
+// MANAGEMENT LOGIC (Superadmin / Kepala Cabang / Kepala Toko)
 // ------------------------------
-async function initSuperadmin() {
-    await loadBranches();
-    await loadOutlets();
+async function initManagement() {
+    const profile = getCurrentProfile();
+    const role = profile?.role;
+    
+    // Sembunyikan tab berdasarkan role
+    const tabBranches = document.querySelector('.tab-btn[data-target="branches-tab"]');
+    const tabOutlets = document.querySelector('.tab-btn[data-target="outlets-tab"]');
+    
+    if (role === 'superadmin' || role === 'owner') {
+        tabBranches.classList.remove('hidden');
+        tabOutlets.classList.remove('hidden');
+        document.getElementById('management-title').textContent = 'Manajemen Sistem';
+    } else if (role === 'kepala_cabang') {
+        tabBranches.classList.add('hidden');
+        tabOutlets.classList.remove('hidden');
+        document.getElementById('management-title').textContent = 'Panel Kepala Cabang';
+    } else if (role === 'kepala_toko') {
+        tabBranches.classList.add('hidden');
+        tabOutlets.classList.add('hidden');
+        document.getElementById('management-title').textContent = 'Panel Kepala Toko';
+    }
+    
+    // Klik tab pertama yang tersedia
+    if (!tabBranches.classList.contains('hidden')) {
+        tabBranches.click();
+    } else if (!tabOutlets.classList.contains('hidden')) {
+        tabOutlets.click();
+    } else {
+        document.querySelector('.tab-btn[data-target="users-tab"]').click();
+    }
+
+    if (role === 'superadmin' || role === 'owner') await loadBranches();
+    if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadOutlets();
     await loadUsers();
 }
 
@@ -404,7 +480,12 @@ async function loadBranches() {
 }
 
 async function loadOutlets() {
-    const { data, error } = await supabase.from('outlets').select('*, branches(name)').order('created_at', { ascending: false });
+    let query = supabase.from('outlets').select('*, branches(name)').order('created_at', { ascending: false });
+    const profile = getCurrentProfile();
+    if (profile?.role === 'kepala_cabang') {
+        query = query.eq('branch_id', profile.branch_id);
+    }
+    const { data, error } = await query;
     if (error) return showToast('Gagal memuat outlet', 'error');
     outletsList = data;
     const tbody = document.querySelector('#outlets-table tbody');
@@ -422,7 +503,14 @@ async function loadOutlets() {
 }
 
 async function loadUsers() {
-    const { data, error } = await supabase.from('profiles').select('*, outlets(name), branches(name)').neq('role', 'superadmin');
+    let query = supabase.from('profiles').select('*, outlets(name), branches(name)').neq('role', 'superadmin');
+    const profile = getCurrentProfile();
+    if (profile?.role === 'kepala_cabang') {
+        query = query.eq('branch_id', profile.branch_id);
+    } else if (profile?.role === 'kepala_toko') {
+        query = query.eq('outlet_id', profile.outlet_id);
+    }
+    const { data, error } = await query;
     if (error) return showToast('Gagal memuat pegawai', 'error');
     const tbody = document.querySelector('#users-table tbody');
     tbody.innerHTML = data.map(u => `
@@ -474,8 +562,13 @@ async function handleAddOutlet(e) {
     e.preventDefault();
     const id = document.getElementById('outlet-id').value;
     const name = document.getElementById('outlet-name').value;
-    const branch_id = document.getElementById('outlet-branch').value;
+    let branch_id = document.getElementById('outlet-branch').value;
     const address = document.getElementById('outlet-address').value;
+
+    const profile = getCurrentProfile();
+    if (profile?.role === 'kepala_cabang') {
+        branch_id = profile.branch_id;
+    }
 
     if (id) {
         const { error } = await supabase.from('outlets').update({ name, address, branch_id }).eq('id', id);
@@ -515,8 +608,19 @@ async function handleAddUser(e) {
     let branch_id = null;
     let outlet_id = null;
 
+    const profile = getCurrentProfile();
+
     if (role === 'kepala_cabang') branch_id = document.getElementById('user-branch').value;
     if (role === 'kepala_toko' || role === 'kasir') outlet_id = document.getElementById('user-outlet').value;
+
+    // Force override untuk manager
+    if (profile?.role === 'kepala_cabang') {
+        branch_id = profile.branch_id;
+        // Outlet ID diambil dari form, karena sudah difilter isi dropdownnya
+    } else if (profile?.role === 'kepala_toko') {
+        branch_id = profile.branch_id;
+        outlet_id = profile.outlet_id;
+    }
 
     const btn = document.getElementById('btn-save-user');
     btn.disabled = true;
