@@ -753,6 +753,51 @@ function renderProducts(search = '') {
     `).join('');
 }
 
+// Helper function to compress image
+function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = event => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round(height * (maxWidth / width));
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = Math.round(width * (maxHeight / height));
+                        height = maxHeight;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                canvas.toBlob((blob) => {
+                    // Create a new File from the Blob so it retains name and type properties
+                    const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+                    resolve(compressedFile);
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = error => reject(error);
+        };
+        reader.onerror = error => reject(error);
+    });
+}
+
 async function handleSaveProduct(e) {
     e.preventDefault();
     if (!activeOutletId) return;
@@ -771,12 +816,17 @@ async function handleSaveProduct(e) {
     try {
         if (imageInput.files && imageInput.files[0]) {
             const file = imageInput.files[0];
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+            
+            // Kompres gambar sebelum diupload
+            btn.textContent = 'Mengompres Gambar...';
+            const compressedFile = await compressImage(file, 800, 800, 0.7);
+            
+            btn.textContent = 'Mengunggah...';
+            const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
             
             const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('product-images')
-                .upload(fileName, file);
+                .upload(fileName, compressedFile, { contentType: 'image/jpeg' });
                 
             if (uploadError) throw new Error('Gagal mengunggah foto: ' + uploadError.message);
             
