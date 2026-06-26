@@ -191,6 +191,7 @@
                 <div class="mobile-brand">
                     <i class="ph-duotone ph-storefront"></i>
                     <span id="mobile-pos-outlet-name">Loading...</span>
+                    <select id="mobile-active-outlet-selector" class="input-sm hidden" style="margin-left: 10px; max-width: 150px; padding: 4px 8px; font-size: 0.9rem;"></select>
                 </div>
             </div>
             
@@ -213,21 +214,17 @@
                 </div>
                 
                 <div class="nav-right">
-                    <div class="search-bar" id="pos-search-container">
-                        <i class="ph ph-magnifying-glass"></i>
-                        <input type="text" id="product-search" placeholder="Cari produk...">
-                    </div>
-                    <button class="btn btn-primary hidden" id="btn-add-product" title="Tambah Produk">
-                        <i class="ph ph-plus"></i> <span class="hide-mobile">Produk</span>
-                    </button>
-                    <button class="btn btn-icon hidden" id="btn-management" title="Manajemen Sistem">
+                    <button class="btn btn-icon hidden" id="btn-management" title="Manajemen Sistem" style="justify-content: flex-start; padding: 12px 16px;">
                         <i class="ph ph-gear"></i>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Manajemen Sistem</span>
                     </button>
-                    <button class="btn btn-icon" id="btn-edit-profile-pos" title="Edit Profile">
+                    <button class="btn btn-icon" id="btn-edit-profile-pos" title="Edit Profile" style="justify-content: flex-start; padding: 12px 16px;">
                         <i class="ph ph-user-circle"></i>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Edit Profile</span>
                     </button>
-                    <button class="btn btn-icon btn-logout" title="Logout">
+                    <button class="btn btn-icon btn-logout" title="Logout" style="justify-content: flex-start; padding: 12px 16px;">
                         <i class="ph ph-sign-out"></i>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Keluar</span>
                     </button>
                 </div>
             </nav>
@@ -236,6 +233,15 @@
             <div id="pos-tab-content" class="pos-tab-pane active pos-layout">
                 <!-- Left Side: Product Catalog -->
                 <div class="pos-catalog">
+                    <div class="catalog-header" style="display: flex; gap: 10px; margin-bottom: 15px; padding: 0 5px;">
+                        <div class="search-bar" id="pos-search-container" style="flex: 1;">
+                            <i class="ph ph-magnifying-glass"></i>
+                            <input type="text" id="product-search" placeholder="Cari produk...">
+                        </div>
+                        <button class="btn btn-primary hidden" id="btn-add-product" title="Tambah Produk">
+                            <i class="ph ph-plus"></i> <span class="hide-mobile">Produk</span>
+                        </button>
+                    </div>
                     <div class="catalog-grid" id="product-grid">
                         <!-- Product cards injected here -->
                         <div class="loading-state">Memuat produk...</div>
