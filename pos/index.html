@@ -94,6 +94,7 @@
                         <button class="pos-nav-btn tab-btn active" data-target="branches-tab">Kelola Cabang</button>
                         <button class="pos-nav-btn tab-btn" data-target="outlets-tab">Kelola Outlets</button>
                         <button class="pos-nav-btn tab-btn" data-target="users-tab">Kelola Users</button>
+                        <button class="pos-nav-btn tab-btn" data-target="server-info-tab">Info Server</button>
                     </div>
                 </div>
                 <div class="nav-right">
@@ -167,29 +168,82 @@
                         </div>
                     </div>
 
-                    <!-- USERS TAB -->
-                    <div id="users-tab" class="tab-pane hidden">
+                    <!-- 3. KELOLA USERS TAB -->
+                    <div id="users-tab" class="sa-tab-content hidden">
                         <div class="action-bar">
-                            <h3>Daftar Pegawai</h3>
-                            <button class="btn btn-primary" id="btn-add-user">
-                                <i class="ph ph-plus"></i> Tambah Pegawai
-                            </button>
+                            <h3>Daftar Pengguna</h3>
                         </div>
-                        <div class="table-responsive glass-panel">
-                            <table class="data-table" id="users-table">
+                        <div class="table-responsive">
+                            <table class="data-table" id="sa-users-table">
                                 <thead>
                                     <tr>
                                         <th>Nama Lengkap</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Penempatan</th>
-                                        <th class="action-col">Aksi</th>
+                                        <th>Email / Username</th>
+                                        <th>Role / Jabatan</th>
+                                        <th>Cabang (Opsional)</th>
+                                        <th>Outlet (Opsional)</th>
+                                        <th style="width: 120px;">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <!-- User rows injected here -->
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- 4. INFO SERVER TAB -->
+                    <div id="server-info-tab" class="sa-tab-content hidden">
+                        <div class="action-bar">
+                            <h3>Info Penggunaan Server</h3>
+                            <button class="btn btn-secondary btn-sm" id="btn-refresh-server" style="display: flex; align-items: center; gap: 5px;" onclick="loadServerInfo()">
+                                <i class="ph ph-arrows-clockwise"></i> Refresh
+                            </button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 10px;">
+                            
+                            <!-- Supabase Storage -->
+                            <div class="glass-panel" style="padding: 20px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                    <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(62, 207, 142, 0.1); display: flex; align-items: center; justify-content: center; color: #3ECF8E;">
+                                        <i class="ph-fill ph-database" style="font-size: 24px;"></i>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0; font-size: 1rem;">Database Supabase</h4>
+                                        <span style="font-size: 0.8rem; color: var(--text-secondary);">Limit Gratis: 500 MB</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
+                                    <span style="color: var(--text-secondary);">Terpakai:</span>
+                                    <strong id="supabase-usage-text">Loading...</strong>
+                                </div>
+                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
+                                    <div id="supabase-usage-bar" style="height: 100%; width: 0%; background: #3ECF8E; transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+
+                            <!-- GitHub Storage -->
+                            <div class="glass-panel" style="padding: 20px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                    <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(24, 23, 23, 0.1); display: flex; align-items: center; justify-content: center; color: #181717;">
+                                        <i class="ph-fill ph-github-logo" style="font-size: 24px;"></i>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0; font-size: 1rem;">Repositori GitHub Pages</h4>
+                                        <span style="font-size: 0.8rem; color: var(--text-secondary);">Limit Gratis: 1 GB</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
+                                    <span style="color: var(--text-secondary);">Terpakai:</span>
+                                    <strong id="github-usage-text">Loading...</strong>
+                                </div>
+                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
+                                    <div id="github-usage-bar" style="height: 100%; width: 0%; background: #181717; transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; font-size: 0.85rem; color: var(--text-muted); background: rgba(255, 165, 0, 0.1); padding: 10px; border-radius: 8px; border-left: 4px solid orange;">
+                            <i class="ph-fill ph-info"></i> <strong>Pemberitahuan:</strong> Sistem tidak dapat menampilkan penggunaan <em>Bandwidth</em> secara langsung karena keterbatasan akses API dari paket gratis Supabase maupun GitHub Pages. Mohon cek dasbor resmi mereka jika Anda mendapati akses yang melambat.
                         </div>
                     </div>
                 </div>
@@ -401,9 +455,11 @@
             <div id="dashboard-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                     <h2>Dashboard Harian</h2>
-                    <div style="display:flex; gap: 10px; align-items:center;">
-                        <label for="dashboard-date">Pilih Tanggal:</label>
-                        <input type="date" id="dashboard-date" class="input-sm">
+                    <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+                        <label>Periode:</label>
+                        <input type="date" id="dashboard-date-start" class="input-sm">
+                        <span>-</span>
+                        <input type="date" id="dashboard-date-end" class="input-sm">
                     </div>
                 </div>
                 

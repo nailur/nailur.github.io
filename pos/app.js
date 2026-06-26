@@ -502,8 +502,8 @@ function setupEventListeners() {
     document.getElementById('cash-received').addEventListener('input', calculateChange);
     document.getElementById('btn-checkout').addEventListener('click', checkout);
     
-    // Set default history date to today and listen for changes
-    const dIds = ['history-date-start', 'history-date-end', 'attendance-date-start', 'attendance-date-end'];
+    // Set default history and attendance dates to today and listen for changes
+    const dIds = ['history-date-start', 'history-date-end', 'attendance-date-start', 'attendance-date-end', 'dashboard-date-start', 'dashboard-date-end'];
     dIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -511,16 +511,9 @@ function setupEventListeners() {
             if(!el.value) el.value = today;
             if(id.startsWith('history')) el.addEventListener('change', loadHistory);
             if(id.startsWith('attendance')) el.addEventListener('change', loadAttendanceHistory);
+            if(id.startsWith('dashboard')) el.addEventListener('change', loadDashboard);
         }
     });
-    
-    // Set default dashboard date to today
-    const dashboardDate = document.getElementById('dashboard-date');
-    if (dashboardDate) {
-        const today = getLocalToday();
-        dashboardDate.value = today;
-        dashboardDate.addEventListener('change', loadDashboard);
-    }
     
     document.getElementById('btn-export-excel')?.addEventListener('click', exportToExcel);
 }
@@ -824,8 +817,8 @@ async function initPos() {
     checkAttendanceStatus();
 
     const today = getLocalToday();
-    const dIds = ['history-date-start', 'history-date-end', 'dashboard-date', 'attendance-date-start', 'attendance-date-end'];
-    dIds.forEach(id => {
+    const initIds = ['history-date-start', 'history-date-end', 'dashboard-date-start', 'dashboard-date-end', 'attendance-date-start', 'attendance-date-end'];
+    initIds.forEach(id => {
         const el = document.getElementById(id);
         if(el && !el.value) el.value = today;
     });
@@ -1579,12 +1572,12 @@ function reprintReceipt(trx, items) {
 async function loadDashboard() {
     if (!activeOutletId) return;
     
-    const dashboardDate = document.getElementById('dashboard-date');
-    if (!dashboardDate || !dashboardDate.value) return;
+    const startDate = document.getElementById('dashboard-date-start');
+    const endDate = document.getElementById('dashboard-date-end');
+    if (!startDate || !startDate.value || !endDate || !endDate.value) return;
 
-    const dateStr = dashboardDate.value;
-    const startOfDay = new Date(`${dateStr}T00:00:00`).toISOString();
-    const endOfDay = new Date(`${dateStr}T23:59:59.999`).toISOString();
+    const startOfDay = new Date(`${startDate.value}T00:00:00`).toISOString();
+    const endOfDay = new Date(`${endDate.value}T23:59:59.999`).toISOString();
 
     const { data: trxData, error: trxError } = await supabase.from('transactions')
         .select('*')
@@ -1802,3 +1795,60 @@ window.exportAttendanceExcel = async () => {
         btn.innerHTML = originalHtml;
     }
 };
+
+window.loadServerInfo = async () => {
+    const btnRefresh = document.getElementById('btn-refresh-server');
+    if(btnRefresh) {
+        btnRefresh.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Loading...';
+        btnRefresh.disabled = true;
+    }
+
+    try {
+        // Supabase DB Size
+        const { data: dbSizeData, error: dbError } = await supabase.rpc('get_db_size');
+        if(dbError) console.error("Error fetching db size:", dbError);
+        
+        const sbText = document.getElementById('supabase-usage-text');
+        const sbBar = document.getElementById('supabase-usage-bar');
+        
+        if (dbSizeData !== null) {
+            const dbSizeInMb = (dbSizeData / (1024 * 1024)).toFixed(2);
+            sbText.textContent = `${dbSizeInMb} MB / 500 MB`;
+            const percentage = Math.min((dbSizeInMb / 500) * 100, 100);
+            sbBar.style.width = `${percentage}%`;
+            sbBar.style.background = percentage > 90 ? 'var(--danger)' : '#3ECF8E';
+        } else {
+            sbText.textContent = "Gagal mengambil data";
+        }
+
+        // GitHub Repo Size
+        const ghText = document.getElementById('github-usage-text');
+        const ghBar = document.getElementById('github-usage-bar');
+
+        const ghRes = await fetch('https://api.github.com/repos/nailur/nailur.github.io');
+        if(ghRes.ok) {
+            const ghData = await ghRes.json();
+            const sizeInKb = ghData.size;
+            const sizeInMb = (sizeInKb / 1024).toFixed(2);
+            ghText.textContent = `${sizeInMb} MB / 1024 MB (1GB)`;
+            
+            const percentage = Math.min((sizeInMb / 1024) * 100, 100);
+            ghBar.style.width = `${percentage}%`;
+            ghBar.style.background = percentage > 90 ? 'var(--danger)' : '#181717';
+        } else {
+            ghText.textContent = "Gagal mengambil data";
+        }
+
+    } catch (e) {
+        console.error(e);
+    } finally {
+        if(btnRefresh) {
+            btnRefresh.innerHTML = '<i class="ph ph-arrows-clockwise"></i> Refresh';
+            btnRefresh.disabled = false;
+        }
+    }
+};
+
+document.querySelectorAll('.pos-nav-btn[data-target="server-info-tab"]').forEach(btn => {
+    btn.addEventListener('click', window.loadServerInfo);
+});
