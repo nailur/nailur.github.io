@@ -672,7 +672,13 @@ window.editBranch = (id) => {
 };
 
 window.deleteBranch = async (id) => {
-    if(!confirm('Hapus cabang ini? (Semua outlet di dalamnya mungkin terpengaruh)')) return;
+    if(!confirm('Hapus cabang ini?')) return;
+    
+    // Validasi Outlet
+    const { count, error: countErr } = await supabase.from('outlets').select('*', { count: 'exact', head: true }).eq('branch_id', id);
+    if(countErr) return showToast('Gagal memvalidasi cabang', 'error');
+    if(count > 0) return showToast('Cabang tidak bisa dihapus karena masih memiliki outlet!', 'error');
+
     const { error } = await supabase.from('branches').delete().eq('id', id);
     if(error) showToast(error.message, 'error');
     else loadBranches();
@@ -712,7 +718,15 @@ window.editOutlet = (id) => {
 };
 
 window.deleteOutlet = async (id) => {
-    if(!confirm('Hapus outlet ini? (Semua transaksi & produk di dalamnya akan ikut terhapus)')) return;
+    if(!confirm('Hapus outlet ini?')) return;
+    
+    // Validasi Transaksi & Produk
+    const { count: txCount } = await supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('outlet_id', id);
+    if(txCount > 0) return showToast('Outlet tidak bisa dihapus karena sudah memiliki transaksi!', 'error');
+
+    const { count: prodCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('outlet_id', id);
+    if(prodCount > 0) return showToast('Outlet tidak bisa dihapus karena memiliki produk!', 'error');
+
     const { error } = await supabase.from('outlets').delete().eq('id', id);
     if(error) showToast(error.message, 'error');
     else loadOutlets();
@@ -800,6 +814,11 @@ window.editUser = async (id) => {
 
 window.deleteUser = async (id) => {
     if(!confirm('Hapus pegawai ini? Aksesnya akan dicabut.')) return;
+    
+    // Validasi Transaksi (kasir)
+    const { count: txCount } = await supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('cashier_id', id);
+    if(txCount > 0) return showToast('User tidak bisa dihapus karena memiliki riwayat transaksi!', 'error');
+
     // We try to delete from auth.admin if available, otherwise just delete profile
     try {
         if (supabaseAdmin.auth.admin) {
@@ -1675,29 +1694,15 @@ async function loadAttendanceHistory() {
     const role = profile?.role;
     if (!['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) return;
 
-    let query = supabase.from('attendance')
-        .select('*, profiles(name, email), outlets(name, branch_id)')
-        .order('date', { ascending: false });
-
-    // Filter by role
-    if (role === 'kepala_cabang') {
-        // Need to get outlets for this branch
-        const { data: branchOutlets } = await supabase.from('outlets').select('id').eq('branch_id', profile.branch_id);
-        const outletIds = branchOutlets ? branchOutlets.map(o => o.id) : [];
-        if(outletIds.length > 0) query = query.in('outlet_id', outletIds);
-        else query = query.eq('outlet_id', 'none'); // No outlets
-    } else if (role === 'kepala_toko') {
-        query = query.eq('outlet_id', profile.outlet_id);
-    }
-
-    // Filter Date
     const startDate = document.getElementById('attendance-date-start');
     const endDate = document.getElementById('attendance-date-end');
-    if (startDate && startDate.value && endDate && endDate.value) {
-        query = query.gte('date', startDate.value).lte('date', endDate.value);
-    }
+    if (!startDate || !startDate.value || !endDate || !endDate.value) return;
 
-    const { data, error } = await query;
+    const { data, error } = await supabase.rpc('get_attendance_report', {
+        p_start_date: startDate.value,
+        p_end_date: endDate.value
+    });
+
     if (error) {
         showToast('Gagal memuat riwayat absensi', 'error');
         return;
@@ -1705,25 +1710,31 @@ async function loadAttendanceHistory() {
 
     const tbody = document.querySelector('#attendance-table tbody');
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada data absensi</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Belum ada data absensi</td></tr>';
         return;
     }
 
     tbody.innerHTML = data.map(record => {
-        const name = record.profiles?.name || record.profiles?.email || 'Unknown';
-        const outletName = record.outlets?.name || 'Unknown';
-        const dateStr = new Date(record.date).toLocaleDateString('id-ID');
+        const name = record.name || record.email || 'Unknown';
+        const branchName = record.branch_name || '-';
+        const outletName = record.outlet_name || 'Unknown';
+        const dateStr = new Date(record.record_date).toLocaleDateString('id-ID');
         const clockIn = record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-';
         const clockOut = record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-';
         
+        const statusBadge = record.status === 'PRS' 
+            ? '<span style="background:var(--success); color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">PRS</span>'
+            : '<span style="background:var(--danger); color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">OFF</span>';
+
         return `
             <tr>
                 <td>${dateStr}</td>
                 <td><strong>${name}</strong></td>
-                <td>-</td>
+                <td>${branchName}</td>
                 <td>${outletName}</td>
                 <td>${clockIn}</td>
                 <td>${clockOut}</td>
+                <td>${statusBadge}</td>
             </tr>
         `;
     }).join('');
@@ -1744,22 +1755,11 @@ window.exportAttendanceExcel = async () => {
     btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengekspor...';
 
     try {
-        let query = supabase.from('attendance')
-            .select('*, profiles(name, email), outlets(name, branches(name))')
-            .gte('date', startDate)
-            .lte('date', endDate)
-            .order('date', { ascending: true });
+        const { data, error } = await supabase.rpc('get_attendance_report', {
+            p_start_date: startDate,
+            p_end_date: endDate
+        });
 
-        if (role === 'kepala_cabang') {
-            const { data: branchOutlets } = await supabase.from('outlets').select('id').eq('branch_id', profile.branch_id);
-            const outletIds = branchOutlets ? branchOutlets.map(o => o.id) : [];
-            if(outletIds.length > 0) query = query.in('outlet_id', outletIds);
-            else query = query.eq('outlet_id', 'none');
-        } else if (role === 'kepala_toko') {
-            query = query.eq('outlet_id', profile.outlet_id);
-        }
-
-        const { data, error } = await query;
         if (error) throw error;
         if (!data || data.length === 0) {
             showToast('Tidak ada data absensi', 'error');
@@ -1767,12 +1767,13 @@ window.exportAttendanceExcel = async () => {
         }
 
         const exportRows = data.map(record => ({
-            'Tanggal': new Date(record.date).toLocaleDateString('id-ID'),
-            'Nama Kasir': record.profiles?.name || record.profiles?.email || '-',
-            'Cabang': record.outlets?.branches?.name || '-',
-            'Outlet': record.outlets?.name || '-',
+            'Tanggal': new Date(record.record_date).toLocaleDateString('id-ID'),
+            'Nama Kasir': record.name || record.email || '-',
+            'Cabang': record.branch_name || '-',
+            'Outlet': record.outlet_name || '-',
             'Jam Masuk': record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
-            'Jam Pulang': record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-'
+            'Jam Pulang': record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
+            'Status': record.status
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(exportRows);
@@ -1785,7 +1786,8 @@ window.exportAttendanceExcel = async () => {
             { wch: 20 }, // Cabang
             { wch: 20 }, // Outlet
             { wch: 15 }, // In
-            { wch: 15 }  // Out
+            { wch: 15 }, // Out
+            { wch: 10 }  // Status
         ];
         worksheet['!cols'] = colWidths;
 
