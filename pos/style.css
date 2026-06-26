@@ -612,6 +612,38 @@ body {
     .receipt-footer { text-align: center; margin-top: 10px; font-size: 9px; }
 }
 
+/* Mobile Sidebar Elements */
+.hidden-desktop {
+    display: none;
+}
+.mobile-pos-header {
+    align-items: center;
+    padding: 15px 20px;
+    gap: 15px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.mobile-pos-header .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+.sidebar-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 990;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
 /* =========================================
    RESPONSIVE (MEDIA QUERIES)
    ========================================= */
@@ -652,32 +684,70 @@ body {
         border: none;
     }
     
-    /* Make Navbar wrap nicely */
+    /* Mobile Header */
+    .hidden-desktop {
+        display: flex;
+    }
+
+    /* Convert pos-nav to Sidebar */
     .pos-nav {
+        position: fixed;
+        top: 0;
+        left: -300px;
+        width: 280px;
+        height: 100vh;
+        background: #fff;
+        z-index: 1000;
         flex-direction: column;
         align-items: stretch;
-        gap: 10px;
-        padding: 16px;
+        gap: 15px;
+        padding: 20px;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+        border-radius: 0;
+    }
+    .pos-nav.open {
+        left: 0;
     }
     .nav-left, .nav-right {
         flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
+        align-items: flex-start;
+        gap: 15px;
         width: 100%;
     }
     .nav-brand {
-        justify-content: center;
-        margin-bottom: 8px;
+        display: none; /* Hide original brand on mobile since we have mobile-pos-header */
     }
     .pos-tabs-nav {
-        justify-content: center;
+        flex-direction: column;
         width: 100%;
+        background: transparent;
+        padding: 0;
     }
     .pos-tabs-nav .pos-nav-btn {
-        flex: 1;
+        width: 100%;
+        text-align: left;
+        padding: 12px 16px;
+        justify-content: flex-start;
+        border-radius: 8px;
+        background: rgba(0,0,0,0.03);
+    }
+    .pos-tabs-nav .pos-nav-btn.active {
+        background: var(--primary);
+        color: white;
     }
     .search-bar {
         width: 100%;
+    }
+    .nav-right .btn {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 12px 16px;
+    }
+    .nav-right .btn-icon {
+        border-radius: 8px;
+        background: rgba(0,0,0,0.03);
     }
     
     /* Superadmin adjustments */

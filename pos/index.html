@@ -34,7 +34,7 @@
             <div class="login-wrapper glass-panel">
                 <div class="login-header">
                     <i class="ph-duotone ph-storefront"></i>
-                    <h2>POS System by NTGroup</h2>
+                    <h2>POS System</h2>
                     <p>Silakan masuk ke akun Anda</p>
                 </div>
                 <form id="login-form">
@@ -183,8 +183,22 @@
         <!-- 3. POS VIEW (ADMIN) -->
         <!-- ======================= -->
         <section id="pos-view" class="view-section hidden pos-view-container">
-            <!-- Top Navbar (Spans full width) -->
-            <nav class="pos-nav glass-panel">
+            <!-- Mobile Header (Hidden on Desktop) -->
+            <div class="mobile-pos-header hidden-desktop glass-panel">
+                <button class="btn btn-icon" id="btn-mobile-menu">
+                    <i class="ph ph-list" style="font-size: 24px;"></i>
+                </button>
+                <div class="mobile-brand">
+                    <i class="ph-duotone ph-storefront"></i>
+                    <span id="mobile-pos-outlet-name">Loading...</span>
+                </div>
+            </div>
+            
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay hidden" id="sidebar-overlay"></div>
+
+            <!-- Top Navbar / Sidebar on Mobile -->
+            <nav class="pos-nav glass-panel" id="pos-sidebar">
                 <div class="nav-left">
                     <div class="nav-brand">
                         <i class="ph-duotone ph-storefront"></i>

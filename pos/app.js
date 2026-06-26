@@ -90,6 +90,7 @@ async function routeUser(profile) {
         showView('pos');
         activeOutletId = profile.outlet_id;
         document.getElementById('pos-outlet-name').textContent = profile.outlets?.name || 'Toko';
+        document.getElementById('mobile-pos-outlet-name').textContent = profile.outlets?.name || 'Toko';
         if (profile.role === 'kepala_toko') {
             document.getElementById('btn-add-product').classList.remove('hidden');
         } else {
@@ -119,25 +120,40 @@ async function initPosMultiOutlet(profile) {
     }
     const { data } = await query;
     posOutletsList = data || [];
-    
-    const selector = document.getElementById('active-outlet-selector');
     const nameLabel = document.getElementById('pos-outlet-name');
+    const mobileNameLabel = document.getElementById('mobile-pos-outlet-name');
+    const selector = document.getElementById('active-outlet-selector');
     
-    if (posOutletsList.length > 0) {
-        selector.classList.remove('hidden');
+    if (posOutletsList.length > 1) {
         nameLabel.classList.add('hidden');
+        if(mobileNameLabel) mobileNameLabel.classList.add('hidden'); // Also hide mobile label if using dropdown
+        selector.classList.remove('hidden');
         selector.innerHTML = posOutletsList.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
-        
-        const savedOutletId = localStorage.getItem('pos_active_outlet_id');
-        if (savedOutletId && posOutletsList.find(o => o.id === savedOutletId)) {
-            activeOutletId = savedOutletId;
-            selector.value = savedOutletId;
-        } else {
-            activeOutletId = posOutletsList[0].id;
-            localStorage.setItem('pos_active_outlet_id', activeOutletId);
-        }
+        selector.value = activeOutletId;
+        selector.addEventListener('change', (e) => {
+            activeOutletId = e.target.value;
+            loadProducts();
+            loadHistory();
+            loadDashboard();
+        });
     } else {
-        nameLabel.textContent = 'Tidak ada outlet';
+        const outlet = posOutletsList.find(o => o.id === activeOutletId);
+        if (outlet) {
+            nameLabel.textContent = outlet.name;
+            if(mobileNameLabel) mobileNameLabel.textContent = outlet.name;
+        }
+        nameLabel.classList.remove('hidden');
+        if(mobileNameLabel) mobileNameLabel.classList.remove('hidden');
+        selector.classList.add('hidden');
+    }
+    
+    const savedOutletId = localStorage.getItem('pos_active_outlet_id');
+    if (savedOutletId && posOutletsList.find(o => o.id === savedOutletId)) {
+        activeOutletId = savedOutletId;
+        selector.value = savedOutletId;
+    } else if (posOutletsList.length > 0) {
+        activeOutletId = posOutletsList[0].id;
+        localStorage.setItem('pos_active_outlet_id', activeOutletId);
     }
     
     initPos();
@@ -178,6 +194,33 @@ function setupEventListeners() {
     document.querySelectorAll('.btn-logout').forEach(btn => {
         btn.addEventListener('click', () => logout());
     });
+
+    // Mobile Sidebar Logic
+    const btnMobileMenu = document.getElementById('btn-mobile-menu');
+    const posSidebar = document.getElementById('pos-sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+    if (btnMobileMenu && posSidebar && sidebarOverlay) {
+        btnMobileMenu.addEventListener('click', () => {
+            posSidebar.classList.add('open');
+            sidebarOverlay.classList.add('active');
+        });
+
+        sidebarOverlay.addEventListener('click', () => {
+            posSidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+        });
+
+        const sidebarButtons = posSidebar.querySelectorAll('.btn, .pos-nav-btn');
+        sidebarButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    posSidebar.classList.remove('open');
+                    sidebarOverlay.classList.remove('active');
+                }
+            });
+        });
+    }
 
     // Modals Close
     document.querySelectorAll('[data-close]').forEach(btn => {
