@@ -854,8 +854,22 @@ async function checkout() {
         const product = products.find(p => p.id === item.product_id);
         if (product) await supabase.from('products').update({ stock: product.stock - item.quantity }).eq('id', item.product_id);
     }
+    const change = received - total;
+    const cartClone = [...cart];
 
-    printReceipt(trxData.id, cart, total, received, method);
+    // Persiapkan fungsi cetak untuk tombol success modal
+    document.getElementById('btn-success-print').onclick = () => {
+        printReceipt(trxData.id, cartClone, total, received, method);
+    };
+    
+    document.getElementById('btn-success-close').onclick = () => {
+        document.getElementById('modal-checkout-success').classList.add('hidden');
+    };
+
+    // Tampilkan Modal Success
+    document.getElementById('success-change-amount').textContent = 'Rp ' + change.toLocaleString('id-ID');
+    document.getElementById('modal-checkout-success').classList.remove('hidden');
+
     showToast('Transaksi Berhasil!', 'success');
     generateOrderId();
     await loadProducts();
