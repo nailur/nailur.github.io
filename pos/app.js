@@ -240,6 +240,33 @@ function setupEventListeners() {
         });
     }
 
+    // SA Mobile Sidebar Logic
+    const btnSaMobileMenu = document.getElementById('btn-sa-mobile-menu');
+    const saSidebar = document.getElementById('sa-sidebar');
+    const saSidebarOverlay = document.getElementById('sa-sidebar-overlay');
+
+    if (btnSaMobileMenu && saSidebar && saSidebarOverlay) {
+        btnSaMobileMenu.addEventListener('click', () => {
+            saSidebar.classList.add('open');
+            saSidebarOverlay.classList.add('active');
+        });
+
+        saSidebarOverlay.addEventListener('click', () => {
+            saSidebar.classList.remove('open');
+            saSidebarOverlay.classList.remove('active');
+        });
+
+        const saSidebarButtons = saSidebar.querySelectorAll('.btn, .pos-nav-btn');
+        saSidebarButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    saSidebar.classList.remove('open');
+                    saSidebarOverlay.classList.remove('active');
+                }
+            });
+        });
+    }
+
     // Toggle List/Grid View
     const btnToggleLayout = document.getElementById('btn-toggle-layout');
     const productGrid = document.getElementById('product-grid');

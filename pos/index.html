@@ -70,35 +70,53 @@
         <!-- 2. SUPERADMIN DASHBOARD -->
         <!-- ======================= -->
         <section id="superadmin-view" class="view-section hidden">
-            <nav class="top-nav glass-panel">
-                <div class="nav-brand">
+            <!-- Mobile Header for SA -->
+            <div class="mobile-pos-header hidden-desktop glass-panel">
+                <button class="btn btn-icon" id="btn-sa-mobile-menu">
+                    <i class="ph ph-list" style="font-size: 24px;"></i>
+                </button>
+                <div class="mobile-brand">
                     <i class="ph-fill ph-crown"></i>
-                    <span id="management-title">Manajemen Sistem</span>
+                    <span>Manajemen Sistem</span>
                 </div>
-                <div class="nav-actions">
-                    <button class="btn btn-icon" id="btn-back-pos" title="Kembali ke Kasir">
+            </div>
+
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay" id="sa-sidebar-overlay"></div>
+
+            <nav class="pos-nav glass-panel" id="sa-sidebar">
+                <div class="nav-left">
+                    <div class="nav-brand">
+                        <i class="ph-fill ph-crown"></i>
+                        <span id="management-title">Manajemen Sistem</span>
+                    </div>
+                    <div class="pos-tabs-nav tabs" id="sa-tabs-container">
+                        <button class="pos-nav-btn tab-btn active" data-target="branches-tab">Kelola Cabang</button>
+                        <button class="pos-nav-btn tab-btn" data-target="outlets-tab">Kelola Outlets</button>
+                        <button class="pos-nav-btn tab-btn" data-target="users-tab">Kelola Users</button>
+                    </div>
+                </div>
+                <div class="nav-right">
+                    <span id="sa-user-info" class="user-badge hide-mobile" style="margin-right: 15px;">Superadmin</span>
+                    <button class="btn btn-icon" id="btn-back-pos" title="Kembali ke Kasir" style="justify-content: flex-start; padding: 12px 16px;">
                         <i class="ph ph-storefront"></i>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">POS Kasir</span>
                     </button>
-                    <span id="sa-user-info" class="user-badge">Superadmin</span>
-                    <button class="btn btn-icon" id="btn-edit-profile-sa" title="Edit Profile">
+                    <button class="btn btn-icon" id="btn-edit-profile-sa" title="Edit Profile" style="justify-content: flex-start; padding: 12px 16px;">
                         <i class="ph ph-user-circle"></i>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Edit Profile</span>
                     </button>
-                    <button class="btn btn-icon btn-logout" title="Logout">
+                    <button class="btn btn-icon btn-logout" title="Logout" style="justify-content: flex-start; padding: 12px 16px;">
                         <i class="ph ph-sign-out"></i>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Keluar</span>
                     </button>
                 </div>
             </nav>
 
-            <main class="dashboard-content">
-                <header class="page-header">
-                    <h1>Manajemen Sistem</h1>
+            <main class="dashboard-content" style="padding-top: 10px;">
+                <header class="page-header hidden-desktop">
+                    <h1 style="font-size: 1.5rem;">Manajemen Sistem</h1>
                 </header>
-
-                <div class="tabs">
-                    <button class="tab-btn active" data-target="branches-tab">Kelola Cabang</button>
-                    <button class="tab-btn" data-target="outlets-tab">Kelola Outlets</button>
-                    <button class="tab-btn" data-target="users-tab">Kelola Users</button>
-                </div>
 
                 <div class="tab-content">
                     <!-- BRANCHES TAB -->
