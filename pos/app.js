@@ -387,6 +387,7 @@ function setupEventListeners() {
             localStorage.setItem('pos_active_tab', targetId);
             
             if(targetId === 'history-tab-content') loadHistory();
+            if(targetId === 'attendance-history-tab-content') loadAttendanceHistory();
             if(targetId === 'dashboard-tab-content') loadDashboard();
         });
     });
@@ -1446,7 +1447,7 @@ async function exportToExcel() {
             .eq('outlet_id', activeOutletId)
             .gte('created_at', startOfDay)
             .lte('created_at', endOfDay)
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: false });
 
         if (trxError) throw trxError;
         if (!trxData || trxData.length === 0) {
@@ -1556,11 +1557,6 @@ async function loadHistory() {
         showToast('Gagal memuat riwayat', 'error');
         return;
     }
-
-    // Update event listener tab
-    document.querySelectorAll('.pos-nav-btn[data-target="attendance-history-tab-content"]').forEach(btn => {
-        btn.addEventListener('click', loadAttendanceHistory);
-    });
 
     const tbody = document.querySelector('#history-table tbody');
     if (!data || data.length === 0) {
