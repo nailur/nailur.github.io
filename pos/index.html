@@ -271,9 +271,18 @@
 
                 <!-- Right Side: Cart / Checkout -->
                 <div class="pos-cart glass-panel">
+                    
+                    <!-- Clock Time Widget -->
+                    <div id="attendance-widget" style="padding: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                        <div id="attendance-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-dark);">Kasir</div>
+                        <div id="attendance-date" style="font-size: 0.8rem; color: var(--text-muted);">-</div>
+                        <div id="attendance-time" style="font-size: 1.5rem; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; letter-spacing: 1px;">00:00:00</div>
+                        <button class="btn btn-primary" id="btn-clock-time" style="margin-top: 5px; width: 100%; border-radius: var(--radius-full);">Clock In</button>
+                    </div>
+
                     <div class="cart-header">
                         <h2>Pesanan Saat Ini</h2>
-                        <span class="order-id" id="current-order-id">#ORD-...</span>
+                        <button class="btn btn-secondary btn-sm" onclick="cart = []; renderCart();">Kosongkan</button>
                     </div>
                     
                     <div class="cart-items" id="cart-items-container">

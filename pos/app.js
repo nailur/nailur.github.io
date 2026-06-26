@@ -111,6 +111,9 @@ async function routeUser(profile) {
 }
 
 async function initPosMultiOutlet(profile) {
+    startAttendanceClock();
+    checkAttendanceStatus();
+    
     document.getElementById('btn-add-product').classList.remove('hidden');
     
     // Load accessible outlets
@@ -143,6 +146,7 @@ async function initPosMultiOutlet(profile) {
             selector.value = activeOutletId;
             if(mobileSelector) mobileSelector.value = activeOutletId;
             localStorage.setItem('pos_active_outlet_id', activeOutletId);
+            checkAttendanceStatus();
             loadProducts();
             loadHistory();
             loadDashboard();
@@ -824,10 +828,144 @@ async function initPos() {
 
 function generateOrderId() {
     const id = 'ORD-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    document.getElementById('current-order-id').textContent = id;
+    const orderIdEl = document.getElementById('current-order-id');
+    if(orderIdEl) orderIdEl.textContent = id;
     cart = [];
-    document.getElementById('cash-received').value = '';
+    const cashEl = document.getElementById('cash-received');
+    if(cashEl) cashEl.value = '';
     renderCart();
+}
+
+// ------------------------------
+// ATTENDANCE (CLOCK TIME) LOGIC
+// ------------------------------
+let attendanceTimer;
+let currentAttendanceRecord = null;
+
+function startAttendanceClock() {
+    const profile = getCurrentProfile();
+    const nameEl = document.getElementById('attendance-name');
+    if(nameEl && profile) {
+        let name = profile.email.split('@')[0];
+        name = name.charAt(0).toUpperCase() + name.slice(1);
+        nameEl.textContent = name;
+    }
+
+    if (attendanceTimer) clearInterval(attendanceTimer);
+    attendanceTimer = setInterval(() => {
+        const now = new Date();
+        
+        const timeEl = document.getElementById('attendance-time');
+        if(timeEl) {
+            timeEl.textContent = now.toLocaleTimeString('id-ID', { hour12: false });
+        }
+        
+        const dateEl = document.getElementById('attendance-date');
+        if(dateEl) {
+            dateEl.textContent = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+    }, 1000);
+}
+
+async function checkAttendanceStatus() {
+    const profile = getCurrentProfile();
+    if (!profile || !activeOutletId) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('profile_id', profile.id)
+        .eq('outlet_id', activeOutletId)
+        .eq('date', today)
+        .single();
+
+    currentAttendanceRecord = data;
+    renderAttendanceButton();
+}
+
+function renderAttendanceButton() {
+    const btn = document.getElementById('btn-clock-time');
+    if (!btn) return;
+
+    if (!currentAttendanceRecord) {
+        btn.textContent = 'Clock In';
+        btn.className = 'btn btn-primary';
+        btn.onclick = handleClockIn;
+    } else if (!currentAttendanceRecord.clock_out) {
+        const timeIn = new Date(currentAttendanceRecord.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+        btn.innerHTML = `<span style="display:flex; align-items:center; justify-content:center; gap:5px;"><div style="width:8px; height:8px; border-radius:50%; background:#10b981;"></div> Clock Out (In: ${timeIn})</span>`;
+        btn.className = 'btn btn-secondary';
+        btn.onclick = handleClockOut;
+    } else {
+        const timeOut = new Date(currentAttendanceRecord.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+        btn.innerHTML = `<span style="display:flex; align-items:center; justify-content:center; gap:5px;"><div style="width:8px; height:8px; border-radius:50%; background:#ef4444;"></div> Pulang: ${timeOut} (Klik Edit)</span>`;
+        btn.className = 'btn btn-secondary';
+        btn.onclick = handleClockOut; // Allow replacing clock out
+    }
+}
+
+async function handleClockIn() {
+    const profile = getCurrentProfile();
+    if (!profile || !activeOutletId) return;
+
+    const btn = document.getElementById('btn-clock-time');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+        .from('attendance')
+        .insert([{
+            profile_id: profile.id,
+            outlet_id: activeOutletId,
+            date: today,
+            clock_in: now
+        }])
+        .select()
+        .single();
+
+    btn.disabled = false;
+    if (error) {
+        showToast('Gagal Clock In: ' + error.message, 'error');
+    } else {
+        currentAttendanceRecord = data;
+        showToast('Berhasil Clock In!', 'success');
+        renderAttendanceButton();
+    }
+}
+
+async function handleClockOut() {
+    if (!currentAttendanceRecord) return;
+    
+    if (currentAttendanceRecord.clock_out) {
+        if (!confirm('Anda sudah Clock Out sebelumnya. Ganti jam pulang dengan waktu sekarang?')) return;
+    }
+
+    const btn = document.getElementById('btn-clock-time');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+        .from('attendance')
+        .update({ clock_out: now })
+        .eq('id', currentAttendanceRecord.id)
+        .select()
+        .single();
+
+    btn.disabled = false;
+    if (error) {
+        showToast('Gagal Clock Out: ' + error.message, 'error');
+    } else {
+        currentAttendanceRecord = data;
+        showToast('Berhasil Clock Out!', 'success');
+        renderAttendanceButton();
+    }
 }
 
 async function loadProducts() {
