@@ -169,6 +169,15 @@ function setupEventListeners() {
         });
     });
 
+    // Tutup modal jika klik di luar area konten (di area overlay yang gelap)
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.classList.add('hidden');
+            }
+        });
+    });
+
     // Edit Profile Modals
     const openEditProfile = () => {
         const profile = getCurrentProfile();
