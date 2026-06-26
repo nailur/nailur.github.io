@@ -224,9 +224,10 @@
                         <span id="pos-outlet-name">Loading...</span>
                         <select id="active-outlet-selector" class="input-sm hidden" style="margin-left: 10px;"></select>
                     </div>
-                    <div class="pos-tabs-nav">
+                    <div class="pos-tabs-nav tabs" id="pos-tabs-container">
                         <button class="pos-nav-btn active" data-target="pos-tab-content">POS (Kasir)</button>
                         <button class="pos-nav-btn" data-target="history-tab-content">Riwayat Transaksi</button>
+                        <button class="pos-nav-btn hidden" data-target="attendance-history-tab-content" id="nav-attendance">Riwayat Absensi</button>
                         <button class="pos-nav-btn" data-target="dashboard-tab-content">Dashboard</button>
                     </div>
                 </div>
@@ -334,10 +335,12 @@
             <div id="history-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                     <h2>Riwayat Transaksi</h2>
-                    <div style="display:flex; gap: 10px; align-items:center;">
-                        <label for="history-date">Pilih Tanggal:</label>
-                        <input type="date" id="history-date" class="input-sm">
-                        <button class="btn btn-secondary" id="btn-export-excel" style="display: flex; align-items: center; gap: 5px;">
+                    <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+                        <label>Periode:</label>
+                        <input type="date" id="history-date-start" class="input-sm">
+                        <span>-</span>
+                        <input type="date" id="history-date-end" class="input-sm">
+                        <button class="btn btn-secondary" id="btn-export-excel" style="display: flex; align-items: center; gap: 5px;" onclick="exportToExcel()">
                             <i class="ph ph-file-xls"></i> Export Excel
                         </button>
                     </div>
@@ -356,6 +359,39 @@
                         </thead>
                         <tbody>
                             <!-- History rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB RIWAYAT ABSENSI -->
+            <div id="attendance-history-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
+                <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                    <h2>Riwayat Absensi</h2>
+                    <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+                        <label>Periode:</label>
+                        <input type="date" id="attendance-date-start" class="input-sm">
+                        <span>-</span>
+                        <input type="date" id="attendance-date-end" class="input-sm">
+                        <button class="btn btn-secondary" id="btn-export-attendance" style="display: flex; align-items: center; gap: 5px;" onclick="exportAttendanceExcel()">
+                            <i class="ph ph-file-xls"></i> Export Excel
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Nama Kasir</th>
+                                <th>Cabang</th>
+                                <th>Outlet</th>
+                                <th>Jam Masuk</th>
+                                <th>Jam Pulang</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Attendance rows injected here -->
                         </tbody>
                     </table>
                 </div>

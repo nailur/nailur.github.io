@@ -102,11 +102,13 @@ async function routeUser(profile) {
         logout();
     }
     
-    // Tampilkan tombol manajemen untuk role manajerial
+    // Tampilkan tombol manajemen dan tab absensi untuk role manajerial
     if (['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(profile.role)) {
         document.getElementById('btn-management').classList.remove('hidden');
+        document.getElementById('nav-attendance').classList.remove('hidden');
     } else {
         document.getElementById('btn-management').classList.add('hidden');
+        document.getElementById('nav-attendance').classList.add('hidden');
     }
 }
 
@@ -500,13 +502,17 @@ function setupEventListeners() {
     document.getElementById('cash-received').addEventListener('input', calculateChange);
     document.getElementById('btn-checkout').addEventListener('click', checkout);
     
-    // Set default history date to today
-    const historyDate = document.getElementById('history-date');
-    if (historyDate) {
-        const today = getLocalToday();
-        historyDate.value = today;
-        historyDate.addEventListener('change', loadHistory);
-    }
+    // Set default history date to today and listen for changes
+    const dIds = ['history-date-start', 'history-date-end', 'attendance-date-start', 'attendance-date-end'];
+    dIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const today = getLocalToday();
+            if(!el.value) el.value = today;
+            if(id.startsWith('history')) el.addEventListener('change', loadHistory);
+            if(id.startsWith('attendance')) el.addEventListener('change', loadAttendanceHistory);
+        }
+    });
     
     // Set default dashboard date to today
     const dashboardDate = document.getElementById('dashboard-date');
@@ -816,6 +822,14 @@ window.deleteUser = async (id) => {
 async function initPos() {
     startAttendanceClock();
     checkAttendanceStatus();
+
+    const today = getLocalToday();
+    const dIds = ['history-date-start', 'history-date-end', 'dashboard-date', 'attendance-date-start', 'attendance-date-end'];
+    dIds.forEach(id => {
+        const el = document.getElementById(id);
+        if(el && !el.value) el.value = today;
+    });
+
     generateOrderId();
     if (activeOutletId) await loadProducts();
     
@@ -845,8 +859,7 @@ function startAttendanceClock() {
     const profile = getCurrentProfile();
     const nameEl = document.getElementById('attendance-name');
     if(nameEl && profile) {
-        let name = profile.email.split('@')[0];
-        name = name.charAt(0).toUpperCase() + name.slice(1);
+        let name = profile.name || profile.email.split('@')[0];
         nameEl.textContent = name;
     }
 
@@ -1363,12 +1376,13 @@ function printReceipt(trxId, cartItems, total, received, method, trxDate = null,
 async function exportToExcel() {
     if (!activeOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
     
-    const historyDate = document.getElementById('history-date').value;
-    if (!historyDate) return showToast('Pilih tanggal terlebih dahulu', 'error');
+    const startDate = document.getElementById('history-date-start').value;
+    const endDate = document.getElementById('history-date-end').value;
+    if (!startDate || !endDate) return showToast('Pilih rentang tanggal terlebih dahulu', 'error');
     
     // Konversi ke UTC
-    const startOfDay = new Date(`${historyDate}T00:00:00`).toISOString();
-    const endOfDay = new Date(`${historyDate}T23:59:59.999`).toISOString();
+    const startOfDay = new Date(`${startDate}T00:00:00`).toISOString();
+    const endOfDay = new Date(`${endDate}T23:59:59.999`).toISOString();
 
     const btn = document.getElementById('btn-export-excel');
     const originalHtml = btn.innerHTML;
@@ -1454,7 +1468,8 @@ async function exportToExcel() {
         ];
         worksheet['!cols'] = colWidths;
 
-        XLSX.writeFile(workbook, `Laporan_Transaksi_${historyDate}.xlsx`);
+        let filenameDate = startDate === endDate ? startDate : `${startDate}_to_${endDate}`;
+        XLSX.writeFile(workbook, `Laporan_Transaksi_${filenameDate}.xlsx`);
         showToast('Berhasil mengunduh Excel', 'success');
 
     } catch (e) {
@@ -1474,11 +1489,12 @@ async function loadHistory() {
         .eq('outlet_id', activeOutletId)
         .order('created_at', { ascending: false });
 
-    const historyDate = document.getElementById('history-date');
-    if (historyDate && historyDate.value) {
-        const dateStr = historyDate.value;
-        const startOfDay = new Date(`${dateStr}T00:00:00`).toISOString();
-        const endOfDay = new Date(`${dateStr}T23:59:59.999`).toISOString();
+    const startDate = document.getElementById('history-date-start');
+    const endDate = document.getElementById('history-date-end');
+    
+    if (startDate && startDate.value && endDate && endDate.value) {
+        const startOfDay = new Date(`${startDate.value}T00:00:00`).toISOString();
+        const endOfDay = new Date(`${endDate.value}T23:59:59.999`).toISOString();
         
         query = query.gte('created_at', startOfDay)
                      .lte('created_at', endOfDay);
@@ -1490,6 +1506,11 @@ async function loadHistory() {
         showToast('Gagal memuat riwayat', 'error');
         return;
     }
+
+    // Update event listener tab
+    document.querySelectorAll('.pos-nav-btn[data-target="attendance-history-tab-content"]').forEach(btn => {
+        btn.addEventListener('click', loadAttendanceHistory);
+    });
 
     const tbody = document.querySelector('#history-table tbody');
     if (!data || data.length === 0) {
@@ -1647,3 +1668,137 @@ async function loadDashboard() {
 
 // Start App
 init();
+
+// ------------------------------
+// ATTENDANCE HISTORY & EXPORT
+// ------------------------------
+async function loadAttendanceHistory() {
+    const profile = getCurrentProfile();
+    const role = profile?.role;
+    if (!['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) return;
+
+    let query = supabase.from('attendance')
+        .select('*, profiles(name, email), outlets(name, branch_id)')
+        .order('date', { ascending: false });
+
+    // Filter by role
+    if (role === 'kepala_cabang') {
+        // Need to get outlets for this branch
+        const { data: branchOutlets } = await supabase.from('outlets').select('id').eq('branch_id', profile.branch_id);
+        const outletIds = branchOutlets ? branchOutlets.map(o => o.id) : [];
+        if(outletIds.length > 0) query = query.in('outlet_id', outletIds);
+        else query = query.eq('outlet_id', 'none'); // No outlets
+    } else if (role === 'kepala_toko') {
+        query = query.eq('outlet_id', profile.outlet_id);
+    }
+
+    // Filter Date
+    const startDate = document.getElementById('attendance-date-start');
+    const endDate = document.getElementById('attendance-date-end');
+    if (startDate && startDate.value && endDate && endDate.value) {
+        query = query.gte('date', startDate.value).lte('date', endDate.value);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+        showToast('Gagal memuat riwayat absensi', 'error');
+        return;
+    }
+
+    const tbody = document.querySelector('#attendance-table tbody');
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada data absensi</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(record => {
+        const name = record.profiles?.name || record.profiles?.email || 'Unknown';
+        const outletName = record.outlets?.name || 'Unknown';
+        const dateStr = new Date(record.date).toLocaleDateString('id-ID');
+        const clockIn = record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-';
+        const clockOut = record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-';
+        
+        return `
+            <tr>
+                <td>${dateStr}</td>
+                <td><strong>${name}</strong></td>
+                <td>-</td>
+                <td>${outletName}</td>
+                <td>${clockIn}</td>
+                <td>${clockOut}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+window.exportAttendanceExcel = async () => {
+    const profile = getCurrentProfile();
+    const role = profile?.role;
+    if (!['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) return;
+
+    const startDate = document.getElementById('attendance-date-start').value;
+    const endDate = document.getElementById('attendance-date-end').value;
+    if (!startDate || !endDate) return showToast('Pilih rentang tanggal', 'error');
+
+    const btn = document.getElementById('btn-export-attendance');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengekspor...';
+
+    try {
+        let query = supabase.from('attendance')
+            .select('*, profiles(name, email), outlets(name, branches(name))')
+            .gte('date', startDate)
+            .lte('date', endDate)
+            .order('date', { ascending: true });
+
+        if (role === 'kepala_cabang') {
+            const { data: branchOutlets } = await supabase.from('outlets').select('id').eq('branch_id', profile.branch_id);
+            const outletIds = branchOutlets ? branchOutlets.map(o => o.id) : [];
+            if(outletIds.length > 0) query = query.in('outlet_id', outletIds);
+            else query = query.eq('outlet_id', 'none');
+        } else if (role === 'kepala_toko') {
+            query = query.eq('outlet_id', profile.outlet_id);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            showToast('Tidak ada data absensi', 'error');
+            return;
+        }
+
+        const exportRows = data.map(record => ({
+            'Tanggal': new Date(record.date).toLocaleDateString('id-ID'),
+            'Nama Kasir': record.profiles?.name || record.profiles?.email || '-',
+            'Cabang': record.outlets?.branches?.name || '-',
+            'Outlet': record.outlets?.name || '-',
+            'Jam Masuk': record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
+            'Jam Pulang': record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-'
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportRows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Absensi");
+
+        const colWidths = [
+            { wch: 15 }, // Tanggal
+            { wch: 25 }, // Nama
+            { wch: 20 }, // Cabang
+            { wch: 20 }, // Outlet
+            { wch: 15 }, // In
+            { wch: 15 }  // Out
+        ];
+        worksheet['!cols'] = colWidths;
+
+        let filenameDate = startDate === endDate ? startDate : `${startDate}_to_${endDate}`;
+        XLSX.writeFile(workbook, `Laporan_Absensi_${filenameDate}.xlsx`);
+        showToast('Berhasil mengunduh Excel', 'success');
+    } catch (e) {
+        console.error(e);
+        showToast('Gagal mengekspor Excel', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
+};
