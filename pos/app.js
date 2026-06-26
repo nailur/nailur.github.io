@@ -430,6 +430,7 @@ function setupEventListeners() {
         document.getElementById('user-password').placeholder = 'Minimal 6 karakter';
         document.getElementById('user-password').setAttribute('required', 'true');
         document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+        filterUserOutlets();
         
         // Filter options based on role
         const role = getCurrentProfile()?.role;
@@ -460,6 +461,7 @@ function setupEventListeners() {
     });
 
     document.getElementById('user-role').addEventListener('change', handleRoleSelectionChange);
+    document.getElementById('user-branch').addEventListener('change', filterUserOutlets);
 
     document.getElementById('form-branch').addEventListener('submit', handleAddBranch);
     document.getElementById('form-outlet').addEventListener('submit', handleAddOutlet);
@@ -518,6 +520,20 @@ function setupEventListeners() {
     document.getElementById('btn-export-excel')?.addEventListener('click', exportToExcel);
 }
 
+function filterUserOutlets() {
+    const branchId = document.getElementById('user-branch').value;
+    const myRole = getCurrentProfile()?.role;
+    let filteredOutlets = outletsList;
+
+    if (myRole === 'kepala_cabang') {
+        filteredOutlets = outletsList.filter(o => o.branch_id === getCurrentProfile().branch_id);
+    } else if (branchId) {
+        filteredOutlets = outletsList.filter(o => o.branch_id === branchId);
+    }
+
+    document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+}
+
 function handleRoleSelectionChange() {
     const role = document.getElementById('user-role').value;
     const branchGroup = document.getElementById('group-user-branch');
@@ -537,6 +553,8 @@ function handleRoleSelectionChange() {
         if(myRole === 'kepala_toko') outletGroup.classList.add('hidden'); // Kepala toko can't change outlet
         else outletGroup.classList.remove('hidden');
     }
+
+    filterUserOutlets();
 }
 
 // ------------------------------
@@ -578,13 +596,18 @@ async function initManagement() {
         document.querySelector('.tab-btn[data-target="users-tab"]').click();
     }
 
-    if (role === 'superadmin' || role === 'owner') await loadBranches();
+    if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadBranches();
     if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadOutlets();
     await loadUsers();
 }
 
 async function loadBranches() {
-    const { data, error } = await supabase.from('branches').select('*').order('created_at', { ascending: false });
+    let query = supabase.from('branches').select('*').order('created_at', { ascending: false });
+    const profile = getCurrentProfile();
+    if (profile?.role === 'kepala_cabang') {
+        query = query.eq('id', profile.branch_id);
+    }
+    const { data, error } = await query;
     if (error) return showToast('Gagal memuat cabang', 'error');
     branchesList = data;
     const tbody = document.querySelector('#branches-table tbody');
@@ -626,7 +649,13 @@ async function loadUsers() {
     let query = supabase.from('profiles').select('*, outlets(name), branches(name)').neq('role', 'superadmin');
     const profile = getCurrentProfile();
     if (profile?.role === 'kepala_cabang') {
-        query = query.eq('branch_id', profile.branch_id);
+        const { data: bOutlets } = await supabase.from('outlets').select('id').eq('branch_id', profile.branch_id);
+        const outletIds = bOutlets ? bOutlets.map(o => o.id) : [];
+        if (outletIds.length > 0) {
+            query = query.or(`branch_id.eq.${profile.branch_id},outlet_id.in.(${outletIds.join(',')})`);
+        } else {
+            query = query.eq('branch_id', profile.branch_id);
+        }
     } else if (profile?.role === 'kepala_toko') {
         query = query.eq('outlet_id', profile.outlet_id);
     }
@@ -809,6 +838,10 @@ window.editUser = async (id) => {
     document.getElementById('user-outlet').innerHTML = outletsList.map(o => `<option value="${o.id}" ${o.id===data.outlet_id?'selected':''}>${o.name}</option>`).join('');
     
     handleRoleSelectionChange();
+    // Beri sedikit jeda agar DOM ter-update, lalu set nilai outlet asli
+    setTimeout(() => {
+        document.getElementById('user-outlet').value = data.outlet_id || '';
+    }, 50);
     document.getElementById('modal-user').classList.remove('hidden');
 };
 
