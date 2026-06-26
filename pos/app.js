@@ -206,6 +206,8 @@ function setupEventListeners() {
     });
     document.getElementById('btn-back-pos').addEventListener('click', () => {
         showView('pos');
+        // Pastikan tab kasir terbuka
+        document.querySelector('.pos-nav-btn[data-target="pos-tab-content"]')?.click();
     });
 
     // Logout
@@ -281,6 +283,14 @@ function setupEventListeners() {
                 icon.classList.add('ph-list-dashes');
                 icon.classList.remove('ph-squares-four');
             }
+        });
+    }
+
+    // Payment method change -> recalculate cart
+    const paymentMethodSelect = document.getElementById('payment-method');
+    if (paymentMethodSelect) {
+        paymentMethodSelect.addEventListener('change', () => {
+            renderCart();
         });
     }
 
@@ -914,6 +924,9 @@ async function handleSaveProduct(e) {
     const id = document.getElementById('product-id').value;
     const name = document.getElementById('product-name').value;
     const price = document.getElementById('product-price').value;
+    const price_gofood = document.getElementById('product-price-gofood').value;
+    const price_grabfood = document.getElementById('product-price-grabfood').value;
+    const price_shopeefood = document.getElementById('product-price-shopeefood').value;
     const stock = document.getElementById('product-stock').value;
     const imageInput = document.getElementById('product-image');
     let image_url = null;
@@ -942,7 +955,12 @@ async function handleSaveProduct(e) {
             image_url = publicUrlData.publicUrl;
         }
 
-        const payload = { name, price, stock, outlet_id: activeOutletId };
+        const payload = { 
+            name, price, stock, outlet_id: activeOutletId,
+            price_gofood: price_gofood ? price_gofood : null,
+            price_grabfood: price_grabfood ? price_grabfood : null,
+            price_shopeefood: price_shopeefood ? price_shopeefood : null
+        };
         if (image_url) payload.image_url = image_url; // Only update image_url if a new one is uploaded
 
         if (id) {
@@ -971,6 +989,9 @@ window.editProduct = (id) => {
     document.getElementById('product-id').value = p.id;
     document.getElementById('product-name').value = p.name;
     document.getElementById('product-price').value = p.price;
+    document.getElementById('product-price-gofood').value = p.price_gofood || '';
+    document.getElementById('product-price-grabfood').value = p.price_grabfood || '';
+    document.getElementById('product-price-shopeefood').value = p.price_shopeefood || '';
     document.getElementById('product-stock').value = p.stock;
     document.getElementById('product-image').value = '';
     
@@ -1001,7 +1022,7 @@ window.addToCart = (id) => {
     if (currentQty >= product.stock) return showToast('Stok tidak mencukupi!', 'error');
     
     if (existing) existing.quantity += 1;
-    else cart.push({ product_id: product.id, name: product.name, price: product.price, quantity: 1 });
+    else cart.push({ product_id: product.id, name: product.name, price: product.price, product: product, quantity: 1 });
     renderCart();
 };
 
@@ -1021,6 +1042,17 @@ function renderCart() {
     const subtotalEl = document.getElementById('cart-subtotal');
     const totalEl = document.getElementById('cart-total');
     
+    const method = document.getElementById('payment-method').value;
+    
+    // Update effective price in cart items based on payment method
+    cart.forEach(item => {
+        let effectivePrice = item.product.price;
+        if (method === 'Go Food' && item.product.price_gofood) effectivePrice = item.product.price_gofood;
+        else if (method === 'Grab Food' && item.product.price_grabfood) effectivePrice = item.product.price_grabfood;
+        else if (method === 'Shopee Food' && item.product.price_shopeefood) effectivePrice = item.product.price_shopeefood;
+        item.price = effectivePrice;
+    });
+
     if (cart.length === 0) {
         container.innerHTML = `<div class="empty-cart"><i class="ph-duotone ph-shopping-cart"></i><p>Keranjang kosong</p></div>`;
         subtotalEl.textContent = 'Rp 0';
@@ -1083,6 +1115,10 @@ function calculateChange() {
 
 async function checkout() {
     if (cart.length === 0 || !activeOutletId) return;
+    
+    // Pastikan update harga sebelum total dihitung
+    renderCart();
+
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const method = document.getElementById('payment-method').value;
     let received = total;

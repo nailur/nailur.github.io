@@ -534,8 +534,22 @@
                     <input type="text" id="product-name" required placeholder="Kopi Susu">
                 </div>
                 <div class="input-group">
-                    <label for="product-price">Harga (Rp)</label>
+                    <label for="product-price">Harga Reguler (Tunai/QRIS) (Rp)</label>
                     <input type="number" id="product-price" required placeholder="15000">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label for="product-price-gofood" style="font-size: 0.8rem;">Harga GoFood</label>
+                        <input type="number" id="product-price-gofood" placeholder="Otomatis">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label for="product-price-grabfood" style="font-size: 0.8rem;">Harga GrabFood</label>
+                        <input type="number" id="product-price-grabfood" placeholder="Otomatis">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label for="product-price-shopeefood" style="font-size: 0.8rem;">Harga ShopeeFood</label>
+                        <input type="number" id="product-price-shopeefood" placeholder="Otomatis">
+                    </div>
                 </div>
                 <div class="input-group">
                     <label for="product-stock">Stok</label>
