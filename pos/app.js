@@ -549,18 +549,23 @@ async function initManagement() {
     // Sembunyikan tab berdasarkan role
     const tabBranches = document.querySelector('.tab-btn[data-target="branches-tab"]');
     const tabOutlets = document.querySelector('.tab-btn[data-target="outlets-tab"]');
+    const tabServerInfo = document.querySelector('.tab-btn[data-target="server-info-tab"]');
     
     if (role === 'superadmin' || role === 'owner') {
         tabBranches.classList.remove('hidden');
         tabOutlets.classList.remove('hidden');
+        if(role === 'superadmin' && tabServerInfo) tabServerInfo.classList.remove('hidden');
+        else if (tabServerInfo) tabServerInfo.classList.add('hidden');
         document.getElementById('management-title').textContent = 'Manajemen Sistem';
     } else if (role === 'kepala_cabang') {
         tabBranches.classList.add('hidden');
         tabOutlets.classList.remove('hidden');
+        if(tabServerInfo) tabServerInfo.classList.add('hidden');
         document.getElementById('management-title').textContent = 'Panel Kepala Cabang';
     } else if (role === 'kepala_toko') {
         tabBranches.classList.add('hidden');
         tabOutlets.classList.add('hidden');
+        if(tabServerInfo) tabServerInfo.classList.add('hidden');
         document.getElementById('management-title').textContent = 'Panel Kepala Toko';
     }
     
