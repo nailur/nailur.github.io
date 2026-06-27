@@ -790,7 +790,7 @@ body {
         display: grid !important;
         grid-template-columns: 1fr auto 1fr;
         align-items: center;
-        gap: 8px;
+        gap: 4px;
         width: 100%;
     }
     .filter-group label {
@@ -799,6 +799,9 @@ body {
     }
     .filter-group input {
         width: 100%;
+        min-width: 0;
+        padding: 8px 4px !important;
+        font-size: 0.85rem !important;
     }
     .filter-group button {
         grid-column: 1 / -1;
