@@ -113,11 +113,13 @@ async function routeUser(profile) {
         logout();
     }
     
-    // Tampilkan tombol manajemen untuk role manajerial
+    // Tampilkan tombol manajemen dan tab absensi untuk role manajerial
     if (['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(profile.role)) {
         document.getElementById('btn-management').classList.remove('hidden');
+        document.getElementById('nav-attendance').classList.remove('hidden');
     } else {
         document.getElementById('btn-management').classList.add('hidden');
+        document.getElementById('nav-attendance').classList.add('hidden');
     }
 }
 
@@ -154,6 +156,7 @@ async function initPosMultiOutlet(profile) {
             selector.value = activeOutletId;
             if(mobileSelector) mobileSelector.value = activeOutletId;
             localStorage.setItem('pos_active_outlet_id', activeOutletId);
+            checkAttendanceStatus();
             loadProducts();
             loadHistory();
             loadDashboard();
@@ -493,6 +496,7 @@ function setupEventListeners() {
             localStorage.setItem('pos_active_tab', targetId);
             
             if(targetId === 'history-tab-content') loadHistory();
+            if(targetId === 'attendance-history-tab-content') loadAttendanceHistory();
             if(targetId === 'dashboard-tab-content') loadDashboard();
         });
     });
@@ -536,6 +540,7 @@ function setupEventListeners() {
         document.getElementById('user-password').placeholder = 'Minimal 6 karakter';
         document.getElementById('user-password').setAttribute('required', 'true');
         document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+        filterUserOutlets();
         
         // Filter options based on role
         const role = getCurrentProfile()?.role;
@@ -573,6 +578,7 @@ function setupEventListeners() {
     });
 
     document.getElementById('user-role').addEventListener('change', handleRoleSelectionChange);
+    document.getElementById('user-branch').addEventListener('change', filterUserOutlets);
 
     document.getElementById('form-branch').addEventListener('submit', handleAddBranch);
     document.getElementById('form-outlet').addEventListener('submit', handleAddOutlet);
@@ -615,23 +621,34 @@ function setupEventListeners() {
     document.getElementById('cash-received').addEventListener('input', calculateChange);
     document.getElementById('btn-checkout').addEventListener('click', checkout);
     
-    // Set default history date to today
-    const historyDate = document.getElementById('history-date');
-    if (historyDate) {
-        const today = getLocalToday();
-        historyDate.value = today;
-        historyDate.addEventListener('change', loadHistory);
-    }
-    
-    // Set default dashboard date to today
-    const dashboardDate = document.getElementById('dashboard-date');
-    if (dashboardDate) {
-        const today = getLocalToday();
-        dashboardDate.value = today;
-        dashboardDate.addEventListener('change', loadDashboard);
-    }
+    // Set default history and attendance dates to today and listen for changes
+    const dIds = ['history-date-start', 'history-date-end', 'attendance-date-start', 'attendance-date-end', 'dashboard-date-start', 'dashboard-date-end'];
+    dIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const today = getLocalToday();
+            if(!el.value) el.value = today;
+            if(id.startsWith('history')) el.addEventListener('change', loadHistory);
+            if(id.startsWith('attendance')) el.addEventListener('change', loadAttendanceHistory);
+            if(id.startsWith('dashboard')) el.addEventListener('change', loadDashboard);
+        }
+    });
     
     document.getElementById('btn-export-excel')?.addEventListener('click', exportToExcel);
+}
+
+function filterUserOutlets() {
+    const branchId = document.getElementById('user-branch').value;
+    const myRole = getCurrentProfile()?.role;
+    let filteredOutlets = outletsList;
+
+    if (myRole === 'kepala_cabang') {
+        filteredOutlets = outletsList.filter(o => o.branch_id === getCurrentProfile().branch_id);
+    } else if (branchId) {
+        filteredOutlets = outletsList.filter(o => o.branch_id === branchId);
+    }
+
+    document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
 }
 
 function handleRoleSelectionChange() {
@@ -653,6 +670,8 @@ function handleRoleSelectionChange() {
         if(myRole === 'kepala_toko') outletGroup.classList.add('hidden'); // Kepala toko can't change outlet
         else outletGroup.classList.remove('hidden');
     }
+
+    filterUserOutlets();
 }
 
 // ------------------------------
@@ -665,18 +684,23 @@ async function initManagement() {
     // Sembunyikan tab berdasarkan role
     const tabBranches = document.querySelector('.tab-btn[data-target="branches-tab"]');
     const tabOutlets = document.querySelector('.tab-btn[data-target="outlets-tab"]');
+    const tabServerInfo = document.querySelector('.tab-btn[data-target="server-info-tab"]');
     
     if (role === 'superadmin' || role === 'owner') {
         tabBranches.classList.remove('hidden');
         tabOutlets.classList.remove('hidden');
+        if(role === 'superadmin' && tabServerInfo) tabServerInfo.classList.remove('hidden');
+        else if (tabServerInfo) tabServerInfo.classList.add('hidden');
         document.getElementById('management-title').textContent = 'Manajemen Sistem';
     } else if (role === 'kepala_cabang') {
         tabBranches.classList.add('hidden');
         tabOutlets.classList.remove('hidden');
+        if(tabServerInfo) tabServerInfo.classList.add('hidden');
         document.getElementById('management-title').textContent = 'Panel Kepala Cabang';
     } else if (role === 'kepala_toko') {
         tabBranches.classList.add('hidden');
         tabOutlets.classList.add('hidden');
+        if(tabServerInfo) tabServerInfo.classList.add('hidden');
         document.getElementById('management-title').textContent = 'Panel Kepala Toko';
     }
     
@@ -689,13 +713,18 @@ async function initManagement() {
         document.querySelector('.tab-btn[data-target="users-tab"]').click();
     }
 
-    if (role === 'superadmin' || role === 'owner') await loadBranches();
+    if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadBranches();
     if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadOutlets();
     await loadUsers();
 }
 
 async function loadBranches() {
-    const { data, error } = await supabase.from('branches').select('*').order('created_at', { ascending: false });
+    let query = supabase.from('branches').select('*').order('created_at', { ascending: false });
+    const profile = getCurrentProfile();
+    if (profile?.role === 'kepala_cabang') {
+        query = query.eq('id', profile.branch_id);
+    }
+    const { data, error } = await query;
     if (error) return showToast('Gagal memuat cabang', 'error');
     branchesList = data;
     const tbody = document.querySelector('#branches-table tbody');
@@ -739,7 +768,13 @@ async function loadUsers() {
     let query = supabase.from('profiles').select('*, outlets(name), branches(name)').neq('role', 'superadmin');
     const profile = getCurrentProfile();
     if (profile?.role === 'kepala_cabang') {
-        query = query.eq('branch_id', profile.branch_id);
+        const { data: bOutlets } = await supabase.from('outlets').select('id').eq('branch_id', profile.branch_id);
+        const outletIds = bOutlets ? bOutlets.map(o => o.id) : [];
+        if (outletIds.length > 0) {
+            query = query.or(`branch_id.eq.${profile.branch_id},outlet_id.in.(${outletIds.join(',')})`);
+        } else {
+            query = query.eq('branch_id', profile.branch_id);
+        }
     } else if (profile?.role === 'kepala_toko') {
         query = query.eq('outlet_id', profile.outlet_id);
     }
@@ -786,7 +821,13 @@ window.editBranch = (id) => {
 };
 
 window.deleteBranch = async (id) => {
-    if(!confirm('Hapus cabang ini? (Semua outlet di dalamnya mungkin terpengaruh)')) return;
+    if(!confirm('Hapus cabang ini?')) return;
+    
+    // Validasi Outlet
+    const { count, error: countErr } = await supabase.from('outlets').select('*', { count: 'exact', head: true }).eq('branch_id', id);
+    if(countErr) return showToast('Gagal memvalidasi cabang', 'error');
+    if(count > 0) return showToast('Cabang tidak bisa dihapus karena masih memiliki outlet!', 'error');
+
     const { error } = await supabase.from('branches').delete().eq('id', id);
     if(error) showToast(error.message, 'error');
     else loadBranches();
@@ -826,7 +867,15 @@ window.editOutlet = (id) => {
 };
 
 window.deleteOutlet = async (id) => {
-    if(!confirm('Hapus outlet ini? (Semua transaksi & produk di dalamnya akan ikut terhapus)')) return;
+    if(!confirm('Hapus outlet ini?')) return;
+    
+    // Validasi Transaksi & Produk
+    const { count: txCount } = await supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('outlet_id', id);
+    if(txCount > 0) return showToast('Outlet tidak bisa dihapus karena sudah memiliki transaksi!', 'error');
+
+    const { count: prodCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('outlet_id', id);
+    if(prodCount > 0) return showToast('Outlet tidak bisa dihapus karena memiliki produk!', 'error');
+
     const { error } = await supabase.from('outlets').delete().eq('id', id);
     if(error) showToast(error.message, 'error');
     else loadOutlets();
@@ -913,11 +962,20 @@ window.editUser = async (id) => {
     document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}" ${o.id===data.outlet_id?'selected':''}>${o.name}</option>`).join('');
     
     handleRoleSelectionChange();
+    // Beri sedikit jeda agar DOM ter-update, lalu set nilai outlet asli
+    setTimeout(() => {
+        document.getElementById('user-outlet').value = data.outlet_id || '';
+    }, 50);
     document.getElementById('modal-user').classList.remove('hidden');
 };
 
 window.deleteUser = async (id) => {
     if(!confirm('Hapus pegawai ini? Aksesnya akan dicabut.')) return;
+    
+    // Validasi Transaksi (kasir)
+    const { count: txCount } = await supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('cashier_id', id);
+    if(txCount > 0) return showToast('User tidak bisa dihapus karena memiliki riwayat transaksi!', 'error');
+
     // We try to delete from auth.admin if available, otherwise just delete profile
     try {
         if (supabaseAdmin.auth.admin) {
@@ -936,6 +994,16 @@ window.deleteUser = async (id) => {
 // POS / ADMIN LOGIC
 // ------------------------------
 async function initPos() {
+    startAttendanceClock();
+    checkAttendanceStatus();
+
+    const today = getLocalToday();
+    const initIds = ['history-date-start', 'history-date-end', 'dashboard-date-start', 'dashboard-date-end', 'attendance-date-start', 'attendance-date-end'];
+    initIds.forEach(id => {
+        const el = document.getElementById(id);
+        if(el && !el.value) el.value = today;
+    });
+
     generateOrderId();
     if (activeOutletId) await loadProducts();
     
@@ -947,10 +1015,143 @@ async function initPos() {
 
 function generateOrderId() {
     const id = 'ORD-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    document.getElementById('current-order-id').textContent = id;
+    const orderIdEl = document.getElementById('current-order-id');
+    if(orderIdEl) orderIdEl.textContent = id;
     cart = [];
-    document.getElementById('cash-received').value = '';
+    const cashEl = document.getElementById('cash-received');
+    if(cashEl) cashEl.value = '';
     renderCart();
+}
+
+// ------------------------------
+// ATTENDANCE (CLOCK TIME) LOGIC
+// ------------------------------
+let attendanceTimer;
+let currentAttendanceRecord = null;
+
+function startAttendanceClock() {
+    const profile = getCurrentProfile();
+    const nameEl = document.getElementById('attendance-name');
+    if(nameEl && profile) {
+        let name = profile.name || profile.email.split('@')[0];
+        nameEl.textContent = name;
+    }
+
+    if (attendanceTimer) clearInterval(attendanceTimer);
+    attendanceTimer = setInterval(() => {
+        const now = new Date();
+        
+        const timeEl = document.getElementById('attendance-time');
+        if(timeEl) {
+            timeEl.textContent = now.toLocaleTimeString('id-ID', { hour12: false });
+        }
+        
+        const dateEl = document.getElementById('attendance-date');
+        if(dateEl) {
+            dateEl.textContent = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+    }, 1000);
+}
+
+async function checkAttendanceStatus() {
+    const profile = getCurrentProfile();
+    if (!profile || !activeOutletId) return;
+
+    const today = getLocalToday();
+    
+    const { data, error } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('profile_id', profile.id)
+        .eq('outlet_id', activeOutletId)
+        .eq('date', today)
+        .single();
+
+    currentAttendanceRecord = data;
+    renderAttendanceButton();
+}
+
+function renderAttendanceButton() {
+    const btn = document.getElementById('btn-clock-time');
+    if (!btn) return;
+
+    if (!currentAttendanceRecord) {
+        btn.textContent = 'Clock In';
+        btn.className = 'btn btn-primary';
+        btn.onclick = handleClockIn;
+    } else if (!currentAttendanceRecord.clock_out) {
+        const timeIn = new Date(currentAttendanceRecord.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+        btn.innerHTML = `<span style="display:flex; align-items:center; justify-content:center; gap:5px;"><div style="width:8px; height:8px; border-radius:50%; background:#10b981;"></div> Clock Out (In: ${timeIn})</span>`;
+        btn.className = 'btn btn-secondary';
+        btn.onclick = handleClockOut;
+    } else {
+        const timeOut = new Date(currentAttendanceRecord.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+        btn.innerHTML = `<span style="display:flex; align-items:center; justify-content:center; gap:5px;"><div style="width:8px; height:8px; border-radius:50%; background:#ef4444;"></div> Pulang: ${timeOut} (Klik Edit)</span>`;
+        btn.className = 'btn btn-secondary';
+        btn.onclick = handleClockOut; // Allow replacing clock out
+    }
+}
+
+async function handleClockIn() {
+    const profile = getCurrentProfile();
+    if (!profile || !activeOutletId) return;
+
+    const btn = document.getElementById('btn-clock-time');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    const today = getLocalToday();
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+        .from('attendance')
+        .insert([{
+            profile_id: profile.id,
+            outlet_id: activeOutletId,
+            date: today,
+            clock_in: now
+        }])
+        .select()
+        .single();
+
+    btn.disabled = false;
+    if (error) {
+        showToast('Gagal Clock In: ' + error.message, 'error');
+    } else {
+        currentAttendanceRecord = data;
+        showToast('Berhasil Clock In!', 'success');
+        renderAttendanceButton();
+    }
+}
+
+async function handleClockOut() {
+    if (!currentAttendanceRecord) return;
+    
+    if (currentAttendanceRecord.clock_out) {
+        if (!confirm('Anda sudah Clock Out sebelumnya. Ganti jam pulang dengan waktu sekarang?')) return;
+    }
+
+    const btn = document.getElementById('btn-clock-time');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+        .from('attendance')
+        .update({ clock_out: now })
+        .eq('id', currentAttendanceRecord.id)
+        .select()
+        .single();
+
+    btn.disabled = false;
+    if (error) {
+        showToast('Gagal Clock Out: ' + error.message, 'error');
+    } else {
+        currentAttendanceRecord = data;
+        showToast('Berhasil Clock Out!', 'success');
+        renderAttendanceButton();
+    }
 }
 
 async function loadProducts() {
@@ -1160,6 +1361,11 @@ window.updateQty = (id, delta) => {
     renderCart();
 };
 
+window.emptyCart = () => {
+    cart = [];
+    renderCart();
+};
+
 function renderCart() {
     const container = document.getElementById('cart-items-container');
     const subtotalEl = document.getElementById('cart-subtotal');
@@ -1344,12 +1550,13 @@ function printReceipt(trxId, cartItems, total, received, method, trxDate = null,
 async function exportToExcel() {
     if (!activeOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
     
-    const historyDate = document.getElementById('history-date').value;
-    if (!historyDate) return showToast('Pilih tanggal terlebih dahulu', 'error');
+    const startDate = document.getElementById('history-date-start').value;
+    const endDate = document.getElementById('history-date-end').value;
+    if (!startDate || !endDate) return showToast('Pilih rentang tanggal terlebih dahulu', 'error');
     
     // Konversi ke UTC
-    const startOfDay = new Date(`${historyDate}T00:00:00`).toISOString();
-    const endOfDay = new Date(`${historyDate}T23:59:59.999`).toISOString();
+    const startOfDay = new Date(`${startDate}T00:00:00`).toISOString();
+    const endOfDay = new Date(`${endDate}T23:59:59.999`).toISOString();
 
     const btn = document.getElementById('btn-export-excel');
     const originalHtml = btn.innerHTML;
@@ -1363,7 +1570,7 @@ async function exportToExcel() {
             .eq('outlet_id', activeOutletId)
             .gte('created_at', startOfDay)
             .lte('created_at', endOfDay)
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: false });
 
         if (trxError) throw trxError;
         if (!trxData || trxData.length === 0) {
@@ -1435,7 +1642,8 @@ async function exportToExcel() {
         ];
         worksheet['!cols'] = colWidths;
 
-        XLSX.writeFile(workbook, `Laporan_Transaksi_${historyDate}.xlsx`);
+        let filenameDate = startDate === endDate ? startDate : `${startDate}_to_${endDate}`;
+        XLSX.writeFile(workbook, `Laporan_Transaksi_${filenameDate}.xlsx`);
         showToast('Berhasil mengunduh Excel', 'success');
 
     } catch (e) {
@@ -1455,11 +1663,12 @@ async function loadHistory() {
         .eq('outlet_id', activeOutletId)
         .order('created_at', { ascending: false });
 
-    const historyDate = document.getElementById('history-date');
-    if (historyDate && historyDate.value) {
-        const dateStr = historyDate.value;
-        const startOfDay = new Date(`${dateStr}T00:00:00`).toISOString();
-        const endOfDay = new Date(`${dateStr}T23:59:59.999`).toISOString();
+    const startDate = document.getElementById('history-date-start');
+    const endDate = document.getElementById('history-date-end');
+    
+    if (startDate && startDate.value && endDate && endDate.value) {
+        const startOfDay = new Date(`${startDate.value}T00:00:00`).toISOString();
+        const endOfDay = new Date(`${endDate.value}T23:59:59.999`).toISOString();
         
         query = query.gte('created_at', startOfDay)
                      .lte('created_at', endOfDay);
@@ -1540,12 +1749,12 @@ function reprintReceipt(trx, items) {
 async function loadDashboard() {
     if (!activeOutletId) return;
     
-    const dashboardDate = document.getElementById('dashboard-date');
-    if (!dashboardDate || !dashboardDate.value) return;
+    const startDate = document.getElementById('dashboard-date-start');
+    const endDate = document.getElementById('dashboard-date-end');
+    if (!startDate || !startDate.value || !endDate || !endDate.value) return;
 
-    const dateStr = dashboardDate.value;
-    const startOfDay = new Date(`${dateStr}T00:00:00`).toISOString();
-    const endOfDay = new Date(`${dateStr}T23:59:59.999`).toISOString();
+    const startOfDay = new Date(`${startDate.value}T00:00:00`).toISOString();
+    const endOfDay = new Date(`${endDate.value}T23:59:59.999`).toISOString();
 
     const { data: trxData, error: trxError } = await supabase.from('transactions')
         .select('*')
@@ -1685,3 +1894,177 @@ function enableTableSort(tableId) {
 
 // Start App
 init();
+
+// ------------------------------
+// ATTENDANCE HISTORY & EXPORT
+// ------------------------------
+async function loadAttendanceHistory() {
+    const profile = getCurrentProfile();
+    const role = profile?.role;
+    if (!['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) return;
+
+    const startDate = document.getElementById('attendance-date-start');
+    const endDate = document.getElementById('attendance-date-end');
+    if (!startDate || !startDate.value || !endDate || !endDate.value) return;
+
+    const { data, error } = await supabase.rpc('get_attendance_report', {
+        p_start_date: startDate.value,
+        p_end_date: endDate.value
+    });
+
+    if (error) {
+        showToast('Gagal memuat riwayat absensi', 'error');
+        return;
+    }
+
+    const tbody = document.querySelector('#attendance-table tbody');
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Belum ada data absensi</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(record => {
+        const name = record.name || record.email || 'Unknown';
+        const branchName = record.branch_name || '-';
+        const outletName = record.outlet_name || 'Unknown';
+        const dateStr = new Date(record.record_date).toLocaleDateString('id-ID');
+        const clockIn = record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-';
+        const clockOut = record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-';
+        
+        const statusBadge = record.status === 'PRS' 
+            ? '<span style="background:var(--success); color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">PRS</span>'
+            : '<span style="background:var(--danger); color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">OFF</span>';
+
+        return `
+            <tr>
+                <td>${dateStr}</td>
+                <td><strong>${name}</strong></td>
+                <td>${branchName}</td>
+                <td>${outletName}</td>
+                <td>${clockIn}</td>
+                <td>${clockOut}</td>
+                <td>${statusBadge}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+window.exportAttendanceExcel = async () => {
+    const profile = getCurrentProfile();
+    const role = profile?.role;
+    if (!['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) return;
+
+    const startDate = document.getElementById('attendance-date-start').value;
+    const endDate = document.getElementById('attendance-date-end').value;
+    if (!startDate || !endDate) return showToast('Pilih rentang tanggal', 'error');
+
+    const btn = document.getElementById('btn-export-attendance');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengekspor...';
+
+    try {
+        const { data, error } = await supabase.rpc('get_attendance_report', {
+            p_start_date: startDate,
+            p_end_date: endDate
+        });
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            showToast('Tidak ada data absensi', 'error');
+            return;
+        }
+
+        const exportRows = data.map(record => ({
+            'Tanggal': new Date(record.record_date).toLocaleDateString('id-ID'),
+            'Nama Kasir': record.name || record.email || '-',
+            'Cabang': record.branch_name || '-',
+            'Outlet': record.outlet_name || '-',
+            'Jam Masuk': record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
+            'Jam Pulang': record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
+            'Status': record.status
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportRows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Absensi");
+
+        const colWidths = [
+            { wch: 15 }, // Tanggal
+            { wch: 25 }, // Nama
+            { wch: 20 }, // Cabang
+            { wch: 20 }, // Outlet
+            { wch: 15 }, // In
+            { wch: 15 }, // Out
+            { wch: 10 }  // Status
+        ];
+        worksheet['!cols'] = colWidths;
+
+        let filenameDate = startDate === endDate ? startDate : `${startDate}_to_${endDate}`;
+        XLSX.writeFile(workbook, `Laporan_Absensi_${filenameDate}.xlsx`);
+        showToast('Berhasil mengunduh Excel', 'success');
+    } catch (e) {
+        console.error(e);
+        showToast('Gagal mengekspor Excel', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
+};
+
+window.loadServerInfo = async () => {
+    const btnRefresh = document.getElementById('btn-refresh-server');
+    if(btnRefresh) {
+        btnRefresh.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Loading...';
+        btnRefresh.disabled = true;
+    }
+
+    try {
+        // Supabase DB Size
+        const { data: dbSizeData, error: dbError } = await supabase.rpc('get_db_size');
+        if(dbError) console.error("Error fetching db size:", dbError);
+        
+        const sbText = document.getElementById('supabase-usage-text');
+        const sbBar = document.getElementById('supabase-usage-bar');
+        
+        if (dbSizeData !== null) {
+            const dbSizeInMb = (dbSizeData / (1024 * 1024)).toFixed(2);
+            sbText.textContent = `${dbSizeInMb} MB / 500 MB`;
+            const percentage = Math.min((dbSizeInMb / 500) * 100, 100);
+            sbBar.style.width = `${percentage}%`;
+            sbBar.style.background = percentage > 90 ? 'var(--danger)' : '#3ECF8E';
+        } else {
+            sbText.textContent = "Gagal mengambil data";
+        }
+
+        // GitHub Repo Size
+        const ghText = document.getElementById('github-usage-text');
+        const ghBar = document.getElementById('github-usage-bar');
+
+        const ghRes = await fetch('https://api.github.com/repos/nailur/nailur.github.io');
+        if(ghRes.ok) {
+            const ghData = await ghRes.json();
+            const sizeInKb = ghData.size;
+            const sizeInMb = (sizeInKb / 1024).toFixed(2);
+            ghText.textContent = `${sizeInMb} MB / 1024 MB (1GB)`;
+            
+            const percentage = Math.min((sizeInMb / 1024) * 100, 100);
+            ghBar.style.width = `${percentage}%`;
+            ghBar.style.background = percentage > 90 ? 'var(--danger)' : '#181717';
+        } else {
+            ghText.textContent = "Gagal mengambil data";
+        }
+
+    } catch (e) {
+        console.error(e);
+    } finally {
+        if(btnRefresh) {
+            btnRefresh.innerHTML = '<i class="ph ph-arrows-clockwise"></i> Refresh';
+            btnRefresh.disabled = false;
+        }
+    }
+};
+
+document.querySelectorAll('.pos-nav-btn[data-target="server-info-tab"]').forEach(btn => {
+    btn.addEventListener('click', window.loadServerInfo);
+});
