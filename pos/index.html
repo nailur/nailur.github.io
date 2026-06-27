@@ -117,7 +117,7 @@
                 <form id="reset-password-form">
                     <div class="input-group">
                         <label for="new-password">Password Baru</label>
-                        <div style="position: relative;">
+                        <div class="password-wrapper" style="position: relative;">
                             <input type="password" id="new-password" required placeholder="Minimal 6 karakter"
                                 style="width: 100%; padding-right: 40px;">
                             <i class="ph ph-eye toggle-password"
@@ -490,9 +490,11 @@
             <div id="history-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                     <h2>Riwayat Transaksi</h2>
-                    <div style="display:flex; gap: 10px; align-items:center;">
-                        <label for="history-date">Pilih Tanggal:</label>
-                        <input type="date" id="history-date" class="input-sm">
+                    <div class="filter-group" style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+                        <label>Periode:</label>
+                        <input type="date" id="history-date-start" class="input-sm">
+                        <span>-</span>
+                        <input type="date" id="history-date-end" class="input-sm">
                         <button class="btn btn-secondary" id="btn-export-excel"
                             style="display: flex; align-items: center; gap: 5px;">
                             <i class="ph ph-file-xls"></i> Export Excel
@@ -522,7 +524,7 @@
             <div id="attendance-history-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                     <h2>Riwayat Absensi</h2>
-                    <div style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+                    <div class="filter-group" style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
                         <label>Periode:</label>
                         <input type="date" id="attendance-date-start" class="input-sm">
                         <span>-</span>
@@ -557,9 +559,11 @@
             <div id="dashboard-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                     <h2>Dashboard Harian</h2>
-                    <div style="display:flex; gap: 10px; align-items:center;">
-                        <label for="dashboard-date">Pilih Tanggal:</label>
-                        <input type="date" id="dashboard-date" class="input-sm">
+                    <div class="filter-group" style="display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+                        <label>Periode:</label>
+                        <input type="date" id="dashboard-date-start" class="input-sm">
+                        <span>-</span>
+                        <input type="date" id="dashboard-date-end" class="input-sm">
                     </div>
                 </div>
 
@@ -695,7 +699,7 @@
                 </div>
                 <div class="input-group">
                     <label for="user-password">Password Sementara</label>
-                    <div style="position: relative;">
+                    <div class="password-wrapper" style="position: relative;">
                         <input type="password" id="user-password" required placeholder="Minimal 6 karakter"
                             style="width: 100%; padding-right: 40px;">
                         <i class="ph ph-eye toggle-password"
@@ -835,7 +839,7 @@
                 </div>
                 <div class="input-group">
                     <label for="my-old-password">Password Lama</label>
-                    <div style="position: relative;">
+                    <div class="password-wrapper" style="position: relative;">
                         <input type="password" id="my-old-password" placeholder="Isi untuk verifikasi">
                         <i class="ph ph-eye toggle-password"
                             style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
@@ -843,7 +847,7 @@
                 </div>
                 <div class="input-group">
                     <label for="my-password">Password Baru (Opsional)</label>
-                    <div style="position: relative;">
+                    <div class="password-wrapper" style="position: relative;">
                         <input type="password" id="my-password" placeholder="Isi jika ingin ganti password">
                         <i class="ph ph-eye toggle-password"
                             style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>

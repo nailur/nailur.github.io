@@ -1834,6 +1834,9 @@ async function loadDashboard() {
             </tr>
         `).join('');
     }
+    
+    enableTableSort('dashboard-method-table');
+    enableTableSort('dashboard-product-table');
 }
 
 // Table Sorting Logic
@@ -1947,6 +1950,8 @@ async function loadAttendanceHistory() {
             </tr>
         `;
     }).join('');
+    
+    enableTableSort('attendance-table');
 }
 
 window.exportAttendanceExcel = async () => {
