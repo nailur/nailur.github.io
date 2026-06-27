@@ -786,7 +786,8 @@ async function loadUsers() {
             <td>${u.name || '-'}</td>
             <td>${u.email}</td>
             <td><span class="user-badge">${u.role}</span></td>
-            <td>${u.role === 'kepala_cabang' ? (u.branches?.name || '-') : (u.outlets?.name || '-')}</td>
+            <td>${u.branches?.name || '-'}</td>
+            <td>${u.outlets?.name || '-'}</td>
             <td>
                 <button class="btn btn-icon" style="color:var(--primary)" onclick="editUser('${u.id}')"><i class="ph ph-pencil-simple"></i></button>
                 <button class="btn btn-icon" onclick="deleteUser('${u.id}')"><i class="ph ph-trash"></i></button>
@@ -893,8 +894,12 @@ async function handleAddUser(e) {
 
     const profile = getCurrentProfile();
 
-    if (role === 'kepala_cabang') branch_id = document.getElementById('user-branch').value;
-    if (role === 'kepala_toko' || role === 'kasir') outlet_id = document.getElementById('user-outlet').value;
+    if (role !== 'owner' && role !== 'superadmin') {
+        branch_id = document.getElementById('user-branch').value;
+    }
+    if (role === 'kepala_toko' || role === 'kasir') {
+        outlet_id = document.getElementById('user-outlet').value;
+    }
 
     // Force override untuk manager
     if (profile?.role === 'kepala_cabang') {
@@ -954,10 +959,15 @@ window.editUser = async (id) => {
     document.getElementById('user-password').removeAttribute('required');
     
     document.getElementById('user-role').value = data.role;
-    document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id===data.branch_id?'selected':''}>${b.name}</option>`).join('');
+    let dataBranchId = data.branch_id;
+    if (!dataBranchId && data.outlet_id) {
+        const out = outletsList.find(o => o.id === data.outlet_id);
+        if (out) dataBranchId = out.branch_id;
+    }
+    const initialBranch = dataBranchId || (branchesList.length > 0 ? branchesList[0].id : null);
     
-    // Initial outlet filter
-    const initialBranch = data.branch_id || (branchesList.length > 0 ? branchesList[0].id : null);
+    document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id===initialBranch?'selected':''}>${b.name}</option>`).join('');
+    
     const filteredOutlets = outletsList.filter(o => o.branch_id === initialBranch);
     document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}" ${o.id===data.outlet_id?'selected':''}>${o.name}</option>`).join('');
     
