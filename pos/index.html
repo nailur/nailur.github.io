@@ -50,6 +50,10 @@
                         <div class="input-icon">
                             <i class="ph ph-lock-key"></i>
                             <input type="password" id="password" required placeholder="••••••••">
+                            <i class="ph ph-eye toggle-password" style="left: auto; right: 12px; cursor: pointer;"></i>
+                        </div>
+                        <div style="text-align: right; margin-top: 8px;">
+                            <a href="#" id="btn-forgot-password" style="font-size: 0.85rem; color: var(--primary); text-decoration: none;">Lupa Password?</a>
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary btn-block" id="login-btn">
@@ -63,6 +67,60 @@
                 </div>
             </div>
             <script>document.getElementById('current-year').textContent = new Date().getFullYear();</script>
+        </section>
+
+
+        <!-- ======================= -->
+        <!-- 1.1 FORGOT PASSWORD VIEW -->
+        <!-- ======================= -->
+        <section id="forgot-password-view" class="view-section hidden">
+            <div class="login-wrapper glass-panel">
+                <div class="login-header">
+                    <i class="ph-duotone ph-key"></i>
+                    <h2>Lupa Password</h2>
+                    <p>Masukkan email untuk reset password</p>
+                </div>
+                <form id="forgot-password-form">
+                    <div class="input-group">
+                        <label for="forgot-email">Email</label>
+                        <div class="input-icon">
+                            <i class="ph ph-envelope"></i>
+                            <input type="email" id="forgot-email" required placeholder="admin@pos.com">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" id="reset-btn">
+                        <span>Kirim Link Reset</span>
+                    </button>
+                    <div style="margin-top: 15px; text-align: center;">
+                        <a href="#" id="btn-back-login" style="font-size: 0.9rem; color: var(--text-muted); text-decoration: none;"><i class="ph ph-arrow-left"></i> Kembali ke Login</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+        
+        <!-- ======================= -->
+        <!-- 1.2 RESET PASSWORD VIEW -->
+        <!-- ======================= -->
+        <section id="reset-password-view" class="view-section hidden">
+            <div class="login-wrapper glass-panel">
+                <div class="login-header">
+                    <i class="ph-duotone ph-lock-key"></i>
+                    <h2>Buat Password Baru</h2>
+                    <p>Silakan masukkan password baru Anda</p>
+                </div>
+                <form id="reset-password-form">
+                    <div class="input-group">
+                        <label for="new-password">Password Baru</label>
+                        <div style="position: relative;">
+                            <input type="password" id="new-password" required placeholder="Minimal 6 karakter" style="width: 100%; padding-right: 40px;">
+                            <i class="ph ph-eye toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" id="btn-save-new-password">
+                        <span>Simpan Password Baru</span>
+                    </button>
+                </form>
+            </div>
         </section>
 
 
@@ -325,7 +383,7 @@
             <div id="history-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                     <h2>Riwayat Transaksi</h2>
-                    <div style="display:flex; gap: 10px; align-items:center;">
+                    <div class="filter-group" style="display:flex; gap: 10px; align-items:center;">
                         <label for="history-date">Pilih Tanggal:</label>
                         <input type="date" id="history-date" class="input-sm">
                         <button class="btn btn-secondary" id="btn-export-excel" style="display: flex; align-items: center; gap: 5px;">
@@ -356,7 +414,7 @@
             <div id="dashboard-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                     <h2>Dashboard Harian</h2>
-                    <div style="display:flex; gap: 10px; align-items:center;">
+                    <div class="filter-group" style="display:flex; gap: 10px; align-items:center;">
                         <label for="dashboard-date">Pilih Tanggal:</label>
                         <input type="date" id="dashboard-date" class="input-sm">
                     </div>
@@ -489,7 +547,10 @@
                 </div>
                 <div class="input-group">
                     <label for="user-password">Password Sementara</label>
-                    <input type="password" id="user-password" required placeholder="Minimal 6 karakter">
+                    <div style="position: relative;">
+                        <input type="password" id="user-password" required placeholder="Minimal 6 karakter" style="width: 100%; padding-right: 40px;">
+                        <i class="ph ph-eye toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
+                    </div>
                 </div>
                 <div class="input-group">
                     <label for="user-role">Jabatan</label>
@@ -620,8 +681,18 @@
                     <input type="text" id="my-name" required placeholder="Nama Anda">
                 </div>
                 <div class="input-group">
+                    <label for="my-old-password">Password Lama</label>
+                    <div style="position: relative;">
+                        <input type="password" id="my-old-password" placeholder="Isi untuk verifikasi">
+                        <i class="ph ph-eye toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
+                    </div>
+                </div>
+                <div class="input-group">
                     <label for="my-password">Password Baru (Opsional)</label>
-                    <input type="password" id="my-password" placeholder="Isi jika ingin ganti password">
+                    <div style="position: relative;">
+                        <input type="password" id="my-password" placeholder="Isi jika ingin ganti password">
+                        <i class="ph ph-eye toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" data-close="modal-edit-profile">Batal</button>

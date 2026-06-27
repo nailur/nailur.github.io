@@ -41,6 +41,17 @@ let activeOutletId = null;
 
 // Initialize
 async function init() {
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('login-view').classList.remove('active');
+            document.getElementById('forgot-password-view').classList.add('hidden');
+            document.getElementById('superadmin-view').classList.add('hidden');
+            document.getElementById('pos-view').classList.add('hidden');
+            document.getElementById('reset-password-view').classList.remove('hidden');
+        }
+    });
+
     const sessionData = await checkSession();
     if (sessionData) {
         routeUser(sessionData.profile);
@@ -181,6 +192,91 @@ async function initPosMultiOutlet(profile) {
 // EVENT LISTENERS SETUP
 // ------------------------------
 function setupEventListeners() {
+    // Toggle Password Visibility
+    document.querySelectorAll('.toggle-password').forEach(icon => {
+        icon.addEventListener('click', function() {
+            const input = this.previousElementSibling;
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.classList.remove('ph-eye');
+                this.classList.add('ph-eye-closed');
+            } else {
+                input.type = 'password';
+                this.classList.remove('ph-eye-closed');
+                this.classList.add('ph-eye');
+            }
+        });
+    });
+
+    // Forgot Password Flow
+    const btnForgot = document.getElementById('btn-forgot-password');
+    const btnBackLogin = document.getElementById('btn-back-login');
+    const forgotView = document.getElementById('forgot-password-view');
+    const loginViewEl = document.getElementById('login-view');
+    
+    if (btnForgot && forgotView && loginViewEl) {
+        btnForgot.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginViewEl.classList.add('hidden');
+            loginViewEl.classList.remove('active');
+            forgotView.classList.remove('hidden');
+        });
+    }
+    
+    if (btnBackLogin && forgotView && loginViewEl) {
+        btnBackLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            forgotView.classList.add('hidden');
+            loginViewEl.classList.remove('hidden');
+            loginViewEl.classList.add('active');
+        });
+    }
+
+    document.getElementById('forgot-password-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('forgot-email').value;
+        const btn = document.getElementById('reset-btn');
+        btn.disabled = true;
+        btn.textContent = 'Mengirim...';
+        
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + window.location.pathname,
+        });
+        
+        if (error) {
+            showToast('Gagal mengirim link reset: ' + error.message, 'error');
+        } else {
+            showToast('Link reset password telah dikirim ke email Anda', 'success');
+            setTimeout(() => {
+                btnBackLogin.click();
+            }, 3000);
+        }
+        btn.disabled = false;
+        btn.textContent = 'Kirim Link Reset';
+    });
+
+    document.getElementById('reset-password-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newPassword = document.getElementById('new-password').value;
+        const btn = document.getElementById('btn-save-new-password');
+        btn.disabled = true;
+        btn.textContent = 'Menyimpan...';
+
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) {
+            showToast('Gagal mengubah password: ' + error.message, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Simpan Password Baru';
+        } else {
+            showToast('Password berhasil diubah, silakan login', 'success');
+            document.getElementById('reset-password-view').classList.add('hidden');
+            loginViewEl.classList.remove('hidden');
+            loginViewEl.classList.add('active');
+            // Log out user so they have to login with new password
+            await supabase.auth.signOut();
+        }
+    });
+
     // Login
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -314,11 +410,10 @@ function setupEventListeners() {
     // Edit Profile Modals
     const openEditProfile = () => {
         const profile = getCurrentProfile();
-        if(profile) {
-            document.getElementById('my-name').value = profile.name || '';
-            document.getElementById('my-password').value = '';
-            document.getElementById('modal-edit-profile').classList.remove('hidden');
-        }
+        document.getElementById('my-name').value = profile?.name || '';
+        document.getElementById('my-old-password').value = '';
+        document.getElementById('my-password').value = '';
+        document.getElementById('modal-edit-profile').classList.remove('hidden');
     };
     document.getElementById('btn-edit-profile-sa')?.addEventListener('click', openEditProfile);
     document.getElementById('btn-edit-profile-pos')?.addEventListener('click', openEditProfile);
@@ -341,6 +436,20 @@ function setupEventListeners() {
                 localStorage.setItem('pos_profile', JSON.stringify(profile)); // Update cache
             }
             if(newPassword) {
+                const oldPassword = document.getElementById('my-old-password').value;
+                if (!oldPassword) throw new Error("Password lama wajib diisi untuk mengubah password");
+                
+                // Verifikasi password lama
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) throw new Error("Sesi tidak valid");
+                
+                const { error: authError } = await supabase.auth.signInWithPassword({
+                    email: user.email,
+                    password: oldPassword
+                });
+                
+                if (authError) throw new Error("Password lama salah");
+
                 const { error } = await supabase.auth.updateUser({ password: newPassword });
                 if(error) throw error;
             }
@@ -447,13 +556,20 @@ function setupEventListeners() {
         }
         
         let filteredOutlets = outletsList;
-        if (role === 'kepala_cabang') {
-            filteredOutlets = outletsList.filter(o => o.branch_id === getCurrentProfile().branch_id);
+        const branchVal = document.getElementById('user-branch').value;
+        if (branchVal) {
+            filteredOutlets = outletsList.filter(o => o.branch_id === branchVal);
         }
         document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
         
         document.getElementById('modal-user').classList.remove('hidden');
         handleRoleSelectionChange();
+    });
+
+    document.getElementById('user-branch').addEventListener('change', (e) => {
+        const branchVal = e.target.value;
+        const filteredOutlets = outletsList.filter(o => o.branch_id === branchVal);
+        document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
     });
 
     document.getElementById('user-role').addEventListener('change', handleRoleSelectionChange);
@@ -592,6 +708,7 @@ async function loadBranches() {
             </td>
         </tr>
     `).join('');
+    enableTableSort('branches-table');
 }
 
 async function loadOutlets() {
@@ -615,6 +732,7 @@ async function loadOutlets() {
             </td>
         </tr>
     `).join('');
+    enableTableSort('outlets-table');
 }
 
 async function loadUsers() {
@@ -640,6 +758,7 @@ async function loadUsers() {
             </td>
         </tr>
     `).join('');
+    enableTableSort('users-table');
 }
 
 async function handleAddBranch(e) {
@@ -787,7 +906,11 @@ window.editUser = async (id) => {
     
     document.getElementById('user-role').value = data.role;
     document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id===data.branch_id?'selected':''}>${b.name}</option>`).join('');
-    document.getElementById('user-outlet').innerHTML = outletsList.map(o => `<option value="${o.id}" ${o.id===data.outlet_id?'selected':''}>${o.name}</option>`).join('');
+    
+    // Initial outlet filter
+    const initialBranch = data.branch_id || (branchesList.length > 0 ? branchesList[0].id : null);
+    const filteredOutlets = outletsList.filter(o => o.branch_id === initialBranch);
+    document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}" ${o.id===data.outlet_id?'selected':''}>${o.name}</option>`).join('');
     
     handleRoleSelectionChange();
     document.getElementById('modal-user').classList.remove('hidden');
@@ -1367,6 +1490,7 @@ async function loadHistory() {
             </td>
         </tr>
     `).join('');
+    enableTableSort('history-table');
 }
 
 window.viewTransactionDetails = async (trxId) => {
@@ -1501,6 +1625,62 @@ async function loadDashboard() {
             </tr>
         `).join('');
     }
+}
+
+// Table Sorting Logic
+function enableTableSort(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    const headers = table.querySelectorAll('th');
+    
+    headers.forEach((header, index) => {
+        // Skip sort for action column
+        if (header.classList.contains('action-col')) return;
+
+        header.style.cursor = 'pointer';
+        header.title = "Klik untuk mengurutkan";
+        
+        let sortAsc = true;
+        
+        header.addEventListener('click', () => {
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Remove sort icons from other headers
+            headers.forEach(h => {
+                const icon = h.querySelector('.sort-icon');
+                if (icon) icon.remove();
+            });
+
+            // Add sort icon to current header
+            const icon = document.createElement('i');
+            icon.className = `sort-icon ph ph-caret-${sortAsc ? 'up' : 'down'}`;
+            icon.style.marginLeft = '5px';
+            header.appendChild(icon);
+
+            rows.sort((a, b) => {
+                const cellA = a.querySelectorAll('td')[index]?.textContent.trim() || '';
+                const cellB = b.querySelectorAll('td')[index]?.textContent.trim() || '';
+
+                // Check if numeric
+                const numA = parseFloat(cellA.replace(/[^0-9.-]+/g,""));
+                const numB = parseFloat(cellB.replace(/[^0-9.-]+/g,""));
+
+                if (!isNaN(numA) && !isNaN(numB) && cellA.match(/[0-9]/) && cellB.match(/[0-9]/)) {
+                    return sortAsc ? numA - numB : numB - numA;
+                }
+
+                return sortAsc ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+            });
+
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+            
+            sortAsc = !sortAsc;
+        });
+    });
 }
 
 // Start App

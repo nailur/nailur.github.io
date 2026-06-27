@@ -726,6 +726,7 @@ body {
         align-items: stretch;
         gap: 15px;
         padding: 20px;
+        padding-bottom: 80px; /* Fix for iOS logout button obscured */
         transition: left 0.3s ease;
         overflow-y: auto;
         box-shadow: 4px 0 20px rgba(0,0,0,0.1);
@@ -782,6 +783,13 @@ body {
         flex-direction: column;
         gap: 10px;
         text-align: center;
+    }
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    .filter-group input, .filter-group button {
+        width: 100%;
     }
 }
 
