@@ -474,6 +474,7 @@ function setupEventListeners() {
             e.currentTarget.classList.add('active');
             const targetId = e.currentTarget.getAttribute('data-target');
             document.getElementById(targetId).classList.remove('hidden');
+            localStorage.setItem('management_active_tab', targetId);
         });
     });
 
@@ -704,14 +705,28 @@ async function initManagement() {
         document.getElementById('management-title').textContent = 'Panel Kepala Toko';
     }
     
-    // Klik tab pertama yang tersedia
-    if (!tabBranches.classList.contains('hidden')) {
-        tabBranches.click();
-    } else if (!tabOutlets.classList.contains('hidden')) {
-        tabOutlets.click();
-    } else {
-        document.querySelector('.tab-btn[data-target="users-tab"]').click();
+    // Restore active sub-tab or click the first available
+    const savedMgmtTab = localStorage.getItem('management_active_tab');
+    let tabToClick = null;
+    
+    if (savedMgmtTab) {
+        const btn = document.querySelector(`.tab-btn[data-target="${savedMgmtTab}"]`);
+        if (btn && !btn.classList.contains('hidden')) {
+            tabToClick = btn;
+        }
     }
+    
+    if (!tabToClick) {
+        if (!tabBranches.classList.contains('hidden')) {
+            tabToClick = tabBranches;
+        } else if (!tabOutlets.classList.contains('hidden')) {
+            tabToClick = tabOutlets;
+        } else {
+            tabToClick = document.querySelector('.tab-btn[data-target="users-tab"]');
+        }
+    }
+    
+    if (tabToClick) tabToClick.click();
 
     if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadBranches();
     if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadOutlets();
