@@ -385,13 +385,7 @@ function setupEventListeners() {
         });
     }
 
-    // Payment method change -> recalculate cart
-    const paymentMethodSelect = document.getElementById('payment-method');
-    if (paymentMethodSelect) {
-        paymentMethodSelect.addEventListener('change', () => {
-            renderCart();
-        });
-    }
+
 
     // Modal Close
     document.querySelectorAll('[data-close]').forEach(btn => {
@@ -618,7 +612,9 @@ function setupEventListeners() {
     document.getElementById('form-product').addEventListener('submit', handleSaveProduct);
     document.getElementById('product-search').addEventListener('input', (e) => renderProducts(e.target.value));
     
-    document.getElementById('modal-payment-method').addEventListener('change', calculateChange);
+    document.getElementById('modal-payment-method').addEventListener('change', () => {
+        renderCart();
+    });
     document.getElementById('modal-cash-received').addEventListener('input', calculateChange);
     document.getElementById('btn-checkout').addEventListener('click', openCheckoutModal);
     document.getElementById('btn-confirm-payment').addEventListener('click', finalizeCheckout);
@@ -1440,6 +1436,11 @@ function renderCart() {
 
 function calculateChange() {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // Update total in modal
+    const modalTotalEl = document.getElementById('modal-checkout-total');
+    if (modalTotalEl) modalTotalEl.textContent = `Rp ${total.toLocaleString('id-ID')}`;
+    
     const method = document.getElementById('modal-payment-method').value;
     const cashGroup = document.getElementById('modal-cash-input-group');
     const changeEl = document.getElementById('modal-cart-change');
@@ -1471,14 +1472,15 @@ function calculateChange() {
 function openCheckoutModal() {
     if (cart.length === 0 || !activeOutletId) return;
     
+    // Reset payment method first so renderCart uses the correct price
+    document.getElementById('modal-payment-method').value = 'Tunai';
+    document.getElementById('modal-cash-received').value = '';
+    
     // Pastikan update harga sebelum total dihitung
     renderCart();
 
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     document.getElementById('modal-checkout-total').textContent = `Rp ${total.toLocaleString('id-ID')}`;
-    
-    document.getElementById('modal-payment-method').value = 'Tunai';
-    document.getElementById('modal-cash-received').value = '';
     
     calculateChange(); // update UI elements in modal
     document.getElementById('modal-checkout').classList.remove('hidden');
