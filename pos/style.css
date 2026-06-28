@@ -318,6 +318,7 @@ body {
 .pos-view-container {
     display: flex;
     flex-direction: column;
+    height: 100vh; /* Fallback for browsers that do not support dvh */
     height: 100dvh; /* use dvh for mobile browsers */
 }
 
@@ -335,6 +336,7 @@ body {
     flex-direction: column;
     padding: 16px;
     height: 100%;
+    min-height: 0;
 }
 .pos-nav {
     display: flex;
@@ -404,6 +406,7 @@ body {
 
 .catalog-grid {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
@@ -501,7 +504,9 @@ body {
 
 .cart-items {
     flex: 1;
+    min-height: 0;
     padding: 20px;
+    overflow-y: auto;
 }
 .empty-cart {
     height: 100%;
