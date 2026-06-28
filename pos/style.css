@@ -643,6 +643,13 @@ body {
     }
     
     .receipt-header { text-align: center; margin-bottom: 5px; }
+    .receipt-logo {
+        max-width: 40mm; /* Atur lebar max agar pas di kertas struk */
+        max-height: 40mm;
+        margin: 0 auto 5px auto;
+        display: block;
+        filter: grayscale(100%); /* Biasanya printer thermal hanya B/W */
+    }
     .receipt-header h3 { font-size: 14px; font-weight: bold; margin: 0 0 2px 0; }
     .receipt-header p { margin: 0; font-size: 10px; }
     

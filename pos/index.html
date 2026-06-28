@@ -651,6 +651,10 @@
                     <label for="outlet-address">Alamat</label>
                     <textarea id="outlet-address" rows="3" placeholder="Jl. Sudirman No. 1"></textarea>
                 </div>
+                <div class="input-group">
+                    <label for="outlet-phone">Nomor Telepon</label>
+                    <input type="text" id="outlet-phone" placeholder="08123456789">
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" data-close="modal-outlet">Batal</button>
                     <button type="submit" class="btn btn-primary" id="btn-save-outlet">Simpan</button>
@@ -869,6 +873,11 @@
                 </div>
 
                 <div class="input-group">
+                    <label>Nama Customer (Opsional)</label>
+                    <input type="text" id="modal-customer-name" placeholder="Cth: Budi" class="input-lg" style="width: 100%;">
+                </div>
+
+                <div class="input-group">
                     <label>Metode Pembayaran</label>
                     <select id="modal-payment-method" class="input-lg" style="width: 100%;">
                         <option value="Tunai">Tunai</option>
@@ -902,8 +911,10 @@
     <div id="receipt-view" class="receipt-container">
         <div class="receipt">
             <div class="receipt-header">
+                <img src="logo.png" alt="Logo" class="receipt-logo" onerror="this.style.display='none'">
                 <h3 id="receipt-store-name">NAMA TOKO</h3>
                 <p id="receipt-store-address">Alamat Toko</p>
+                <p id="receipt-store-phone">No. Telp</p>
                 <div class="receipt-divider"></div>
             </div>
 
@@ -916,6 +927,9 @@
                 </div>
                 <div class="info-row">
                     <span>Kasir: <span id="receipt-cashier"></span></span>
+                </div>
+                <div class="info-row" id="receipt-customer-row" style="display: none;">
+                    <span>Customer: <span id="receipt-customer-name"></span></span>
                 </div>
             </div>
 
