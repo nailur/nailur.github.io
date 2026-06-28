@@ -1443,11 +1443,13 @@ function calculateChange() {
     
     const method = document.getElementById('modal-payment-method').value;
     const cashGroup = document.getElementById('modal-cash-input-group');
+    const changeGroup = document.getElementById('modal-change-group');
     const changeEl = document.getElementById('modal-cart-change');
     const btn = document.getElementById('btn-confirm-payment');
     
     if (method === 'Tunai') {
         cashGroup.classList.remove('hidden');
+        if (changeGroup) changeGroup.classList.remove('hidden');
         const receivedStr = document.getElementById('modal-cash-received').value;
         const received = receivedStr ? parseFloat(receivedStr) : 0;
         const change = received - total;
@@ -1463,6 +1465,7 @@ function calculateChange() {
         }
     } else {
         cashGroup.classList.add('hidden');
+        if (changeGroup) changeGroup.classList.add('hidden');
         changeEl.textContent = 'Rp 0';
         changeEl.className = 'text-success';
         btn.disabled = total <= 0;
