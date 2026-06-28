@@ -1397,7 +1397,7 @@ function renderCart() {
     const subtotalEl = document.getElementById('cart-subtotal');
     const totalEl = document.getElementById('cart-total');
     
-    const method = document.getElementById('payment-method').value;
+    const method = document.getElementById('modal-payment-method').value;
     
     // Update effective price in cart items based on payment method
     cart.forEach(item => {
