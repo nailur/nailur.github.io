@@ -618,9 +618,10 @@ function setupEventListeners() {
     document.getElementById('form-product').addEventListener('submit', handleSaveProduct);
     document.getElementById('product-search').addEventListener('input', (e) => renderProducts(e.target.value));
     
-    document.getElementById('payment-method').addEventListener('change', calculateChange);
-    document.getElementById('cash-received').addEventListener('input', calculateChange);
-    document.getElementById('btn-checkout').addEventListener('click', checkout);
+    document.getElementById('modal-payment-method').addEventListener('change', calculateChange);
+    document.getElementById('modal-cash-received').addEventListener('input', calculateChange);
+    document.getElementById('btn-checkout').addEventListener('click', openCheckoutModal);
+    document.getElementById('btn-confirm-payment').addEventListener('click', finalizeCheckout);
     
     // Set default history and attendance dates to today and listen for changes
     const dIds = ['history-date-start', 'history-date-end', 'attendance-date-start', 'attendance-date-end', 'dashboard-date-start', 'dashboard-date-end'];
@@ -1439,14 +1440,14 @@ function renderCart() {
 
 function calculateChange() {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const method = document.getElementById('payment-method').value;
-    const cashGroup = document.getElementById('cash-input-group');
-    const changeEl = document.getElementById('cart-change');
-    const btn = document.getElementById('btn-checkout');
+    const method = document.getElementById('modal-payment-method').value;
+    const cashGroup = document.getElementById('modal-cash-input-group');
+    const changeEl = document.getElementById('modal-cart-change');
+    const btn = document.getElementById('btn-confirm-payment');
     
     if (method === 'Tunai') {
         cashGroup.classList.remove('hidden');
-        const receivedStr = document.getElementById('cash-received').value;
+        const receivedStr = document.getElementById('modal-cash-received').value;
         const received = receivedStr ? parseFloat(receivedStr) : 0;
         const change = received - total;
         
@@ -1467,22 +1468,35 @@ function calculateChange() {
     }
 }
 
-async function checkout() {
+function openCheckoutModal() {
     if (cart.length === 0 || !activeOutletId) return;
     
     // Pastikan update harga sebelum total dihitung
     renderCart();
 
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const method = document.getElementById('payment-method').value;
+    document.getElementById('modal-checkout-total').textContent = `Rp ${total.toLocaleString('id-ID')}`;
+    
+    document.getElementById('modal-payment-method').value = 'Tunai';
+    document.getElementById('modal-cash-received').value = '';
+    
+    calculateChange(); // update UI elements in modal
+    document.getElementById('modal-checkout').classList.remove('hidden');
+}
+
+async function finalizeCheckout() {
+    if (cart.length === 0 || !activeOutletId) return;
+    
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const method = document.getElementById('modal-payment-method').value;
     let received = total;
     
     if (method === 'Tunai') {
-        received = parseFloat(document.getElementById('cash-received').value) || 0;
+        received = parseFloat(document.getElementById('modal-cash-received').value) || 0;
         if (received < total) return showToast('Uang tunai kurang!', 'error');
     }
 
-    const btn = document.getElementById('btn-checkout');
+    const btn = document.getElementById('btn-confirm-payment');
     btn.disabled = true;
     btn.textContent = 'Memproses...';
 
@@ -1497,7 +1511,7 @@ async function checkout() {
 
     if (trxError) {
         showToast('Gagal menyimpan transaksi', 'error');
-        btn.disabled = false; btn.textContent = 'Bayar & Cetak'; return;
+        btn.disabled = false; btn.textContent = 'Konfirmasi & Cetak'; return;
     }
 
     const items = cart.map(item => ({
@@ -1515,8 +1529,17 @@ async function checkout() {
     }
     const change = received - total;
     const cartClone = [...cart];
-
-    // Persiapkan fungsi cetak untuk tombol success modal
+    
+    // Close Checkout Modal
+    document.getElementById('modal-checkout').classList.add('hidden');
+    
+    // Reset Cart
+    cart = [];
+    renderCart();
+    
+    // Reset btn confirm
+    btn.textContent = 'Konfirmasi & Cetak';
+    btn.disabled = false;
     document.getElementById('btn-success-print').onclick = () => {
         printReceipt(trxData.id, cartClone, total, received, method);
     };

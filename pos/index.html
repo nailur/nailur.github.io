@@ -392,17 +392,17 @@
                     </div>
 
                     <button class="btn btn-icon hidden" id="btn-management" title="Manajemen Sistem"
-                        style="justify-content: flex-start; padding: 8px 10px;">
+                        style="justify-content: flex-start;">
                         <i class="ph ph-gear"></i>
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Manajemen Sistem</span>
                     </button>
                     <button class="btn btn-icon" id="btn-edit-profile-pos" title="Edit Profile"
-                        style="justify-content: flex-start; padding: 8px 10px;">
+                        style="justify-content: flex-start;">
                         <i class="ph ph-user-circle"></i>
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Edit Profile</span>
                     </button>
                     <button class="btn btn-icon btn-logout" title="Logout"
-                        style="justify-content: flex-start; padding: 8px 10px;">
+                        style="justify-content: flex-start;">
                         <i class="ph ph-sign-out"></i>
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Keluar</span>
                     </button>
@@ -458,28 +458,8 @@
                             <span id="cart-total">Rp 0</span>
                         </div>
 
-                        <div class="payment-section" style="margin-bottom: 15px;">
-                            <label style="margin-bottom:5px;">Metode Pembayaran</label>
-                            <select id="payment-method" class="input-lg" style="margin-bottom:10px;">
-                                <option value="Tunai">Tunai</option>
-                                <option value="QRIS">QRIS</option>
-                                <option value="Go Food">Go Food</option>
-                                <option value="Grab Food">Grab Food</option>
-                                <option value="Shopee Food">Shopee Food</option>
-                            </select>
-
-                            <div id="cash-input-group">
-                                <label>Tunai Diterima</label>
-                                <input type="number" id="cash-received" placeholder="0" class="input-lg">
-                            </div>
-                        </div>
-                        <div class="summary-row">
-                            <span>Kembalian</span>
-                            <span id="cart-change" class="text-success">Rp 0</span>
-                        </div>
-
                         <button class="btn btn-primary btn-block btn-checkout" id="btn-checkout" disabled>
-                            Bayar & Cetak
+                            Lanjut Bayar
                         </button>
                     </div>
                 </div>
@@ -871,6 +851,47 @@
             <div class="modal-actions" style="justify-content: center; gap: 15px;">
                 <button type="button" class="btn btn-secondary" id="btn-success-close">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btn-success-print">Cetak Struk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Checkout (Payment) -->
+    <div id="modal-checkout" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>Konfirmasi Pembayaran</h2>
+                <button class="btn btn-icon" data-close="modal-checkout"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: var(--radius-md); margin-bottom: 20px; text-align: center;">
+                    <span style="font-size: 0.9rem; color: var(--text-muted);">Total Tagihan</span>
+                    <div id="modal-checkout-total" style="font-size: 2rem; font-weight: 700; color: var(--primary);">Rp 0</div>
+                </div>
+
+                <div class="input-group">
+                    <label>Metode Pembayaran</label>
+                    <select id="modal-payment-method" class="input-lg" style="width: 100%;">
+                        <option value="Tunai">Tunai</option>
+                        <option value="QRIS">QRIS</option>
+                        <option value="Go Food">Go Food</option>
+                        <option value="Grab Food">Grab Food</option>
+                        <option value="Shopee Food">Shopee Food</option>
+                    </select>
+                </div>
+
+                <div class="input-group" id="modal-cash-input-group">
+                    <label>Tunai Diterima</label>
+                    <input type="number" id="modal-cash-received" placeholder="0" class="input-lg" style="width: 100%;">
+                </div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 600; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border);">
+                    <span>Kembalian</span>
+                    <span id="modal-cart-change" class="text-success">Rp 0</span>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 25px;">
+                <button type="button" class="btn btn-secondary" data-close="modal-checkout">Batal</button>
+                <button type="button" class="btn btn-primary" id="btn-confirm-payment">Konfirmasi & Cetak</button>
             </div>
         </div>
     </div>
