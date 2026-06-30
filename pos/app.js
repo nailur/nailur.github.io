@@ -2024,8 +2024,8 @@ async function loadAttendanceHistory() {
 
     tbody.innerHTML = data.map(record => {
         const name = record.name || record.email || 'Unknown';
+        const roleName = record.role || '-';
         const branchName = record.branch_name || '-';
-        const outletName = record.outlet_name || 'Unknown';
         const dateStr = new Date(record.record_date).toLocaleDateString('id-ID');
         const clockIn = record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-';
         const clockOut = record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-';
@@ -2038,8 +2038,8 @@ async function loadAttendanceHistory() {
             <tr>
                 <td>${dateStr}</td>
                 <td><strong>${name}</strong></td>
+                <td style="text-transform: capitalize;">${roleName.replace('_', ' ')}</td>
                 <td>${branchName}</td>
-                <td>${outletName}</td>
                 <td>${clockIn}</td>
                 <td>${clockOut}</td>
                 <td>${statusBadge}</td>
@@ -2078,9 +2078,9 @@ window.exportAttendanceExcel = async () => {
 
         const exportRows = data.map(record => ({
             'Tanggal': new Date(record.record_date).toLocaleDateString('id-ID'),
-            'Nama Kasir': record.name || record.email || '-',
+            'Nama Pegawai': record.name || record.email || '-',
+            'Role': (record.role || '-').replace('_', ' ').toUpperCase(),
             'Cabang': record.branch_name || '-',
-            'Outlet': record.outlet_name || '-',
             'Jam Masuk': record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
             'Jam Pulang': record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
             'Status': record.status
@@ -2093,8 +2093,8 @@ window.exportAttendanceExcel = async () => {
         const colWidths = [
             { wch: 15 }, // Tanggal
             { wch: 25 }, // Nama
+            { wch: 15 }, // Role
             { wch: 20 }, // Cabang
-            { wch: 20 }, // Outlet
             { wch: 15 }, // In
             { wch: 15 }, // Out
             { wch: 10 }  // Status
