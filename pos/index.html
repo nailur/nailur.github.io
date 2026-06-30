@@ -364,7 +364,7 @@
 
             <!-- Top Navbar / Sidebar on Mobile -->
             <nav class="pos-nav glass-panel" id="pos-sidebar">
-                <div class="nav-left" style="flex: 1; min-width: 200px;">
+                <div class="nav-left">
                     <div class="nav-brand">
                         <i class="ph-duotone ph-storefront"></i>
                         <span id="pos-outlet-name">Loading...</span>
@@ -372,17 +372,15 @@
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: center; align-items: center; flex: 1; min-width: 350px;">
-                    <div class="pos-tabs-nav tabs" id="pos-tabs-container">
-                        <button class="pos-nav-btn active" data-target="pos-tab-content">Kasir</button>
-                        <button class="pos-nav-btn" data-target="history-tab-content">Riwayat Transaksi</button>
-                        <button class="pos-nav-btn hidden" data-target="attendance-history-tab-content"
-                            id="nav-attendance">Riwayat Absensi</button>
-                        <button class="pos-nav-btn" data-target="dashboard-tab-content">Dashboard</button>
-                    </div>
+                <div class="pos-tabs-nav tabs" id="pos-tabs-container">
+                    <button class="pos-nav-btn active" data-target="pos-tab-content">Kasir</button>
+                    <button class="pos-nav-btn" data-target="history-tab-content">Riwayat Transaksi</button>
+                    <button class="pos-nav-btn hidden" data-target="attendance-history-tab-content"
+                        id="nav-attendance">Riwayat Absensi</button>
+                    <button class="pos-nav-btn" data-target="dashboard-tab-content">Dashboard</button>
                 </div>
 
-                <div class="nav-right" style="gap: 5px; flex: 1; justify-content: flex-end; min-width: 350px;">
+                <div class="nav-right" style="gap: 5px;">
                     <!-- Clock Time Widget (Moved to Navbar) -->
                     <div id="attendance-widget">
                         <div style="text-align: right; line-height: 1.2;" class="hide-mobile">
@@ -392,7 +390,7 @@
                         <div id="attendance-time" style="font-size: 1.2rem; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums;">
                             00:00:00
                         </div>
-                        <button class="btn btn-primary" id="btn-clock-time" style="padding: 6px 16px; border-radius: var(--radius-full); font-size: 0.85rem;">Clock In</button>
+                        <button class="btn btn-primary" id="btn-clock-time" style="padding: 6px 16px; border-radius: var(--radius-full); font-size: 0.85rem; white-space: nowrap;">Clock In</button>
                     </div>
                     <button class="btn btn-icon" id="btn-connect-printer" title="Koneksikan Printer Bluetooth (Terputus)" style="margin-right: 5px;">
                         <i class="ph ph-printer" id="printer-status-icon" style="color:var(--danger); font-size: 1.2rem;"></i> 
