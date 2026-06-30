@@ -1587,6 +1587,10 @@ async function finalizeCheckout() {
         printReceipt(trxData.id, cartClone, total, received, method, trxData.created_at, null, customer_name);
     };
     
+    document.getElementById('btn-success-print-raw').onclick = () => {
+        printReceiptRawBT(trxData.id, cartClone, total, received, method, trxData.created_at, null, customer_name);
+    };
+    
     document.getElementById('btn-success-close').onclick = () => {
         document.getElementById('modal-checkout-success').classList.add('hidden');
     };
@@ -1652,6 +1656,67 @@ function printReceipt(trxId, cartItems, total, received, method, trxDate = null,
     document.getElementById('receipt-change').textContent = change.toLocaleString('id-ID');
 
     window.print();
+}
+
+function printReceiptRawBT(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null) {
+    const dateStr = trxDate ? new Date(trxDate).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
+    const change = received - total;
+    
+    const activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+    const outletName = activeOutlet.name || 'Toko Kami';
+    
+    let displayName = cashierName;
+    if (!displayName) {
+        const profile = getCurrentProfile();
+        displayName = profile.name || profile.email;
+    }
+
+    let text = `[C]<b>${outletName}</b>\n`;
+    if(activeOutlet.address) text += `[C]${activeOutlet.address}\n`;
+    if(activeOutlet.phone) text += `[C]${activeOutlet.phone}\n`;
+    text += `--------------------------------\n`;
+    text += `No      : ${trxId.substring(0,8)}\n`;
+    text += `Tanggal : ${dateStr}\n`;
+    text += `Kasir   : ${displayName}\n`;
+    if (customerName) {
+        text += `Customer: ${customerName}\n`;
+    }
+    text += `Metode  : ${method}\n`;
+    text += `--------------------------------\n`;
+    
+    cartItems.forEach(item => {
+        text += `${item.name}\n`;
+        const qtyStr = `${item.quantity}x`;
+        const priceStr = item.price.toLocaleString('id-ID');
+        const subtotalStr = (item.price * item.quantity).toLocaleString('id-ID');
+        
+        let line = ` ${qtyStr}   ${priceStr}`;
+        let spaces = 32 - line.length - subtotalStr.length;
+        if(spaces < 1) spaces = 1;
+        line += " ".repeat(spaces) + subtotalStr;
+        text += `${line}\n`;
+    });
+    
+    text += `--------------------------------\n`;
+    
+    const totalStr = total.toLocaleString('id-ID');
+    text += `Total   : ${" ".repeat(32 - 10 - totalStr.length)}${totalStr}\n`;
+    
+    const receivedStr = received.toLocaleString('id-ID');
+    text += `Tunai   : ${" ".repeat(32 - 10 - receivedStr.length)}${receivedStr}\n`;
+    
+    const changeStr = change.toLocaleString('id-ID');
+    text += `Kembali : ${" ".repeat(32 - 10 - changeStr.length)}${changeStr}\n`;
+    
+    text += `--------------------------------\n`;
+    text += `[C]Terima Kasih\n`;
+    text += `[C]Follow Us On @D.OneChicken\n`;
+    text += `[C]#ChickenRasaNo1\n`;
+    text += `\n\n`; // Add paper feed
+
+    // Membuka aplikasi RawBT dengan intent
+    const rawbt_url = "intent:" + encodeURI(text) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+    window.location.href = rawbt_url;
 }
 
 async function exportToExcel() {
