@@ -1584,6 +1584,11 @@ async function finalizeCheckout() {
     btn.textContent = 'Konfirmasi & Cetak';
     btn.disabled = false;
     
+    // Auto cetak RawBT jika di perangkat Android
+    if (/android/i.test(navigator.userAgent)) {
+        printReceiptRawBT(trxData.id, cartClone, total, received, method, trxData.created_at, null, customer_name);
+    }
+    
     // Tampilkan Modal Success
     const changeAmountEl = document.getElementById('success-change-amount');
     if (changeAmountEl) changeAmountEl.textContent = 'Rp ' + change.toLocaleString('id-ID');
