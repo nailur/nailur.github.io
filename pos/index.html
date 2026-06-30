@@ -391,10 +391,10 @@
                         </div>
                         <button class="btn btn-primary" id="btn-clock-time" style="padding: 6px 16px; border-radius: var(--radius-full); font-size: 0.85rem;">Clock In</button>
                     </div>
-                    <div style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 15px;">
-                        <button class="btn btn-outline" id="btn-connect-printer" style="padding: 4px 10px; font-size: 0.8rem; border-color: var(--border-color);">Koneksikan Printer</button>
-                        <div id="printer-status-text" style="font-size: 0.7rem; margin-top: 2px;"><span style="color:var(--danger)">🔴 Tidak Terhubung</span></div>
-                    </div>
+                    <button class="btn btn-outline" id="btn-connect-printer" title="Koneksikan Printer Bluetooth" style="padding: 6px 12px; border-radius: var(--radius-full); font-size: 0.8rem; border-color: var(--border-color); display: flex; align-items: center; gap: 5px; margin-right: 5px;">
+                        <i class="ph ph-printer"></i> 
+                        <span id="printer-status-text" style="color:var(--danger); font-weight: 500;">Terputus</span>
+                    </button>
 
                     <button class="btn btn-icon hidden" id="btn-management" title="Manajemen Sistem"
                         style="justify-content: flex-start;">

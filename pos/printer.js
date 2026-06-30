@@ -7,14 +7,13 @@ let isConnected = false;
 // Optional: you can update the UI directly from here or use callbacks
 function updatePrinterStatusUI(connected, deviceName = '') {
     const statusEl = document.getElementById('printer-status-text');
-    const btnEl = document.getElementById('btn-connect-printer');
     if (statusEl) {
         if (connected) {
-            statusEl.innerHTML = `<span style="color:var(--success)">🟢 Terhubung: ${deviceName}</span>`;
-            if (btnEl) btnEl.textContent = 'Putuskan Printer';
+            statusEl.textContent = deviceName || 'Terhubung';
+            statusEl.style.color = 'var(--success)';
         } else {
-            statusEl.innerHTML = `<span style="color:var(--danger)">🔴 Tidak Terhubung</span>`;
-            if (btnEl) btnEl.textContent = 'Koneksikan Printer';
+            statusEl.textContent = 'Terputus';
+            statusEl.style.color = 'var(--danger)';
         }
     }
 }
