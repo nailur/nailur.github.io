@@ -1053,6 +1053,26 @@ async function initPos() {
     if (btnConnectPrinter) {
         btnConnectPrinter.onclick = connectPrinter;
     }
+    
+    // Bind hard refresh button
+    const btnHardRefresh = document.getElementById('btn-hard-refresh');
+    if (btnHardRefresh) {
+        btnHardRefresh.onclick = async () => {
+            if (confirm('Muat ulang aplikasi (Hard Refresh)?')) {
+                // Clear service worker caches if exist
+                if ('caches' in window) {
+                    try {
+                        const cacheNames = await caches.keys();
+                        for (let name of cacheNames) {
+                            await caches.delete(name);
+                        }
+                    } catch(e) {}
+                }
+                // Reload page
+                window.location.reload(true);
+            }
+        };
+    }
 }
 
 function generateOrderId() {
