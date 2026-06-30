@@ -254,6 +254,7 @@
                                         <th>Role / Jabatan</th>
                                         <th>Cabang (Opsional)</th>
                                         <th>Outlet (Opsional)</th>
+                                        <th>Status</th>
                                         <th style="width: 120px;">Aksi</th>
                                     </tr>
                                 </thead>
@@ -696,6 +697,13 @@
                         <option value="kepala_cabang">Kepala Cabang</option>
                         <option value="kepala_toko">Kepala Toko</option>
                         <option value="kasir">Kasir</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="user-status">Status</label>
+                    <select id="user-status" required>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
                     </select>
                 </div>
                 <div class="input-group hidden" id="group-user-branch">

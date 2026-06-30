@@ -17,6 +17,14 @@ export async function checkSession() {
             await loadProfile(currentUser.id);
         }
         
+        if (currentProfile && currentProfile.status === 'inactive') {
+            await supabase.auth.signOut();
+            currentUser = null;
+            currentProfile = null;
+            localStorage.removeItem('pos_profile');
+            return null; // Force logout
+        }
+
         return { user: currentUser, profile: currentProfile };
     }
     return null;
@@ -51,6 +59,16 @@ export async function login(email, password) {
     
     currentUser = data.user;
     await loadProfile(currentUser.id);
+
+    if (currentProfile && currentProfile.status === 'inactive') {
+        showToast('Akun Anda telah dinonaktifkan', 'error');
+        await supabase.auth.signOut();
+        currentUser = null;
+        currentProfile = null;
+        localStorage.removeItem('pos_profile');
+        return null;
+    }
+
     return { user: currentUser, profile: currentProfile };
 }
 

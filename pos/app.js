@@ -534,6 +534,7 @@ function setupEventListeners() {
         document.getElementById('user-email').disabled = false;
         document.getElementById('user-password').placeholder = 'Minimal 6 karakter';
         document.getElementById('user-password').setAttribute('required', 'true');
+        document.getElementById('user-status').value = 'active';
         document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
         filterUserOutlets();
         
@@ -800,6 +801,7 @@ async function loadUsers() {
             <td><span class="user-badge">${u.role}</span></td>
             <td>${u.branches?.name || '-'}</td>
             <td>${u.outlets?.name || '-'}</td>
+            <td>${u.status === 'inactive' ? '<span class="user-badge" style="background:var(--danger)">Inactive</span>' : '<span class="user-badge" style="background:var(--success)">Active</span>'}</td>
             <td>
                 <button class="btn btn-icon" style="color:var(--primary)" onclick="editUser('${u.id}')"><i class="ph ph-pencil-simple"></i></button>
                 <button class="btn btn-icon" onclick="deleteUser('${u.id}')"><i class="ph ph-trash"></i></button>
@@ -903,6 +905,7 @@ async function handleAddUser(e) {
     const name = document.getElementById('user-name').value;
     const password = document.getElementById('user-password').value;
     const role = document.getElementById('user-role').value;
+    const status = document.getElementById('user-status').value;
     let branch_id = null;
     let outlet_id = null;
 
@@ -930,7 +933,7 @@ async function handleAddUser(e) {
 
     if (id) {
         // Edit User (hanya profile, email/password tidak diubah dari UI ini)
-        const { error } = await supabase.from('profiles').update({ name, role, branch_id, outlet_id }).eq('id', id);
+        const { error } = await supabase.from('profiles').update({ name, role, branch_id, outlet_id, status }).eq('id', id);
         if (error) showToast('Gagal update: ' + error.message, 'error');
         else { showToast('Pegawai diperbarui!', 'success'); document.getElementById('modal-user').classList.add('hidden'); loadUsers(); }
         btn.disabled = false; btn.textContent = 'Simpan';
@@ -949,7 +952,7 @@ async function handleAddUser(e) {
 
         setTimeout(async () => {
             const { error: updateError } = await supabase.from('profiles')
-                .update({ name, role, branch_id, outlet_id })
+                .update({ name, role, branch_id, outlet_id, status })
                 .eq('id', authData.user.id);
                 
             if (updateError) showToast('Gagal set profile: ' + updateError.message, 'error');
@@ -973,6 +976,7 @@ window.editUser = async (id) => {
     document.getElementById('user-password').removeAttribute('required');
     
     document.getElementById('user-role').value = data.role;
+    document.getElementById('user-status').value = data.status || 'active';
     let dataBranchId = data.branch_id;
     if (!dataBranchId && data.outlet_id) {
         const out = outletsList.find(o => o.id === data.outlet_id);
@@ -994,11 +998,18 @@ window.editUser = async (id) => {
 };
 
 window.deleteUser = async (id) => {
+    const profile = getCurrentProfile();
+    if(id === profile?.id) return showToast('Tidak dapat menghapus diri sendiri', 'error');
+
     if(!confirm('Hapus pegawai ini? Aksesnya akan dicabut.')) return;
     
     // Validasi Transaksi (kasir)
     const { count: txCount } = await supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('cashier_id', id);
     if(txCount > 0) return showToast('User tidak bisa dihapus karena memiliki riwayat transaksi!', 'error');
+
+    // Validasi Absensi
+    const { count: attCount } = await supabase.from('attendance').select('*', { count: 'exact', head: true }).eq('profile_id', id);
+    if(attCount > 0) return showToast('User tidak bisa dihapus karena memiliki riwayat absensi!', 'error');
 
     // We try to delete from auth.admin if available, otherwise just delete profile
     try {
