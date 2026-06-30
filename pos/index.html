@@ -679,12 +679,12 @@
                 </div>
                 <div class="input-group">
                     <label for="user-email">Email</label>
-                    <input type="email" id="user-email" required placeholder="email@gmail.com">
+                    <input type="email" id="user-email" required placeholder="">
                 </div>
                 <div class="input-group">
-                    <label for="user-password">Password Sementara</label>
+                    <label for="user-password">Password</label>
                     <div class="password-wrapper" style="position: relative;">
-                        <input type="password" id="user-password" required placeholder="Minimal 6 karakter"
+                        <input type="password" id="user-password" required placeholder=""
                             style="width: 100%; padding-right: 40px;">
                         <i class="ph ph-eye toggle-password"
                             style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
@@ -737,30 +737,30 @@
                 <input type="hidden" id="product-id">
                 <div class="input-group">
                     <label for="product-name">Nama Produk</label>
-                    <input type="text" id="product-name" required placeholder="Kopi Susu">
+                    <input type="text" id="product-name" required placeholder="">
                 </div>
                 <div class="input-group">
                     <label for="product-price">Harga Reguler (Tunai/QRIS) (Rp)</label>
-                    <input type="number" id="product-price" required placeholder="15000">
+                    <input type="number" id="product-price" required placeholder="">
                 </div>
                 <div class="input-group">
-                    <label for="product-price-gofood">Harga GoFood (Rp) - Opsional</label>
-                    <input type="number" id="product-price-gofood" placeholder="15000">
+                    <label for="product-price-gofood">Harga GoFood (Rp)</label>
+                    <input type="number" id="product-price-gofood" placeholder="">
                 </div>
                 <div class="input-group">
-                    <label for="product-price-grabfood">Harga GrabFood (Rp) - Opsional</label>
-                    <input type="number" id="product-price-grabfood" placeholder="15000">
+                    <label for="product-price-grabfood">Harga GrabFood (Rp)</label>
+                    <input type="number" id="product-price-grabfood" placeholder="">
                 </div>
                 <div class="input-group">
-                    <label for="product-price-shopeefood">Harga ShopeeFood (Rp) - Opsional</label>
-                    <input type="number" id="product-price-shopeefood" placeholder="15000">
+                    <label for="product-price-shopeefood">Harga ShopeeFood (Rp)</label>
+                    <input type="number" id="product-price-shopeefood" placeholder="">
                 </div>
                 <div class="input-group">
                     <label for="product-stock">Stok</label>
                     <input type="number" id="product-stock" required placeholder="100">
                 </div>
                 <div class="input-group">
-                    <label for="product-image">Foto Produk (Opsional)</label>
+                    <label for="product-image">Foto Produk</label>
                     <input type="file" id="product-image" accept="image/*" style="padding: 8px;">
                     <div id="product-image-preview-container" class="hidden"
                         style="margin-top: 10px; text-align: center;">
@@ -837,7 +837,7 @@
                     </div>
                 </div>
                 <div class="input-group">
-                    <label for="my-password">Password Baru (Opsional)</label>
+                    <label for="my-password">Password Baru</label>
                     <div class="password-wrapper" style="position: relative;">
                         <input type="password" id="my-password" placeholder="Isi jika ingin ganti password">
                         <i class="ph ph-eye toggle-password"
@@ -857,9 +857,8 @@
         <div class="modal-content glass-panel" style="text-align: center; max-width: 400px;">
             <i class="ph ph-check-circle" style="font-size: 5rem; color: #10b981; margin-bottom: 10px;"></i>
             <h2 style="margin-bottom: 10px;">Transaksi Berhasil!</h2>
-            <p style="color: var(--text-muted); margin-bottom: 5px;">Kembalian:</p>
-            <h1 id="success-change-amount" style="color: var(--primary); font-size: 2.5rem; margin-bottom: 20px;">Rp 0
-            </h1>
+            <!-- <p style="color: var(--text-muted); margin-bottom: 5px;">Kembalian:</p>
+            <h1 id="success-change-amount" style="color: var(--primary); font-size: 2.5rem; margin-bottom: 20px;">Rp 0</h1> -->
             <div class="modal-actions" style="justify-content: center; gap: 15px;">
                 <button type="button" class="btn btn-secondary" id="btn-success-close">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btn-success-print">Cetak Struk</button>
@@ -881,8 +880,8 @@
                 </div>
 
                 <div class="input-group">
-                    <label>Nama Customer (Opsional)</label>
-                    <input type="text" id="modal-customer-name" placeholder="Cth: Budi" class="input-lg" style="width: 100%;">
+                    <label>Nama Customer</label>
+                    <input type="text" id="modal-customer-name" placeholder="" class="input-lg" style="width: 100%;">
                 </div>
 
                 <div class="input-group">
@@ -928,10 +927,10 @@
 
             <div class="receipt-info">
                 <div class="info-row">
-                    <span>Tgl: <span id="receipt-date"></span></span>
+                    <span>No: <span id="receipt-id"></span></span>
                 </div>
                 <div class="info-row">
-                    <span>No: <span id="receipt-id"></span></span>
+                    <span>Tanggal: <span id="receipt-date"></span></span>
                 </div>
                 <div class="info-row">
                     <span>Kasir: <span id="receipt-cashier"></span></span>
@@ -939,9 +938,6 @@
                 <div class="info-row" id="receipt-customer-row" style="display: none;">
                     <span>Customer: <span id="receipt-customer-name"></span></span>
                 </div>
-            </div>
-
-            <div class="receipt-info" style="margin-top:5px;">
                 <div class="info-row">
                     <span>Metode: <span id="receipt-method"></span></span>
                 </div>
@@ -983,7 +979,7 @@
 
             <div class="receipt-footer">
                 <p>Terima Kasih</p>
-                <p>Selamat Belanja Kembali</p>
+                <p>Follow Us On @D.OneChicken #ChickenRasaNo1</p>
             </div>
         </div>
     </div>
