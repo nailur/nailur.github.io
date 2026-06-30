@@ -1583,22 +1583,16 @@ async function finalizeCheckout() {
     // Reset btn confirm
     btn.textContent = 'Konfirmasi & Cetak';
     btn.disabled = false;
-    document.getElementById('btn-success-print').onclick = () => {
-        printReceipt(trxData.id, cartClone, total, received, method, trxData.created_at, null, customer_name);
-    };
     
-    document.getElementById('btn-success-print-raw').onclick = () => {
-        printReceiptRawBT(trxData.id, cartClone, total, received, method, trxData.created_at, null, customer_name);
-    };
-    
-    document.getElementById('btn-success-close').onclick = () => {
-        document.getElementById('modal-checkout-success').classList.add('hidden');
-    };
-
     // Tampilkan Modal Success
     const changeAmountEl = document.getElementById('success-change-amount');
     if (changeAmountEl) changeAmountEl.textContent = 'Rp ' + change.toLocaleString('id-ID');
     document.getElementById('modal-checkout-success').classList.remove('hidden');
+
+    // Auto close after 1 second
+    setTimeout(() => {
+        document.getElementById('modal-checkout-success').classList.add('hidden');
+    }, 1000);
 
     showToast('Transaksi Berhasil!', 'success');
     generateOrderId();
