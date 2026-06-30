@@ -1596,7 +1596,8 @@ async function finalizeCheckout() {
     };
 
     // Tampilkan Modal Success
-    document.getElementById('success-change-amount').textContent = 'Rp ' + change.toLocaleString('id-ID');
+    const changeAmountEl = document.getElementById('success-change-amount');
+    if (changeAmountEl) changeAmountEl.textContent = 'Rp ' + change.toLocaleString('id-ID');
     document.getElementById('modal-checkout-success').classList.remove('hidden');
 
     showToast('Transaksi Berhasil!', 'success');
