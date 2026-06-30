@@ -364,12 +364,15 @@
 
             <!-- Top Navbar / Sidebar on Mobile -->
             <nav class="pos-nav glass-panel" id="pos-sidebar">
-                <div class="nav-left">
+                <div class="nav-left" style="flex: 1; min-width: 200px;">
                     <div class="nav-brand">
                         <i class="ph-duotone ph-storefront"></i>
                         <span id="pos-outlet-name">Loading...</span>
                         <select id="active-outlet-selector" class="input-sm hidden" style="margin-left: 10px;"></select>
                     </div>
+                </div>
+
+                <div style="display: flex; justify-content: center; flex: 1; min-width: 350px;">
                     <div class="pos-tabs-nav tabs" id="pos-tabs-container">
                         <button class="pos-nav-btn active" data-target="pos-tab-content">Kasir</button>
                         <button class="pos-nav-btn" data-target="history-tab-content">Riwayat Transaksi</button>
@@ -379,7 +382,7 @@
                     </div>
                 </div>
 
-                <div class="nav-right" style="gap: 5px;">
+                <div class="nav-right" style="gap: 5px; flex: 1; justify-content: flex-end; min-width: 350px;">
                     <!-- Clock Time Widget (Moved to Navbar) -->
                     <div id="attendance-widget">
                         <div style="text-align: right; line-height: 1.2;" class="hide-mobile">
