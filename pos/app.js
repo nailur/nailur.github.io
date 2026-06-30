@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { supabaseAdmin } from './supabase-admin.js';
 import { checkSession, login, logout, getCurrentUser, getCurrentProfile } from './auth.js';
+import { connectPrinter, printReceiptNative } from './printer.js';
 
 // DOM Elements
 const appContainer = document.getElementById('app-container');
@@ -1046,6 +1047,12 @@ async function initPos() {
     const savedTab = localStorage.getItem('pos_active_tab') || 'pos-tab-content';
     const btn = document.querySelector(`.pos-nav-btn[data-target="${savedTab}"]`);
     if(btn) btn.click();
+    
+    // Bind printer connect button
+    const btnConnectPrinter = document.getElementById('btn-connect-printer');
+    if (btnConnectPrinter) {
+        btnConnectPrinter.onclick = connectPrinter;
+    }
 }
 
 function generateOrderId() {
@@ -1584,10 +1591,66 @@ async function finalizeCheckout() {
     btn.textContent = 'Konfirmasi & Cetak';
     btn.disabled = false;
     
-    // Auto cetak RawBT jika di perangkat Android
-    if (/android/i.test(navigator.userAgent)) {
-        printReceiptRawBT(trxData.id, cartClone, total, received, method, trxData.created_at, null, customer_name);
+    // Generate struk text untuk dicetak
+    const activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+    const outletName = activeOutlet.name || 'Toko Kami';
+    let displayName = customer_name;
+    if (!displayName) {
+        const profile = getCurrentProfile();
+        displayName = profile.name || profile.email;
     }
+    
+    // ESC/POS Commands
+    const ESC_INIT = "\x1B\x40";
+    const ALIGN_CENTER = "\x1B\x61\x01";
+    const ALIGN_LEFT = "\x1B\x61\x00";
+    const BOLD_ON = "\x1B\x45\x01";
+    const BOLD_OFF = "\x1B\x45\x00";
+
+    let text = ESC_INIT;
+    text += ALIGN_CENTER + BOLD_ON + outletName + "\n" + BOLD_OFF;
+    if(activeOutlet.address) text += activeOutlet.address + "\n";
+    if(activeOutlet.phone) text += activeOutlet.phone + "\n";
+    text += ALIGN_LEFT;
+    text += `--------------------------------\n`;
+    text += `No      : ${trxData.id.substring(0,8)}\n`;
+    text += `Tanggal : ${new Date(trxData.created_at).toLocaleString('id-ID')}\n`;
+    text += `Kasir   : ${displayName}\n`;
+    if (customer_name) {
+        text += `Customer: ${customer_name}\n`;
+    }
+    text += `Metode  : ${method}\n`;
+    text += `--------------------------------\n`;
+    
+    cartClone.forEach(item => {
+        text += `${item.name}\n`;
+        const qtyStr = `${item.quantity}x`;
+        const priceStr = item.price.toLocaleString('id-ID');
+        const subtotalStr = (item.price * item.quantity).toLocaleString('id-ID');
+        
+        let line = ` ${qtyStr}   ${priceStr}`;
+        let spaces = 32 - line.length - subtotalStr.length;
+        if(spaces < 1) spaces = 1;
+        line += " ".repeat(spaces) + subtotalStr;
+        text += `${line}\n`;
+    });
+    
+    text += `--------------------------------\n`;
+    const totalStr = total.toLocaleString('id-ID');
+    text += `Total   : ${" ".repeat(32 - 10 - totalStr.length)}${totalStr}\n`;
+    const receivedStr = received.toLocaleString('id-ID');
+    text += `Tunai   : ${" ".repeat(32 - 10 - receivedStr.length)}${receivedStr}\n`;
+    const changeStr = change.toLocaleString('id-ID');
+    text += `Kembali : ${" ".repeat(32 - 10 - changeStr.length)}${changeStr}\n`;
+    text += `--------------------------------\n`;
+    text += ALIGN_CENTER;
+    text += `Terima Kasih\n`;
+    text += `Follow Us On @D.OneChicken\n`;
+    text += `#ChickenRasaNo1\n`;
+    text += `\n\n\n`; // Add extra line feeds at the bottom
+    
+    // Auto cetak Native Web Bluetooth
+    printReceiptNative(text);
     
     // Tampilkan Modal Success
     const changeAmountEl = document.getElementById('success-change-amount');
