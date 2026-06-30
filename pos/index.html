@@ -391,9 +391,8 @@
                         </div>
                         <button class="btn btn-primary" id="btn-clock-time" style="padding: 6px 16px; border-radius: var(--radius-full); font-size: 0.85rem;">Clock In</button>
                     </div>
-                    <button class="btn btn-outline" id="btn-connect-printer" title="Koneksikan Printer Bluetooth" style="padding: 6px 12px; border-radius: var(--radius-full); font-size: 0.8rem; border-color: var(--border-color); display: flex; align-items: center; gap: 5px; margin-right: 5px;">
-                        <i class="ph ph-printer"></i> 
-                        <span id="printer-status-text" style="color:var(--danger); font-weight: 500;">Terputus</span>
+                    <button class="btn btn-icon" id="btn-connect-printer" title="Koneksikan Printer Bluetooth (Terputus)" style="margin-right: 5px;">
+                        <i class="ph ph-printer" id="printer-status-icon" style="color:var(--danger); font-size: 1.2rem;"></i> 
                     </button>
 
                     <button class="btn btn-icon hidden" id="btn-management" title="Manajemen Sistem"

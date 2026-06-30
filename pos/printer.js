@@ -6,14 +6,16 @@ let isConnected = false;
 
 // Optional: you can update the UI directly from here or use callbacks
 function updatePrinterStatusUI(connected, deviceName = '') {
-    const statusEl = document.getElementById('printer-status-text');
-    if (statusEl) {
+    const iconEl = document.getElementById('printer-status-icon');
+    const btnEl = document.getElementById('btn-connect-printer');
+    
+    if (iconEl) {
         if (connected) {
-            statusEl.textContent = deviceName || 'Terhubung';
-            statusEl.style.color = 'var(--success)';
+            iconEl.style.color = 'var(--success)';
+            if (btnEl) btnEl.title = `Printer Terhubung: ${deviceName} (Klik untuk memutus)`;
         } else {
-            statusEl.textContent = 'Terputus';
-            statusEl.style.color = 'var(--danger)';
+            iconEl.style.color = 'var(--danger)';
+            if (btnEl) btnEl.title = 'Koneksikan Printer Bluetooth (Terputus)';
         }
     }
 }
