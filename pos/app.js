@@ -1605,8 +1605,8 @@ function printReceipt(trxId, cartItems, total, received, method, trxDate = null,
     const dateStr = trxDate ? new Date(trxDate).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
     const change = received - total;
     
-    // Retrieve the active outlet data from outletsList
-    const activeOutlet = outletsList.find(o => o.id === activeOutletId) || {};
+    // Retrieve the active outlet data from posOutletsList (available for all POS users)
+    const activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
     const outletName = activeOutlet.name || 'Toko Kami';
     const outletAddress = activeOutlet.address || '';
     const outletPhone = activeOutlet.phone || '';
