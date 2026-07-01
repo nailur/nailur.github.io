@@ -84,17 +84,8 @@ async function routeUser(profile) {
         return;
     }
     if (profile.role === 'superadmin' || profile.role === 'owner') {
-        // We will show superadmin view for both superadmin and owner for simplicity, 
-        // but owner can also access POS. Let's redirect owner to POS with full access.
-        if (profile.role === 'superadmin') {
-            showView('superadmin');
-            document.getElementById('sa-user-info').textContent = 'Superadmin';
-            initManagement();
-        } else {
-            // Owner
-            showView('pos');
-            await initPosMultiOutlet(profile);
-        }
+        showView('pos');
+        await initPosMultiOutlet(profile);
     } else if (profile.role === 'kepala_cabang') {
         showView('pos');
         await initPosMultiOutlet(profile);
