@@ -1965,18 +1965,22 @@ async function loadHistory() {
         return;
     }
 
-    tbody.innerHTML = data.map(trx => `
-        <tr>
-            <td>${new Date(trx.created_at).toLocaleString('id-ID')}</td>
-            <td>${trx.id.substring(0,8)}</td>
-            <td>Rp ${trx.total_amount.toLocaleString('id-ID')}</td>
-            <td>${trx.payment_method}</td>
-            <td>${trx.profiles?.name || trx.profiles?.email || '-'}</td>
-            <td>
-                <button class="btn btn-icon" style="color:var(--primary);" onclick="viewTransactionDetails('${trx.id}')" title="Detail"><i class="ph ph-eye"></i></button>
-            </td>
-        </tr>
-    `).join('');
+    const rowsHTML = await Promise.all(data.map(async trx => {
+        const receiptNo = await generateReceiptNumber(trx);
+        return `
+            <tr>
+                <td>${new Date(trx.created_at).toLocaleString('id-ID')}</td>
+                <td>${receiptNo}</td>
+                <td>Rp ${trx.total_amount.toLocaleString('id-ID')}</td>
+                <td>${trx.payment_method}</td>
+                <td>${trx.profiles?.name || trx.profiles?.email || '-'}</td>
+                <td>
+                    <button class="btn btn-icon" style="color:var(--primary);" onclick="viewTransactionDetails('${trx.id}')" title="Detail"><i class="ph ph-eye"></i></button>
+                </td>
+            </tr>
+        `;
+    }));
+    tbody.innerHTML = rowsHTML.join('');
     enableTableSort('history-table');
 }
 
