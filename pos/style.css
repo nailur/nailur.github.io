@@ -334,6 +334,7 @@ body {
 .pos-layout {
     display: grid;
     grid-template-columns: 1fr 400px;
+    gap: 16px;
     flex: 1;
     overflow: hidden;
     min-height: 0;
@@ -344,19 +345,18 @@ body {
     display: flex;
     flex-direction: column;
     padding: 16px;
-    margin: 16px 0 16px 16px; /* Symmetrical margin */
+    margin: 12px 0 16px 16px; /* Reduced top margin */
     background: var(--surface); /* White background */
     border-radius: var(--radius-lg);
     box-shadow: 0 8px 30px rgba(0,0,0,0.04);
-    height: 100%;
-    min-height: 0;
+    min-height: 0; /* Let grid item stretch naturally without overflowing */
 }
 .pos-nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 8px 16px;
-    margin: 12px 16px;
+    margin: 12px 16px 0 16px; /* Removed bottom margin */
     flex-wrap: nowrap; /* MUST NOT WRAP to prevent tall headers on tablets */
     gap: 10px;
     overflow-x: auto;
@@ -509,7 +509,7 @@ body {
 
 /* Right Cart */
 .pos-cart {
-    margin: 16px 16px 16px 0;
+    margin: 12px 16px 16px 0; /* Match top margin */
     display: flex;
     flex-direction: column;
     min-height: 0;
