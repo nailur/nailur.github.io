@@ -1821,7 +1821,7 @@ async function generateReceiptNumber(trx) {
              outletCode = activeOutlet && activeOutlet.name ? activeOutlet.name.replace(/[^A-Za-z0-9]/g, '').substring(0, 3).toUpperCase() : 'TRN';
         }
         
-        return `${outletCode}-${counter.toString().padStart(4, '0')}`;
+        return `${outletCode}-${counter.toString().padStart(6, '0')}`;
     } catch(e) {
         return trx.id.substring(0,8).toUpperCase();
     }
