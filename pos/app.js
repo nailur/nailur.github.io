@@ -1808,13 +1808,9 @@ async function generateReceiptNumber(trx) {
     if (!trx || !trx.created_at || !trx.outlet_id) return trx?.id ? trx.id.substring(0,8).toUpperCase() : "TRN-0000";
     try {
         const trxDate = new Date(trx.created_at);
-        const startOfDay = new Date(trxDate);
-        startOfDay.setHours(0,0,0,0);
-        
         const { count, error } = await supabase.from('transactions')
             .select('*', { count: 'exact', head: true })
             .eq('outlet_id', trx.outlet_id)
-            .gte('created_at', startOfDay.toISOString())
             .lte('created_at', trx.created_at);
             
         let counter = count || 1;
