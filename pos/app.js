@@ -1625,24 +1625,27 @@ async function finalizeCheckout() {
     const BOLD_OFF = "\x1B\x45\x00";
 
     const receiptNo = await generateReceiptNumber(trxData);
+    
+    // Helper untuk memotong teks agar tidak turun ke bawah (maks 32 karakter standar 58mm)
+    const tLine = (str) => str.length > 32 ? str.substring(0, 32) : str;
 
     let text = ESC_INIT;
-    text += ALIGN_CENTER + BOLD_ON + outletName + "\n" + BOLD_OFF;
-    if(activeOutlet.address) text += activeOutlet.address + "\n";
-    if(activeOutlet.phone) text += activeOutlet.phone + "\n";
+    text += ALIGN_CENTER + BOLD_ON + tLine(outletName) + "\n" + BOLD_OFF;
+    if(activeOutlet.address) text += tLine(activeOutlet.address) + "\n";
+    if(activeOutlet.phone) text += tLine(activeOutlet.phone) + "\n";
     text += ALIGN_LEFT;
     text += `--------------------------------\n`;
-    text += `No      : ${receiptNo}\n`;
-    text += `Tanggal : ${new Date(trxData.created_at).toLocaleString('id-ID')}\n`;
-    text += `Kasir   : ${displayName}\n`;
+    text += tLine(`No      : ${receiptNo}`) + `\n`;
+    text += tLine(`Tanggal : ${new Date(trxData.created_at).toLocaleString('id-ID')}`) + `\n`;
+    text += tLine(`Kasir   : ${displayName}`) + `\n`;
     if (customer_name) {
-        text += `Customer: ${customer_name}\n`;
+        text += tLine(`Customer: ${customer_name}`) + `\n`;
     }
-    text += `Metode  : ${method}\n`;
+    text += tLine(`Metode  : ${method}`) + `\n`;
     text += `--------------------------------\n`;
     
     cartClone.forEach(item => {
-        text += `${item.name}\n`;
+        text += tLine(`${item.name}`) + `\n`;
         const qtyStr = `${item.quantity}x`;
         const priceStr = item.price.toLocaleString('id-ID');
         const subtotalStr = (item.price * item.quantity).toLocaleString('id-ID');
@@ -1754,22 +1757,25 @@ function printReceiptRawBT(trxId, cartItems, total, received, method, trxDate = 
         displayName = profile.name || profile.email;
     }
 
+    // Helper untuk memotong teks
+    const tLine = (str) => str.length > 32 ? str.substring(0, 32) : str;
+
     let text = `[C]<img>https://nailur.github.io/pos/receipt_logo_print.png</img>\n`;
-    text += `[C]<b>${outletName}</b>\n`;
-    if(activeOutlet.address) text += `[C]${activeOutlet.address}\n`;
-    if(activeOutlet.phone) text += `[C]${activeOutlet.phone}\n`;
+    text += `[C]<b>${tLine(outletName)}</b>\n`;
+    if(activeOutlet.address) text += `[C]${tLine(activeOutlet.address)}\n`;
+    if(activeOutlet.phone) text += `[C]${tLine(activeOutlet.phone)}\n`;
     text += `--------------------------------\n`;
-    text += `No      : ${trxId.substring(0,8)}\n`;
-    text += `Tanggal : ${dateStr}\n`;
-    text += `Kasir   : ${displayName}\n`;
+    text += tLine(`No      : ${trxId}`) + `\n`;
+    text += tLine(`Tanggal : ${dateStr}`) + `\n`;
+    text += tLine(`Kasir   : ${displayName}`) + `\n`;
     if (customerName) {
-        text += `Customer: ${customerName}\n`;
+        text += tLine(`Customer: ${customerName}`) + `\n`;
     }
-    text += `Metode  : ${method}\n`;
+    text += tLine(`Metode  : ${method}`) + `\n`;
     text += `--------------------------------\n`;
     
     cartItems.forEach(item => {
-        text += `${item.name}\n`;
+        text += tLine(`${item.name}`) + `\n`;
         const qtyStr = `${item.quantity}x`;
         const priceStr = item.price.toLocaleString('id-ID');
         const subtotalStr = (item.price * item.quantity).toLocaleString('id-ID');
@@ -1818,10 +1824,16 @@ async function generateReceiptNumber(trx) {
             .lte('created_at', trx.created_at);
             
         let counter = count || 1;
-        const dateStr = trxDate.getFullYear().toString() + 
-                        (trxDate.getMonth()+1).toString().padStart(2, '0') + 
-                        trxDate.getDate().toString().padStart(2, '0');
-        return `TRN-${dateStr}-${counter.toString().padStart(4, '0')}`;
+        
+        const yy = trxDate.getFullYear().toString().substring(2);
+        const mm = (trxDate.getMonth()+1).toString().padStart(2, '0');
+        const dd = trxDate.getDate().toString().padStart(2, '0');
+        const dateStr = yy + mm + dd;
+        
+        const activeOutlet = typeof posOutletsList !== 'undefined' ? posOutletsList.find(o => o.id === trx.outlet_id) : null;
+        const outletCode = activeOutlet && activeOutlet.name ? activeOutlet.name.replace(/[^A-Za-z0-9]/g, '').substring(0, 3).toUpperCase() : 'TRN';
+        
+        return `${outletCode}-${dateStr}-${counter.toString().padStart(4, '0')}`;
     } catch(e) {
         return trx.id.substring(0,8).toUpperCase();
     }
