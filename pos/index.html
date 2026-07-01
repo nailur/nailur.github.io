@@ -23,6 +23,9 @@
 
     <!-- SheetJS for Excel Export -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="./style-modals.css">
@@ -167,6 +170,7 @@
                         <button class="tab-btn active" data-target="branches-tab">Kelola Cabang</button>
                         <button class="tab-btn" data-target="outlets-tab">Kelola Outlets</button>
                         <button class="tab-btn" data-target="users-tab">Kelola Users</button>
+                        <button class="tab-btn" data-target="analytics-tab">Analitik</button>
                         <button class="tab-btn" data-target="server-info-tab">Info Server</button>
                     </div>
                 </div>
@@ -270,6 +274,47 @@
                                     <!-- User rows injected here -->
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- ANALITIK TAB -->
+                    <div id="analytics-tab" class="tab-pane hidden">
+                        <div class="action-bar" style="justify-content: space-between;">
+                            <h3>Laporan & Analitik</h3>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select id="analytics-outlet-filter" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                                    <option value="">Semua Outlet</option>
+                                    <!-- Options injected via JS -->
+                                </select>
+                                <select id="analytics-period-filter" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                                    <option value="7">7 Hari Terakhir</option>
+                                    <option value="30">30 Hari Terakhir</option>
+                                    <option value="this_month">Bulan Ini</option>
+                                    <option value="all">Semua Waktu</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div class="glass-panel" style="padding: 15px; text-align: center;">
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">Total Pendapatan</div>
+                                <div id="analytics-total-revenue" style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">Rp 0</div>
+                            </div>
+                            <div class="glass-panel" style="padding: 15px; text-align: center;">
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">Total Transaksi</div>
+                                <div id="analytics-total-trx" style="font-size: 1.5rem; font-weight: 700; color: var(--success);">0</div>
+                            </div>
+                            <div class="glass-panel" style="padding: 15px; text-align: center;">
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">Produk Terjual</div>
+                                <div id="analytics-total-items" style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">0</div>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                            <div class="glass-panel" style="padding: 15px; height: 300px;">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                            <div class="glass-panel" style="padding: 15px; height: 300px;">
+                                <canvas id="productChart"></canvas>
+                            </div>
                         </div>
                     </div>
 
@@ -679,6 +724,10 @@
                     <label for="outlet-phone">Nomor Telepon</label>
                     <input type="text" id="outlet-phone" placeholder="08123456789">
                 </div>
+                <div class="input-group">
+                    <label for="outlet-tax">Persentase Pajak (%)</label>
+                    <input type="number" id="outlet-tax" step="0.1" placeholder="11" min="0" max="100">
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" data-close="modal-outlet">Batal</button>
                     <button type="submit" class="btn btn-primary" id="btn-save-outlet">Simpan</button>
@@ -896,14 +945,39 @@
                 <button class="btn btn-icon" data-close="modal-checkout"><i class="ph ph-x"></i></button>
             </div>
             <div class="modal-body">
-                <div style="background: rgba(0,0,0,0.03); padding: 10px; border-radius: var(--radius-md); margin-bottom: 12px; text-align: center;">
-                    <span style="font-size: 0.85rem; color: var(--text-muted);">Total Tagihan</span>
-                    <div id="modal-checkout-total" style="font-size: 1.75rem; font-weight: 700; color: var(--primary);">Rp 0</div>
+                <div style="background: rgba(0,0,0,0.03); padding: 10px; border-radius: var(--radius-md); margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
+                        <span style="color: var(--text-muted);">Subtotal</span>
+                        <span id="modal-checkout-subtotal" style="font-weight: 600;">Rp 0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
+                        <span style="color: var(--text-muted);">Diskon</span>
+                        <span id="modal-checkout-discount" style="font-weight: 600; color: var(--danger);">-Rp 0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 8px; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                        <span style="color: var(--text-muted);">Pajak (<span id="modal-checkout-tax-rate">0</span>%)</span>
+                        <span id="modal-checkout-tax" style="font-weight: 600;">Rp 0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">Total Tagihan</span>
+                        <div id="modal-checkout-total" style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">Rp 0</div>
+                    </div>
                 </div>
 
                 <div class="input-group" style="margin-bottom: 10px;">
                     <label style="font-size: 0.85rem; margin-bottom: 4px;">Nama Customer</label>
                     <input type="text" id="modal-customer-name" placeholder="" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 0.85rem; margin-bottom: 4px;">Diskon (%)</label>
+                        <input type="number" id="modal-discount-percent" placeholder="0" min="0" max="100" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 0.85rem; margin-bottom: 4px;">Diskon (Rp)</label>
+                        <input type="number" id="modal-discount-nominal" placeholder="0" min="0" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                    </div>
                 </div>
 
                 <div class="input-group" style="margin-bottom: 10px;">
@@ -984,6 +1058,18 @@
 
             <div class="receipt-summary">
                 <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span id="receipt-subtotal">0</span>
+                </div>
+                <div class="summary-row" id="receipt-discount-row" style="display: none;">
+                    <span>Diskon:</span>
+                    <span id="receipt-discount">0</span>
+                </div>
+                <div class="summary-row" id="receipt-tax-row" style="display: none;">
+                    <span>Pajak:</span>
+                    <span id="receipt-tax">0</span>
+                </div>
+                <div class="summary-row" style="font-weight: bold; margin-top: 5px;">
                     <span>Total:</span>
                     <span id="receipt-total">0</span>
                 </div>

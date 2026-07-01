@@ -471,6 +471,8 @@ function setupEventListeners() {
             const targetId = e.currentTarget.getAttribute('data-target');
             document.getElementById(targetId).classList.remove('hidden');
             localStorage.setItem('management_active_tab', targetId);
+            
+            if (targetId === 'analytics-tab') loadAnalytics();
         });
     });
 
@@ -619,6 +621,8 @@ function setupEventListeners() {
         renderCart();
     });
     document.getElementById('modal-cash-received').addEventListener('input', calculateChange);
+    document.getElementById('modal-discount-percent').addEventListener('input', calculateChange);
+    document.getElementById('modal-discount-nominal').addEventListener('input', calculateChange);
     document.getElementById('btn-checkout').addEventListener('click', openCheckoutModal);
     document.getElementById('btn-confirm-payment').addEventListener('click', finalizeCheckout);
     
@@ -636,6 +640,9 @@ function setupEventListeners() {
     });
     
     document.getElementById('btn-export-excel')?.addEventListener('click', exportToExcel);
+    
+    document.getElementById('analytics-outlet-filter')?.addEventListener('change', loadAnalytics);
+    document.getElementById('analytics-period-filter')?.addEventListener('change', loadAnalytics);
 }
 
 function filterUserOutlets() {
@@ -859,6 +866,7 @@ async function handleAddOutlet(e) {
     let branch_id = document.getElementById('outlet-branch').value;
     const address = document.getElementById('outlet-address').value;
     const phone = document.getElementById('outlet-phone').value;
+    const tax_rate_percent = parseFloat(document.getElementById('outlet-tax').value) || 0;
 
     const profile = getCurrentProfile();
     if (profile?.role === 'kepala_cabang') {
@@ -866,11 +874,11 @@ async function handleAddOutlet(e) {
     }
 
     if (id) {
-        const { error } = await supabase.from('outlets').update({ name, code, address, phone, branch_id }).eq('id', id);
+        const { error } = await supabase.from('outlets').update({ name, code, address, phone, branch_id, tax_rate_percent }).eq('id', id);
         if (error) showToast(error.message, 'error');
         else { showToast('Outlet diperbarui!', 'success'); document.getElementById('modal-outlet').classList.add('hidden'); loadOutlets(); }
     } else {
-        const { error } = await supabase.from('outlets').insert([{ name, code, address, phone, branch_id }]);
+        const { error } = await supabase.from('outlets').insert([{ name, code, address, phone, branch_id, tax_rate_percent }]);
         if (error) showToast(error.message, 'error');
         else { showToast('Outlet ditambahkan!', 'success'); document.getElementById('modal-outlet').classList.add('hidden'); loadOutlets(); }
     }
@@ -885,6 +893,7 @@ window.editOutlet = (id) => {
     document.getElementById('outlet-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id===o.branch_id?'selected':''}>${b.name}</option>`).join('');
     document.getElementById('outlet-address').value = o.address || '';
     document.getElementById('outlet-phone').value = o.phone || '';
+    document.getElementById('outlet-tax').value = o.tax_rate_percent || 0;
     document.getElementById('modal-outlet').classList.remove('hidden');
 };
 
@@ -1240,13 +1249,15 @@ function renderProducts(search = '') {
         return;
     }
 
-    grid.innerHTML = filtered.map(p => `
-        <div class="product-card" onclick="addToCart('${p.id}')">
+    grid.innerHTML = filtered.map(p => {
+        const isOutOfStock = p.stock <= 0;
+        return `
+        <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}" ${isOutOfStock ? '' : `onclick="addToCart('${p.id}')"`} style="${isOutOfStock ? 'opacity: 0.5; filter: grayscale(1); cursor: not-allowed;' : ''}">
             ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" class="product-image">` : `<div class="product-image" style="display:flex;align-items:center;justify-content:center;color:#ccc;"><i class="ph-duotone ph-image" style="font-size:2.5rem;"></i></div>`}
             <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-start;">
                 <div class="product-name">${p.name}</div>
                 <div class="product-price">Rp ${p.price.toLocaleString('id-ID')}</div>
-                <div class="text-sm text-muted">Stok: ${p.stock}</div>
+                <div class="text-sm ${isOutOfStock ? 'text-danger' : 'text-muted'}">${isOutOfStock ? 'Stok Habis' : 'Stok: ' + p.stock}</div>
             </div>
             ${canEdit ? `
                 <div style="margin-top:10px; display:flex; gap:5px; justify-content:center;" onclick="event.stopPropagation()">
@@ -1255,7 +1266,7 @@ function renderProducts(search = '') {
                 </div>
             ` : ''}
         </div>
-    `).join('');
+    `}).join('');
 }
 
 // Helper function to compress image
@@ -1478,11 +1489,41 @@ function renderCart() {
     calculateChange();
 }
 
-function calculateChange() {
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+function calculateTotals() {
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
-    // Update total in modal
+    let discountPercent = parseFloat(document.getElementById('modal-discount-percent').value) || 0;
+    let discountNominal = parseFloat(document.getElementById('modal-discount-nominal').value) || 0;
+    
+    let discount = (subtotal * discountPercent / 100) + discountNominal;
+    if (discount > subtotal) discount = subtotal;
+    
+    const afterDiscount = subtotal - discount;
+    
+    const activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+    const taxRate = activeOutlet.tax_rate_percent || 0;
+    
+    const tax = Math.round(afterDiscount * taxRate / 100);
+    const total = afterDiscount + tax;
+    
+    return { subtotal, discount, tax, taxRate, total };
+}
+
+function calculateChange() {
+    const totals = calculateTotals();
+    const total = totals.total;
+    
+    // Update breakdowns in modal
+    const subtotalEl = document.getElementById('modal-checkout-subtotal');
+    const discountEl = document.getElementById('modal-checkout-discount');
+    const taxEl = document.getElementById('modal-checkout-tax');
+    const taxRateEl = document.getElementById('modal-checkout-tax-rate');
     const modalTotalEl = document.getElementById('modal-checkout-total');
+    
+    if (subtotalEl) subtotalEl.textContent = `Rp ${totals.subtotal.toLocaleString('id-ID')}`;
+    if (discountEl) discountEl.textContent = `-Rp ${totals.discount.toLocaleString('id-ID')}`;
+    if (taxEl) taxEl.textContent = `Rp ${totals.tax.toLocaleString('id-ID')}`;
+    if (taxRateEl) taxRateEl.textContent = totals.taxRate;
     if (modalTotalEl) modalTotalEl.textContent = `Rp ${total.toLocaleString('id-ID')}`;
     
     const method = document.getElementById('modal-payment-method').value;
@@ -1523,13 +1564,12 @@ function openCheckoutModal() {
     document.getElementById('modal-payment-method').value = 'Tunai';
     document.getElementById('modal-cash-received').value = '';
     document.getElementById('modal-customer-name').value = '';
+    document.getElementById('modal-discount-percent').value = '';
+    document.getElementById('modal-discount-nominal').value = '';
     
     // Pastikan update harga sebelum total dihitung
     renderCart();
 
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    document.getElementById('modal-checkout-total').textContent = `Rp ${total.toLocaleString('id-ID')}`;
-    
     calculateChange(); // update UI elements in modal
     document.getElementById('modal-checkout').classList.remove('hidden');
 }
@@ -1537,13 +1577,13 @@ function openCheckoutModal() {
 async function finalizeCheckout() {
     if (cart.length === 0 || !activeOutletId) return;
     
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const totals = calculateTotals();
     const method = document.getElementById('modal-payment-method').value;
-    let received = total;
+    let received = totals.total;
     
     if (method === 'Tunai') {
         received = parseFloat(document.getElementById('modal-cash-received').value) || 0;
-        if (received < total) return showToast('Uang tunai kurang!', 'error');
+        if (received < totals.total) return showToast('Uang tunai kurang!', 'error');
     }
 
     const btn = document.getElementById('btn-confirm-payment');
@@ -1553,56 +1593,76 @@ async function finalizeCheckout() {
     const profile = getCurrentProfile();
     const customer_name = document.getElementById('modal-customer-name').value || null;
 
-    // Use try-catch in case customer_name column doesn't exist yet
-    let trxData, trxError;
-    try {
-        const result = await supabase.from('transactions').insert([{
-            outlet_id: activeOutletId,
-            cashier_id: profile.id,
-            total_amount: total,
-            payment_method: method,
-            customer_name: customer_name
-        }]).select().single();
-        
-        // If error contains customer_name, retry without it
-        if (result.error && result.error.message.includes('customer_name')) {
-            const fallback = await supabase.from('transactions').insert([{
-                outlet_id: activeOutletId,
-                cashier_id: profile.id,
-                total_amount: total,
-                payment_method: method
-            }]).select().single();
-            trxData = fallback.data;
-            trxError = fallback.error;
-            showToast('Warning: Kolom customer_name belum ditambahkan ke Supabase!', 'error');
-        } else {
-            trxData = result.data;
-            trxError = result.error;
-        }
-    } catch(e) {
-        trxError = e;
-    }
-
-    if (trxError) {
-        showToast('Gagal menyimpan transaksi', 'error');
-        btn.disabled = false; btn.textContent = 'Konfirmasi & Cetak'; return;
-    }
-
-    const items = cart.map(item => ({
-        transaction_id: trxData.id,
+    const itemsPayload = cart.map(item => ({
         product_id: item.product_id,
         quantity: item.quantity,
         price: item.price
     }));
 
-    await supabase.from('transaction_items').insert(items);
+    let isOffline = !navigator.onLine;
+    let trxData = { 
+        id: crypto.randomUUID ? crypto.randomUUID() : 'OFFLINE-' + Date.now(), 
+        created_at: new Date().toISOString(),
+        outlet_id: activeOutletId
+    };
+    let receiptNo = "";
     
-    for (const item of cart) {
-        const product = products.find(p => p.id === item.product_id);
-        if (product) await supabase.from('products').update({ stock: product.stock - item.quantity }).eq('id', item.product_id);
+    if (!isOffline) {
+        try {
+            const { data, error } = await supabase.rpc('process_checkout', {
+                p_outlet_id: activeOutletId,
+                p_cashier_id: profile.id,
+                p_subtotal_amount: totals.subtotal,
+                p_discount_amount: totals.discount,
+                p_tax_amount: totals.tax,
+                p_total_amount: totals.total,
+                p_payment_method: method,
+                p_customer_name: customer_name,
+                p_items: itemsPayload
+            });
+            
+            if (error) {
+                console.error("RPC Error:", error);
+                isOffline = true;
+            } else {
+                trxData.id = data; // the UUID returned
+                receiptNo = await generateReceiptNumber(trxData);
+            }
+        } catch (e) {
+            console.error("RPC Exception:", e);
+            isOffline = true;
+        }
     }
-    const change = received - total;
+    
+    if (isOffline) {
+        receiptNo = "OFFLINE-" + Math.floor(Math.random() * 10000);
+        const offlineTrx = {
+            id: trxData.id,
+            outlet_id: activeOutletId,
+            cashier_id: profile.id,
+            subtotal_amount: totals.subtotal,
+            discount_amount: totals.discount,
+            tax_amount: totals.tax,
+            total_amount: totals.total,
+            payment_method: method,
+            customer_name: customer_name,
+            items: itemsPayload,
+            created_at: trxData.created_at,
+            receipt_no: receiptNo
+        };
+        await saveOfflineTransaction(offlineTrx);
+        showToast('Offline! Transaksi disimpan di perangkat.', 'warning');
+    }
+    
+    // Kurangi stok di UI agar kasir langsung melihat perubahan
+    for (const item of cart) {
+        const p = products.find(x => x.id === item.product_id);
+        if (p) p.stock -= item.quantity;
+    }
+    
+    const change = received - totals.total;
     const cartClone = [...cart];
+    const finalTotals = { ...totals };
     
     // Close Checkout Modal
     document.getElementById('modal-checkout').classList.add('hidden');
@@ -1628,7 +1688,8 @@ async function finalizeCheckout() {
     const BOLD_ON = "\x1B\x45\x01";
     const BOLD_OFF = "\x1B\x45\x00";
 
-    const receiptNo = await generateReceiptNumber(trxData);
+    // Remove redeclaration since receiptNo is already declared and generated above
+    // const receiptNo = await generateReceiptNumber(trxData);
     
     // Helper untuk memotong teks agar tidak turun ke bawah (maks 32 karakter standar 58mm)
     const tLine = (str) => str.length > 32 ? str.substring(0, 32) : str;
@@ -1662,7 +1723,21 @@ async function finalizeCheckout() {
     });
     
     text += `--------------------------------\n`;
-    const totalStr = total.toLocaleString('id-ID');
+    
+    const subtotalStr = finalTotals.subtotal.toLocaleString('id-ID');
+    text += `Subtotal: ${" ".repeat(32 - 10 - subtotalStr.length)}${subtotalStr}\n`;
+    
+    if (finalTotals.discount > 0) {
+        const discountStr = "-" + finalTotals.discount.toLocaleString('id-ID');
+        text += `Diskon  : ${" ".repeat(32 - 10 - discountStr.length)}${discountStr}\n`;
+    }
+    
+    if (finalTotals.tax > 0) {
+        const taxStr = finalTotals.tax.toLocaleString('id-ID');
+        text += `Pajak   : ${" ".repeat(32 - 10 - taxStr.length)}${taxStr}\n`;
+    }
+
+    const totalStr = finalTotals.total.toLocaleString('id-ID');
     text += `Total   : ${" ".repeat(32 - 10 - totalStr.length)}${totalStr}\n`;
     const receivedStr = received.toLocaleString('id-ID');
     text += `Tunai   : ${" ".repeat(32 - 10 - receivedStr.length)}${receivedStr}\n`;
@@ -1695,7 +1770,7 @@ async function finalizeCheckout() {
     btn.textContent = 'Bayar & Cetak';
 }
 
-function printReceipt(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null) {
+function printReceipt(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null) {
     const dateStr = trxDate ? new Date(trxDate).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
     const change = received - total;
     
@@ -1741,6 +1816,27 @@ function printReceipt(trxId, cartItems, total, received, method, trxDate = null,
         </tr>
     `).join('');
     document.getElementById('receipt-items').innerHTML = itemsHtml;
+    
+    if (totalsObj) {
+        document.getElementById('receipt-subtotal').textContent = totalsObj.subtotal.toLocaleString('id-ID');
+        if (totalsObj.discount > 0) {
+            document.getElementById('receipt-discount-row').style.display = 'flex';
+            document.getElementById('receipt-discount').textContent = '-' + totalsObj.discount.toLocaleString('id-ID');
+        } else {
+            document.getElementById('receipt-discount-row').style.display = 'none';
+        }
+        if (totalsObj.tax > 0) {
+            document.getElementById('receipt-tax-row').style.display = 'flex';
+            document.getElementById('receipt-tax').textContent = totalsObj.tax.toLocaleString('id-ID');
+        } else {
+            document.getElementById('receipt-tax-row').style.display = 'none';
+        }
+    } else {
+        document.getElementById('receipt-subtotal').textContent = total.toLocaleString('id-ID');
+        document.getElementById('receipt-discount-row').style.display = 'none';
+        document.getElementById('receipt-tax-row').style.display = 'none';
+    }
+
     document.getElementById('receipt-total').textContent = total.toLocaleString('id-ID');
     document.getElementById('receipt-cash').textContent = received.toLocaleString('id-ID');
     document.getElementById('receipt-change').textContent = change.toLocaleString('id-ID');
@@ -2050,7 +2146,146 @@ async function reprintReceipt(trx, items) {
         price: i.price
     }));
     const receiptNo = await generateReceiptNumber(trx);
-    printReceipt(receiptNo, cartItems, trx.total_amount, trx.total_amount, trx.payment_method, trx.created_at, cashierName, trx.customer_name);
+    const totalsObj = {
+        subtotal: trx.subtotal_amount || trx.total_amount,
+        discount: trx.discount_amount || 0,
+        tax: trx.tax_amount || 0,
+        total: trx.total_amount || 0
+    };
+    printReceipt(receiptNo, cartItems, trx.total_amount, trx.total_amount, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj);
+}
+
+let revenueChartInst = null;
+let productChartInst = null;
+
+async function loadAnalytics() {
+    const profile = getCurrentProfile();
+    // Only management can see
+    if (profile?.role === 'kasir') return;
+    
+    // Populate outlet filter if first time
+    const outletSelect = document.getElementById('analytics-outlet-filter');
+    if (outletSelect && outletSelect.options.length <= 1) {
+        let outlets = outletsList;
+        if (profile?.role === 'kepala_cabang') {
+            outlets = outletsList.filter(o => o.branch_id === profile.branch_id);
+        } else if (profile?.role === 'kepala_toko') {
+            outlets = outletsList.filter(o => o.id === profile.outlet_id);
+        }
+        outlets.forEach(o => {
+            const opt = document.createElement('option');
+            opt.value = o.id;
+            opt.textContent = o.name;
+            outletSelect.appendChild(opt);
+        });
+    }
+
+    const period = document.getElementById('analytics-period-filter')?.value || '7';
+    const outletFilter = document.getElementById('analytics-outlet-filter')?.value;
+    
+    let query = supabase.from('transactions').select('*, transaction_items(product_id, quantity, price)');
+    
+    if (outletFilter) {
+        query = query.eq('outlet_id', outletFilter);
+    } else {
+        if (profile?.role === 'kepala_cabang') {
+            const branchOutlets = outletsList.filter(o => o.branch_id === profile.branch_id).map(o => o.id);
+            if(branchOutlets.length > 0) query = query.in('outlet_id', branchOutlets);
+            else query = query.eq('outlet_id', 'none'); // returns nothing
+        } else if (profile?.role === 'kepala_toko') {
+            query = query.eq('outlet_id', profile.outlet_id);
+        }
+    }
+    
+    const now = new Date();
+    let startDateStr = null;
+    if (period === '7') {
+        const d = new Date(); d.setDate(d.getDate() - 7);
+        startDateStr = d.toISOString();
+    } else if (period === '30') {
+        const d = new Date(); d.setDate(d.getDate() - 30);
+        startDateStr = d.toISOString();
+    } else if (period === 'this_month') {
+        const d = new Date(now.getFullYear(), now.getMonth(), 1);
+        startDateStr = d.toISOString();
+    }
+    
+    if (startDateStr) {
+        query = query.gte('created_at', startDateStr);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+        console.error('Analytics load error:', error);
+        return;
+    }
+
+    let totalRevenue = 0;
+    let totalItems = 0;
+    const dailyRevenue = {};
+    const productCounts = {};
+
+    data.forEach(trx => {
+        totalRevenue += (trx.total_amount || 0);
+        const dateKey = trx.created_at.split('T')[0];
+        dailyRevenue[dateKey] = (dailyRevenue[dateKey] || 0) + (trx.total_amount || 0);
+
+        if (trx.transaction_items) {
+            trx.transaction_items.forEach(item => {
+                totalItems += item.quantity;
+                const p = products.find(x => x.id === item.product_id);
+                const pName = p ? p.name : 'Unknown';
+                productCounts[pName] = (productCounts[pName] || 0) + item.quantity;
+            });
+        }
+    });
+
+    document.getElementById('analytics-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
+    document.getElementById('analytics-total-trx').textContent = data.length.toLocaleString('id-ID');
+    document.getElementById('analytics-total-items').textContent = totalItems.toLocaleString('id-ID');
+
+    // Chart.js requires rendering
+    const revCtx = document.getElementById('revenueChart');
+    const prodCtx = document.getElementById('productChart');
+    if(!revCtx || !prodCtx) return;
+
+    const revLabels = Object.keys(dailyRevenue).sort();
+    const revData = revLabels.map(k => dailyRevenue[k]);
+    
+    if (revenueChartInst) revenueChartInst.destroy();
+    revenueChartInst = new Chart(revCtx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: revLabels.map(d => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month:'short'})),
+            datasets: [{
+                label: 'Pendapatan (Rp)',
+                data: revData,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // Top 5 Products
+    const sortedProducts = Object.entries(productCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+    const prodLabels = sortedProducts.map(x => x[0]);
+    const prodData = sortedProducts.map(x => x[1]);
+
+    if (productChartInst) productChartInst.destroy();
+    productChartInst = new Chart(prodCtx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: prodLabels,
+            datasets: [{
+                data: prodData,
+                backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
 }
 
 async function loadDashboard() {
@@ -2393,5 +2628,102 @@ if ('serviceWorker' in navigator) {
             .catch(err => {
                 console.log('ServiceWorker registration failed: ', err);
             });
+            
+        // Trigger sync when app loads
+        setTimeout(() => {
+            if(navigator.onLine) syncOfflineTransactions();
+        }, 3000); // delay to let app initialize first
     });
+}
+
+// ------------------------------
+// OFFLINE SYNC (IndexedDB)
+// ------------------------------
+async function initDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('POSDatabase', 1);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('offline_transactions')) {
+                db.createObjectStore('offline_transactions', { keyPath: 'id' });
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function saveOfflineTransaction(trx) {
+    const db = await initDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('offline_transactions', 'readwrite');
+        const store = tx.objectStore('offline_transactions');
+        store.put(trx);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function getOfflineTransactions() {
+    const db = await initDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('offline_transactions', 'readonly');
+        const store = tx.objectStore('offline_transactions');
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function clearOfflineTransaction(id) {
+    const db = await initDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('offline_transactions', 'readwrite');
+        const store = tx.objectStore('offline_transactions');
+        store.delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+window.addEventListener('online', async () => {
+    console.log('Online! Menyinkronkan data...');
+    await syncOfflineTransactions();
+});
+
+async function syncOfflineTransactions() {
+    if (!navigator.onLine) return;
+    const pending = await getOfflineTransactions();
+    if (pending.length === 0) return;
+    
+    showToast(`Menyinkronkan ${pending.length} transaksi offline...`, 'info');
+    let successCount = 0;
+    for (const trx of pending) {
+        try {
+            const { error } = await supabase.rpc('process_checkout', {
+                p_outlet_id: trx.outlet_id,
+                p_cashier_id: trx.cashier_id,
+                p_subtotal_amount: trx.subtotal_amount,
+                p_discount_amount: trx.discount_amount,
+                p_tax_amount: trx.tax_amount,
+                p_total_amount: trx.total_amount,
+                p_payment_method: trx.payment_method,
+                p_customer_name: trx.customer_name,
+                p_items: trx.items
+            });
+            if (!error) {
+                await clearOfflineTransaction(trx.id);
+                successCount++;
+            } else {
+                console.error('Offline Sync Error:', error);
+            }
+        } catch (e) {
+            console.error('Failed to sync offline transaction', e);
+        }
+    }
+    
+    if (successCount > 0) {
+        showToast(`${successCount} transaksi offline berhasil disinkronkan!`, 'success');
+        if (typeof loadHistory === 'function') loadHistory();
+    }
 }
