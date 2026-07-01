@@ -1668,8 +1668,9 @@ async function finalizeCheckout() {
     text += `#ChickenRasaNo1\n`;
     text += `\n\n\n`; // Add extra line feeds at the bottom
     
-    // Auto cetak Native Web Bluetooth
-    printReceiptNative(text);
+    // Auto cetak Native Web Bluetooth dengan logo
+    const logoUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'receipt_logo_print.png';
+    printReceiptNative(text, logoUrl);
     
     // Tampilkan Modal Success
     const changeAmountEl = document.getElementById('success-change-amount');
