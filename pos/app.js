@@ -364,6 +364,16 @@ function setupEventListeners() {
     const btnToggleLayout = document.getElementById('btn-toggle-layout');
     const productGrid = document.getElementById('product-grid');
     if (btnToggleLayout && productGrid) {
+        // Set default to list-view on mobile
+        if (window.innerWidth <= 768) {
+            productGrid.classList.add('list-view');
+            const icon = btnToggleLayout.querySelector('i');
+            if(icon) {
+                icon.classList.remove('ph-list-dashes');
+                icon.classList.add('ph-squares-four');
+            }
+        }
+
         btnToggleLayout.addEventListener('click', () => {
             productGrid.classList.toggle('list-view');
             const icon = btnToggleLayout.querySelector('i');

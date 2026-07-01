@@ -735,7 +735,7 @@ body {
         flex: 1; 
         min-height: 0; /* CRITICAL: allows flex child to scroll */
         overflow-y: auto;
-        padding-bottom: 20px;
+        padding-bottom: 10px; /* Reduced from 20px */
         margin: 0; /* Remove margin on mobile */
         border-radius: 0; /* Remove rounded corners on mobile */
     }
@@ -745,12 +745,33 @@ body {
     }
     .pos-cart {
         margin: 0;
-        flex: 1; /* Take bottom 50% */
+        flex: 1.3; /* Increased from 1 to make cart bigger */
         min-height: 0; /* CRITICAL: allows flex child to scroll */
         overflow-y: auto;
         border-radius: 24px 24px 0 0;
         box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
         border: none;
+    }
+    
+    /* Compact List View for Mobile */
+    .catalog-grid.list-view {
+        gap: 6px;
+    }
+    .catalog-grid.list-view .product-card {
+        height: auto;
+        min-height: 56px;
+        padding: 6px 8px;
+    }
+    .catalog-grid.list-view .product-image {
+        width: 44px;
+        height: 44px;
+        margin: 0 8px 0 0;
+    }
+    .catalog-grid.list-view .product-name {
+        font-size: 0.85rem;
+    }
+    .catalog-grid.list-view .product-price {
+        font-size: 0.9rem;
     }
     
     /* Mobile Header */
@@ -772,13 +793,15 @@ body {
         z-index: 1000;
         flex-direction: column;
         align-items: stretch;
+        justify-content: flex-start !important; /* Force items to start from top */
         gap: 15px;
+        margin: 0 !important; /* Remove desktop margin so it touches left/top edges */
         padding: 20px;
         padding-bottom: 80px; /* Fix for iOS logout button obscured */
         transition: left 0.3s ease;
         overflow-y: auto;
         box-shadow: 4px 0 20px rgba(0,0,0,0.1);
-        border-radius: 0;
+        border-radius: 0 !important; /* Remove any glass-panel radius */
     }
     .pos-nav.open {
         left: 0;
