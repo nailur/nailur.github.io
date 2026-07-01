@@ -767,6 +767,7 @@ async function loadOutlets() {
     tbody.innerHTML = data.map(o => `
         <tr>
             <td><strong>${o.name}</strong></td>
+            <td><strong>${o.code || '-'}</strong></td>
             <td>${o.branches?.name || '-'}</td>
             <td>${o.address || '-'}</td>
             <td>
@@ -853,6 +854,7 @@ async function handleAddOutlet(e) {
     e.preventDefault();
     const id = document.getElementById('outlet-id').value;
     const name = document.getElementById('outlet-name').value;
+    const code = document.getElementById('outlet-code').value.toUpperCase();
     let branch_id = document.getElementById('outlet-branch').value;
     const address = document.getElementById('outlet-address').value;
     const phone = document.getElementById('outlet-phone').value;
@@ -863,11 +865,11 @@ async function handleAddOutlet(e) {
     }
 
     if (id) {
-        const { error } = await supabase.from('outlets').update({ name, address, phone, branch_id }).eq('id', id);
+        const { error } = await supabase.from('outlets').update({ name, code, address, phone, branch_id }).eq('id', id);
         if (error) showToast(error.message, 'error');
         else { showToast('Outlet diperbarui!', 'success'); document.getElementById('modal-outlet').classList.add('hidden'); loadOutlets(); }
     } else {
-        const { error } = await supabase.from('outlets').insert([{ name, address, phone, branch_id }]);
+        const { error } = await supabase.from('outlets').insert([{ name, code, address, phone, branch_id }]);
         if (error) showToast(error.message, 'error');
         else { showToast('Outlet ditambahkan!', 'success'); document.getElementById('modal-outlet').classList.add('hidden'); loadOutlets(); }
     }
@@ -878,6 +880,7 @@ window.editOutlet = (id) => {
     if (!o) return;
     document.getElementById('outlet-id').value = o.id;
     document.getElementById('outlet-name').value = o.name;
+    document.getElementById('outlet-code').value = o.code || '';
     document.getElementById('outlet-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id===o.branch_id?'selected':''}>${b.name}</option>`).join('');
     document.getElementById('outlet-address').value = o.address || '';
     document.getElementById('outlet-phone').value = o.phone || '';
@@ -1825,15 +1828,13 @@ async function generateReceiptNumber(trx) {
             
         let counter = count || 1;
         
-        const yy = trxDate.getFullYear().toString().substring(2);
-        const mm = (trxDate.getMonth()+1).toString().padStart(2, '0');
-        const dd = trxDate.getDate().toString().padStart(2, '0');
-        const dateStr = yy + mm + dd;
-        
         const activeOutlet = typeof posOutletsList !== 'undefined' ? posOutletsList.find(o => o.id === trx.outlet_id) : null;
-        const outletCode = activeOutlet && activeOutlet.name ? activeOutlet.name.replace(/[^A-Za-z0-9]/g, '').substring(0, 3).toUpperCase() : 'TRN';
+        let outletCode = activeOutlet && activeOutlet.code ? activeOutlet.code.toUpperCase() : null;
+        if (!outletCode) {
+             outletCode = activeOutlet && activeOutlet.name ? activeOutlet.name.replace(/[^A-Za-z0-9]/g, '').substring(0, 3).toUpperCase() : 'TRN';
+        }
         
-        return `${outletCode}-${dateStr}-${counter.toString().padStart(4, '0')}`;
+        return `${outletCode}-${counter.toString().padStart(4, '0')}`;
     } catch(e) {
         return trx.id.substring(0,8).toUpperCase();
     }
