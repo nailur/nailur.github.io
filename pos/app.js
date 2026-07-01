@@ -1614,11 +1614,9 @@ async function finalizeCheckout() {
     // Generate struk text untuk dicetak
     const activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
     const outletName = activeOutlet.name || 'Toko Kami';
-    let displayName = customer_name;
-    if (!displayName) {
-        const profile = getCurrentProfile();
-        displayName = profile.name || profile.email;
-    }
+    let displayName = null;
+    const profile = getCurrentProfile();
+    displayName = profile.name || profile.email;
     
     // ESC/POS Commands
     const ESC_INIT = "\x1B\x40";
@@ -1627,13 +1625,15 @@ async function finalizeCheckout() {
     const BOLD_ON = "\x1B\x45\x01";
     const BOLD_OFF = "\x1B\x45\x00";
 
+    const receiptNo = await generateReceiptNumber(trxData);
+
     let text = ESC_INIT;
     text += ALIGN_CENTER + BOLD_ON + outletName + "\n" + BOLD_OFF;
     if(activeOutlet.address) text += activeOutlet.address + "\n";
     if(activeOutlet.phone) text += activeOutlet.phone + "\n";
     text += ALIGN_LEFT;
     text += `--------------------------------\n`;
-    text += `No      : ${trxData.id.substring(0,8)}\n`;
+    text += `No      : ${receiptNo}\n`;
     text += `Tanggal : ${new Date(trxData.created_at).toLocaleString('id-ID')}\n`;
     text += `Kasir   : ${displayName}\n`;
     if (customer_name) {
@@ -1705,7 +1705,7 @@ function printReceipt(trxId, cartItems, total, received, method, trxDate = null,
     
     // Set transaction data
     document.getElementById('receipt-date').textContent = dateStr;
-    document.getElementById('receipt-id').textContent = trxId.substring(0,8);
+    document.getElementById('receipt-id').textContent = trxId; // trxId is now the receiptNo
     
     // Use cashier name if provided, else use current profile
     let displayName = cashierName;
@@ -1800,6 +1800,30 @@ function printReceiptRawBT(trxId, cartItems, total, received, method, trxDate = 
     // Membuka aplikasi RawBT dengan intent
     const rawbt_url = "intent:" + encodeURI(text) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
     window.location.href = rawbt_url;
+}
+
+// Generate TRN-YYYYMMDD-XXXX
+async function generateReceiptNumber(trx) {
+    if (!trx || !trx.created_at || !trx.outlet_id) return trx?.id ? trx.id.substring(0,8).toUpperCase() : "TRN-0000";
+    try {
+        const trxDate = new Date(trx.created_at);
+        const startOfDay = new Date(trxDate);
+        startOfDay.setHours(0,0,0,0);
+        
+        const { count, error } = await supabase.from('transactions')
+            .select('*', { count: 'exact', head: true })
+            .eq('outlet_id', trx.outlet_id)
+            .gte('created_at', startOfDay.toISOString())
+            .lte('created_at', trx.created_at);
+            
+        let counter = count || 1;
+        const dateStr = trxDate.getFullYear().toString() + 
+                        (trxDate.getMonth()+1).toString().padStart(2, '0') + 
+                        trxDate.getDate().toString().padStart(2, '0');
+        return `TRN-${dateStr}-${counter.toString().padStart(4, '0')}`;
+    } catch(e) {
+        return trx.id.substring(0,8).toUpperCase();
+    }
 }
 
 async function exportToExcel() {
@@ -1990,15 +2014,18 @@ window.viewTransactionDetails = async (trxId) => {
     document.getElementById('modal-transaction-details').classList.remove('hidden');
 }
 
-function reprintReceipt(trx, items) {
-    const cartItems = items.map(item => ({
-        name: item.products?.name || 'Produk Terhapus',
-        quantity: item.quantity,
-        price: item.price
+async function reprintReceipt(trx, items) {
+    let cashierName = null;
+    if (trx.profiles) {
+        cashierName = trx.profiles.name || trx.profiles.email;
+    }
+    const cartItems = items.map(i => ({
+        name: i.products?.name || 'Produk',
+        quantity: i.quantity,
+        price: i.price
     }));
-    
-    const cashierName = trx.profiles?.name || trx.profiles?.email || '-';
-    printReceipt(trx.id, cartItems, trx.total_amount, trx.total_amount, trx.payment_method, trx.created_at, cashierName);
+    const receiptNo = await generateReceiptNumber(trx);
+    printReceipt(receiptNo, cartItems, trx.total_amount, trx.total_amount, trx.payment_method, trx.created_at, cashierName, trx.customer_name);
 }
 
 async function loadDashboard() {
