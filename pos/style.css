@@ -353,9 +353,13 @@ body {
     align-items: center;
     padding: 8px 16px;
     margin: 12px 16px;
-    flex-wrap: wrap; /* allow wrapping on smaller screens */
+    flex-wrap: nowrap; /* MUST NOT WRAP to prevent tall headers on tablets */
     gap: 10px;
+    overflow-x: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
+.pos-nav::-webkit-scrollbar { display: none; }
 .nav-left {
     display: flex;
     align-items: center;
