@@ -1993,9 +1993,19 @@ window.viewTransactionDetails = async (trxId) => {
         
     if (trxError || itemsError) return showToast('Gagal memuat detail transaksi', 'error');
 
-    document.getElementById('detail-trx-id').textContent = trx.id.substring(0,8);
+    const receiptNo = await generateReceiptNumber(trx);
+    document.getElementById('detail-trx-id').textContent = receiptNo;
     document.getElementById('detail-trx-date').textContent = new Date(trx.created_at).toLocaleString('id-ID');
     document.getElementById('detail-trx-cashier').textContent = trx.profiles?.name || trx.profiles?.email || '-';
+    
+    const customerWrapper = document.getElementById('detail-trx-customer-wrapper');
+    if (trx.customer_name) {
+        document.getElementById('detail-trx-customer').textContent = trx.customer_name;
+        if (customerWrapper) customerWrapper.style.display = 'block';
+    } else {
+        if (customerWrapper) customerWrapper.style.display = 'none';
+    }
+    
     document.getElementById('detail-trx-method').textContent = trx.payment_method;
     
     const tbody = document.getElementById('detail-trx-items');
