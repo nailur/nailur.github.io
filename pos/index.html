@@ -754,24 +754,26 @@
                     <label for="product-name">Nama Produk</label>
                     <input type="text" id="product-name" required placeholder="">
                 </div>
-                <div class="input-group">
-                    <label for="product-price">Harga Reguler (Tunai/QRIS) (Rp)</label>
-                    <input type="number" id="product-price" required placeholder="">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="input-group" style="margin-bottom:0;">
+                        <label for="product-price">Reguler (Rp)</label>
+                        <input type="number" id="product-price" required>
+                    </div>
+                    <div class="input-group" style="margin-bottom:0;">
+                        <label for="product-price-gofood">GoFood (Rp)</label>
+                        <input type="number" id="product-price-gofood">
+                    </div>
+                    <div class="input-group">
+                        <label for="product-price-grabfood">GrabFood (Rp)</label>
+                        <input type="number" id="product-price-grabfood">
+                    </div>
+                    <div class="input-group">
+                        <label for="product-price-shopeefood">ShopeeFood (Rp)</label>
+                        <input type="number" id="product-price-shopeefood">
+                    </div>
                 </div>
                 <div class="input-group">
-                    <label for="product-price-gofood">Harga GoFood (Rp)</label>
-                    <input type="number" id="product-price-gofood" placeholder="">
-                </div>
-                <div class="input-group">
-                    <label for="product-price-grabfood">Harga GrabFood (Rp)</label>
-                    <input type="number" id="product-price-grabfood" placeholder="">
-                </div>
-                <div class="input-group">
-                    <label for="product-price-shopeefood">Harga ShopeeFood (Rp)</label>
-                    <input type="number" id="product-price-shopeefood" placeholder="">
-                </div>
-                <div class="input-group">
-                    <label for="product-stock">Stok</label>
+                    <label for="product-stock">Stok Awal</label>
                     <input type="number" id="product-stock" required placeholder="100">
                 </div>
                 <div class="input-group">
