@@ -1753,7 +1753,8 @@ function printReceiptRawBT(trxId, cartItems, total, received, method, trxDate = 
         displayName = profile.name || profile.email;
     }
 
-    let text = `[C]<b>${outletName}</b>\n`;
+    let text = `[C]<img>https://nailur.github.io/pos/receipt_logo_print.png</img>\n`;
+    text += `[C]<b>${outletName}</b>\n`;
     if(activeOutlet.address) text += `[C]${activeOutlet.address}\n`;
     if(activeOutlet.phone) text += `[C]${activeOutlet.phone}\n`;
     text += `--------------------------------\n`;
