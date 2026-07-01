@@ -349,7 +349,7 @@ function setupEventListeners() {
             saSidebarOverlay.classList.remove('active');
         });
 
-        const saSidebarButtons = saSidebar.querySelectorAll('.btn, .pos-nav-btn');
+        const saSidebarButtons = saSidebar.querySelectorAll('.btn, .pos-nav-btn, .tab-btn');
         saSidebarButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 if (window.innerWidth <= 768) {
