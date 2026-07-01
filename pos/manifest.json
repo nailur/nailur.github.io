@@ -1,11 +1,11 @@
 {
-  "name": "D'One Chicken POS",
-  "short_name": "POS Kasir",
+  "name": "NTPOS Kasir",
+  "short_name": "NTPOS",
   "start_url": "/pos/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#6366f1",
-  "description": "Aplikasi kasir modern",
+  "description": "Aplikasi kasir paling keren by NTGroup",
   "icons": [
     {
       "src": "logo.png",
