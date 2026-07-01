@@ -345,7 +345,7 @@ body {
     flex-direction: column;
     padding: 16px;
     margin: 0 0 16px 16px; /* Symmetrical margin */
-    background: var(--surface-0); /* White background */
+    background: var(--surface); /* White background */
     border-radius: var(--radius-lg);
     box-shadow: 0 8px 30px rgba(0,0,0,0.04);
     height: 100%;
@@ -471,7 +471,7 @@ body {
 }
 
 .product-card {
-    background: var(--surface-0);
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: 8px; /* Reduced from 12px for compactness */

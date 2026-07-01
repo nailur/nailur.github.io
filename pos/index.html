@@ -443,9 +443,9 @@
                     <div id="attendance-widget" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.02); border-radius: 16px 16px 0 0;">
                         <div style="line-height: 1.2;">
                             <div id="attendance-name" style="font-weight: 600; font-size: 0.85rem; color: var(--text-dark); max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Kasir</div>
-                            <div style="display: flex; gap: 8px; align-items: baseline;">
-                                <span id="attendance-time" style="font-size: 1.1rem; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums;">00:00:00</span>
-                                <span id="attendance-date" style="font-size: 0.75rem; color: var(--text-muted);">-</span>
+                            <div style="display: flex; flex-direction: column; margin-top: 2px;">
+                                <span id="attendance-date" style="font-size: 0.75rem; color: var(--text-muted); line-height: 1;">-</span>
+                                <span id="attendance-time" style="font-size: 1.15rem; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; line-height: 1;">00:00:00</span>
                             </div>
                         </div>
                         <button class="btn btn-primary" id="btn-clock-time" style="padding: 6px 16px; border-radius: var(--radius-full); font-size: 0.85rem; white-space: nowrap;">Clock In</button>
@@ -885,19 +885,19 @@
                 <button class="btn btn-icon" data-close="modal-checkout"><i class="ph ph-x"></i></button>
             </div>
             <div class="modal-body">
-                <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: var(--radius-md); margin-bottom: 20px; text-align: center;">
-                    <span style="font-size: 0.9rem; color: var(--text-muted);">Total Tagihan</span>
-                    <div id="modal-checkout-total" style="font-size: 2rem; font-weight: 700; color: var(--primary);">Rp 0</div>
+                <div style="background: rgba(0,0,0,0.03); padding: 10px; border-radius: var(--radius-md); margin-bottom: 12px; text-align: center;">
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">Total Tagihan</span>
+                    <div id="modal-checkout-total" style="font-size: 1.75rem; font-weight: 700; color: var(--primary);">Rp 0</div>
                 </div>
 
-                <div class="input-group">
-                    <label>Nama Customer</label>
-                    <input type="text" id="modal-customer-name" placeholder="" class="input-lg" style="width: 100%;">
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 0.85rem; margin-bottom: 4px;">Nama Customer</label>
+                    <input type="text" id="modal-customer-name" placeholder="" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
                 </div>
 
-                <div class="input-group">
-                    <label>Metode Pembayaran</label>
-                    <select id="modal-payment-method" class="input-lg" style="width: 100%;">
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 0.85rem; margin-bottom: 4px;">Metode Pembayaran</label>
+                    <select id="modal-payment-method" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
                         <option value="Tunai">Tunai</option>
                         <option value="QRIS">QRIS</option>
                         <option value="Go Food">Go Food</option>
@@ -906,17 +906,17 @@
                     </select>
                 </div>
 
-                <div class="input-group" id="modal-cash-input-group">
-                    <label>Tunai Diterima</label>
-                    <input type="number" id="modal-cash-received" placeholder="0" class="input-lg" style="width: 100%;">
+                <div class="input-group" id="modal-cash-input-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 0.85rem; margin-bottom: 4px;">Tunai Diterima</label>
+                    <input type="number" id="modal-cash-received" placeholder="0" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
                 </div>
 
-                <div id="modal-change-group" style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 600; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border);">
+                <div id="modal-change-group" style="display: flex; justify-content: space-between; font-size: 1rem; font-weight: 600; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">
                     <span>Kembalian</span>
                     <span id="modal-cart-change" class="text-success">Rp 0</span>
                 </div>
             </div>
-            <div class="modal-actions" style="margin-top: 25px;">
+            <div class="modal-actions" style="margin-top: 15px;">
                 <button type="button" class="btn btn-secondary" data-close="modal-checkout">Batal</button>
                 <button type="button" class="btn btn-primary" id="btn-confirm-payment">Konfirmasi & Cetak</button>
             </div>
