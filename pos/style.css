@@ -101,12 +101,12 @@ body {
 }
 
 .input-group {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .input-group label {
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     font-weight: 500;
     font-size: 0.9rem;
     color: var(--text-main);
@@ -117,7 +117,7 @@ body {
 .input-group > textarea,
 .password-wrapper > input {
     width: 100%;
-    padding: 12px;
+    padding: 8px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: rgba(255, 255, 255, 0.7);
@@ -150,7 +150,7 @@ body {
 }
 .input-icon input {
     width: 100%;
-    padding: 12px 12px 12px 40px;
+    padding: 8px 12px 8px 36px;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: rgba(255,255,255,0.7);
@@ -294,7 +294,7 @@ body {
     border-collapse: collapse;
 }
 .data-table th, .data-table td {
-    padding: 16px;
+    padding: 10px 12px;
     text-align: left;
     border-bottom: 1px solid var(--border);
 }
