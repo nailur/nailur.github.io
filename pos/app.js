@@ -1615,7 +1615,6 @@ async function finalizeCheckout() {
     const activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
     const outletName = activeOutlet.name || 'Toko Kami';
     let displayName = null;
-    const profile = getCurrentProfile();
     displayName = profile.name || profile.email;
     
     // ESC/POS Commands
