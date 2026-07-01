@@ -344,7 +344,7 @@ body {
     display: flex;
     flex-direction: column;
     padding: 16px;
-    margin: 0 0 16px 16px; /* Symmetrical margin */
+    margin: 16px 0 16px 16px; /* Symmetrical margin */
     background: var(--surface); /* White background */
     border-radius: var(--radius-lg);
     box-shadow: 0 8px 30px rgba(0,0,0,0.04);
