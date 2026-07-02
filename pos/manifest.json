@@ -5,7 +5,7 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#6366f1",
-  "description": "NTPOS adalah Aplikasi Point of Sale (Kasir) pintar & modern by NTGroup.\n\nFitur Utama:\n✅ Transaksi Offline-to-Online (Tetap jualan tanpa hambatan walau internet mati)\n✅ Manajemen Multi-Cabang, Multi-Outlet, dan Hak Akses Pengguna (Role)\n✅ Sistem Pencatatan Stok Barang Real-time & Otomatis\n✅ Manajemen Fleksibel untuk Diskon (Nominal/Persen) & Pajak Outlet\n✅ Dukungan Cetak Struk Printer Bluetooth Thermal secara Native\n✅ Sistem Absensi Pegawai Terintegrasi (Clock-In / Clock-Out)\n✅ Laporan & Analitik Visual (Grafik Interaktif & Export Laporan via Excel)",
+  "description": "NTPOS adalah Aplikasi Point of Sale (Kasir) pintar & modern by NTGroup. Fitur Utama: - Transaksi Offline-to-Online (Tetap berjualan meskipun koneksi internet terputus dengan penyimpanan lokal IndexedDB yang otomatis sinkronisasi ke server saat online kembali) - Manajemen Multi-Cabang & Multi-Outlet (Pengelolaan data terpusat dengan multi-role: Superadmin, Owner, Kepala Cabang, Kepala Toko, Kasir) - Manajemen Inventori Otomatis (Stok barang terupdate secara real-time pada setiap outlet dengan validasi otomatis saat stok habis) - Diskon & Pajak Terstruktur (Dukungan kombinasi diskon nominal dan persentase beserta perhitungan pajak yang fleksibel) - Cetak Struk Bluetooth Thermal (Cetak struk secara native dari browser melalui Web Bluetooth API tanpa driver) - Sistem Absensi Pegawai (Terintegrasi fitur absensi Clock-In dan Clock-Out) - Laporan & Dashboard Analitik (Visualisasi data pendapatan harian dan top produk menggunakan grafik interaktif, lengkap dengan filter waktu dan fitur ekspor absensi/transaksi ke Excel).",
   "icons": [
     {
       "src": "icon-192.png",
