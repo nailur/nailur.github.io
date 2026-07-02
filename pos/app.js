@@ -1066,6 +1066,31 @@ async function initPos() {
     if (btnConnectPrinter) {
         btnConnectPrinter.onclick = connectPrinter;
     }
+
+    // Bind hard refresh button
+    const btnHardRefresh = document.getElementById('btn-hard-refresh');
+    if (btnHardRefresh) {
+        btnHardRefresh.addEventListener('click', async () => {
+            const icon = btnHardRefresh.querySelector('i');
+            if(icon) {
+                icon.classList.remove('ph-arrows-clockwise');
+                icon.classList.add('ph-spinner', 'ph-spin');
+            }
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                window.location.reload(true);
+            } catch (e) {
+                window.location.reload(true);
+            }
+        });
+    }
 }
 
 function generateOrderId() {
