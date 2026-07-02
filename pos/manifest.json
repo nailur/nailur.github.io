@@ -5,7 +5,7 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#6366f1",
-  "description": "Aplikasi kasir paling keren by NTGroup",
+  "description": "NTPOS adalah Aplikasi Point of Sale (Kasir) pintar & modern by NTGroup.\n\nFitur Utama:\n✅ Transaksi Offline-to-Online (Tetap jualan tanpa hambatan walau internet mati)\n✅ Manajemen Multi-Cabang, Multi-Outlet, dan Hak Akses Pengguna (Role)\n✅ Sistem Pencatatan Stok Barang Real-time & Otomatis\n✅ Manajemen Fleksibel untuk Diskon (Nominal/Persen) & Pajak Outlet\n✅ Dukungan Cetak Struk Printer Bluetooth Thermal secara Native\n✅ Sistem Absensi Pegawai Terintegrasi (Clock-In / Clock-Out)\n✅ Laporan & Analitik Visual (Grafik Interaktif & Export Laporan via Excel)",
   "icons": [
     {
       "src": "icon-192.png",
