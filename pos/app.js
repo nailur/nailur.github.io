@@ -1885,13 +1885,36 @@ function printReceiptRawBT(trxId, cartItems, total, received, method, trxDate = 
         displayName = profile.name || profile.email;
     }
 
-    // Helper untuk memotong teks
+    // Helper untuk memotong teks (harus 1 baris)
     const tLine = (str) => str.length > 32 ? str.substring(0, 32) : str;
+
+    // Helper untuk memecah teks panjang menjadi beberapa baris
+    const wrapLine = (str, len = 32) => {
+        if (!str) return [];
+        const lines = [];
+        let curr = '';
+        str.split(' ').forEach(word => {
+            if ((curr + word).length > len) {
+                if (curr) lines.push(curr.trim());
+                curr = word + ' ';
+            } else {
+                curr += word + ' ';
+            }
+        });
+        if (curr) lines.push(curr.trim());
+        return lines;
+    };
 
     let text = `[C]<img>https://nailur.github.io/pos/receipt_logo_print.png</img>\n`;
     text += `[C]<b>${tLine(outletName)}</b>\n`;
-    if(activeOutlet.address) text += `[C]${tLine(activeOutlet.address)}\n`;
-    if(activeOutlet.phone) text += `[C]${tLine(activeOutlet.phone)}\n`;
+    
+    if (activeOutlet.address) {
+        wrapLine(activeOutlet.address).forEach(line => {
+            text += `[C]${line}\n`;
+        });
+    }
+    
+    if (activeOutlet.phone) text += `[C]${tLine(activeOutlet.phone)}\n`;
     text += `--------------------------------\n`;
     text += tLine(`No      : ${trxId}`) + `\n`;
     text += tLine(`Tanggal : ${dateStr}`) + `\n`;
