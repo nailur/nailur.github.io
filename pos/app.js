@@ -2610,6 +2610,14 @@ document.querySelectorAll('.pos-nav-btn[data-target="server-info-tab"]').forEach
 // ------------------------------
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+            }
+        });
+
         navigator.serviceWorker.register('./sw.js')
             .then(registration => {
                 console.log('ServiceWorker registration successful with scope: ', registration.scope);
@@ -2629,9 +2637,13 @@ if ('serviceWorker' in navigator) {
                                 toast.style.opacity = '1';
                                 toast.innerHTML = `
                                     <span>Versi terbaru aplikasi telah tersedia!</span>
-                                    <button style="padding: 6px 12px; border: none; border-radius: 4px; background: white; color: var(--primary); font-weight: bold; cursor: pointer;" onclick="window.location.reload()">Refresh Sekarang</button>
+                                    <button id="btn-pwa-refresh" style="padding: 6px 12px; border: none; border-radius: 4px; background: white; color: var(--primary); font-weight: bold; cursor: pointer;">Refresh Sekarang</button>
                                 `;
                                 container.appendChild(toast);
+                                
+                                document.getElementById('btn-pwa-refresh').addEventListener('click', () => {
+                                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                });
                             }
                         }
                     });

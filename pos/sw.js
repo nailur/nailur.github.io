@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pos-kasir-cache-v1';
+const CACHE_NAME = 'pos-kasir-cache-v2';
 const urlsToCache = [
   './',
   './index.html',
@@ -71,4 +71,10 @@ self.addEventListener('activate', event => {
       );
     })
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
