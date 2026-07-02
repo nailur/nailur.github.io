@@ -2633,6 +2633,29 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
             .then(registration => {
                 console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            const container = document.getElementById('toast-container');
+                            if (container) {
+                                const toast = document.createElement('div');
+                                toast.className = `toast toast-info`;
+                                toast.style.background = 'var(--primary)';
+                                toast.style.display = 'flex';
+                                toast.style.flexDirection = 'column';
+                                toast.style.gap = '10px';
+                                toast.style.opacity = '1';
+                                toast.innerHTML = `
+                                    <span>Versi terbaru aplikasi telah tersedia!</span>
+                                    <button style="padding: 6px 12px; border: none; border-radius: 4px; background: white; color: var(--primary); font-weight: bold; cursor: pointer;" onclick="window.location.reload()">Refresh Sekarang</button>
+                                `;
+                                container.appendChild(toast);
+                            }
+                        }
+                    });
+                });
             })
             .catch(err => {
                 console.log('ServiceWorker registration failed: ', err);
