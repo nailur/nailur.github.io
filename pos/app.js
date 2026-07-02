@@ -360,7 +360,7 @@ function setupEventListeners() {
         });
     }
 
-    // Toggle List/Grid View
+    // Toggle List/Grid View Setup
     const btnToggleLayout = document.getElementById('btn-toggle-layout');
     const productGrid = document.getElementById('product-grid');
     if (btnToggleLayout && productGrid) {
@@ -373,18 +373,6 @@ function setupEventListeners() {
                 icon.classList.add('ph-squares-four');
             }
         }
-
-        btnToggleLayout.addEventListener('click', () => {
-            productGrid.classList.toggle('list-view');
-            const icon = btnToggleLayout.querySelector('i');
-            if (productGrid.classList.contains('list-view')) {
-                icon.classList.remove('ph-list-dashes');
-                icon.classList.add('ph-squares-four');
-            } else {
-                icon.classList.add('ph-list-dashes');
-                icon.classList.remove('ph-squares-four');
-            }
-        });
     }
 
 
@@ -2632,6 +2620,27 @@ document.querySelectorAll('.pos-nav-btn[data-target="server-info-tab"]').forEach
 
 // ------------------------------
 // PWA Service Worker Registration
+// ------------------------------
+// GLOBAL UI FUNCTIONS
+// ------------------------------
+window.toggleLayout = function() {
+    const productGrid = document.getElementById('product-grid');
+    const btnToggleLayout = document.getElementById('btn-toggle-layout');
+    if (!productGrid || !btnToggleLayout) return;
+    
+    productGrid.classList.toggle('list-view');
+    const icon = btnToggleLayout.querySelector('i');
+    if (icon) {
+        if (productGrid.classList.contains('list-view')) {
+            icon.classList.remove('ph-list-dashes');
+            icon.classList.add('ph-squares-four');
+        } else {
+            icon.classList.add('ph-list-dashes');
+            icon.classList.remove('ph-squares-four');
+        }
+    }
+};
+
 // ------------------------------
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
