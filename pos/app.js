@@ -2642,6 +2642,79 @@ window.toggleLayout = function() {
 };
 
 // ------------------------------
+// GLOBAL REFRESH BROADCAST
+// ------------------------------
+let systemChannel = null;
+
+function setupGlobalRefreshListener() {
+    if (!supabase) return;
+    
+    // Subscribe to system_events channel
+    systemChannel = supabase.channel('system_events');
+    systemChannel.on('broadcast', { event: 'force_refresh' }, async (payload) => {
+        console.log('Received force_refresh broadcast:', payload);
+        showToast('Memperbarui aplikasi dari Pusat...', 'info');
+        
+        // Execute hard refresh
+        try {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (let registration of registrations) {
+                    await registration.unregister();
+                }
+            }
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 1000);
+        } catch (e) {
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 1000);
+        }
+    }).subscribe((status) => {
+        console.log('System Events Channel Status:', status);
+    });
+}
+
+window.triggerGlobalRefresh = async function() {
+    const btn = document.getElementById('btn-force-global-refresh');
+    const originalText = btn.innerHTML;
+    
+    if (!confirm('Peringatan: Tindakan ini akan memaksa SELURUH perangkat kasir yang sedang online untuk memuat ulang aplikasi detik ini juga. Lanjutkan?')) {
+        return;
+    }
+    
+    if (btn) {
+        btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengirim Sinyal...';
+        btn.disabled = true;
+    }
+    
+    if (systemChannel) {
+        const resp = await systemChannel.send({
+            type: 'broadcast',
+            event: 'force_refresh',
+            payload: { timestamp: new Date().toISOString() }
+        });
+        
+        if (resp !== 'ok') {
+            showToast('Gagal mengirim sinyal refresh ke perangkat lain.', 'error');
+        }
+    } else {
+        showToast('Koneksi Realtime belum siap.', 'error');
+    }
+    
+    if (btn) {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+};
+
+// Start listening when file loads
+setupGlobalRefreshListener();
+
+// ------------------------------
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         let refreshing = false;

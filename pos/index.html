@@ -325,12 +325,18 @@
 
                     <!-- 4. INFO SERVER TAB -->
                     <div id="server-info-tab" class="tab-pane hidden">
-                        <div class="action-bar">
+                        <div class="action-bar" style="display: flex; justify-content: space-between; align-items: center;">
                             <h3>Info Penggunaan Server</h3>
-                            <button class="btn btn-secondary btn-sm" id="btn-refresh-server"
-                                style="display: flex; align-items: center; gap: 5px;" onclick="loadServerInfo()">
-                                <i class="ph ph-arrows-clockwise"></i> Refresh
-                            </button>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-secondary btn-sm" id="btn-refresh-server"
+                                    style="display: flex; align-items: center; gap: 5px;" onclick="loadServerInfo()">
+                                    <i class="ph ph-arrows-clockwise"></i> Refresh
+                                </button>
+                                <button class="btn btn-danger btn-sm" id="btn-force-global-refresh"
+                                    style="display: flex; align-items: center; gap: 5px;" onclick="triggerGlobalRefresh()">
+                                    <i class="ph ph-warning-circle"></i> Paksa Refresh Global
+                                </button>
+                            </div>
                         </div>
                         <div
                             style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 10px;">
