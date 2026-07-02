@@ -279,9 +279,9 @@
 
                     <!-- ANALITIK TAB -->
                     <div id="analytics-tab" class="tab-pane hidden">
-                        <div class="action-bar" style="justify-content: space-between;">
+                        <div class="action-bar" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                             <h3>Laporan & Analitik</h3>
-                            <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                                 <select id="analytics-outlet-filter" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">
                                     <option value="">Semua Outlet</option>
                                     <!-- Options injected via JS -->
@@ -308,7 +308,7 @@
                                 <div id="analytics-total-items" style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">0</div>
                             </div>
                         </div>
-                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                        <div class="analytics-charts-grid" style="display: grid; gap: 15px;">
                             <div class="glass-panel" style="padding: 15px; height: 300px;">
                                 <canvas id="revenueChart"></canvas>
                             </div>

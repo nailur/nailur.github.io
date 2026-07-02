@@ -613,6 +613,10 @@ body {
     margin-top: 8px;
 }
 
+.analytics-charts-grid {
+    grid-template-columns: 2fr 1fr;
+}
+
 /* =========================================
    RECEIPT PRINT VIEW (58mm)
    ========================================= */
@@ -847,6 +851,9 @@ body {
     }
     .action-bar {
         margin-bottom: 10px;
+    }
+    .analytics-charts-grid {
+        grid-template-columns: 1fr !important;
     }
     .action-bar h3 {
         font-size: 1.1rem;
