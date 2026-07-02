@@ -1599,9 +1599,17 @@ async function finalizeCheckout() {
         price: item.price
     }));
 
+    function generateUUID() {
+        if (crypto.randomUUID) return crypto.randomUUID();
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
     let isOffline = !navigator.onLine;
     let trxData = { 
-        id: crypto.randomUUID ? crypto.randomUUID() : 'OFFLINE-' + Date.now(), 
+        id: generateUUID(), 
         created_at: new Date().toISOString(),
         outlet_id: activeOutletId
     };
@@ -1610,6 +1618,7 @@ async function finalizeCheckout() {
     if (!isOffline) {
         try {
             const { data, error } = await supabase.rpc('process_checkout', {
+                p_id: trxData.id,
                 p_outlet_id: activeOutletId,
                 p_cashier_id: profile.id,
                 p_subtotal_amount: totals.subtotal,
@@ -2691,16 +2700,21 @@ window.addEventListener('online', async () => {
     await syncOfflineTransactions();
 });
 
+let isSyncing = false;
 async function syncOfflineTransactions() {
-    if (!navigator.onLine) return;
-    const pending = await getOfflineTransactions();
-    if (pending.length === 0) return;
+    if (!navigator.onLine || isSyncing) return;
+    
+    isSyncing = true;
+    try {
+        const pending = await getOfflineTransactions();
+        if (pending.length === 0) return;
     
     showToast(`Menyinkronkan ${pending.length} transaksi offline...`, 'info');
     let successCount = 0;
     for (const trx of pending) {
         try {
             const { error } = await supabase.rpc('process_checkout', {
+                p_id: trx.id,
                 p_outlet_id: trx.outlet_id,
                 p_cashier_id: trx.cashier_id,
                 p_subtotal_amount: trx.subtotal_amount,
@@ -2725,5 +2739,8 @@ async function syncOfflineTransactions() {
     if (successCount > 0) {
         showToast(`${successCount} transaksi offline berhasil disinkronkan!`, 'success');
         if (typeof loadHistory === 'function') loadHistory();
+    }
+    } finally {
+        isSyncing = false;
     }
 }
