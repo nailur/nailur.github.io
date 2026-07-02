@@ -2678,6 +2678,9 @@ function setupGlobalRefreshListener() {
             // Cart is not empty! Don't aggressively reload.
             const container = document.getElementById('toast-container');
             if (container) {
+                // Prevent duplicate warning toasts if multiple broadcasts arrive
+                if (container.querySelector('.toast-warning')) return;
+                
                 const toast = document.createElement('div');
                 toast.className = `toast toast-warning`;
                 toast.style.background = '#f59e0b'; // warning color
