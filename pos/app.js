@@ -34,7 +34,7 @@ export function showToast(message, type = 'info') {
 
 // Global State
 let products = [];
-let cart = [];
+let cart = JSON.parse(localStorage.getItem('pos_cart')) || [];
 let branchesList = [];
 let outletsList = [];
 let posOutletsList = []; // Outlets accessible by current POS user
@@ -1041,7 +1041,7 @@ async function initPos() {
         if(el && !el.value) el.value = today;
     });
 
-    generateOrderId();
+    generateOrderId(false);
     if (activeOutletId) await loadProducts();
     
     // Restore active tab
@@ -1081,13 +1081,16 @@ async function initPos() {
     }
 }
 
-function generateOrderId() {
+function generateOrderId(resetCart = true) {
     const id = 'ORD-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     const orderIdEl = document.getElementById('current-order-id');
     if(orderIdEl) orderIdEl.textContent = id;
-    cart = [];
-    const cashEl = document.getElementById('cash-received');
-    if(cashEl) cashEl.value = '';
+    
+    if (resetCart) {
+        cart = [];
+        const cashEl = document.getElementById('cash-received');
+        if(cashEl) cashEl.value = '';
+    }
     renderCart();
 }
 
@@ -1437,6 +1440,7 @@ window.emptyCart = () => {
 };
 
 function renderCart() {
+    localStorage.setItem('pos_cart', JSON.stringify(cart));
     const container = document.getElementById('cart-items-container');
     const subtotalEl = document.getElementById('cart-subtotal');
     const totalEl = document.getElementById('cart-total');
@@ -2653,25 +2657,50 @@ function setupGlobalRefreshListener() {
     systemChannel = supabase.channel('system_events');
     systemChannel.on('broadcast', { event: 'force_refresh' }, async (payload) => {
         console.log('Received force_refresh broadcast:', payload);
-        showToast('Memperbarui aplikasi dari Pusat...', 'info');
         
-        // Execute hard refresh
-        try {
-            if ('serviceWorker' in navigator) {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                for (let registration of registrations) {
-                    await registration.unregister();
+        const executeHardRefresh = async () => {
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
                 }
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                setTimeout(() => window.location.reload(true), 1000);
+            } catch (e) {
+                setTimeout(() => window.location.reload(true), 1000);
             }
-            const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map(name => caches.delete(name)));
-            setTimeout(() => {
-                window.location.reload(true);
-            }, 1000);
-        } catch (e) {
-            setTimeout(() => {
-                window.location.reload(true);
-            }, 1000);
+        };
+
+        if (cart && cart.length > 0) {
+            // Cart is not empty! Don't aggressively reload.
+            const container = document.getElementById('toast-container');
+            if (container) {
+                const toast = document.createElement('div');
+                toast.className = `toast toast-warning`;
+                toast.style.background = '#f59e0b'; // warning color
+                toast.style.display = 'flex';
+                toast.style.flexDirection = 'column';
+                toast.style.gap = '10px';
+                toast.style.opacity = '1';
+                toast.innerHTML = `
+                    <span>Pusat meminta Anda memperbarui aplikasi. Tolong selesaikan transaksi Anda saat ini, lalu klik tombol Refresh.</span>
+                    <button id="btn-pwa-refresh-forced" style="padding: 6px 12px; border: none; border-radius: 4px; background: white; color: #f59e0b; font-weight: bold; cursor: pointer;">Refresh Sekarang</button>
+                `;
+                container.appendChild(toast);
+                
+                document.getElementById('btn-pwa-refresh-forced').onclick = () => {
+                    toast.remove();
+                    showToast('Memperbarui aplikasi...', 'info');
+                    executeHardRefresh();
+                };
+            }
+        } else {
+            // Cart is empty, safe to refresh immediately
+            showToast('Memperbarui aplikasi dari Pusat...', 'info');
+            executeHardRefresh();
         }
     }).subscribe((status) => {
         console.log('System Events Channel Status:', status);
