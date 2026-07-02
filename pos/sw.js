@@ -1,9 +1,9 @@
-const CACHE_NAME = 'pos-kasir-cache-v8';
+const CACHE_NAME = 'pos-kasir-cache-v9';
 const urlsToCache = [
   './',
   './index.html',
   './style.css',
-  './app.js',
+  './app.js?v=8',
   './auth.js',
   './printer.js',
   './manifest.json',

@@ -27,7 +27,7 @@
     <!-- Chart.js for Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <link rel="stylesheet" href="./style.css?v=6">
+    <link rel="stylesheet" href="./style.css?v=8">
     <link rel="stylesheet" href="./style-modals.css">
 </head>
 
@@ -172,6 +172,7 @@
                         <button class="tab-btn" data-target="users-tab">Kelola Users</button>
                         <button class="tab-btn" data-target="analytics-tab">Analitik</button>
                         <button class="tab-btn" data-target="server-info-tab">Info Server</button>
+                        <button class="tab-btn" data-target="announcement-tab">Pengumuman</button>
                     </div>
                 </div>
                 <div class="nav-right">
@@ -399,6 +400,40 @@
                             menampilkan penggunaan <em>Bandwidth</em> secara langsung karena keterbatasan akses API dari
                             paket gratis Supabase maupun GitHub Pages. Mohon cek dasbor resmi mereka jika Anda mendapati
                             akses yang melambat.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ANNOUNCEMENT TAB -->
+                <div id="announcement-tab" class="tab-content hidden">
+                    <div class="card glass-panel fade-in">
+                        <div class="card-header">
+                            <h2 style="font-size: 1.5rem; color: var(--primary);"><i class="ph-duotone ph-megaphone"></i> Broadcast Pengumuman</h2>
+                        </div>
+                        <div class="card-body" style="max-width: 600px; margin: 0 auto; padding-top: 20px;">
+                            <form id="form-announcement" style="display: flex; flex-direction: column; gap: 15px;">
+                                <div class="form-group">
+                                    <label>Target Pengguna (Kasir yang sedang online)</label>
+                                    <select id="announcement-target" class="input" required>
+                                        <option value="all">Semua Kasir</option>
+                                        <!-- specific users will be loaded here -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Judul Notifikasi</label>
+                                    <input type="text" id="announcement-title" class="input" placeholder="Contoh: Pembaruan Sistem atau Promo Baru" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Isi Pesan</label>
+                                    <textarea id="announcement-body" class="input" rows="5" placeholder="Ketikkan pesan lengkap di sini..." required style="resize: vertical;"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px; font-size: 1.1rem; padding: 12px;">
+                                    <i class="ph-bold ph-paper-plane-right"></i> Kirim Sekarang
+                                </button>
+                            </form>
+                            <div style="margin-top: 20px; font-size: 0.85rem; color: var(--text-muted); background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
+                                <strong>Catatan:</strong> Notifikasi ini hanya akan diterima oleh kasir yang sedang membuka aplikasi (atau membiarkan aplikasinya nyala di latar belakang). Ini adalah metode <i>In-App Broadcast</i>.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1106,7 +1141,7 @@
 
     <!-- MAIN SCRIPT (ES MODULE) -->
     <!-- MAIN SCRIPT (ES MODULE) -->
-    <script type="module" src="./app.js?v=6"></script>
+    <script type="module" src="./app.js?v=8"></script>
 </body>
 
 </html>

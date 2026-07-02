@@ -83,6 +83,11 @@ async function routeUser(profile) {
         logout();
         return;
     }
+    
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        Notification.requestPermission();
+    }
+    
     if (profile.role === 'superadmin' || profile.role === 'owner') {
         showView('pos');
         await initPosMultiOutlet(profile);
@@ -681,22 +686,30 @@ async function initManagement() {
     const tabBranches = document.querySelector('.tab-btn[data-target="branches-tab"]');
     const tabOutlets = document.querySelector('.tab-btn[data-target="outlets-tab"]');
     const tabServerInfo = document.querySelector('.tab-btn[data-target="server-info-tab"]');
+    const tabAnnouncement = document.querySelector('.tab-btn[data-target="announcement-tab"]');
     
     if (role === 'superadmin' || role === 'owner') {
         tabBranches.classList.remove('hidden');
         tabOutlets.classList.remove('hidden');
-        if(role === 'superadmin' && tabServerInfo) tabServerInfo.classList.remove('hidden');
-        else if (tabServerInfo) tabServerInfo.classList.add('hidden');
+        if(role === 'superadmin') {
+            if (tabServerInfo) tabServerInfo.classList.remove('hidden');
+            if (tabAnnouncement) tabAnnouncement.classList.remove('hidden');
+        } else {
+            if (tabServerInfo) tabServerInfo.classList.add('hidden');
+            if (tabAnnouncement) tabAnnouncement.classList.add('hidden');
+        }
         document.getElementById('management-title').textContent = 'Manajemen Sistem';
     } else if (role === 'kepala_cabang') {
         tabBranches.classList.add('hidden');
         tabOutlets.classList.remove('hidden');
         if(tabServerInfo) tabServerInfo.classList.add('hidden');
+        if(tabAnnouncement) tabAnnouncement.classList.add('hidden');
         document.getElementById('management-title').textContent = 'Panel Kepala Cabang';
     } else if (role === 'kepala_toko') {
         tabBranches.classList.add('hidden');
         tabOutlets.classList.add('hidden');
         if(tabServerInfo) tabServerInfo.classList.add('hidden');
+        if(tabAnnouncement) tabAnnouncement.classList.add('hidden');
         document.getElementById('management-title').textContent = 'Panel Kepala Toko';
     }
     
@@ -726,6 +739,15 @@ async function initManagement() {
     if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadBranches();
     if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadOutlets();
     await loadUsers();
+    
+    if (role === 'superadmin') {
+        const formAnnouncement = document.getElementById('form-announcement');
+        if (formAnnouncement && !formAnnouncement.dataset.bound) {
+            formAnnouncement.addEventListener('submit', window.sendCustomNotification);
+            formAnnouncement.dataset.bound = 'true';
+        }
+        await loadTargetUsers();
+    }
 }
 
 async function loadBranches() {
@@ -2705,6 +2727,45 @@ function setupGlobalRefreshListener() {
             showToast('Memperbarui aplikasi dari Pusat...', 'info');
             executeHardRefresh();
         }
+    }).on('broadcast', { event: 'system_announcement' }, (payload) => {
+        const { title, body, target } = payload.payload || {};
+        const profile = getCurrentProfile();
+        if (!profile || (target !== 'all' && profile.id !== target)) return; // not for us
+        
+        // Show in-app modal or toast
+        const container = document.getElementById('toast-container');
+        if (container) {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-info`;
+            toast.style.background = 'var(--primary)';
+            toast.style.display = 'flex';
+            toast.style.flexDirection = 'column';
+            toast.style.gap = '10px';
+            toast.style.opacity = '1';
+            toast.style.animation = 'slideIn 0.3s ease';
+            toast.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong><i class="ph-fill ph-bell-ringing"></i> ${title || 'Pengumuman'}</strong>
+                    <button class="btn-close-toast" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-x"></i></button>
+                </div>
+                <div style="font-size: 0.95rem; white-space: pre-wrap;">${body || ''}</div>
+            `;
+            container.appendChild(toast);
+            toast.querySelector('.btn-close-toast').onclick = () => toast.remove();
+            
+            // Auto remove after 30 seconds
+            setTimeout(() => {
+                if(toast.parentElement) toast.remove();
+            }, 30000);
+        }
+        
+        // Try OS Notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title || 'Pengumuman', {
+                body: body || '',
+                icon: './icon-192.png'
+            });
+        }
     }).subscribe((status) => {
         console.log('System Events Channel Status:', status);
     });
@@ -2742,6 +2803,53 @@ window.triggerGlobalRefresh = async function() {
         btn.disabled = false;
     }
 };
+
+window.sendCustomNotification = async function(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    
+    const target = document.getElementById('announcement-target').value;
+    const title = document.getElementById('announcement-title').value;
+    const body = document.getElementById('announcement-body').value;
+    
+    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengirim...';
+    btn.disabled = true;
+    
+    if (systemChannel) {
+        const resp = await systemChannel.send({
+            type: 'broadcast',
+            event: 'system_announcement',
+            payload: { title, body, target }
+        });
+        
+        if (resp === 'ok') {
+            showToast('Pengumuman berhasil dikirim!', 'success');
+            document.getElementById('form-announcement').reset();
+        } else {
+            showToast('Gagal mengirim pengumuman.', 'error');
+        }
+    } else {
+        showToast('Koneksi Realtime belum siap.', 'error');
+    }
+    
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+};
+
+async function loadTargetUsers() {
+    const select = document.getElementById('announcement-target');
+    if (!select) return;
+    
+    const { data: users, error } = await supabase.from('profiles').select('id, name, email').neq('role', 'superadmin');
+    if (users && !error) {
+        select.innerHTML = '<option value="all">Semua Kasir</option>';
+        users.forEach(u => {
+            const name = u.name || u.email;
+            select.innerHTML += `<option value="${u.id}">${name}</option>`;
+        });
+    }
+}
 
 // Start listening when file loads
 setupGlobalRefreshListener();
