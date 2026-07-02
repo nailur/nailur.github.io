@@ -1721,10 +1721,33 @@ async function finalizeCheckout() {
     
     // Helper untuk memotong teks agar tidak turun ke bawah (maks 32 karakter standar 58mm)
     const tLine = (str) => str.length > 32 ? str.substring(0, 32) : str;
+    
+    // Helper untuk memecah teks panjang menjadi beberapa baris
+    const wrapLine = (str, len = 32) => {
+        if (!str) return [];
+        const lines = [];
+        let curr = '';
+        str.split(' ').forEach(word => {
+            if ((curr + word).length > len) {
+                if (curr) lines.push(curr.trim());
+                curr = word + ' ';
+            } else {
+                curr += word + ' ';
+            }
+        });
+        if (curr) lines.push(curr.trim());
+        return lines;
+    };
 
     let text = ESC_INIT;
     text += ALIGN_CENTER + BOLD_ON + tLine(outletName) + "\n" + BOLD_OFF;
-    if(activeOutlet.address) text += tLine(activeOutlet.address) + "\n";
+    
+    if (activeOutlet.address) {
+        wrapLine(activeOutlet.address).forEach(line => {
+            text += line + "\n";
+        });
+    }
+    
     if(activeOutlet.phone) text += tLine(activeOutlet.phone) + "\n";
     text += ALIGN_LEFT;
     text += `--------------------------------\n`;
