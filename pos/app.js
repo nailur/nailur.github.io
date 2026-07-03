@@ -912,6 +912,7 @@ window.editBranch = (id) => {
     if (!b) return;
     document.getElementById('branch-id').value = b.id;
     document.getElementById('branch-name').value = b.name;
+
     document.getElementById('modal-branch').classList.remove('hidden');
 };
 
