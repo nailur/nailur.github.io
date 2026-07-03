@@ -1326,7 +1326,7 @@ async function loadProducts() {
     // 2. Background Revalidation (Stale-While-Revalidate)
     if (!navigator.onLine) return;
 
-    const { data, error } = await supabase.from('products').select('id, name, price, price_gofood, price_grabfood, price_shopeefood, stock, category, barcode, image_url, created_at').eq('outlet_id', activeOutletId).order('name');
+    const { data, error } = await supabase.from('products').select('id, name, price, price_gofood, price_grabfood, price_shopeefood, stock, barcode, image_url, created_at').eq('outlet_id', activeOutletId).order('name');
     if (error) {
         if (!products.length) showToast('Gagal memuat produk dari server', 'error');
         return;
