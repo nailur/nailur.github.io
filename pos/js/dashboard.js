@@ -204,11 +204,13 @@ window.loadDashboard = async function() {
     const result = rpcResult;
     const totalRevenue = result.total_revenue || 0;
     const totalTrx = result.total_trx || 0;
+    const totalDiscount = result.total_discount || 0;
     const methodData = result.method_summary || [];
     const productData = result.product_summary || [];
 
     document.getElementById('dash-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
     document.getElementById('dash-total-trx').textContent = totalTrx;
+    document.getElementById('dash-total-discount').textContent = `Rp ${totalDiscount.toLocaleString('id-ID')}`;
 
     // Build method summary with defaults
     const ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];
@@ -262,6 +264,7 @@ window.loadDashboardFallback = async function(startOfDay, endOfDay) {
     ALL_PAYMENT_METHODS.forEach(m => methodSummary[m] = { count: 0, total: 0 });
     const productSummary = {};
     let totalRevenue = 0;
+    let totalDiscount = 0;
     let totalTrx = trxData ? trxData.length : 0;
 
     if (trxData && trxData.length > 0) {
@@ -272,10 +275,11 @@ window.loadDashboardFallback = async function(startOfDay, endOfDay) {
 
         trxData.forEach(trx => {
             const method = trx.payment_method || 'Tunai';
-            totalRevenue += trx.total_amount;
+            totalRevenue += (trx.total_amount || 0);
+            totalDiscount += (trx.discount_amount || 0);
             if (!methodSummary[method]) methodSummary[method] = { count: 0, total: 0 };
             methodSummary[method].count++;
-            methodSummary[method].total += trx.total_amount;
+            methodSummary[method].total += (trx.total_amount || 0);
         });
 
         if (itemsData) {
@@ -290,6 +294,7 @@ window.loadDashboardFallback = async function(startOfDay, endOfDay) {
 
     document.getElementById('dash-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
     document.getElementById('dash-total-trx').textContent = totalTrx;
+    document.getElementById('dash-total-discount').textContent = `Rp ${totalDiscount.toLocaleString('id-ID')}`;
 
     const tbodyMethod = document.querySelector('#dashboard-method-table tbody');
     tbodyMethod.innerHTML = Object.entries(methodSummary)
