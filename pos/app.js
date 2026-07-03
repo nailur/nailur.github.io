@@ -1336,6 +1336,7 @@ async function loadTargetUsers() {
         });
     }
 }
+window.loadTargetUsers = loadTargetUsers;
 
 // Start listening when file loads
 setupGlobalRefreshListener();
