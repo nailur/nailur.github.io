@@ -1271,7 +1271,7 @@ function renderProducts(search = '') {
         const isOutOfStock = p.stock <= 0;
         return `
         <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}" ${isOutOfStock ? '' : `onclick="addToCart('${p.id}')"`} style="${isOutOfStock ? 'opacity: 0.5; filter: grayscale(1); cursor: not-allowed;' : ''}">
-            ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" class="product-image">` : `<div class="product-image" style="display:flex;align-items:center;justify-content:center;color:#ccc;"><i class="ph-duotone ph-image" style="font-size:2.5rem;"></i></div>`}
+            ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" class="product-image" loading="lazy" decoding="async">` : `<div class="product-image" style="display:flex;align-items:center;justify-content:center;color:#ccc;"><i class="ph-duotone ph-image" style="font-size:2.5rem;"></i></div>`}
             <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-start;">
                 <div class="product-name">${p.name}</div>
                 <div class="product-price">Rp ${p.price.toLocaleString('id-ID')}</div>
