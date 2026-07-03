@@ -674,8 +674,8 @@ function setupEventListeners() {
     document.getElementById('user-role').addEventListener('change', handleRoleSelectionChange);
     document.getElementById('user-branch').addEventListener('change', filterUserOutlets);
 
-    document.getElementById('form-branch').addEventListener('submit', (e) => { e.preventDefault(); window.saveBranch(); });
-    document.getElementById('form-outlet').addEventListener('submit', (e) => { e.preventDefault(); window.saveOutlet(); });
+    document.getElementById('form-branch').addEventListener('submit', handleAddBranch);
+    document.getElementById('form-outlet').addEventListener('submit', handleAddOutlet);
     document.getElementById('form-user').addEventListener('submit', handleAddUser);
     const formCompany = document.getElementById('form-company');
     if (formCompany) formCompany.addEventListener('submit', (e) => { e.preventDefault(); window.saveCompany(); });
