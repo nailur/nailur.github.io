@@ -1307,11 +1307,34 @@ async function handleClockOut() {
 
 async function loadProducts() {
     if (!activeOutletId) return;
+
+    // 1. Cache-First: Load from IndexedDB
+    try {
+        const cachedProducts = await getOfflineProducts(activeOutletId);
+        if (cachedProducts && cachedProducts.length > 0) {
+            products = cachedProducts;
+            productShowAll = false;
+            renderProducts();
+        }
+    } catch (err) {
+        console.error('Failed to load products from cache', err);
+    }
+
+    // 2. Background Revalidation (Stale-While-Revalidate)
+    if (!navigator.onLine) return;
+
     const { data, error } = await supabase.from('products').select('id, name, price, price_gofood, price_grabfood, price_shopeefood, stock, category, barcode, image_url, created_at').eq('outlet_id', activeOutletId).order('name');
-    if (error) return showToast('Gagal memuat produk', 'error');
+    if (error) {
+        if (!products.length) showToast('Gagal memuat produk dari server', 'error');
+        return;
+    }
+    
     products = data;
-    productShowAll = false; // Reset display limit when loading fresh data
+    productShowAll = false;
     renderProducts();
+    
+    // 3. Save fresh data to IndexedDB
+    await saveOfflineProducts(activeOutletId, data);
 }
 
 function renderProducts(search = '') {
@@ -2895,16 +2918,45 @@ if ('serviceWorker' in navigator) {
 // ------------------------------
 async function initDB() {
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open('POSDatabase', 1);
+        const request = indexedDB.open('POSDatabase', 2);
         request.onupgradeneeded = (e) => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains('offline_transactions')) {
                 db.createObjectStore('offline_transactions', { keyPath: 'id' });
             }
+            if (!db.objectStoreNames.contains('offline_products')) {
+                db.createObjectStore('offline_products', { keyPath: 'outlet_id' });
+            }
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
     });
+}
+
+async function getOfflineProducts(outletId) {
+    try {
+        const db = await initDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('offline_products', 'readonly');
+            const store = tx.objectStore('offline_products');
+            const req = store.get(outletId);
+            req.onsuccess = () => resolve(req.result ? req.result.products : null);
+            req.onerror = () => reject(req.error);
+        });
+    } catch(e) { return null; }
+}
+
+async function saveOfflineProducts(outletId, productsData) {
+    try {
+        const db = await initDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('offline_products', 'readwrite');
+            const store = tx.objectStore('offline_products');
+            store.put({ outlet_id: outletId, products: productsData, updated_at: new Date().toISOString() });
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch(e) { console.error('Failed saving offline products', e); }
 }
 
 async function saveOfflineTransaction(trx) {
