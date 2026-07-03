@@ -233,8 +233,60 @@ export async function viewTransactionDetails(trxId) {
         </tr>
     `).join('');
     
-    document.getElementById('detail-trx-total').textContent = `Rp ${trx.total_amount.toLocaleString('id-ID')}`;
+    const tfoot = document.querySelector('#modal-transaction-details tfoot');
+    let tfootHTML = '';
     
+    if (trx.subtotal_amount && trx.subtotal_amount !== trx.total_amount || trx.discount_amount > 0 || trx.tax_amount > 0) {
+        const subtotal = trx.subtotal_amount || trx.total_amount;
+        tfootHTML += `
+            <tr>
+                <th colspan="3" style="text-align: right; font-weight: normal; font-size: 0.9rem;">Subtotal</th>
+                <th style="text-align: right; font-weight: normal; font-size: 0.9rem;">${subtotal.toLocaleString('id-ID')}</th>
+            </tr>
+        `;
+        if (trx.discount_amount > 0) {
+            tfootHTML += `
+                <tr>
+                    <th colspan="3" style="text-align: right; font-weight: normal; font-size: 0.9rem; color: var(--danger);">Diskon</th>
+                    <th style="text-align: right; font-weight: normal; font-size: 0.9rem; color: var(--danger);">- ${trx.discount_amount.toLocaleString('id-ID')}</th>
+                </tr>
+            `;
+        }
+        if (trx.tax_amount > 0) {
+            tfootHTML += `
+                <tr>
+                    <th colspan="3" style="text-align: right; font-weight: normal; font-size: 0.9rem;">Pajak</th>
+                    <th style="text-align: right; font-weight: normal; font-size: 0.9rem;">${trx.tax_amount.toLocaleString('id-ID')}</th>
+                </tr>
+            `;
+        }
+    }
+    
+    if (trx.cash_received !== undefined && trx.cash_received !== null) {
+        tfootHTML += `
+            <tr>
+                <th colspan="3" style="text-align: right;">TOTAL</th>
+                <th id="detail-trx-total" style="text-align: right; color: var(--primary); font-size: 1.1rem;">Rp ${trx.total_amount.toLocaleString('id-ID')}</th>
+            </tr>
+            <tr>
+                <th colspan="3" style="text-align: right; font-weight: normal; font-size: 0.9rem;">Tunai</th>
+                <th style="text-align: right; font-weight: normal; font-size: 0.9rem;">${trx.cash_received.toLocaleString('id-ID')}</th>
+            </tr>
+            <tr>
+                <th colspan="3" style="text-align: right; font-weight: normal; font-size: 0.9rem;">Kembali</th>
+                <th style="text-align: right; font-weight: normal; font-size: 0.9rem;">${trx.change_amount.toLocaleString('id-ID')}</th>
+            </tr>
+        `;
+    } else {
+        tfootHTML += `
+            <tr>
+                <th colspan="3" style="text-align: right;">TOTAL</th>
+                <th id="detail-trx-total" style="text-align: right; color: var(--primary); font-size: 1.1rem;">Rp ${trx.total_amount.toLocaleString('id-ID')}</th>
+            </tr>
+        `;
+    }
+    
+    tfoot.innerHTML = tfootHTML;
     document.getElementById('btn-reprint-trx').onclick = () => reprintReceipt(trx, items);
     document.getElementById('modal-transaction-details').classList.remove('hidden');
 }

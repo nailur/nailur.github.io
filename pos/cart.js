@@ -249,7 +249,9 @@ export async function finalizeCheckout() {
                 p_total_amount: totals.total,
                 p_payment_method: method,
                 p_customer_name: customer_name,
-                p_items: itemsPayload
+                p_items: itemsPayload,
+                p_cash_received: received,
+                p_change_amount: received - totals.total
             });
             
             if (error) {
@@ -257,8 +259,8 @@ export async function finalizeCheckout() {
                 isOffline = true;
             } else {
                 trxData.id = data;
-                receiptNo = await generateReceiptNumber(trxData);
-                supabase.from('transactions').update({ receipt_no: receiptNo }).eq('id', trxData.id);
+                receiptNo = trxData.id.substring(0,8).toUpperCase();
+                // receipt_no tidak perlu disave ke DB karena kita ambil langsung dari ID sekarang
             }
         } catch (e) {
             console.error("RPC Exception:", e);
@@ -267,7 +269,7 @@ export async function finalizeCheckout() {
     }
     
     if (isOffline) {
-        receiptNo = "OFFLINE-" + Math.floor(Math.random() * 10000);
+        receiptNo = trxData.id.substring(0,8).toUpperCase();
         const offlineTrx = {
             id: trxData.id,
             outlet_id: activeOutletId,
@@ -278,9 +280,10 @@ export async function finalizeCheckout() {
             total_amount: totals.total,
             payment_method: method,
             customer_name: customer_name,
+            cash_received: received,
+            change_amount: received - totals.total,
             items: itemsPayload,
-            created_at: trxData.created_at,
-            receipt_no: receiptNo
+            created_at: trxData.created_at
         };
         await saveOfflineTransaction(offlineTrx);
         showToast('Offline! Transaksi disimpan di perangkat.', 'warning');
