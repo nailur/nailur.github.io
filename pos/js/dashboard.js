@@ -65,25 +65,34 @@ window.loadAnalytics = async function() {
     }
 
     const result = rpcResult;
-    const totalRevenue = result.total_revenue || 0;
-    const totalItems = result.total_items || 0;
+    const totalRevenue = Number(result.total_revenue) || 0;
+    const totalItems = Number(result.total_items) || 0;
+    const totalDiscount = Number(result.total_discount) || 0;
+    const totalTax = Number(result.total_tax) || 0;
     const dailyData = result.daily_revenue || [];
     const topProducts = result.top_products || [];
+    const paymentMethods = result.payment_methods || [];
 
     document.getElementById('analytics-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
-    document.getElementById('analytics-total-trx').textContent = (result.total_trx || 0).toLocaleString('id-ID');
+    document.getElementById('analytics-total-trx').textContent = (Number(result.total_trx) || 0).toLocaleString('id-ID');
     document.getElementById('analytics-total-items').textContent = totalItems.toLocaleString('id-ID');
+    
+    const dashDiscount = document.getElementById('analytics-total-discount');
+    if (dashDiscount) dashDiscount.textContent = `Rp ${totalDiscount.toLocaleString('id-ID')}`;
+    const dashTax = document.getElementById('analytics-total-tax');
+    if (dashTax) dashTax.textContent = `Rp ${totalTax.toLocaleString('id-ID')}`;
 
     // Chart.js rendering
     const revCtx = document.getElementById('revenueChart');
-    const prodCtx = document.getElementById('productChart');
-    if(!revCtx || !prodCtx) return;
+    const prodCtx = document.getElementById('productsChart');
+    const methodCtx = document.getElementById('methodsChart');
+    if(!revCtx || !prodCtx || !methodCtx) return;
 
     const revLabels = dailyData.map(d => d.date);
     const revData = dailyData.map(d => d.revenue);
     
-    if (revenueChartInst) revenueChartInst.destroy();
-    revenueChartInst = new Chart(revCtx.getContext('2d'), {
+    if (window.revenueChartInst) window.revenueChartInst.destroy();
+    window.revenueChartInst = new Chart(revCtx.getContext('2d'), {
         type: 'line',
         data: {
             labels: revLabels.map(d => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month:'short'})),
@@ -102,14 +111,31 @@ window.loadAnalytics = async function() {
     const prodLabels = topProducts.map(x => x.name);
     const prodData = topProducts.map(x => x.qty);
 
-    if (productChartInst) productChartInst.destroy();
-    productChartInst = new Chart(prodCtx.getContext('2d'), {
+    if (window.productChartInst) window.productChartInst.destroy();
+    window.productChartInst = new Chart(prodCtx.getContext('2d'), {
         type: 'doughnut',
         data: {
             labels: prodLabels,
             datasets: [{
                 data: prodData,
                 backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    const methodLabels = paymentMethods.map(x => x.method);
+    const methodData = paymentMethods.map(x => x.total);
+    
+    if (window.methodsChartInst) window.methodsChartInst.destroy();
+    window.methodsChartInst = new Chart(methodCtx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: methodLabels,
+            datasets: [{
+                label: 'Omzet per Metode (Rp)',
+                data: methodData,
+                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6']
             }]
         },
         options: { responsive: true, maintainAspectRatio: false }
@@ -130,11 +156,16 @@ async function loadAnalyticsFallback(outletIds, startDateStr) {
     const { data, error } = await query;
     if (error) { console.error('Analytics fallback error:', error); return; }
 
-    let totalRevenue = 0, totalItems = 0;
-    const dailyRevenue = {}, productCounts = {};
+    let totalRevenue = 0, totalItems = 0, totalDiscount = 0, totalTax = 0;
+    const dailyRevenue = {}, productCounts = {}, methodCounts = {};
 
     data.forEach(trx => {
         totalRevenue += (trx.total_amount || 0);
+        totalDiscount += (trx.discount_amount || 0);
+        totalTax += (trx.tax_amount || 0);
+        const method = trx.payment_method || 'Tunai';
+        methodCounts[method] = (methodCounts[method] || 0) + (trx.total_amount || 0);
+        
         const dateKey = trx.created_at.split('T')[0];
         dailyRevenue[dateKey] = (dailyRevenue[dateKey] || 0) + (trx.total_amount || 0);
         if (trx.transaction_items) {
@@ -150,15 +181,21 @@ async function loadAnalyticsFallback(outletIds, startDateStr) {
     document.getElementById('analytics-total-trx').textContent = data.length.toLocaleString('id-ID');
     document.getElementById('analytics-total-items').textContent = totalItems.toLocaleString('id-ID');
 
+    const dashDiscount = document.getElementById('analytics-total-discount');
+    if (dashDiscount) dashDiscount.textContent = `Rp ${totalDiscount.toLocaleString('id-ID')}`;
+    const dashTax = document.getElementById('analytics-total-tax');
+    if (dashTax) dashTax.textContent = `Rp ${totalTax.toLocaleString('id-ID')}`;
+
     const revCtx = document.getElementById('revenueChart');
-    const prodCtx = document.getElementById('productChart');
-    if(!revCtx || !prodCtx) return;
+    const prodCtx = document.getElementById('productsChart');
+    const methodCtx = document.getElementById('methodsChart');
+    if(!revCtx || !prodCtx || !methodCtx) return;
 
     const revLabels = Object.keys(dailyRevenue).sort();
     const revData = revLabels.map(k => dailyRevenue[k]);
     
-    if (revenueChartInst) revenueChartInst.destroy();
-    revenueChartInst = new Chart(revCtx.getContext('2d'), {
+    if (window.revenueChartInst) window.revenueChartInst.destroy();
+    window.revenueChartInst = new Chart(revCtx.getContext('2d'), {
         type: 'line',
         data: {
             labels: revLabels.map(d => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month:'short'})),
@@ -167,13 +204,24 @@ async function loadAnalyticsFallback(outletIds, startDateStr) {
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    const sortedProducts = Object.entries(productCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
-    if (productChartInst) productChartInst.destroy();
-    productChartInst = new Chart(prodCtx.getContext('2d'), {
+    const sortedProducts = Object.entries(productCounts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+    if (window.productChartInst) window.productChartInst.destroy();
+    window.productChartInst = new Chart(prodCtx.getContext('2d'), {
         type: 'doughnut',
         data: {
             labels: sortedProducts.map(x => x[0]),
             datasets: [{ data: sortedProducts.map(x => x[1]), backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    const sortedMethods = Object.entries(methodCounts).sort((a,b) => b[1] - a[1]);
+    if (window.methodsChartInst) window.methodsChartInst.destroy();
+    window.methodsChartInst = new Chart(methodCtx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: sortedMethods.map(x => x[0]),
+            datasets: [{ label: 'Omzet per Metode (Rp)', data: sortedMethods.map(x => x[1]), backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'] }]
         },
         options: { responsive: true, maintainAspectRatio: false }
     });
