@@ -245,8 +245,8 @@ window.loadDashboard = async function() {
         `).join('');
     }
     
-    enableTableSort('dashboard-method-table');
-    enableTableSort('dashboard-product-table');
+    if (window.enableTableSort) window.enableTableSort('dashboard-method-table');
+    if (window.enableTableSort) window.enableTableSort('dashboard-product-table');
 }
 
 // Fallback: original client-side dashboard aggregation (used if RPC not yet deployed)
@@ -314,6 +314,6 @@ window.loadDashboardFallback = async function(startOfDay, endOfDay) {
         `).join('');
     }
     
-    enableTableSort('dashboard-method-table');
-    enableTableSort('dashboard-product-table');
+    if (window.enableTableSort) window.enableTableSort('dashboard-method-table');
+    if (window.enableTableSort) window.enableTableSort('dashboard-product-table');
 }
