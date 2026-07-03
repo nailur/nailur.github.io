@@ -202,6 +202,9 @@ async function initPosMultiOutlet(profile) {
         if (outlet) {
             nameLabel.textContent = outlet.name;
             if(mobileNameLabel) mobileNameLabel.textContent = outlet.name;
+        } else {
+            nameLabel.textContent = 'Belum ada Outlet';
+            if(mobileNameLabel) mobileNameLabel.textContent = 'Belum ada Outlet';
         }
         nameLabel.classList.remove('hidden');
         if(mobileNameLabel) mobileNameLabel.classList.remove('hidden');
