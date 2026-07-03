@@ -3,6 +3,9 @@ import { supabaseAdmin } from './supabase-admin.js';
 import { checkSession, login, logout, getCurrentUser, getCurrentProfile } from './auth.js';
 import { connectPrinter, printReceiptNative } from './printer.js';
 
+window.getCurrentProfile = getCurrentProfile;
+window.getCurrentUser = getCurrentUser;
+
 // DOM Elements
 const appContainer = document.getElementById('app-container');
 const loginView = document.getElementById('login-view');
