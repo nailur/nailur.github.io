@@ -854,28 +854,9 @@ export function generateOrderId(resetCart = true) {
 
 // Cart logic moved to cart.js
 
-// Generate TRN-YYYYMMDD-XXXX
 export async function generateReceiptNumber(trx) {
-    if (!trx || !trx.created_at || !trx.outlet_id) return trx?.id ? trx.id.substring(0,8).toUpperCase() : "TRN-0000";
-    try {
-        const trxDate = new Date(trx.created_at);
-        const { count, error } = await supabase.from('transactions')
-            .select('*', { count: 'exact', head: true })
-            .eq('outlet_id', trx.outlet_id)
-            .lte('created_at', trx.created_at);
-            
-        let counter = count || 1;
-        
-        const activeOutlet = typeof posOutletsList !== 'undefined' ? posOutletsList.find(o => o.id === trx.outlet_id) : null;
-        let outletCode = activeOutlet && activeOutlet.code ? activeOutlet.code.toUpperCase() : null;
-        if (!outletCode) {
-             outletCode = activeOutlet && activeOutlet.name ? activeOutlet.name.replace(/[^A-Za-z0-9]/g, '').substring(0, 3).toUpperCase() : 'TRN';
-        }
-        
-        return `${outletCode}-${counter.toString().padStart(6, '0')}`;
-    } catch(e) {
-        return trx.id.substring(0,8).toUpperCase();
-    }
+    if (!trx || !trx.id) return "TRN-0000";
+    return trx.id.substring(0,8).toUpperCase();
 }
 
 // History logic moved to history.js

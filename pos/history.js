@@ -154,7 +154,7 @@ export async function loadHistory(resetPage = true) {
     }
 
     const rowsHTML = data.map(trx => {
-        const receiptNo = trx.receipt_no || trx.id.substring(0, 8).toUpperCase();
+        const receiptNo = trx.id.substring(0, 8).toUpperCase();
         return `
             <tr>
                 <td>${new Date(trx.created_at).toLocaleString('id-ID')}</td>
@@ -208,7 +208,7 @@ export async function viewTransactionDetails(trxId) {
         
     if (trxError || itemsError) return showToast('Gagal memuat detail transaksi', 'error');
 
-    const receiptNo = trx.receipt_no || await generateReceiptNumber(trx);
+    const receiptNo = trx.id.substring(0, 8).toUpperCase();
     document.getElementById('detail-trx-id').textContent = receiptNo;
     document.getElementById('detail-trx-date').textContent = new Date(trx.created_at).toLocaleString('id-ID');
     document.getElementById('detail-trx-cashier').textContent = trx.profiles?.name || trx.profiles?.email || '-';
@@ -249,7 +249,7 @@ export async function reprintReceipt(trx, items) {
         quantity: i.quantity,
         price: i.price
     }));
-    const receiptNo = trx.receipt_no || await generateReceiptNumber(trx);
+    const receiptNo = trx.id.substring(0, 8).toUpperCase();
     const totalsObj = {
         subtotal: trx.subtotal_amount || trx.total_amount,
         discount: trx.discount_amount || 0,
