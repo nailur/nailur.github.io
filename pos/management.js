@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from './supabase.js';
+import { supabase } from './supabase.js';
 import { showToast } from './app.js';
 import { 
     branchesList, outletsList, 
@@ -360,11 +360,8 @@ export async function deleteUser(id) {
     const { count: attCount } = await supabase.from('attendance').select('*', { count: 'exact', head: true }).eq('profile_id', id);
     if(attCount > 0) return showToast('User tidak bisa dihapus karena memiliki riwayat absensi!', 'error');
 
-    try {
-        if (supabaseAdmin && supabaseAdmin.auth && supabaseAdmin.auth.admin) {
-            await supabaseAdmin.auth.admin.deleteUser(id);
-        }
-    } catch(e) { console.warn('Supabase admin delete unsupported, deleting profile only'); }
+    // Edge function untuk delete user dari auth bisa ditambahkan nanti jika diperlukan
+    // Untuk saat ini, menghapus profil sudah cukup untuk mencabut akses (login akan gagal)
     
     const { error } = await supabase.from('profiles').delete().eq('id', id);
     if(error) showToast(error.message, 'error');
