@@ -313,5 +313,7 @@ window.loadDashboardFallback = async function(startOfDay, endOfDay) {
             <tr><td>${name}</td><td style="text-align: right;">${stats.qty}</td><td style="text-align: right;">Rp ${stats.revenue.toLocaleString('id-ID')}</td></tr>
         `).join('');
     }
+    
+    enableTableSort('dashboard-method-table');
+    enableTableSort('dashboard-product-table');
 }
-
