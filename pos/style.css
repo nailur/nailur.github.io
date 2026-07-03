@@ -974,3 +974,56 @@ body {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
+
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 0 8px;
+    flex-wrap: wrap;
+}
+.pagination-controls button {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+.pagination-controls button:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+.pagination-controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.pagination-controls .pagination-info {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    padding: 0 8px;
+}
+
+/* Load More Products */
+.btn-load-more {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    border: 2px dashed var(--border);
+    background: transparent;
+    color: var(--primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.btn-load-more:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: var(--primary);
+}

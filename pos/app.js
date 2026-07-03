@@ -57,6 +57,15 @@ let outletsList = [];
 let posOutletsList = []; // Outlets accessible by current POS user
 let activeOutletId = null;
 
+// Pagination State
+const HISTORY_PAGE_SIZE = 25;
+let historyPage = 0;
+let historyTotalCount = 0;
+
+// Product Display Limit
+const PRODUCT_DISPLAY_LIMIT = 50;
+let productShowAll = false;
+
 // Initialize
 async function init() {
     supabase.auth.onAuthStateChange((event, session) => {
@@ -1269,6 +1278,7 @@ async function loadProducts() {
     const { data, error } = await supabase.from('products').select('*').eq('outlet_id', activeOutletId).order('name');
     if (error) return showToast('Gagal memuat produk', 'error');
     products = data;
+    productShowAll = false; // Reset display limit when loading fresh data
     renderProducts();
 }
 
@@ -1284,7 +1294,11 @@ function renderProducts(search = '') {
         return;
     }
 
-    grid.innerHTML = filtered.map(p => {
+    // Apply display limit for performance (only when not searching)
+    const shouldLimit = !search && !productShowAll && filtered.length > PRODUCT_DISPLAY_LIMIT;
+    const displayProducts = shouldLimit ? filtered.slice(0, PRODUCT_DISPLAY_LIMIT) : filtered;
+
+    grid.innerHTML = displayProducts.map(p => {
         const isOutOfStock = p.stock <= 0;
         return `
         <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}" ${isOutOfStock ? '' : `onclick="addToCart('${p.id}')"`} style="${isOutOfStock ? 'opacity: 0.5; filter: grayscale(1); cursor: not-allowed;' : ''}">
@@ -1302,6 +1316,15 @@ function renderProducts(search = '') {
             ` : ''}
         </div>
     `}).join('');
+
+    // Show "Load More" button if products were truncated
+    if (shouldLimit) {
+        grid.insertAdjacentHTML('beforeend', `
+            <button class="btn-load-more" onclick="showAllProducts()">
+                <i class="ph ph-arrow-down"></i> Tampilkan Semua (${filtered.length} produk)
+            </button>
+        `);
+    }
 }
 
 // Helper function to compress image
@@ -1450,6 +1473,11 @@ window.deleteProduct = async (id) => {
     else loadProducts();
 };
 
+window.showAllProducts = () => {
+    productShowAll = true;
+    renderProducts();
+};
+
 window.addToCart = (id) => {
     const product = products.find(p => p.id === id);
     if (!product) return;
@@ -1478,7 +1506,9 @@ window.emptyCart = () => {
     renderCart();
 };
 
-function renderCart() {
+let _prevCartIds = []; // Track previous cart product IDs for surgical update detection
+
+function renderCart(forceRebuild = false) {
     localStorage.setItem('pos_cart', JSON.stringify(cart));
     const container = document.getElementById('cart-items-container');
     const subtotalEl = document.getElementById('cart-subtotal');
@@ -1500,23 +1530,41 @@ function renderCart() {
         subtotalEl.textContent = 'Rp 0';
         totalEl.textContent = 'Rp 0';
         document.getElementById('btn-checkout').disabled = true;
+        _prevCartIds = [];
         calculateChange();
         return;
     }
-    
-    container.innerHTML = cart.map(item => `
-        <div class="cart-item">
-            <div class="cart-item-info">
-                <div class="cart-item-name">${item.name}</div>
-                <div class="cart-item-price">Rp ${(item.price * item.quantity).toLocaleString('id-ID')}</div>
+
+    // Determine if we need a full rebuild or can do surgical update
+    const currentIds = cart.map(i => i.product_id);
+    const idsMatch = !forceRebuild && currentIds.length === _prevCartIds.length && currentIds.every((id, idx) => id === _prevCartIds[idx]);
+
+    if (idsMatch) {
+        // SURGICAL UPDATE: Only update qty and price text, no DOM destruction
+        cart.forEach(item => {
+            const el = container.querySelector(`[data-product-id="${item.product_id}"]`);
+            if (el) {
+                el.querySelector('.qty-display').textContent = item.quantity;
+                el.querySelector('.cart-item-price').textContent = `Rp ${(item.price * item.quantity).toLocaleString('id-ID')}`;
+            }
+        });
+    } else {
+        // FULL REBUILD: Items were added or removed
+        container.innerHTML = cart.map(item => `
+            <div class="cart-item" data-product-id="${item.product_id}">
+                <div class="cart-item-info">
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-price">Rp ${(item.price * item.quantity).toLocaleString('id-ID')}</div>
+                </div>
+                <div class="cart-item-controls">
+                    <button class="qty-btn" onclick="updateQty('${item.product_id}', -1)"><i class="ph ph-minus"></i></button>
+                    <div class="qty-display">${item.quantity}</div>
+                    <button class="qty-btn" onclick="updateQty('${item.product_id}', 1)"><i class="ph ph-plus"></i></button>
+                </div>
             </div>
-            <div class="cart-item-controls">
-                <button class="qty-btn" onclick="updateQty('${item.product_id}', -1)"><i class="ph ph-minus"></i></button>
-                <div class="qty-display">${item.quantity}</div>
-                <button class="qty-btn" onclick="updateQty('${item.product_id}', 1)"><i class="ph ph-plus"></i></button>
-            </div>
-        </div>
-    `).join('');
+        `).join('');
+        _prevCartIds = [...currentIds];
+    }
     
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     subtotalEl.textContent = `Rp ${total.toLocaleString('id-ID')}`;
@@ -2132,11 +2180,16 @@ async function exportToExcel() {
     }
 }
 
-async function loadHistory() {
+async function loadHistory(resetPage = true) {
     if (!activeOutletId) return;
     
+    if (resetPage) historyPage = 0;
+    
+    const from = historyPage * HISTORY_PAGE_SIZE;
+    const to = from + HISTORY_PAGE_SIZE - 1;
+    
     let query = supabase.from('transactions')
-        .select('*, profiles(email, name)')
+        .select('*, profiles(email, name)', { count: 'exact' })
         .eq('outlet_id', activeOutletId)
         .order('created_at', { ascending: false });
 
@@ -2151,16 +2204,22 @@ async function loadHistory() {
                      .lte('created_at', endOfDay);
     }
 
-    const { data, error } = await query;
+    query = query.range(from, to);
+
+    const { data, error, count } = await query;
 
     if (error) {
         showToast('Gagal memuat riwayat', 'error');
         return;
     }
 
+    historyTotalCount = count || 0;
     const tbody = document.querySelector('#history-table tbody');
+    const paginationEl = document.getElementById('history-pagination');
+
     if (!data || data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada transaksi</td></tr>';
+        if (paginationEl) paginationEl.innerHTML = '';
         return;
     }
 
@@ -2181,7 +2240,29 @@ async function loadHistory() {
     }));
     tbody.innerHTML = rowsHTML.join('');
     enableTableSort('history-table');
+
+    // Render pagination controls
+    const totalPages = Math.ceil(historyTotalCount / HISTORY_PAGE_SIZE);
+    if (paginationEl && totalPages > 1) {
+        const currentPage = historyPage + 1;
+        paginationEl.innerHTML = `
+            <button ${historyPage === 0 ? 'disabled' : ''} onclick="changeHistoryPage(${historyPage - 1})">
+                <i class="ph ph-caret-left"></i> Prev
+            </button>
+            <span class="pagination-info">Halaman ${currentPage} dari ${totalPages} (${historyTotalCount} transaksi)</span>
+            <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="changeHistoryPage(${historyPage + 1})">
+                Next <i class="ph ph-caret-right"></i>
+            </button>
+        `;
+    } else if (paginationEl) {
+        paginationEl.innerHTML = historyTotalCount > 0 ? `<span class="pagination-info">${historyTotalCount} transaksi</span>` : '';
+    }
 }
+
+window.changeHistoryPage = (page) => {
+    historyPage = page;
+    loadHistory(false);
+};
 
 window.viewTransactionDetails = async (trxId) => {
     const { data: trx, error: trxError } = await supabase.from('transactions')
@@ -2274,17 +2355,16 @@ async function loadAnalytics() {
     const period = document.getElementById('analytics-period-filter')?.value || '7';
     const outletFilter = document.getElementById('analytics-outlet-filter')?.value;
     
-    let query = supabase.from('transactions').select('*, transaction_items(product_id, quantity, price)');
-    
+    // Build outlet IDs array for RPC
+    let outletIds = null;
     if (outletFilter) {
-        query = query.eq('outlet_id', outletFilter);
+        outletIds = [outletFilter];
     } else {
         if (profile?.role === 'kepala_cabang') {
-            const branchOutlets = outletsList.filter(o => o.branch_id === profile.branch_id).map(o => o.id);
-            if(branchOutlets.length > 0) query = query.in('outlet_id', branchOutlets);
-            else query = query.eq('outlet_id', 'none'); // returns nothing
+            outletIds = outletsList.filter(o => o.branch_id === profile.branch_id).map(o => o.id);
+            if (outletIds.length === 0) return;
         } else if (profile?.role === 'kepala_toko') {
-            query = query.eq('outlet_id', profile.outlet_id);
+            outletIds = [profile.outlet_id];
         }
     }
     
@@ -2300,48 +2380,36 @@ async function loadAnalytics() {
         const d = new Date(now.getFullYear(), now.getMonth(), 1);
         startDateStr = d.toISOString();
     }
-    
-    if (startDateStr) {
-        query = query.gte('created_at', startDateStr);
-    }
 
-    const { data, error } = await query;
-    if (error) {
-        console.error('Analytics load error:', error);
-        return;
-    }
-
-    let totalRevenue = 0;
-    let totalItems = 0;
-    const dailyRevenue = {};
-    const productCounts = {};
-
-    data.forEach(trx => {
-        totalRevenue += (trx.total_amount || 0);
-        const dateKey = trx.created_at.split('T')[0];
-        dailyRevenue[dateKey] = (dailyRevenue[dateKey] || 0) + (trx.total_amount || 0);
-
-        if (trx.transaction_items) {
-            trx.transaction_items.forEach(item => {
-                totalItems += item.quantity;
-                const p = products.find(x => x.id === item.product_id);
-                const pName = p ? p.name : 'Unknown';
-                productCounts[pName] = (productCounts[pName] || 0) + item.quantity;
-            });
-        }
+    // Try server-side RPC first (much faster & saves bandwidth)
+    const { data: rpcResult, error: rpcError } = await supabase.rpc('get_analytics_summary', {
+        p_outlet_ids: outletIds,
+        p_start_date: startDateStr
     });
 
+    if (rpcError) {
+        console.error('Analytics RPC error (falling back to client-side):', rpcError);
+        // Fallback: client-side aggregation
+        return loadAnalyticsFallback(outletIds, startDateStr);
+    }
+
+    const result = rpcResult;
+    const totalRevenue = result.total_revenue || 0;
+    const totalItems = result.total_items || 0;
+    const dailyData = result.daily_revenue || [];
+    const topProducts = result.top_products || [];
+
     document.getElementById('analytics-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
-    document.getElementById('analytics-total-trx').textContent = data.length.toLocaleString('id-ID');
+    document.getElementById('analytics-total-trx').textContent = (result.total_trx || 0).toLocaleString('id-ID');
     document.getElementById('analytics-total-items').textContent = totalItems.toLocaleString('id-ID');
 
-    // Chart.js requires rendering
+    // Chart.js rendering
     const revCtx = document.getElementById('revenueChart');
     const prodCtx = document.getElementById('productChart');
     if(!revCtx || !prodCtx) return;
 
-    const revLabels = Object.keys(dailyRevenue).sort();
-    const revData = revLabels.map(k => dailyRevenue[k]);
+    const revLabels = dailyData.map(d => d.date);
+    const revData = dailyData.map(d => d.revenue);
     
     if (revenueChartInst) revenueChartInst.destroy();
     revenueChartInst = new Chart(revCtx.getContext('2d'), {
@@ -2360,10 +2428,8 @@ async function loadAnalytics() {
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // Top 5 Products
-    const sortedProducts = Object.entries(productCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
-    const prodLabels = sortedProducts.map(x => x[0]);
-    const prodData = sortedProducts.map(x => x[1]);
+    const prodLabels = topProducts.map(x => x.name);
+    const prodData = topProducts.map(x => x.qty);
 
     if (productChartInst) productChartInst.destroy();
     productChartInst = new Chart(prodCtx.getContext('2d'), {
@@ -2379,6 +2445,69 @@ async function loadAnalytics() {
     });
 }
 
+// Fallback: original client-side aggregation (used if RPC not yet deployed)
+async function loadAnalyticsFallback(outletIds, startDateStr) {
+    let query = supabase.from('transactions').select('*, transaction_items(product_id, quantity, price)');
+    
+    if (outletIds && outletIds.length === 1) {
+        query = query.eq('outlet_id', outletIds[0]);
+    } else if (outletIds && outletIds.length > 1) {
+        query = query.in('outlet_id', outletIds);
+    }
+    if (startDateStr) query = query.gte('created_at', startDateStr);
+
+    const { data, error } = await query;
+    if (error) { console.error('Analytics fallback error:', error); return; }
+
+    let totalRevenue = 0, totalItems = 0;
+    const dailyRevenue = {}, productCounts = {};
+
+    data.forEach(trx => {
+        totalRevenue += (trx.total_amount || 0);
+        const dateKey = trx.created_at.split('T')[0];
+        dailyRevenue[dateKey] = (dailyRevenue[dateKey] || 0) + (trx.total_amount || 0);
+        if (trx.transaction_items) {
+            trx.transaction_items.forEach(item => {
+                totalItems += item.quantity;
+                const p = products.find(x => x.id === item.product_id);
+                productCounts[p ? p.name : 'Unknown'] = (productCounts[p ? p.name : 'Unknown'] || 0) + item.quantity;
+            });
+        }
+    });
+
+    document.getElementById('analytics-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
+    document.getElementById('analytics-total-trx').textContent = data.length.toLocaleString('id-ID');
+    document.getElementById('analytics-total-items').textContent = totalItems.toLocaleString('id-ID');
+
+    const revCtx = document.getElementById('revenueChart');
+    const prodCtx = document.getElementById('productChart');
+    if(!revCtx || !prodCtx) return;
+
+    const revLabels = Object.keys(dailyRevenue).sort();
+    const revData = revLabels.map(k => dailyRevenue[k]);
+    
+    if (revenueChartInst) revenueChartInst.destroy();
+    revenueChartInst = new Chart(revCtx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: revLabels.map(d => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month:'short'})),
+            datasets: [{ label: 'Pendapatan (Rp)', data: revData, borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', tension: 0.3, fill: true }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    const sortedProducts = Object.entries(productCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+    if (productChartInst) productChartInst.destroy();
+    productChartInst = new Chart(prodCtx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: sortedProducts.map(x => x[0]),
+            datasets: [{ data: sortedProducts.map(x => x[1]), backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
 async function loadDashboard() {
     if (!activeOutletId) return;
     
@@ -2389,40 +2518,91 @@ async function loadDashboard() {
     const startOfDay = new Date(`${startDate.value}T00:00:00`).toISOString();
     const endOfDay = new Date(`${endDate.value}T23:59:59.999`).toISOString();
 
+    // Try server-side RPC first (much faster & saves bandwidth)
+    const { data: rpcResult, error: rpcError } = await supabase.rpc('get_dashboard_summary', {
+        p_outlet_id: activeOutletId,
+        p_start_date: startOfDay,
+        p_end_date: endOfDay
+    });
+
+    if (rpcError) {
+        console.error('Dashboard RPC error (falling back to client-side):', rpcError);
+        return loadDashboardFallback(startOfDay, endOfDay);
+    }
+
+    const result = rpcResult;
+    const totalRevenue = result.total_revenue || 0;
+    const totalTrx = result.total_trx || 0;
+    const methodData = result.method_summary || [];
+    const productData = result.product_summary || [];
+
+    document.getElementById('dash-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
+    document.getElementById('dash-total-trx').textContent = totalTrx;
+
+    // Build method summary with defaults
+    const ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];
+    const methodSummary = {};
+    ALL_PAYMENT_METHODS.forEach(m => methodSummary[m] = { count: 0, total: 0 });
+    methodData.forEach(m => {
+        const key = m.method || 'Tunai';
+        methodSummary[key] = { count: Number(m.count), total: Number(m.total) };
+    });
+
+    const tbodyMethod = document.querySelector('#dashboard-method-table tbody');
+    tbodyMethod.innerHTML = Object.entries(methodSummary)
+        .sort((a,b) => b[1].total - a[1].total)
+        .map(([method, stats]) => `
+        <tr>
+            <td><strong>${method}</strong></td>
+            <td style="text-align: right;">${stats.count}</td>
+            <td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td>
+        </tr>
+    `).join('');
+
+    const tbodyProduct = document.querySelector('#dashboard-product-table tbody');
+    if (productData.length === 0) {
+        tbodyProduct.innerHTML = '<tr><td colspan="3" class="text-center">Belum ada data</td></tr>';
+    } else {
+        tbodyProduct.innerHTML = productData.map(p => `
+            <tr>
+                <td>${p.name}</td>
+                <td style="text-align: right;">${Number(p.qty)}</td>
+                <td style="text-align: right;">Rp ${Number(p.revenue).toLocaleString('id-ID')}</td>
+            </tr>
+        `).join('');
+    }
+    
+    enableTableSort('dashboard-method-table');
+    enableTableSort('dashboard-product-table');
+}
+
+// Fallback: original client-side dashboard aggregation (used if RPC not yet deployed)
+async function loadDashboardFallback(startOfDay, endOfDay) {
     const { data: trxData, error: trxError } = await supabase.from('transactions')
         .select('*')
         .eq('outlet_id', activeOutletId)
         .gte('created_at', startOfDay)
         .lte('created_at', endOfDay);
 
-    if (trxError) {
-        showToast('Gagal memuat data dashboard', 'error');
-        return;
-    }
+    if (trxError) { showToast('Gagal memuat data dashboard', 'error'); return; }
 
-    // Default methods with 0 values
     const ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];
     const methodSummary = {};
     ALL_PAYMENT_METHODS.forEach(m => methodSummary[m] = { count: 0, total: 0 });
-
     const productSummary = {};
     let totalRevenue = 0;
     let totalTrx = trxData ? trxData.length : 0;
 
     if (trxData && trxData.length > 0) {
-        // Fetch items
         const trxIds = trxData.map(t => t.id);
-        const { data: itemsData, error: itemsError } = await supabase.from('transaction_items')
+        const { data: itemsData } = await supabase.from('transaction_items')
             .select('*, products(name)')
             .in('transaction_id', trxIds);
 
         trxData.forEach(trx => {
             const method = trx.payment_method || 'Tunai';
             totalRevenue += trx.total_amount;
-
-            if (!methodSummary[method]) {
-                methodSummary[method] = { count: 0, total: 0 };
-            }
+            if (!methodSummary[method]) methodSummary[method] = { count: 0, total: 0 };
             methodSummary[method].count++;
             methodSummary[method].total += trx.total_amount;
         });
@@ -2430,9 +2610,7 @@ async function loadDashboard() {
         if (itemsData) {
             itemsData.forEach(item => {
                 const pName = item.products?.name || 'Produk Terhapus';
-                if (!productSummary[pName]) {
-                    productSummary[pName] = { qty: 0, revenue: 0 };
-                }
+                if (!productSummary[pName]) productSummary[pName] = { qty: 0, revenue: 0 };
                 productSummary[pName].qty += item.quantity;
                 productSummary[pName].revenue += (item.quantity * item.price);
             });
@@ -2444,13 +2622,9 @@ async function loadDashboard() {
 
     const tbodyMethod = document.querySelector('#dashboard-method-table tbody');
     tbodyMethod.innerHTML = Object.entries(methodSummary)
-        .sort((a,b) => b[1].total - a[1].total) // Sort by total descending
+        .sort((a,b) => b[1].total - a[1].total)
         .map(([method, stats]) => `
-        <tr>
-            <td><strong>${method}</strong></td>
-            <td style="text-align: right;">${stats.count}</td>
-            <td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td>
-        </tr>
+        <tr><td><strong>${method}</strong></td><td style="text-align: right;">${stats.count}</td><td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td></tr>
     `).join('');
 
     const tbodyProduct = document.querySelector('#dashboard-product-table tbody');
@@ -2458,13 +2632,9 @@ async function loadDashboard() {
         tbodyProduct.innerHTML = '<tr><td colspan="3" class="text-center">Belum ada data</td></tr>';
     } else {
         tbodyProduct.innerHTML = Object.entries(productSummary)
-            .sort((a,b) => b[1].qty - a[1].qty) // Sort by qty descending
+            .sort((a,b) => b[1].qty - a[1].qty)
             .map(([name, stats]) => `
-            <tr>
-                <td>${name}</td>
-                <td style="text-align: right;">${stats.qty}</td>
-                <td style="text-align: right;">Rp ${stats.revenue.toLocaleString('id-ID')}</td>
-            </tr>
+            <tr><td>${name}</td><td style="text-align: right;">${stats.qty}</td><td style="text-align: right;">Rp ${stats.revenue.toLocaleString('id-ID')}</td></tr>
         `).join('');
     }
     
@@ -2733,105 +2903,116 @@ window.toggleLayout = function() {
 // ------------------------------
 // GLOBAL REFRESH BROADCAST
 // ------------------------------
-let systemChannel = null;
+let globalChannel = null;
+let userChannel = null;
 
-function setupGlobalRefreshListener() {
-    if (!supabase) return;
+function handleForceRefresh(payload) {
+    console.log('Received force_refresh broadcast:', payload);
     
-    // Subscribe to system_events channel
-    systemChannel = supabase.channel('system_events');
-    systemChannel.on('broadcast', { event: 'force_refresh' }, async (payload) => {
-        console.log('Received force_refresh broadcast:', payload);
-        
-        const executeHardRefresh = async () => {
-            try {
-                if ('serviceWorker' in navigator) {
-                    const registrations = await navigator.serviceWorker.getRegistrations();
-                    for (let registration of registrations) {
-                        await registration.unregister();
-                    }
+    const executeHardRefresh = async () => {
+        try {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (let registration of registrations) {
+                    await registration.unregister();
                 }
-                const cacheNames = await caches.keys();
-                await Promise.all(cacheNames.map(name => caches.delete(name)));
-                setTimeout(() => window.location.reload(true), 1000);
-            } catch (e) {
-                setTimeout(() => window.location.reload(true), 1000);
             }
-        };
-
-        if (cart && cart.length > 0) {
-            // Cart is not empty! Don't aggressively reload.
-            const container = document.getElementById('toast-container');
-            if (container) {
-                // Prevent duplicate warning toasts if multiple broadcasts arrive
-                if (container.querySelector('.toast-warning')) return;
-                
-                const toast = document.createElement('div');
-                toast.className = `toast toast-warning`;
-                toast.style.background = '#f59e0b'; // warning color
-                toast.style.display = 'flex';
-                toast.style.flexDirection = 'column';
-                toast.style.gap = '10px';
-                toast.style.opacity = '1';
-                toast.innerHTML = `
-                    <span>Pusat meminta Anda memperbarui aplikasi. Tolong selesaikan transaksi Anda saat ini, lalu klik tombol Refresh.</span>
-                    <button id="btn-pwa-refresh-forced" style="padding: 6px 12px; border: none; border-radius: 4px; background: white; color: #f59e0b; font-weight: bold; cursor: pointer;">Refresh Sekarang</button>
-                `;
-                container.appendChild(toast);
-                
-                document.getElementById('btn-pwa-refresh-forced').onclick = () => {
-                    toast.remove();
-                    showToast('Memperbarui aplikasi...', 'info');
-                    executeHardRefresh();
-                };
-            }
-        } else {
-            // Cart is empty, safe to refresh immediately
-            showToast('Memperbarui aplikasi dari Pusat...', 'info');
-            executeHardRefresh();
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            setTimeout(() => window.location.reload(true), 1000);
+        } catch (e) {
+            setTimeout(() => window.location.reload(true), 1000);
         }
-    }).on('broadcast', { event: 'system_announcement' }, (payload) => {
-        const { title, body, target } = payload.payload || {};
-        const profile = getCurrentProfile();
-        if (!profile || (target !== 'all' && profile.id !== target)) return; // not for us
-        
-        // Show in-app modal or toast
+    };
+
+    if (cart && cart.length > 0) {
         const container = document.getElementById('toast-container');
         if (container) {
+            if (container.querySelector('.toast-warning')) return;
+            
             const toast = document.createElement('div');
-            toast.className = `toast toast-info`;
-            toast.style.background = 'var(--primary)';
+            toast.className = `toast toast-warning`;
+            toast.style.background = '#f59e0b';
             toast.style.display = 'flex';
             toast.style.flexDirection = 'column';
             toast.style.gap = '10px';
             toast.style.opacity = '1';
-            toast.style.animation = 'slideIn 0.3s ease';
             toast.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong><i class="ph-fill ph-bell-ringing"></i> ${title || 'Pengumuman'}</strong>
-                    <button class="btn-close-toast" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-x"></i></button>
-                </div>
-                <div style="font-size: 0.95rem; white-space: pre-wrap;">${body || ''}</div>
+                <span>Pusat meminta Anda memperbarui aplikasi. Tolong selesaikan transaksi Anda saat ini, lalu klik tombol Refresh.</span>
+                <button id="btn-pwa-refresh-forced" style="padding: 6px 12px; border: none; border-radius: 4px; background: white; color: #f59e0b; font-weight: bold; cursor: pointer;">Refresh Sekarang</button>
             `;
             container.appendChild(toast);
-            toast.querySelector('.btn-close-toast').onclick = () => toast.remove();
             
-            // Auto remove after 30 seconds
-            setTimeout(() => {
-                if(toast.parentElement) toast.remove();
-            }, 30000);
+            document.getElementById('btn-pwa-refresh-forced').onclick = () => {
+                toast.remove();
+                showToast('Memperbarui aplikasi...', 'info');
+                executeHardRefresh();
+            };
         }
+    } else {
+        showToast('Memperbarui aplikasi dari Pusat...', 'info');
+        executeHardRefresh();
+    }
+}
+
+function handleAnnouncement(payload) {
+    const { title, body } = payload.payload || {};
+    
+    const container = document.getElementById('toast-container');
+    if (container) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-info`;
+        toast.style.background = 'var(--primary)';
+        toast.style.display = 'flex';
+        toast.style.flexDirection = 'column';
+        toast.style.gap = '10px';
+        toast.style.opacity = '1';
+        toast.style.animation = 'slideIn 0.3s ease';
+        toast.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong><i class="ph-fill ph-bell-ringing"></i> ${title || 'Pengumuman'}</strong>
+                <button class="btn-close-toast" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-x"></i></button>
+            </div>
+            <div style="font-size: 0.95rem; white-space: pre-wrap;">${body || ''}</div>
+        `;
+        container.appendChild(toast);
+        toast.querySelector('.btn-close-toast').onclick = () => toast.remove();
         
-        // Try OS Notification
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title || 'Pengumuman', {
-                body: body || '',
-                icon: './icon-192.png'
+        setTimeout(() => {
+            if(toast.parentElement) toast.remove();
+        }, 30000);
+    }
+    
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title || 'Pengumuman', {
+            body: body || '',
+            icon: './icon-192.png'
+        });
+    }
+}
+
+function setupGlobalRefreshListener() {
+    if (!supabase) return;
+    const profile = getCurrentProfile();
+    
+    // 1. GLOBAL channel: force_refresh + announcements for ALL users
+    globalChannel = supabase.channel('system_events:global');
+    globalChannel
+        .on('broadcast', { event: 'force_refresh' }, handleForceRefresh)
+        .on('broadcast', { event: 'system_announcement' }, handleAnnouncement)
+        .subscribe((status) => {
+            console.log('Global Channel Status:', status);
+        });
+
+    // 2. PER-USER channel: targeted announcements for this specific user only
+    if (profile?.id) {
+        userChannel = supabase.channel(`system_events:user_${profile.id}`);
+        userChannel
+            .on('broadcast', { event: 'system_announcement' }, handleAnnouncement)
+            .subscribe((status) => {
+                console.log('User Channel Status:', status);
             });
-        }
-    }).subscribe((status) => {
-        console.log('System Events Channel Status:', status);
-    });
+    }
 }
 
 window.triggerGlobalRefresh = async function() {
@@ -2847,8 +3028,8 @@ window.triggerGlobalRefresh = async function() {
         btn.disabled = true;
     }
     
-    if (systemChannel) {
-        const resp = await systemChannel.send({
+    if (globalChannel) {
+        const resp = await globalChannel.send({
             type: 'broadcast',
             event: 'force_refresh',
             payload: { timestamp: new Date().toISOString() }
@@ -2879,21 +3060,41 @@ window.sendCustomNotification = async function(e) {
     btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengirim...';
     btn.disabled = true;
     
-    if (systemChannel) {
-        const resp = await systemChannel.send({
+    let sendSuccess = false;
+    
+    if (target === 'all') {
+        // Send to GLOBAL channel — all devices receive it
+        if (globalChannel) {
+            const resp = await globalChannel.send({
+                type: 'broadcast',
+                event: 'system_announcement',
+                payload: { title, body, target }
+            });
+            sendSuccess = resp === 'ok';
+        }
+    } else {
+        // Send to specific USER's channel — only that user receives it
+        const targetChannel = supabase.channel(`system_events:user_${target}`);
+        await new Promise(resolve => {
+            targetChannel.subscribe((status) => {
+                if (status === 'SUBSCRIBED') resolve();
+            });
+        });
+        const resp = await targetChannel.send({
             type: 'broadcast',
             event: 'system_announcement',
             payload: { title, body, target }
         });
-        
-        if (resp === 'ok') {
-            showToast('Pengumuman berhasil dikirim!', 'success');
-            document.getElementById('form-announcement').reset();
-        } else {
-            showToast('Gagal mengirim pengumuman.', 'error');
-        }
+        sendSuccess = resp === 'ok';
+        // Unsubscribe from temporary channel after sending
+        supabase.removeChannel(targetChannel);
+    }
+    
+    if (sendSuccess) {
+        showToast('Pengumuman berhasil dikirim!', 'success');
+        document.getElementById('form-announcement').reset();
     } else {
-        showToast('Koneksi Realtime belum siap.', 'error');
+        showToast('Gagal mengirim pengumuman.', 'error');
     }
     
     btn.innerHTML = originalText;
