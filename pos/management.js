@@ -100,7 +100,7 @@ export async function loadBranches() {
 }
 
 export async function loadOutlets() {
-    let query = supabase.from('outlets').select('*, branches(name)').order('created_at', { ascending: false });
+    let query = supabase.from('outlets').select('id, name, address, branch_id, tax_rate_percent, phone, created_at, branches(name)').order('created_at', { ascending: false });
     const profile = window.getCurrentProfile();
     if (profile?.role === 'kepala_cabang') {
         query = query.eq('branch_id', profile.branch_id);
@@ -127,7 +127,7 @@ export async function loadOutlets() {
 }
 
 export async function loadUsers() {
-    let query = supabase.from('profiles').select('*, outlets(name), branches(name)').neq('role', 'superadmin');
+    let query = supabase.from('profiles').select('id, email, name, role, branch_id, outlet_id, status, created_at, outlets(name), branches(name)').neq('role', 'superadmin');
     const profile = window.getCurrentProfile();
     if (profile?.role === 'kepala_cabang') {
         const { data: bOutlets } = await supabase.from('outlets').select('id').eq('branch_id', profile.branch_id);

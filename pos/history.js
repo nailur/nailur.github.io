@@ -24,7 +24,7 @@ export async function exportToExcel() {
 
     try {
         const { data: trxData, error: trxError } = await supabase.from('transactions')
-            .select('*, profiles(email, name)')
+            .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, profiles(email, name)')
             .eq('outlet_id', activeOutletId)
             .gte('created_at', startOfDay)
             .lte('created_at', endOfDay)
@@ -38,7 +38,7 @@ export async function exportToExcel() {
 
         const trxIds = trxData.map(t => t.id);
         const { data: itemsData, error: itemsError } = await supabase.from('transaction_items')
-            .select('*, products(name)')
+            .select('transaction_id, product_id, quantity, price, products(name)')
             .in('transaction_id', trxIds);
 
         if (itemsError) throw itemsError;
@@ -120,7 +120,7 @@ export async function loadHistory(resetPage = true) {
     const to = from + HISTORY_PAGE_SIZE - 1;
     
     let query = supabase.from('transactions')
-        .select('*, profiles(email, name)', { count: 'exact' })
+        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, profiles(email, name)', { count: 'exact' })
         .eq('outlet_id', activeOutletId)
         .order('created_at', { ascending: false });
 
@@ -202,12 +202,12 @@ export function changeHistoryPage(page) {
 
 export async function viewTransactionDetails(trxId) {
     const { data: trx, error: trxError } = await supabase.from('transactions')
-        .select('*, profiles(email, name)')
+        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, profiles(email, name)')
         .eq('id', trxId)
         .single();
         
     const { data: items, error: itemsError } = await supabase.from('transaction_items')
-        .select('*, products(name)')
+        .select('transaction_id, product_id, quantity, price, products(name)')
         .eq('transaction_id', trxId);
         
     if (trxError || itemsError) return showToast('Gagal memuat detail transaksi', 'error');
