@@ -166,6 +166,15 @@ async function initPosMultiOutlet(profile) {
     }
     const { data } = await query;
     posOutletsList = data || [];
+    // RESOLVE ACTIVE OUTLET ID FIRST
+    const savedOutletId = localStorage.getItem('pos_active_outlet_id');
+    if (savedOutletId && posOutletsList.find(o => o.id === savedOutletId)) {
+        activeOutletId = savedOutletId;
+    } else if (posOutletsList.length > 0) {
+        activeOutletId = posOutletsList[0].id;
+        localStorage.setItem('pos_active_outlet_id', activeOutletId);
+    }
+
     const nameLabel = document.getElementById('pos-outlet-name');
     const mobileNameLabel = document.getElementById('mobile-pos-outlet-name');
     const selector = document.getElementById('active-outlet-selector');
@@ -210,18 +219,6 @@ async function initPosMultiOutlet(profile) {
         if(mobileNameLabel) mobileNameLabel.classList.remove('hidden');
         selector.classList.add('hidden');
         if(mobileSelector) mobileSelector.classList.add('hidden');
-    }
-    
-    const savedOutletId = localStorage.getItem('pos_active_outlet_id');
-    if (savedOutletId && posOutletsList.find(o => o.id === savedOutletId)) {
-        activeOutletId = savedOutletId;
-        selector.value = savedOutletId;
-        if(mobileSelector) mobileSelector.value = savedOutletId;
-    } else if (posOutletsList.length > 0) {
-        activeOutletId = posOutletsList[0].id;
-        localStorage.setItem('pos_active_outlet_id', activeOutletId);
-        selector.value = activeOutletId;
-        if(mobileSelector) mobileSelector.value = activeOutletId;
     }
     
     initPos();
