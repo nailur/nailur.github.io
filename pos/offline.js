@@ -118,7 +118,9 @@ export async function syncOfflineTransactions() {
                 p_total_amount: trx.total_amount,
                 p_payment_method: trx.payment_method,
                 p_customer_name: trx.customer_name,
-                p_items: trx.items
+                p_items: trx.items,
+                p_cash_received: trx.cash_received || 0,
+                p_change_amount: trx.change_amount || 0
             });
             if (!error) {
                 try {
