@@ -1,0 +1,28 @@
+{
+    "env": {
+        "browser": true,
+        "es2021": true
+    },
+    "extends": "eslint:recommended",
+    "parserOptions": {
+        "ecmaVersion": 12,
+        "sourceType": "module"
+    },
+    "globals": {
+        "supabase": "readonly",
+        "Chart": "readonly",
+        "html2canvas": "readonly",
+        "products": "readonly",
+        "outletsList": "readonly",
+        "activeOutletId": "readonly",
+        "revenueChartInst": "writable",
+        "productChartInst": "writable",
+        "enableTableSort": "readonly",
+        "getCurrentProfile": "readonly",
+        "getCurrentUser": "readonly"
+    },
+    "rules": {
+        "no-undef": "warn",
+        "no-unused-vars": "warn"
+    }
+}
