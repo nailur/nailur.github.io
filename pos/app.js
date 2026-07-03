@@ -6,6 +6,7 @@ import { connectPrinter, printReceiptNative } from './printer.js';
 window.getCurrentProfile = getCurrentProfile;
 window.getCurrentUser = getCurrentUser;
 window.supabase = supabase;
+window.showToast = showToast;
 
 // DOM Elements
 const appContainer = document.getElementById('app-container');

@@ -198,7 +198,7 @@ window.loadDashboard = async function() {
 
     if (rpcError) {
         console.error('Dashboard RPC error (falling back to client-side):', rpcError);
-        return loadDashboardFallback(startOfDay, endOfDay);
+        return window.loadDashboardFallback(startOfDay, endOfDay);
     }
 
     const result = rpcResult;
@@ -255,7 +255,7 @@ window.loadDashboardFallback = async function(startOfDay, endOfDay) {
         .gte('created_at', startOfDay)
         .lte('created_at', endOfDay);
 
-    if (trxError) { showToast('Gagal memuat data dashboard', 'error'); return; }
+    if (trxError) { window.showToast('Gagal memuat data dashboard', 'error'); return; }
 
     const ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];
     const methodSummary = {};
