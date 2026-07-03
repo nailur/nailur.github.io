@@ -112,8 +112,6 @@ export function escapeHtml(str) {
 // cart state moved to cart.js
 // State variables moved to state.jsexternal scripts (e.g. dashboard.js)
 Object.defineProperty(window, 'products', { get: () => products });
-Object.defineProperty(window, 'outletsList', { get: () => outletsList });
-Object.defineProperty(window, 'activeOutletId', { get: () => activeOutletId });
 
 // History pagination state moved to history.js
 
