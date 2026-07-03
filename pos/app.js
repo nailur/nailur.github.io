@@ -150,7 +150,7 @@ async function initPosMultiOutlet(profile) {
     document.getElementById('btn-add-product').classList.remove('hidden');
     
     // Load accessible outlets
-    let query = supabase.from('outlets').select('*').order('name');
+    let query = supabase.from('outlets').select('id, name, branch_id').order('name');
     if (profile.role === 'kepala_cabang') {
         query = query.eq('branch_id', profile.branch_id);
     }
@@ -182,7 +182,7 @@ async function initPosMultiOutlet(profile) {
             checkAttendanceStatus();
             loadProducts();
             loadHistory();
-            loadDashboard();
+            if(window.loadDashboard) window.loadDashboard();
         };
         
         selector.addEventListener('change', handleChange);
@@ -484,6 +484,12 @@ function setupEventListeners() {
     // Main Tabs (Superadmin)
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
+            const prevTab = localStorage.getItem('management_active_tab');
+            if (prevTab === 'analytics-tab' && e.currentTarget.getAttribute('data-target') !== 'analytics-tab') {
+                if (window.revenueChartInst) { window.revenueChartInst.destroy(); window.revenueChartInst = null; }
+                if (window.productChartInst) { window.productChartInst.destroy(); window.productChartInst = null; }
+            }
+
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
             e.currentTarget.classList.add('active');
@@ -491,13 +497,29 @@ function setupEventListeners() {
             document.getElementById(targetId).classList.remove('hidden');
             localStorage.setItem('management_active_tab', targetId);
             
-            if (targetId === 'analytics-tab') loadAnalytics();
+            if (targetId === 'analytics-tab') {
+                if (!document.getElementById('script-dashboard')) {
+                    const script = document.createElement('script');
+                    script.id = 'script-dashboard';
+                    script.src = 'js/dashboard.js';
+                    script.onload = () => window.loadAnalytics();
+                    document.body.appendChild(script);
+                } else if (window.loadAnalytics) {
+                    window.loadAnalytics();
+                }
+            }
         });
     });
 
     // POS Tabs
     document.querySelectorAll('.pos-nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
+            const prevTab = localStorage.getItem('pos_active_tab');
+            if (prevTab === 'dashboard-tab-content' && e.currentTarget.getAttribute('data-target') !== 'dashboard-tab-content') {
+                if (window.revenueChartInst) { window.revenueChartInst.destroy(); window.revenueChartInst = null; }
+                if (window.productChartInst) { window.productChartInst.destroy(); window.productChartInst = null; }
+            }
+
             document.querySelectorAll('.pos-nav-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.pos-tab-pane').forEach(p => p.classList.add('hidden'));
             e.currentTarget.classList.add('active');
@@ -515,7 +537,17 @@ function setupEventListeners() {
             
             if(targetId === 'history-tab-content') loadHistory();
             if(targetId === 'attendance-history-tab-content') loadAttendanceHistory();
-            if(targetId === 'dashboard-tab-content') loadDashboard();
+            if(targetId === 'dashboard-tab-content') {
+                if (!document.getElementById('script-dashboard')) {
+                    const script = document.createElement('script');
+                    script.id = 'script-dashboard';
+                    script.src = 'js/dashboard.js';
+                    script.onload = () => window.loadDashboard();
+                    document.body.appendChild(script);
+                } else if (window.loadDashboard) {
+                    window.loadDashboard();
+                }
+            }
         });
     });
 
@@ -531,7 +563,7 @@ function setupEventListeners() {
                 loadHistory();
             }
             if(!document.getElementById('dashboard-tab-content').classList.contains('hidden')) {
-                loadDashboard();
+                if(window.loadDashboard) window.loadDashboard();
             }
         });
     }
@@ -654,14 +686,14 @@ function setupEventListeners() {
             if(!el.value) el.value = today;
             if(id.startsWith('history')) el.addEventListener('change', loadHistory);
             if(id.startsWith('attendance')) el.addEventListener('change', loadAttendanceHistory);
-            if(id.startsWith('dashboard')) el.addEventListener('change', loadDashboard);
+            if(id.startsWith('dashboard')) el.addEventListener('change', () => { if(window.loadDashboard) window.loadDashboard() });
         }
     });
     
     document.getElementById('btn-export-excel')?.addEventListener('click', exportToExcel);
     
-    document.getElementById('analytics-outlet-filter')?.addEventListener('change', loadAnalytics);
-    document.getElementById('analytics-period-filter')?.addEventListener('change', loadAnalytics);
+    document.getElementById('analytics-outlet-filter')?.addEventListener('change', () => { if(window.loadAnalytics) window.loadAnalytics() });
+    document.getElementById('analytics-period-filter')?.addEventListener('change', () => { if(window.loadAnalytics) window.loadAnalytics() });
 }
 
 function filterUserOutlets() {
@@ -777,7 +809,7 @@ async function initManagement() {
 }
 
 async function loadBranches() {
-    let query = supabase.from('branches').select('*').order('created_at', { ascending: false });
+    let query = supabase.from('branches').select('id, name, created_at').order('created_at', { ascending: false });
     const profile = getCurrentProfile();
     if (profile?.role === 'kepala_cabang') {
         query = query.eq('id', profile.branch_id);
@@ -1014,7 +1046,7 @@ async function handleAddUser(e) {
 
 window.editUser = async (id) => {
     // Fetch user details from DB
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('profiles').select('id, name, email, role, branch_id, outlet_id').eq('id', id).single();
     if (error || !data) return showToast('Gagal memuat profil', 'error');
     
     document.getElementById('user-id').value = data.id;
@@ -1275,7 +1307,7 @@ async function handleClockOut() {
 
 async function loadProducts() {
     if (!activeOutletId) return;
-    const { data, error } = await supabase.from('products').select('*').eq('outlet_id', activeOutletId).order('name');
+    const { data, error } = await supabase.from('products').select('id, name, price, price_gofood, price_grabfood, price_shopeefood, stock, category, barcode, image_url, created_at').eq('outlet_id', activeOutletId).order('name');
     if (error) return showToast('Gagal memuat produk', 'error');
     products = data;
     productShowAll = false; // Reset display limit when loading fresh data
@@ -1328,7 +1360,7 @@ function renderProducts(search = '') {
 }
 
 // Helper function to compress image
-function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+function compressImage(file, maxWidth = 300, maxHeight = 300, quality = 0.6) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -2327,320 +2359,7 @@ async function reprintReceipt(trx, items) {
     printReceipt(receiptNo, cartItems, trx.total_amount, trx.total_amount, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj);
 }
 
-let revenueChartInst = null;
-let productChartInst = null;
 
-async function loadAnalytics() {
-    const profile = getCurrentProfile();
-    // Only management can see
-    if (profile?.role === 'kasir') return;
-    
-    // Populate outlet filter if first time
-    const outletSelect = document.getElementById('analytics-outlet-filter');
-    if (outletSelect && outletSelect.options.length <= 1) {
-        let outlets = outletsList;
-        if (profile?.role === 'kepala_cabang') {
-            outlets = outletsList.filter(o => o.branch_id === profile.branch_id);
-        } else if (profile?.role === 'kepala_toko') {
-            outlets = outletsList.filter(o => o.id === profile.outlet_id);
-        }
-        outlets.forEach(o => {
-            const opt = document.createElement('option');
-            opt.value = o.id;
-            opt.textContent = o.name;
-            outletSelect.appendChild(opt);
-        });
-    }
-
-    const period = document.getElementById('analytics-period-filter')?.value || '7';
-    const outletFilter = document.getElementById('analytics-outlet-filter')?.value;
-    
-    // Build outlet IDs array for RPC
-    let outletIds = null;
-    if (outletFilter) {
-        outletIds = [outletFilter];
-    } else {
-        if (profile?.role === 'kepala_cabang') {
-            outletIds = outletsList.filter(o => o.branch_id === profile.branch_id).map(o => o.id);
-            if (outletIds.length === 0) return;
-        } else if (profile?.role === 'kepala_toko') {
-            outletIds = [profile.outlet_id];
-        }
-    }
-    
-    const now = new Date();
-    let startDateStr = null;
-    if (period === '7') {
-        const d = new Date(); d.setDate(d.getDate() - 7);
-        startDateStr = d.toISOString();
-    } else if (period === '30') {
-        const d = new Date(); d.setDate(d.getDate() - 30);
-        startDateStr = d.toISOString();
-    } else if (period === 'this_month') {
-        const d = new Date(now.getFullYear(), now.getMonth(), 1);
-        startDateStr = d.toISOString();
-    }
-
-    // Try server-side RPC first (much faster & saves bandwidth)
-    const { data: rpcResult, error: rpcError } = await supabase.rpc('get_analytics_summary', {
-        p_outlet_ids: outletIds,
-        p_start_date: startDateStr
-    });
-
-    if (rpcError) {
-        console.error('Analytics RPC error (falling back to client-side):', rpcError);
-        // Fallback: client-side aggregation
-        return loadAnalyticsFallback(outletIds, startDateStr);
-    }
-
-    const result = rpcResult;
-    const totalRevenue = result.total_revenue || 0;
-    const totalItems = result.total_items || 0;
-    const dailyData = result.daily_revenue || [];
-    const topProducts = result.top_products || [];
-
-    document.getElementById('analytics-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
-    document.getElementById('analytics-total-trx').textContent = (result.total_trx || 0).toLocaleString('id-ID');
-    document.getElementById('analytics-total-items').textContent = totalItems.toLocaleString('id-ID');
-
-    // Chart.js rendering
-    const revCtx = document.getElementById('revenueChart');
-    const prodCtx = document.getElementById('productChart');
-    if(!revCtx || !prodCtx) return;
-
-    const revLabels = dailyData.map(d => d.date);
-    const revData = dailyData.map(d => d.revenue);
-    
-    if (revenueChartInst) revenueChartInst.destroy();
-    revenueChartInst = new Chart(revCtx.getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: revLabels.map(d => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month:'short'})),
-            datasets: [{
-                label: 'Pendapatan (Rp)',
-                data: revData,
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                tension: 0.3,
-                fill: true
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-
-    const prodLabels = topProducts.map(x => x.name);
-    const prodData = topProducts.map(x => x.qty);
-
-    if (productChartInst) productChartInst.destroy();
-    productChartInst = new Chart(prodCtx.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: prodLabels,
-            datasets: [{
-                data: prodData,
-                backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-}
-
-// Fallback: original client-side aggregation (used if RPC not yet deployed)
-async function loadAnalyticsFallback(outletIds, startDateStr) {
-    let query = supabase.from('transactions').select('*, transaction_items(product_id, quantity, price)');
-    
-    if (outletIds && outletIds.length === 1) {
-        query = query.eq('outlet_id', outletIds[0]);
-    } else if (outletIds && outletIds.length > 1) {
-        query = query.in('outlet_id', outletIds);
-    }
-    if (startDateStr) query = query.gte('created_at', startDateStr);
-
-    const { data, error } = await query;
-    if (error) { console.error('Analytics fallback error:', error); return; }
-
-    let totalRevenue = 0, totalItems = 0;
-    const dailyRevenue = {}, productCounts = {};
-
-    data.forEach(trx => {
-        totalRevenue += (trx.total_amount || 0);
-        const dateKey = trx.created_at.split('T')[0];
-        dailyRevenue[dateKey] = (dailyRevenue[dateKey] || 0) + (trx.total_amount || 0);
-        if (trx.transaction_items) {
-            trx.transaction_items.forEach(item => {
-                totalItems += item.quantity;
-                const p = products.find(x => x.id === item.product_id);
-                productCounts[p ? p.name : 'Unknown'] = (productCounts[p ? p.name : 'Unknown'] || 0) + item.quantity;
-            });
-        }
-    });
-
-    document.getElementById('analytics-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
-    document.getElementById('analytics-total-trx').textContent = data.length.toLocaleString('id-ID');
-    document.getElementById('analytics-total-items').textContent = totalItems.toLocaleString('id-ID');
-
-    const revCtx = document.getElementById('revenueChart');
-    const prodCtx = document.getElementById('productChart');
-    if(!revCtx || !prodCtx) return;
-
-    const revLabels = Object.keys(dailyRevenue).sort();
-    const revData = revLabels.map(k => dailyRevenue[k]);
-    
-    if (revenueChartInst) revenueChartInst.destroy();
-    revenueChartInst = new Chart(revCtx.getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: revLabels.map(d => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month:'short'})),
-            datasets: [{ label: 'Pendapatan (Rp)', data: revData, borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', tension: 0.3, fill: true }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-
-    const sortedProducts = Object.entries(productCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
-    if (productChartInst) productChartInst.destroy();
-    productChartInst = new Chart(prodCtx.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: sortedProducts.map(x => x[0]),
-            datasets: [{ data: sortedProducts.map(x => x[1]), backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-}
-
-async function loadDashboard() {
-    if (!activeOutletId) return;
-    
-    const startDate = document.getElementById('dashboard-date-start');
-    const endDate = document.getElementById('dashboard-date-end');
-    if (!startDate || !startDate.value || !endDate || !endDate.value) return;
-
-    const startOfDay = new Date(`${startDate.value}T00:00:00`).toISOString();
-    const endOfDay = new Date(`${endDate.value}T23:59:59.999`).toISOString();
-
-    // Try server-side RPC first (much faster & saves bandwidth)
-    const { data: rpcResult, error: rpcError } = await supabase.rpc('get_dashboard_summary', {
-        p_outlet_id: activeOutletId,
-        p_start_date: startOfDay,
-        p_end_date: endOfDay
-    });
-
-    if (rpcError) {
-        console.error('Dashboard RPC error (falling back to client-side):', rpcError);
-        return loadDashboardFallback(startOfDay, endOfDay);
-    }
-
-    const result = rpcResult;
-    const totalRevenue = result.total_revenue || 0;
-    const totalTrx = result.total_trx || 0;
-    const methodData = result.method_summary || [];
-    const productData = result.product_summary || [];
-
-    document.getElementById('dash-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
-    document.getElementById('dash-total-trx').textContent = totalTrx;
-
-    // Build method summary with defaults
-    const ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];
-    const methodSummary = {};
-    ALL_PAYMENT_METHODS.forEach(m => methodSummary[m] = { count: 0, total: 0 });
-    methodData.forEach(m => {
-        const key = m.method || 'Tunai';
-        methodSummary[key] = { count: Number(m.count), total: Number(m.total) };
-    });
-
-    const tbodyMethod = document.querySelector('#dashboard-method-table tbody');
-    tbodyMethod.innerHTML = Object.entries(methodSummary)
-        .sort((a,b) => b[1].total - a[1].total)
-        .map(([method, stats]) => `
-        <tr>
-            <td><strong>${method}</strong></td>
-            <td style="text-align: right;">${stats.count}</td>
-            <td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td>
-        </tr>
-    `).join('');
-
-    const tbodyProduct = document.querySelector('#dashboard-product-table tbody');
-    if (productData.length === 0) {
-        tbodyProduct.innerHTML = '<tr><td colspan="3" class="text-center">Belum ada data</td></tr>';
-    } else {
-        tbodyProduct.innerHTML = productData.map(p => `
-            <tr>
-                <td>${p.name}</td>
-                <td style="text-align: right;">${Number(p.qty)}</td>
-                <td style="text-align: right;">Rp ${Number(p.revenue).toLocaleString('id-ID')}</td>
-            </tr>
-        `).join('');
-    }
-    
-    enableTableSort('dashboard-method-table');
-    enableTableSort('dashboard-product-table');
-}
-
-// Fallback: original client-side dashboard aggregation (used if RPC not yet deployed)
-async function loadDashboardFallback(startOfDay, endOfDay) {
-    const { data: trxData, error: trxError } = await supabase.from('transactions')
-        .select('*')
-        .eq('outlet_id', activeOutletId)
-        .gte('created_at', startOfDay)
-        .lte('created_at', endOfDay);
-
-    if (trxError) { showToast('Gagal memuat data dashboard', 'error'); return; }
-
-    const ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];
-    const methodSummary = {};
-    ALL_PAYMENT_METHODS.forEach(m => methodSummary[m] = { count: 0, total: 0 });
-    const productSummary = {};
-    let totalRevenue = 0;
-    let totalTrx = trxData ? trxData.length : 0;
-
-    if (trxData && trxData.length > 0) {
-        const trxIds = trxData.map(t => t.id);
-        const { data: itemsData } = await supabase.from('transaction_items')
-            .select('*, products(name)')
-            .in('transaction_id', trxIds);
-
-        trxData.forEach(trx => {
-            const method = trx.payment_method || 'Tunai';
-            totalRevenue += trx.total_amount;
-            if (!methodSummary[method]) methodSummary[method] = { count: 0, total: 0 };
-            methodSummary[method].count++;
-            methodSummary[method].total += trx.total_amount;
-        });
-
-        if (itemsData) {
-            itemsData.forEach(item => {
-                const pName = item.products?.name || 'Produk Terhapus';
-                if (!productSummary[pName]) productSummary[pName] = { qty: 0, revenue: 0 };
-                productSummary[pName].qty += item.quantity;
-                productSummary[pName].revenue += (item.quantity * item.price);
-            });
-        }
-    }
-
-    document.getElementById('dash-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
-    document.getElementById('dash-total-trx').textContent = totalTrx;
-
-    const tbodyMethod = document.querySelector('#dashboard-method-table tbody');
-    tbodyMethod.innerHTML = Object.entries(methodSummary)
-        .sort((a,b) => b[1].total - a[1].total)
-        .map(([method, stats]) => `
-        <tr><td><strong>${method}</strong></td><td style="text-align: right;">${stats.count}</td><td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td></tr>
-    `).join('');
-
-    const tbodyProduct = document.querySelector('#dashboard-product-table tbody');
-    if (Object.keys(productSummary).length === 0) {
-        tbodyProduct.innerHTML = '<tr><td colspan="3" class="text-center">Belum ada data</td></tr>';
-    } else {
-        tbodyProduct.innerHTML = Object.entries(productSummary)
-            .sort((a,b) => b[1].qty - a[1].qty)
-            .map(([name, stats]) => `
-            <tr><td>${name}</td><td style="text-align: right;">${stats.qty}</td><td style="text-align: right;">Rp ${stats.revenue.toLocaleString('id-ID')}</td></tr>
-        `).join('');
-    }
-    
-    enableTableSort('dashboard-method-table');
-    enableTableSort('dashboard-product-table');
-}
 
 // Table Sorting Logic
 function enableTableSort(tableId) {
