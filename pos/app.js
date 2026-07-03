@@ -2303,7 +2303,6 @@ async function loadHistory(resetPage = true) {
     }
 
     historyTotalCount = count || 0;
-    const tbody = document.querySelector('#history-table tbody');
     const paginationEl = document.getElementById('history-pagination');
 
     if (!data || data.length === 0) {
