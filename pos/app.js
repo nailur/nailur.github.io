@@ -1,5 +1,4 @@
 import { supabase } from './supabase.js';
-import { supabaseAdmin } from './supabase-admin.js';
 import { checkSession, login, logout, getCurrentUser, getCurrentProfile } from './auth.js';
 import { connectPrinter, printReceiptNative } from './printer.js';
 
@@ -1037,21 +1036,24 @@ async function handleAddUser(e) {
             btn.disabled = false; btn.textContent = 'Simpan';
             return;
         }
-        const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({ email, password });
-        if (authError) {
-            showToast(authError.message, 'error');
+        const { data: resData, error: invokeError } = await supabase.functions.invoke('create-user', {
+            body: { email, password, name, role, branch_id, outlet_id, status }
+        });
+
+        if (invokeError) {
+            showToast('Gagal memanggil fungsi: ' + invokeError.message, 'error');
             btn.disabled = false; btn.textContent = 'Simpan'; return;
         }
 
-        setTimeout(async () => {
-            const { error: updateError } = await supabase.from('profiles')
-                .update({ name, role, branch_id, outlet_id, status })
-                .eq('id', authData.user.id);
-                
-            if (updateError) showToast('Gagal set profile: ' + updateError.message, 'error');
-            else { showToast('Pegawai berhasil ditambahkan!', 'success'); document.getElementById('modal-user').classList.add('hidden'); loadUsers(); }
-            btn.disabled = false; btn.textContent = 'Simpan';
-        }, 1000);
+        if (resData && resData.error) {
+            showToast('Gagal membuat user: ' + resData.error, 'error');
+            btn.disabled = false; btn.textContent = 'Simpan'; return;
+        }
+
+        showToast('Pegawai berhasil ditambahkan!', 'success'); 
+        document.getElementById('modal-user').classList.add('hidden'); 
+        loadUsers();
+        btn.disabled = false; btn.textContent = 'Simpan';
     }
 }
 
