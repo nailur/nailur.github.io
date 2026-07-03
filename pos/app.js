@@ -54,6 +54,12 @@ export function debounce(func, wait) {
     };
 }
 
+// HTML Escape (XSS Protection)
+export function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 // Global State
 let products = [];
 let cart = JSON.parse(localStorage.getItem('pos_cart')) || [];
@@ -198,14 +204,22 @@ async function initPosMultiOutlet(profile) {
             selector.value = activeOutletId;
             if(mobileSelector) mobileSelector.value = activeOutletId;
             localStorage.setItem('pos_active_outlet_id', activeOutletId);
+            generateOrderId();
             checkAttendanceStatus();
             loadProducts();
             loadHistory();
             if(window.loadDashboard) window.loadDashboard();
         };
         
-        selector.addEventListener('change', handleChange);
-        if(mobileSelector) mobileSelector.addEventListener('change', handleChange);
+        // Guard: mencegah listener bertumpuk saat re-login tanpa reload
+        if (!selector._outletChangeAttached) {
+            selector.addEventListener('change', handleChange);
+            selector._outletChangeAttached = true;
+        }
+        if (mobileSelector && !mobileSelector._outletChangeAttached) {
+            mobileSelector.addEventListener('change', handleChange);
+            mobileSelector._outletChangeAttached = true;
+        }
     } else {
         const outlet = posOutletsList.find(o => o.id === activeOutletId);
         if (outlet) {
@@ -561,22 +575,6 @@ function setupEventListeners() {
         });
     });
 
-    // Outlet Selector Change (Owner/Kepala Cabang)
-    const outletSelector = document.getElementById('active-outlet-selector');
-    if (outletSelector) {
-        outletSelector.addEventListener('change', (e) => {
-            activeOutletId = e.target.value;
-            localStorage.setItem('pos_active_outlet_id', activeOutletId);
-            generateOrderId();
-            loadProducts();
-            if(!document.getElementById('history-tab-content').classList.contains('hidden')) {
-                loadHistory();
-            }
-            if(!document.getElementById('dashboard-tab-content').classList.contains('hidden')) {
-                if(window.loadDashboard) window.loadDashboard();
-            }
-        });
-    }
 
     // Superadmin Actions
     document.getElementById('btn-add-branch').addEventListener('click', () => {
@@ -1321,6 +1319,12 @@ async function handleClockOut() {
 async function loadProducts() {
     if (!activeOutletId) return;
 
+    // Tampilkan loading spinner jika belum ada produk di layar
+    if (products.length === 0) {
+        const grid = document.getElementById('product-grid');
+        if (grid) grid.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:10px;color:var(--text-muted);"><i class="ph ph-spinner ph-spin" style="font-size:2rem;"></i><span>Memuat produk...</span></div>';
+    }
+
     // 1. Cache-First: Load from IndexedDB
     try {
         const cachedProducts = await getOfflineProducts(activeOutletId);
@@ -1584,6 +1588,17 @@ function renderCart(forceRebuild = false) {
     
     const method = document.getElementById('modal-payment-method').value;
     
+    // Re-link product references ke array products terbaru (hindari data stale dari localStorage)
+    if (products.length > 0) {
+        cart = cart.filter(item => {
+            const freshProduct = products.find(p => p.id === item.product_id);
+            if (!freshProduct) return false; // Produk sudah dihapus dari server
+            item.product = freshProduct;
+            item.name = freshProduct.name;
+            return true;
+        });
+    }
+
     // Update effective price in cart items based on payment method
     cart.forEach(item => {
         let effectivePrice = item.product.price;
@@ -1621,7 +1636,7 @@ function renderCart(forceRebuild = false) {
         container.innerHTML = cart.map(item => `
             <div class="cart-item" data-product-id="${item.product_id}">
                 <div class="cart-item-info">
-                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-name">${escapeHtml(item.name)}</div>
                     <div class="cart-item-price">Rp ${(item.price * item.quantity).toLocaleString('id-ID')}</div>
                 </div>
                 <div class="cart-item-controls">
@@ -1788,6 +1803,8 @@ async function finalizeCheckout() {
             } else {
                 trxData.id = data; // the UUID returned
                 receiptNo = await generateReceiptNumber(trxData);
+                // Persist receipt_no ke DB agar tidak berubah saat ada offline sync
+                supabase.from('transactions').update({ receipt_no: receiptNo }).eq('id', trxData.id);
             }
         } catch (e) {
             console.error("RPC Exception:", e);
@@ -2252,7 +2269,11 @@ async function loadHistory(resetPage = true) {
     if (!activeOutletId) return;
     
     if (resetPage) historyPage = 0;
-    
+
+    // Tampilkan loading spinner di tabel
+    const tbody = document.querySelector('#history-table tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted);"><i class="ph ph-spinner ph-spin"></i> Memuat riwayat...</td></tr>';
+
     const from = historyPage * HISTORY_PAGE_SIZE;
     const to = from + HISTORY_PAGE_SIZE - 1;
     
@@ -2291,8 +2312,8 @@ async function loadHistory(resetPage = true) {
         return;
     }
 
-    const rowsHTML = await Promise.all(data.map(async trx => {
-        const receiptNo = await generateReceiptNumber(trx);
+    const rowsHTML = data.map(trx => {
+        const receiptNo = trx.receipt_no || trx.id.substring(0, 8).toUpperCase();
         return `
             <tr>
                 <td>${new Date(trx.created_at).toLocaleString('id-ID')}</td>
@@ -2305,7 +2326,7 @@ async function loadHistory(resetPage = true) {
                 </td>
             </tr>
         `;
-    }));
+    });
     tbody.innerHTML = rowsHTML.join('');
     enableTableSort('history-table');
 
@@ -2344,7 +2365,7 @@ window.viewTransactionDetails = async (trxId) => {
         
     if (trxError || itemsError) return showToast('Gagal memuat detail transaksi', 'error');
 
-    const receiptNo = await generateReceiptNumber(trx);
+    const receiptNo = trx.receipt_no || await generateReceiptNumber(trx);
     document.getElementById('detail-trx-id').textContent = receiptNo;
     document.getElementById('detail-trx-date').textContent = new Date(trx.created_at).toLocaleString('id-ID');
     document.getElementById('detail-trx-cashier').textContent = trx.profiles?.name || trx.profiles?.email || '-';
@@ -2385,7 +2406,7 @@ async function reprintReceipt(trx, items) {
         quantity: i.quantity,
         price: i.price
     }));
-    const receiptNo = await generateReceiptNumber(trx);
+    const receiptNo = trx.receipt_no || await generateReceiptNumber(trx);
     const totalsObj = {
         subtotal: trx.subtotal_amount || trx.total_amount,
         discount: trx.discount_amount || 0,
@@ -2726,10 +2747,10 @@ function handleAnnouncement(payload) {
         toast.style.animation = 'slideIn 0.3s ease';
         toast.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong><i class="ph-fill ph-bell-ringing"></i> ${title || 'Pengumuman'}</strong>
+                <strong><i class="ph-fill ph-bell-ringing"></i> ${escapeHtml(title) || 'Pengumuman'}</strong>
                 <button class="btn-close-toast" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-x"></i></button>
             </div>
-            <div style="font-size: 0.95rem; white-space: pre-wrap;">${body || ''}</div>
+            <div style="font-size: 0.95rem; white-space: pre-wrap;">${escapeHtml(body) || ''}</div>
         `;
         container.appendChild(toast);
         toast.querySelector('.btn-close-toast').onclick = () => toast.remove();
@@ -2930,7 +2951,9 @@ if ('serviceWorker' in navigator) {
 // ------------------------------
 // OFFLINE SYNC (IndexedDB)
 // ------------------------------
+let _dbInstance = null;
 async function initDB() {
+    if (_dbInstance) return _dbInstance;
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('POSDatabase', 2);
         request.onupgradeneeded = (e) => {
@@ -2942,7 +2965,11 @@ async function initDB() {
                 db.createObjectStore('offline_products', { keyPath: 'outlet_id' });
             }
         };
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => {
+            _dbInstance = request.result;
+            _dbInstance.onclose = () => { _dbInstance = null; };
+            resolve(_dbInstance);
+        };
         request.onerror = () => reject(request.error);
     });
 }
@@ -3012,13 +3039,20 @@ window.addEventListener('online', async () => {
 });
 
 let isSyncing = false;
+let syncRetryCount = 0;
+const MAX_SYNC_RETRIES = 5;
+
 async function syncOfflineTransactions() {
     if (!navigator.onLine || isSyncing) return;
     
     isSyncing = true;
+    let failCount = 0;
     try {
         const pending = await getOfflineTransactions();
-        if (pending.length === 0) return;
+        if (pending.length === 0) {
+            syncRetryCount = 0;
+            return;
+        }
     
     showToast(`Menyinkronkan ${pending.length} transaksi offline...`, 'info');
     let successCount = 0;
@@ -3037,13 +3071,20 @@ async function syncOfflineTransactions() {
                 p_items: trx.items
             });
             if (!error) {
+                // Generate receipt_no permanen dan simpan ke DB
+                try {
+                    const receiptNo = await generateReceiptNumber({ id: trx.id, created_at: trx.created_at, outlet_id: trx.outlet_id });
+                    await supabase.from('transactions').update({ receipt_no: receiptNo }).eq('id', trx.id);
+                } catch(e) { console.error('Failed to save receipt_no for synced trx', e); }
                 await clearOfflineTransaction(trx.id);
                 successCount++;
             } else {
                 console.error('Offline Sync Error:', error);
+                failCount++;
             }
         } catch (e) {
             console.error('Failed to sync offline transaction', e);
+            failCount++;
         }
     }
     
@@ -3053,5 +3094,18 @@ async function syncOfflineTransactions() {
     }
     } finally {
         isSyncing = false;
+    }
+
+    // Retry dengan exponential backoff jika masih ada yang gagal
+    if (failCount > 0 && syncRetryCount < MAX_SYNC_RETRIES) {
+        syncRetryCount++;
+        const delay = Math.min(5000 * Math.pow(2, syncRetryCount - 1), 60000); // 5s, 10s, 20s, 40s, 60s max
+        showToast(`${failCount} transaksi gagal sync, mencoba ulang dalam ${delay / 1000} detik...`, 'warning');
+        setTimeout(() => syncOfflineTransactions(), delay);
+    } else if (failCount > 0) {
+        showToast(`${failCount} transaksi masih gagal setelah ${MAX_SYNC_RETRIES}x percobaan. Coba refresh manual.`, 'error');
+        syncRetryCount = 0;
+    } else {
+        syncRetryCount = 0;
     }
 }

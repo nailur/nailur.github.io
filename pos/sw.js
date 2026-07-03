@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pos-kasir-cache-v30';
+const CACHE_NAME = 'pos-kasir-cache-v31';
 const urlsToCache = [
   './',
   './index.html',
@@ -16,46 +16,53 @@ const urlsToCache = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
+      .then(cache => cache.addAll(urlsToCache))
   );
 });
 
+// App shell = file yang sering berubah (JS/CSS/HTML)
+function isAppShell(url) {
+  const path = new URL(url).pathname;
+  return path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css') || path.endsWith('/');
+}
+
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request).then(
-          function(response) {
-            // Check if we received a valid response
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
+  if (event.request.method !== 'GET') return;
 
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
-            var responseToCache = response.clone();
+  const url = event.request.url;
 
-            caches.open(CACHE_NAME)
-              .then(function(cache) {
-                // Only cache GET requests
-                if(event.request.method === 'GET') {
-                    cache.put(event.request, responseToCache);
-                }
-              });
+  // API requests — jangan di-cache, langsung ke network
+  if (url.includes('supabase.co') || url.includes('api.github.com') || url.includes('cdn.jsdelivr.net')) return;
 
-            return response;
+  if (isAppShell(url)) {
+    // NETWORK-FIRST: Selalu ambil versi terbaru, fallback ke cache saat offline
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
           }
-        );
-      })
-  );
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+  } else {
+    // CACHE-FIRST: Untuk aset statis (icon, gambar, font, manifest)
+    event.respondWith(
+      caches.match(event.request)
+        .then(cached => {
+          if (cached) return cached;
+          return fetch(event.request).then(response => {
+            if (response && response.status === 200 && response.type === 'basic') {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            }
+            return response;
+          });
+        })
+    );
+  }
 });
 
 self.addEventListener('activate', event => {
