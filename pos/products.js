@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
-import { activeOutletId, showToast, escapeHtml } from './app.js';
+import { showToast, escapeHtml } from './app.js';
+import { activeOutletId } from './state.js';
 import { getOfflineProducts, saveOfflineProducts } from './offline.js';
 import { getCurrentProfile } from './auth.js';
 

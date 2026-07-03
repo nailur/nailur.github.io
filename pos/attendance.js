@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { getCurrentProfile } from './auth.js';
-import { getLocalToday, showToast, activeOutletId } from './app.js';
+import { getLocalToday, showToast } from './app.js';
+import { activeOutletId } from './state.js';
 
 let attendanceTimer;
 export let currentAttendanceRecord = null;

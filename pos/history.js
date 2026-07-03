@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
-import { activeOutletId, showToast, generateReceiptNumber } from './app.js';
+import { showToast, generateReceiptNumber } from './app.js';
+import { activeOutletId } from './state.js';
 import { printReceipt } from './cart.js';
 
 export const HISTORY_PAGE_SIZE = 25;
