@@ -253,12 +253,16 @@ window.loadDashboard = async function() {
     const totalRevenue = Number(result.total_revenue) || 0;
     const totalTrx = Number(result.total_trx) || 0;
     const totalDiscount = Number(result.total_discount) || 0;
+    const totalTax = Number(result.total_tax) || 0;
     const methodData = result.method_summary || [];
     const productData = result.product_summary || [];
 
     document.getElementById('dash-total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
     document.getElementById('dash-total-trx').textContent = totalTrx;
     document.getElementById('dash-total-discount').textContent = `Rp ${totalDiscount.toLocaleString('id-ID')}`;
+    
+    const dashTaxEl = document.getElementById('dash-total-tax');
+    if (dashTaxEl) dashTaxEl.textContent = `Rp ${totalTax.toLocaleString('id-ID')}`;
 
     // Build method summary with defaults
     const ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];

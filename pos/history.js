@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
 import { showToast, generateReceiptNumber } from './app.js';
 import { activeOutletId } from './state.js';
-import { printReceipt } from './cart.js';
+import { printReceipt, printReceiptRawBT } from './cart.js';
 
 export const HISTORY_PAGE_SIZE = 25;
 export let historyPage = 0;
@@ -114,7 +114,7 @@ export async function loadHistory(resetPage = true) {
     if (resetPage) historyPage = 0;
 
     const tbody = document.querySelector('#history-table tbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted);"><i class="ph ph-spinner ph-spin"></i> Memuat riwayat...</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted);"><i class="ph ph-spinner ph-spin"></i> Memuat riwayat...</td></tr>';
 
     const from = historyPage * HISTORY_PAGE_SIZE;
     const to = from + HISTORY_PAGE_SIZE - 1;
@@ -148,7 +148,7 @@ export async function loadHistory(resetPage = true) {
     const paginationEl = document.getElementById('history-pagination');
 
     if (!data || data.length === 0) {
-        if(tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada transaksi</td></tr>';
+        if(tbody) tbody.innerHTML = '<tr><td colspan="10" class="text-center">Belum ada transaksi</td></tr>';
         if (paginationEl) paginationEl.innerHTML = '';
         return;
     }
@@ -159,9 +159,13 @@ export async function loadHistory(resetPage = true) {
             <tr>
                 <td>${new Date(trx.created_at).toLocaleString('id-ID')}</td>
                 <td>${receiptNo}</td>
-                <td>Rp ${trx.total_amount.toLocaleString('id-ID')}</td>
-                <td>${trx.payment_method}</td>
                 <td>${trx.profiles?.name || trx.profiles?.email || '-'}</td>
+                <td>Rp ${(trx.discount_amount || 0).toLocaleString('id-ID')}</td>
+                <td>Rp ${(trx.tax_amount || 0).toLocaleString('id-ID')}</td>
+                <td><strong>Rp ${(trx.total_amount || 0).toLocaleString('id-ID')}</strong></td>
+                <td>Rp ${(trx.cash_received || trx.total_amount).toLocaleString('id-ID')}</td>
+                <td>Rp ${(trx.change_amount || 0).toLocaleString('id-ID')}</td>
+                <td>${trx.payment_method}</td>
                 <td>
                     <button class="btn btn-icon" style="color:var(--primary);" onclick="viewTransactionDetails('${trx.id}')" title="Detail"><i class="ph ph-eye"></i></button>
                 </td>
@@ -308,5 +312,16 @@ export async function reprintReceipt(trx, items) {
         tax: trx.tax_amount || 0,
         total: trx.total_amount || 0
     };
-    printReceipt(receiptNo, cartItems, trx.total_amount, trx.total_amount, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj);
+    const received = trx.cash_received || trx.total_amount;
+    
+    // Pilihan mencetak menggunakan Bluetooth Printer (opsional) atau Web Print
+    if (window.innerWidth < 768) {
+        // Asumsi mobile menggunakan RawBT
+        if (typeof printReceiptRawBT === 'function') {
+            printReceiptRawBT(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj);
+            return;
+        }
+    }
+    
+    printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj);
 }

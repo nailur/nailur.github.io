@@ -481,7 +481,7 @@ export function printReceipt(trxId, cartItems, total, received, method, trxDate 
     window.print();
 }
 
-export function printReceiptRawBT(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null) {
+export function printReceiptRawBT(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null) {
     const dateStr = trxDate ? new Date(trxDate).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
     const change = received - total;
     
@@ -546,6 +546,21 @@ export function printReceiptRawBT(trxId, cartItems, total, received, method, trx
     });
     
     text += `--------------------------------\n`;
+
+    if (totalsObj) {
+        const subtotalStr = totalsObj.subtotal.toLocaleString('id-ID');
+        text += `Subtotal: ${" ".repeat(32 - 10 - subtotalStr.length)}${subtotalStr}\n`;
+        
+        if (totalsObj.discount > 0) {
+            const discountStr = "-" + totalsObj.discount.toLocaleString('id-ID');
+            text += `Diskon  : ${" ".repeat(32 - 10 - discountStr.length)}${discountStr}\n`;
+        }
+        
+        if (totalsObj.tax > 0) {
+            const taxStr = totalsObj.tax.toLocaleString('id-ID');
+            text += `Pajak   : ${" ".repeat(32 - 10 - taxStr.length)}${taxStr}\n`;
+        }
+    }
     
     const totalStr = total.toLocaleString('id-ID');
     text += `Total   : ${" ".repeat(32 - 10 - totalStr.length)}${totalStr}\n`;
