@@ -5,6 +5,7 @@ import { connectPrinter, printReceiptNative } from './printer.js';
 
 window.getCurrentProfile = getCurrentProfile;
 window.getCurrentUser = getCurrentUser;
+window.supabase = supabase;
 
 // DOM Elements
 const appContainer = document.getElementById('app-container');
@@ -59,6 +60,11 @@ let branchesList = [];
 let outletsList = [];
 let posOutletsList = []; // Outlets accessible by current POS user
 let activeOutletId = null;
+
+// Expose to window for external scripts (e.g. dashboard.js)
+Object.defineProperty(window, 'products', { get: () => products });
+Object.defineProperty(window, 'outletsList', { get: () => outletsList });
+Object.defineProperty(window, 'activeOutletId', { get: () => activeOutletId });
 
 // Pagination State
 const HISTORY_PAGE_SIZE = 25;
@@ -2392,6 +2398,7 @@ async function reprintReceipt(trx, items) {
 
 // Table Sorting Logic
 function enableTableSort(tableId) {
+    window.enableTableSort = enableTableSort;
     const table = document.getElementById(tableId);
     if (!table) return;
 
