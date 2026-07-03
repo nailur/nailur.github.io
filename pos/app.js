@@ -864,8 +864,8 @@ export async function generateReceiptNumber(trx) {
 
 
 // Table Sorting Logic
-function enableTableSort(tableId) {
-    window.enableTableSort = enableTableSort;
+window.enableTableSort = enableTableSort;
+export function enableTableSort(tableId) {
     const table = document.getElementById(tableId);
     if (!table) return;
 
