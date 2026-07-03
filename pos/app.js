@@ -23,13 +23,30 @@ export function showToast(message, type = 'info') {
     if (type === 'error') toast.style.background = 'var(--danger)';
     if (type === 'success') toast.style.background = 'var(--success)';
     
-    toast.textContent = message;
+    toast.innerHTML = `
+        <i class="ph-fill ph-${type === 'success' ? 'check-circle' : type === 'error' ? 'warning-circle' : 'info'}"></i>
+        <span>${message}</span>
+    `;
+    
     container.appendChild(toast);
     
     setTimeout(() => {
-        toast.style.opacity = '0';
+        toast.style.animation = 'fadeOut 0.3s ease-out forwards';
         setTimeout(() => toast.remove(), 300);
     }, 3000);
+}
+
+// Debounce Utility
+export function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 
 // Global State
@@ -608,7 +625,7 @@ function setupEventListeners() {
     });
 
     document.getElementById('form-product').addEventListener('submit', handleSaveProduct);
-    document.getElementById('product-search').addEventListener('input', (e) => renderProducts(e.target.value));
+    document.getElementById('product-search').addEventListener('input', debounce((e) => renderProducts(e.target.value), 300));
     
     document.getElementById('modal-payment-method').addEventListener('change', () => {
         renderCart();

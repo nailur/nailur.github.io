@@ -364,6 +364,22 @@ body {
     scrollbar-width: none;
 }
 .pos-nav::-webkit-scrollbar { display: none; }
+.tab-pane {
+    display: none;
+    animation: fadeIn 0.3s ease;
+    will-change: opacity, transform;
+    transform: translateZ(0);
+}
+.tab-pane.active {
+    display: block;
+}
+
+.pos-tab-pane {
+    display: none;
+    animation: fadeIn 0.3s ease;
+    will-change: opacity, transform;
+    transform: translateZ(0);
+}
 .nav-left {
     display: flex;
     align-items: center;
