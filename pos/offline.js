@@ -131,10 +131,14 @@ export async function syncOfflineTransactions() {
                 successCount++;
             } else {
                 console.error('Offline Sync Error:', error);
+                trx.sync_error = error.message;
+                await saveOfflineTransaction(trx);
                 failCount++;
             }
         } catch (e) {
             console.error('Failed to sync offline transaction', e);
+            trx.sync_error = e.message || 'Unknown error';
+            await saveOfflineTransaction(trx);
             failCount++;
         }
     }

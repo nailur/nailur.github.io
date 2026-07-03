@@ -190,7 +190,7 @@ export function editBranch(id) {
 export async function deleteBranch(id) {
     if(!confirm('Hapus cabang ini?')) return;
     
-    const { count, error: countErr } = await supabase.from('outlets').select('*', { count: 'exact', head: true }).eq('branch_id', id);
+    const { count, error: countErr } = await supabase.from('outlets').select('id', { count: 'exact', head: true }).eq('branch_id', id);
     if(countErr) return showToast('Gagal memvalidasi cabang', 'error');
     if(count > 0) return showToast('Cabang tidak bisa dihapus karena masih memiliki outlet!', 'error');
 
@@ -241,10 +241,10 @@ export function editOutlet(id) {
 export async function deleteOutlet(id) {
     if(!confirm('Hapus outlet ini?')) return;
     
-    const { count: txCount } = await supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('outlet_id', id);
+    const { count: txCount } = await supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('outlet_id', id);
     if(txCount > 0) return showToast('Outlet tidak bisa dihapus karena sudah memiliki transaksi!', 'error');
 
-    const { count: prodCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('outlet_id', id);
+    const { count: prodCount } = await supabase.from('products').select('id', { count: 'exact', head: true }).eq('outlet_id', id);
     if(prodCount > 0) return showToast('Outlet tidak bisa dihapus karena memiliki produk!', 'error');
 
     const { error } = await supabase.from('outlets').delete().eq('id', id);
@@ -354,10 +354,10 @@ export async function deleteUser(id) {
 
     if(!confirm('Hapus pegawai ini? Aksesnya akan dicabut.')) return;
     
-    const { count: txCount } = await supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('cashier_id', id);
+    const { count: txCount } = await supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('cashier_id', id);
     if(txCount > 0) return showToast('User tidak bisa dihapus karena memiliki riwayat transaksi!', 'error');
 
-    const { count: attCount } = await supabase.from('attendance').select('*', { count: 'exact', head: true }).eq('profile_id', id);
+    const { count: attCount } = await supabase.from('attendance').select('id', { count: 'exact', head: true }).eq('profile_id', id);
     if(attCount > 0) return showToast('User tidak bisa dihapus karena memiliki riwayat absensi!', 'error');
 
     // Edge function untuk delete user dari auth bisa ditambahkan nanti jika diperlukan

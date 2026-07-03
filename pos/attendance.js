@@ -38,7 +38,7 @@ export async function checkAttendanceStatus() {
     
     const { data, error } = await supabase
         .from('attendance')
-        .select('*')
+        .select('id, clock_in, clock_out, date')
         .eq('profile_id', profile.id)
         .eq('outlet_id', activeOutletId)
         .eq('date', today)
@@ -88,7 +88,7 @@ async function handleClockIn() {
             date: today,
             clock_in: now
         }])
-        .select()
+        .select('id, clock_in, clock_out, date')
         .single();
 
     btn.disabled = false;
@@ -118,7 +118,7 @@ async function handleClockOut() {
         .from('attendance')
         .update({ clock_out: now })
         .eq('id', currentAttendanceRecord.id)
-        .select()
+        .select('id, clock_in, clock_out, date')
         .single();
 
     btn.disabled = false;
