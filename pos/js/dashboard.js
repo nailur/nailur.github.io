@@ -202,9 +202,9 @@ window.loadDashboard = async function() {
     }
 
     const result = rpcResult;
-    const totalRevenue = result.total_revenue || 0;
-    const totalTrx = result.total_trx || 0;
-    const totalDiscount = result.total_discount || 0;
+    const totalRevenue = Number(result.total_revenue) || 0;
+    const totalTrx = Number(result.total_trx) || 0;
+    const totalDiscount = Number(result.total_discount) || 0;
     const methodData = result.method_summary || [];
     const productData = result.product_summary || [];
 
