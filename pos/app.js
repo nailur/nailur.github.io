@@ -201,7 +201,7 @@ async function initPosMultiOutlet(profile) {
     document.getElementById('btn-add-product').classList.remove('hidden');
     
     // Load accessible outlets
-    let query = supabase.from('outlets').select('id, name, branch_id').order('name');
+    let query = supabase.from('outlets').select('id, name, branch_id, address, phone, tax_rate_percent').order('name');
     if (profile.role === 'kepala_cabang') {
         query = query.eq('branch_id', profile.branch_id);
     }
