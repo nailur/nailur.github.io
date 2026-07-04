@@ -90,13 +90,20 @@ window.loadAnalytics = async function() {
     const dashTax = document.getElementById('analytics-total-tax');
     if (dashTax) dashTax.textContent = `Rp ${totalTax.toLocaleString('id-ID')}`;
 
-    // Fetch attendance count
-    let attQuery = supabase.from('attendance').select('id', { count: 'exact', head: true })
-        .gte('clock_in', startDateStr);
+    // Fetch attendance count using RPC to bypass RLS
+    let attCount = 0;
     if (outletIds && outletIds.length > 0) {
-        attQuery = attQuery.in('outlet_id', outletIds);
+        const stStr = startDateStr.split('T')[0];
+        const promises = outletIds.map(oid => supabase.rpc('get_attendance_report', {
+            p_start_date: stStr,
+            p_end_date: '2099-12-31',
+            p_outlet_id: oid
+        }));
+        const results = await Promise.all(promises);
+        results.forEach(r => {
+            if (r.data) attCount += r.data.length;
+        });
     }
-    const { count: attCount } = await attQuery;
     const dashAtt = document.getElementById('analytics-total-attendance');
     if (dashAtt) dashAtt.textContent = (attCount || 0).toLocaleString('id-ID');
 

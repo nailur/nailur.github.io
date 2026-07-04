@@ -171,6 +171,7 @@
                     <button class="tab-btn active" data-target="branches-tab">Kelola Cabang</button>
                     <button class="tab-btn" data-target="outlets-tab">Kelola Outlets</button>
                     <button class="tab-btn" data-target="users-tab">Kelola Users</button>
+                    <button class="tab-btn" data-target="sa-attendance-tab">Absensi</button>
                     <button class="tab-btn" data-target="analytics-tab">Analitik</button>
                     <button class="tab-btn" data-target="server-info-tab">Info Server</button>
                     <button class="tab-btn" data-target="announcement-tab">Pengumuman</button>
@@ -283,6 +284,42 @@
                         </div>
                     </div>
 
+                    <!-- 3.5. ABSENSI TAB -->
+                    <div id="sa-attendance-tab" class="tab-pane hidden">
+                        <div class="action-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <h3>Riwayat Absensi</h3>
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                <select id="sa-attendance-outlet" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                                    <option value="all">Semua Outlet</option>
+                                </select>
+                                <input type="date" id="sa-attendance-start" class="input" style="padding: 6px 12px;">
+                                <span style="color: var(--text-muted); padding-top: 6px;">-</span>
+                                <input type="date" id="sa-attendance-end" class="input" style="padding: 6px 12px;">
+                                <button class="btn btn-secondary btn-sm" onclick="window.loadSaAttendance()">
+                                    <i class="ph ph-funnel"></i> Filter
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="sa-attendance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Karyawan</th>
+                                        <th>Outlet</th>
+                                        <th>Tanggal</th>
+                                        <th>Masuk</th>
+                                        <th>Keluar</th>
+                                        <th>Status</th>
+                                        <th>Foto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Attendance rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- ANALITIK TAB -->
                     <div id="analytics-tab" class="tab-pane hidden">
                         <div class="action-bar" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -327,13 +364,13 @@
                             </div>
                         </div>
                         <div class="analytics-charts-grid" style="display: grid; gap: 15px;">
-                            <div class="glass-panel" style="padding: 15px; height: 300px; grid-column: 1 / -1;">
+                            <div class="glass-panel" style="position: relative; width: 100%; padding: 15px; height: 300px; grid-column: 1 / -1;">
                                 <canvas id="revenueChart"></canvas>
                             </div>
-                            <div class="glass-panel" style="padding: 15px; height: 300px;">
+                            <div class="glass-panel" style="position: relative; width: 100%; padding: 15px; height: 300px;">
                                 <canvas id="productsChart"></canvas>
                             </div>
-                            <div class="glass-panel" style="padding: 15px; height: 300px;">
+                            <div class="glass-panel" style="position: relative; width: 100%; padding: 15px; height: 300px;">
                                 <canvas id="methodsChart"></canvas>
                             </div>
                         </div>
