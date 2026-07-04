@@ -100,7 +100,7 @@ export async function loadBranches() {
 }
 
 export async function loadOutlets() {
-    let query = supabase.from('outlets').select('id, name, address, branch_id, tax_rate_percent, phone, created_at, branches(name)').order('created_at', { ascending: false });
+    let query = supabase.from('outlets').select('id, name, code, address, branch_id, tax_rate_percent, phone, created_at, branches(name)').order('created_at', { ascending: false });
     const profile = window.getCurrentProfile();
     if (profile?.role === 'kepala_cabang') {
         query = query.eq('branch_id', profile.branch_id);
