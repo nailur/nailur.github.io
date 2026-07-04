@@ -379,14 +379,17 @@ body {
     display: flex;
     align-items: center;
     gap: 20px;
+    flex: 1;
 }
 .nav-right {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 15px;
+    flex: 1;
 }
 .pos-tabs-nav {
-    transform: translateY(2px); /* Fix visual vertical alignment */
+    margin-top: 4px; /* Fix visual vertical alignment */
     display: flex;
     gap: 5px;
     background: rgba(0,0,0,0.05);
