@@ -566,8 +566,6 @@ function setupEventListeners() {
                 } else if (window.loadAnalytics) {
                     window.loadAnalytics();
                 }
-            } else if (targetId === 'sa-attendance-tab') {
-                if (window.loadSaAttendance) window.loadSaAttendance();
             }
         });
     });
