@@ -309,20 +309,7 @@ body {
     flex-wrap: wrap;
 }
 
-.tab-btn {
-    padding: 10px 20px;
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    font-weight: 600;
-    color: var(--text-muted);
-    cursor: pointer;
-}
 
-.tab-btn.active {
-    color: var(--primary);
-    border-bottom-color: var(--primary);
-}
 
 .action-bar {
     display: flex;
@@ -470,7 +457,7 @@ body {
     display: none;
 }
 
-.pos-nav-btn {
+.pos-nav-btn, .tab-btn {
     padding: 6px 12px;
     border: none;
     background: transparent;
@@ -483,7 +470,7 @@ body {
     transition: all 0.2s;
 }
 
-.pos-nav-btn.active {
+.pos-nav-btn.active, .tab-btn.active {
     background: #fff;
     color: var(--primary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
