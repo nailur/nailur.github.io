@@ -25,7 +25,7 @@ export async function exportToExcel() {
 
     try {
         const { data: trxData, error: trxError } = await supabase.from('transactions')
-            .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, profiles(email, name)')
+            .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, profiles(email, name)')
             .eq('outlet_id', activeOutletId)
             .gte('created_at', startOfDay)
             .lte('created_at', endOfDay)
@@ -121,7 +121,7 @@ export async function loadHistory(resetPage = true) {
     const to = from + HISTORY_PAGE_SIZE - 1;
     
     let query = supabase.from('transactions')
-        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, profiles(email, name)', { count: 'exact' })
+        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, profiles(email, name)', { count: 'exact' })
         .eq('outlet_id', activeOutletId)
         .order('created_at', { ascending: false });
 
