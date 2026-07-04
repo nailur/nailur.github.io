@@ -145,7 +145,7 @@
         <!-- ======================= -->
         <!-- 2. SUPERADMIN DASHBOARD -->
         <!-- ======================= -->
-        <section id="superadmin-view" class="view-section hidden">
+        <section id="superadmin-view" class="view-section hidden pos-view-container">
             <!-- Mobile Header for SA -->
             <div class="mobile-pos-header hidden-desktop glass-panel">
                 <button class="btn btn-icon" id="btn-sa-mobile-menu">
@@ -175,7 +175,7 @@
                     <button class="tab-btn" data-target="server-info-tab">Info Server</button>
                     <button class="tab-btn" data-target="announcement-tab">Pengumuman</button>
                 </div>
-                <div class="nav-right">
+                <div class="nav-right" style="gap: 5px;">
                     <span id="sa-user-info" class="user-badge hide-mobile" style="margin-right: 15px;">Superadmin</span>
                     <button class="btn btn-icon" id="btn-back-pos" title="Kembali ke Kasir"
                         style="justify-content: flex-start;">
@@ -200,7 +200,7 @@
                 </div>
             </nav>
 
-            <main class="dashboard-content" style="padding-top: 10px;">
+            <main class="glass-panel history-panel">
                 <header class="page-header hidden-desktop">
                     <h1 style="font-size: 1.5rem;">Manajemen Sistem</h1>
                 </header>
@@ -214,7 +214,7 @@
                                 <i class="ph ph-plus"></i> Tambah Cabang
                             </button>
                         </div>
-                        <div class="table-responsive glass-panel">
+                        <div class="table-responsive">
                             <table class="data-table" id="branches-table">
                                 <thead>
                                     <tr>
@@ -237,7 +237,7 @@
                                 <i class="ph ph-plus"></i> Tambah Outlet
                             </button>
                         </div>
-                        <div class="table-responsive glass-panel">
+                        <div class="table-responsive">
                             <table class="data-table" id="outlets-table">
                                 <thead>
                                     <tr>
@@ -263,7 +263,7 @@
                                 <i class="ph ph-plus"></i> Tambah Pengguna
                             </button>
                         </div>
-                        <div class="table-responsive glass-panel">
+                        <div class="table-responsive">
                             <table class="data-table" id="users-table">
                                 <thead>
                                     <tr>
