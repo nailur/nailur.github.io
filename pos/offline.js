@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { showToast, generateReceiptNumber } from './app.js';
+import { showToast } from './app.js';
 
 let _dbInstance = null;
 export async function initDB() {
@@ -123,10 +123,6 @@ export async function syncOfflineTransactions() {
                 p_change_amount: trx.change_amount || 0
             });
             if (!error) {
-                try {
-                    const receiptNo = await generateReceiptNumber({ id: trx.id, created_at: trx.created_at, outlet_id: trx.outlet_id });
-                    await supabase.from('transactions').update({ receipt_no: receiptNo }).eq('id', trx.id);
-                } catch(e) { console.error('Failed to save receipt_no for synced trx', e); }
                 await clearOfflineTransaction(trx.id);
                 successCount++;
             } else {
