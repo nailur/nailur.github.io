@@ -40,18 +40,26 @@ window.loadAnalytics = async function() {
     }
     
     const now = new Date();
-    let startDateStr = null;
+    const formatLocalISO = (d) => {
+        const tzo = -d.getTimezoneOffset();
+        const dif = tzo >= 0 ? '+' : '-';
+        const pad = num => (num < 10 ? '0' : '') + Math.floor(Math.abs(num));
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 
+               'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':00' + 
+               dif + pad(tzo / 60) + ':' + pad(tzo % 60);
+    };
+
+    let startDateStr = '2000-01-01T00:00:00Z'; // fallback for 'all'
     if (period === '7') {
         const d = new Date(); d.setDate(d.getDate() - 7);
-        startDateStr = d.toISOString();
+        startDateStr = formatLocalISO(d);
     } else if (period === '30') {
         const d = new Date(); d.setDate(d.getDate() - 30);
-        startDateStr = d.toISOString();
+        startDateStr = formatLocalISO(d);
     } else if (period === 'this_month') {
         const d = new Date(now.getFullYear(), now.getMonth(), 1);
-        startDateStr = d.toISOString();
+        startDateStr = formatLocalISO(d);
     }
-
     // Try server-side RPC first (much faster & saves bandwidth)
     const { data: rpcResult, error: rpcError } = await supabase.rpc('get_analytics_summary', {
         p_outlet_ids: outletIds,
