@@ -90,6 +90,16 @@ window.loadAnalytics = async function() {
     const dashTax = document.getElementById('analytics-total-tax');
     if (dashTax) dashTax.textContent = `Rp ${totalTax.toLocaleString('id-ID')}`;
 
+    // Fetch attendance count
+    let attQuery = supabase.from('attendance').select('id', { count: 'exact', head: true })
+        .gte('clock_in', startDateStr);
+    if (outletIds && outletIds.length > 0) {
+        attQuery = attQuery.in('outlet_id', outletIds);
+    }
+    const { count: attCount } = await attQuery;
+    const dashAtt = document.getElementById('analytics-total-attendance');
+    if (dashAtt) dashAtt.textContent = (attCount || 0).toLocaleString('id-ID');
+
     // Chart.js rendering
     const revCtx = document.getElementById('revenueChart');
     const prodCtx = document.getElementById('productsChart');
