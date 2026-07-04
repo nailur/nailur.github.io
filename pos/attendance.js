@@ -36,7 +36,7 @@ export async function checkAttendanceStatus() {
 
     const today = getLocalToday();
     
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('attendance')
         .select('id, clock_in, clock_out, date')
         .eq('profile_id', profile.id)

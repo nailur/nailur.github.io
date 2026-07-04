@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { showToast, escapeHtml, generateReceiptNumber, generateOrderId } from './app.js';
+import { showToast, escapeHtml, generateOrderId } from './app.js';
 import { activeOutletId, posOutletsList } from './state.js';
 import { products, loadProducts } from './products.js';
 import { saveOfflineTransaction } from './offline.js';

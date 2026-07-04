@@ -1,5 +1,6 @@
+/* global XLSX */
 import { supabase } from './supabase.js';
-import { showToast, generateReceiptNumber } from './app.js';
+import { showToast } from './app.js';
 import { activeOutletId } from './state.js';
 import { printReceipt, printReceiptRawBT } from './cart.js';
 

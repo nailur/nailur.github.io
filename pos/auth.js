@@ -5,15 +5,23 @@ let currentUser = null;
 let currentProfile = null;
 
 export async function checkSession() {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     if (session) {
         currentUser = session.user;
         
-        // Cek apakah ada profil di localStorage (hemat database query)
-        const cachedProfile = localStorage.getItem('pos_profile');
-        if (cachedProfile) {
-            currentProfile = JSON.parse(cachedProfile);
-        } else {
+        let needsRefresh = true;
+        const cachedStr = localStorage.getItem('pos_profile');
+        if (cachedStr) {
+            try {
+                const cached = JSON.parse(cachedStr);
+                if (cached._timestamp && (Date.now() - cached._timestamp < 15 * 60 * 1000)) {
+                    currentProfile = cached;
+                    needsRefresh = false;
+                }
+            } catch(e) { /* ignore JSON parse error */ }
+        }
+        
+        if (needsRefresh) {
             await loadProfile(currentUser.id);
         }
         
@@ -42,6 +50,7 @@ export async function loadProfile(userId) {
         return null;
     }
     currentProfile = data;
+    currentProfile._timestamp = Date.now();
     localStorage.setItem('pos_profile', JSON.stringify(currentProfile)); // Cache ke localStorage
     return currentProfile;
 }

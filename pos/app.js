@@ -1,9 +1,10 @@
+/* global XLSX */
 import { supabase } from './supabase.js';
 import { checkSession, login, logout, getCurrentUser, getCurrentProfile } from './auth.js';
-import { connectPrinter, printReceiptNative } from './printer.js';
+import { connectPrinter } from './printer.js';
 import { startAttendanceClock, checkAttendanceStatus } from './attendance.js';
-import { syncOfflineTransactions, initDB, getOfflineProducts, saveOfflineProducts, saveOfflineTransaction, getOfflineTransactions, clearOfflineTransaction } from './offline.js';
-import { products, productShowAll, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts } from './products.js';
+import { syncOfflineTransactions, initDB } from './offline.js';
+import { products, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts } from './products.js';
 import { cart, addToCart, updateQty, emptyCart, renderCart, calculateChange, openCheckoutModal, finalizeCheckout, printReceipt, printReceiptRawBT } from './cart.js';
 import { loadHistory, exportToExcel, changeHistoryPage, viewTransactionDetails } from './history.js';
 import { 
@@ -14,7 +15,7 @@ import {
 } from './management.js';
 import { 
     branchesList, outletsList, posOutletsList, activeOutletId, 
-    setBranchesList, setOutletsList, setPosOutletsList, setActiveOutletId 
+    setPosOutletsList, setActiveOutletId 
 } from './state.js';
 
 window.getCurrentProfile = getCurrentProfile;
@@ -56,7 +57,6 @@ Object.defineProperty(window, 'outletsList', { get: () => outletsList });
 Object.defineProperty(window, 'activeOutletId', { get: () => activeOutletId });
 
 // DOM Elements
-const appContainer = document.getElementById('app-container');
 const loginView = document.getElementById('login-view');
 const superadminView = document.getElementById('superadmin-view');
 const posView = document.getElementById('pos-view');
@@ -119,7 +119,9 @@ Object.defineProperty(window, 'products', { get: () => products });
 
 // Initialize
 async function init() {
-    supabase.auth.onAuthStateChange((event, session) => {
+    initDB(); // Pre-warm the offline database to prevent race conditions during offline transactions
+    
+    supabase.auth.onAuthStateChange((event) => {
         if (event === 'PASSWORD_RECOVERY') {
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('login-view').classList.remove('active');
@@ -854,10 +856,7 @@ export function generateOrderId(resetCart = true) {
 
 // Cart logic moved to cart.js
 
-export async function generateReceiptNumber(trx) {
-    if (!trx || !trx.id) return "TRN-0000";
-    return trx.id.substring(0,8).toUpperCase();
-}
+
 
 // History logic moved to history.js
 

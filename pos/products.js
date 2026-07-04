@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { showToast, escapeHtml } from './app.js';
+import { showToast } from './app.js';
 import { activeOutletId } from './state.js';
 import { getOfflineProducts, saveOfflineProducts } from './offline.js';
 import { getCurrentProfile } from './auth.js';
@@ -156,7 +156,7 @@ export async function handleSaveProduct(e) {
             btn.textContent = 'Mengunggah...';
             const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
             
-            const { data: uploadData, error: uploadError } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
                 .from('product-images')
                 .upload(fileName, compressedFile, { contentType: 'image/jpeg' });
                 
