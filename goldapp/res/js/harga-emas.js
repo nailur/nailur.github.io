@@ -21,35 +21,70 @@ const fetchWithTimeout = async (url, ms = 15000) => {
         clearTimeout(timeout);
     }
 };
+async function fetchIdbullion() {
+    try {
+        const targetUrl = "https://idbullion.com/api/gold";
+        const response = await fetch(targetUrl, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
+			signal: AbortSignal.timeout(15000)
+        });
+        const json = await response.json();
+		const data = Array.isArray(json) ? json : (json.data || []);
+        
+		// Filter type physical, currency IDR, and specific vendors directly here
+        return data.filter(item => {
+            const type = String(item.vendor?.type || '').toLowerCase();
+            const currency = String(item.currency || '').toUpperCase();
+            const brandName = String(item.product?.name || '');
+            const vendorName = String(item.vendor?.name || '');
+
+            if (type !== 'physical' || currency !== 'IDR') return false;
+
+            // Filter for ANTAM: only take from vendor ANTAM
+            if (brandName.toLowerCase().includes('antam')) {
+                if (!vendorName.toLowerCase().includes('antam')) return false;
+            }
+
+            // Filter for Lotus Archi: only take from vendor Lotus Archi
+            if (brandName.toLowerCase().includes('lotus archi')) {
+                if (!vendorName.toLowerCase().includes('lotus')) return false;
+            }
+
+            // Filter for Emas Kita: drop from IDBullion because we scrape the official web locally
+            if (brandName.toLowerCase().includes('emas kita')) {
+                return false; 
+            }
+
+            return true;
+        });
+    } catch (e) {
+        console.error("IDBullion fetch error:", e);
+        return [];
+    }
+}
 
 export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        // const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed, ubsPages ] = await Promise.all([
-		// const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed ] = await Promise.all([
-		const [galeriHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed ] = await Promise.all([
+		const [idbullionData, galeriHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed ] = await Promise.all([
+			fetchIdbullion(),
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
-            // fetchWithTimeout("https://idbullion.com/").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
 			fetchWithTimeout("https://www.kinghalim.com/goldbarwithamala").catch(() => ""),
-			// fetchWithTimeout("https://emasantam.id/harga-emas-hari-ini/").catch(() => ""),
             fetchUBSFixed().catch(() => ({}))
-			// fetchUBS().catch(() => ({}))
         ]);
 
         const rawData = [
             ...(galeriHTML ? parseGaleri24(galeriHTML) : []),
-            // ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
-			// ...(bullionHTML ? parseBullion(bullionHTML, lotusHTML) : []),
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
 			...(sampoernaHTML ? parseSampoerna(sampoernaHTML) : []),
 			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
-			// ...(emasAntamHTML ? parseEmasAntamOfficial(emasAntamHTML) : []),
 			...parseUBSLifestyleFixed(ubsPagesFixed)
-            // ...parseUBSLifestyle(ubsPages)
         ];
 
 		const filteredData = rawData.filter(item => {
@@ -67,30 +102,38 @@ export default async function handler(req, res) {
 			uniqueMap.set(item.code, item);
 		});
 
-		const data = Array.from(uniqueMap.values());
+		const localDataArray = Array.from(uniqueMap.values());
 
-		data.sort((a, b) => {
-			const brandA = String(a.category || "").toUpperCase();
-    		const brandB = String(b.category || "").toUpperCase();
-			
-			if (brandA < brandB) return -1;
-			if (brandA > brandB) return 1;
+		// Transform local data into IDBullion format
+		const transformedLocal = localDataArray.map(item => ({
+			buy_price: parseFloat(String(item.jual).replace(/[^\d]/g, "")),
+			buyback_price: item.buyback ? parseFloat(String(item.buyback).replace(/[^\d]/g, "")) : 0,
+			currency: "IDR",
+			price_date: new Date().toISOString(),
+			vendor: {
+				id: `local_${item.category}`,
+				name: item.category,
+				type: "physical"
+			},
+			product: {
+				brand_id: `brand_${item.category}`,
+				name: `${item.category} ${item.gram} Gram`,
+				weight: parseFloat(item.gram)
+			}
+		}));
 
-			const priceA = parseFloat(String(a.jual).replace(/[^\d]/g, "")) || 0;
-			const priceB = parseFloat(String(b.jual).replace(/[^\d]/g, "")) || 0;
-			
-			return priceA - priceB;
-		});
+		// Merge IDBullion data with Transformed Local Data
+		let finalData = idbullionData.concat(transformedLocal);
 
         res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
-        res.setHeader("Access-Control-Allow-Origin", "*"); // Change to your domain in production
+        res.setHeader("Access-Control-Allow-Origin", "*"); 
         res.setHeader("Content-Type", "application/json");
         
         res.status(200).json({ 
             success: true,
             timestamp: new Date().toISOString(),
-            count: data.length,
-            data 
+            count: finalData.length,
+            data: finalData
         });
 
     } catch (e) {

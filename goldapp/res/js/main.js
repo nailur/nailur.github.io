@@ -284,85 +284,29 @@ async function fetchMarketData() {
 	}
 
 	try {
-		const cloudflareWorkerUrl = "https://api-gold.nailur-rohman29.workers.dev/";
-		const localApiUrl = "/api/harga-emas"; // Vercel API Endpoint
+		const localApiUrl = "/api/harga-emas"; // Vercel All-in-One API Endpoint
 
-		const [cfResponse, localResponse] = await Promise.all([
-			fetch(cloudflareWorkerUrl).catch(() => null),
-			fetch(localApiUrl).catch(() => null)
-		]);
+		const localResponse = await fetch(localApiUrl).catch(() => null);
 
 		let itemsArray = [];
 
-		if (cfResponse && cfResponse.ok) {
-			const allData = await cfResponse.json();
-			const data = Array.isArray(allData) ? allData : (allData.data || []);
-			if (Array.isArray(data)) {
-				itemsArray = data;
-			}
-		} else {
-			console.warn("Cloudflare API returned status:", cfResponse ? cfResponse.status : "failed");
-		}
-
-		// Merge data from local Vercel API (UBS, KingHalim)
 		if (localResponse && localResponse.ok) {
 			try {
 				const localData = await localResponse.json();
 				const data = Array.isArray(localData) ? localData : (localData.data || []);
 				
 				if (Array.isArray(data)) {
-					// Transform local API format to match Cloudflare API format
-					const transformedLocal = data.map(item => ({
-						buy_price: parseFloat(String(item.jual).replace(/[^\d]/g, "")),
-						buyback_price: item.buyback ? parseFloat(String(item.buyback).replace(/[^\d]/g, "")) : 0,
-						currency: "IDR",
-						price_date: new Date().toISOString(),
-						vendor: {
-							id: `local_${item.category}`,
-							name: item.category,
-							type: "physical"
-						},
-						product: {
-							brand_id: `brand_${item.category}`,
-							name: `${item.category} ${item.gram} Gram`,
-							weight: parseFloat(item.gram)
-						}
-					}));
-					
-					itemsArray = itemsArray.concat(transformedLocal);
+					itemsArray = data;
 				}
 			} catch (err) {
-				console.error("Failed to parse local API data", err);
+				console.error("Failed to parse Vercel API data", err);
 			}
+		} else {
+			console.warn("Vercel API returned status:", localResponse ? localResponse.status : "failed");
 		}
 
 		if (itemsArray.length > 0) {
-			apiData = itemsArray.filter(apiItem => {
-					const type = String(apiItem.vendor?.type || '').toLowerCase();
-					const currency = String(apiItem.currency || '').toUpperCase();
-					const brandName = apiItem.product?.name || '';
-					const vendorName = apiItem.vendor?.name || '';
-					
-					if (type !== 'physical' || currency !== 'IDR') return false;
-					
-					// Filter for ANTAM: only take from vendor ANTAM
-					if (brandName.toLowerCase().includes('antam')) {
-						if (!vendorName.toLowerCase().includes('antam')) return false;
-					}
-
-					// Filter for Lotus Archi: only take from vendor Lotus Archi
-					if (brandName.toLowerCase().includes('lotus archi')) {
-						if (!vendorName.toLowerCase().includes('lotus')) return false;
-					}
-
-					// Filter for Emas Kita: only take from local API (official website)
-					if (brandName.toLowerCase().includes('emas kita')) {
-						if (!String(apiItem.vendor?.id).startsWith('local_')) return false;
-					}
-					
-					return true;
-				});
-			}
+			apiData = itemsArray;
 	} catch (error) {
 		console.error("Failed to fetch API data:", error);
 	}
