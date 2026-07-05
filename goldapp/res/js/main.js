@@ -307,6 +307,7 @@ async function fetchMarketData() {
 
 		if (itemsArray.length > 0) {
 			apiData = itemsArray;
+		}
 	} catch (error) {
 		console.error("Failed to fetch API data:", error);
 	}
