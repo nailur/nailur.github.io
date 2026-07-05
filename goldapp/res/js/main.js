@@ -278,6 +278,8 @@ const apiBrandMap = {
 };
 
 async function fetchMarketData() {
+	if (Date.now() - lastMarketDataFetch < 300000) return;
+	lastMarketDataFetch = Date.now();
 	let apiData = null;
 	let dbPrices = new Map();
 	let allBrands = new Map();
@@ -600,14 +602,18 @@ async function fetchGoals() {
 
     let { data: allItemsRaw } = await sbClient
         .from('tblinventory')
-        .select('weight_grams, purchase_price, wallet_id, tblbrand(brand_name)')
+        .select('*, tblbrand(brand_name)')
         .eq('user_id', currentSessionUser.id);
 		
 	let allItems = allItemsRaw ? allItemsRaw.map(a => ({
 		...a,
 		weight_grams: Number(decryptData(a.weight_grams)) || 0,
-		purchase_price: Number(decryptData(a.purchase_price)) || 0
+		purchase_price: Number(decryptData(a.purchase_price)) || 0,
+		purchase_date: decryptData(a.purchase_date),
+		brand_name: a.tblbrand?.brand_name || "Unknown"
 	})) : [];
+	
+	cachedDecryptedInventory = allItems;
 
     const goalContainer = document.getElementById('goal-list-container');
 
@@ -852,6 +858,8 @@ let rawInvPrice = 0;
 let rawInvDiff = 0;
 
 let currentSessionUser = null;
+let cachedDecryptedInventory = null;
+let lastMarketDataFetch = 0;
 let currentGoalTarget = 0;
 let rawProgress = "0%";
 let rawTargetLabel = "Target: Rp 0";
@@ -892,13 +900,28 @@ async function fetchPortfolio(user, walletId = null) {
 	if (sortVal.startsWith('brand')) sortCol = 'brand_name';
 	if (sortVal.endsWith('asc')) sortAsc = true;
 
-	let { data: rawAssets, error } = await sbClient
-        .from('tblinventory')
-        .select('*, tblbrand(brand_name)')
-		.eq('user_id', user.id)
-        .eq('wallet_id', activeWalletId);
-		
-	let assets = rawAssets;
+	let error = null;
+	let assets = [];
+	if (cachedDecryptedInventory) {
+		assets = cachedDecryptedInventory.filter(a => a.wallet_id === activeWalletId);
+	} else {
+		let { data: rawAssets, error: e } = await sbClient
+			.from('tblinventory')
+			.select('*, tblbrand(brand_name)')
+			.eq('user_id', user.id)
+			.eq('wallet_id', activeWalletId);
+			
+		error = e;
+		if (rawAssets) {
+			assets = rawAssets.map(a => ({
+				...a,
+				weight_grams: Number(decryptData(a.weight_grams)) || 0,
+				purchase_price: Number(decryptData(a.purchase_price)) || 0,
+				purchase_date: decryptData(a.purchase_date),
+				brand_name: a.tblbrand?.brand_name || "Unknown"
+			}));
+		}
+	}
 
 
 	if (error || !assets || assets.length === 0) {
@@ -911,16 +934,6 @@ async function fetchPortfolio(user, walletId = null) {
     }
 
 	currentWalletItemCount = assets.length;
-
-	assets = assets.map(a => {
-		return {
-			...a,
-			weight_grams: Number(decryptData(a.weight_grams)),
-			purchase_price: Number(decryptData(a.purchase_price)),
-			purchase_date: decryptData(a.purchase_date),
-			brand_name: a.tblbrand?.brand_name || "Unknown"
-		};
-	});
 
 	// Client-side sort for decrypted data
 	assets.sort((a, b) => {
@@ -1113,6 +1126,7 @@ async function saveInventory() {
 
 	if(error) showToast("Error: " + error.message, "failed");
 	else {
+		cachedDecryptedInventory = null;
 		showToast(currentLang === 'en' ? "Added successfully" : "Berhasil menambahkan");
 		toggleAddModal();
 		document.getElementById('add-price').value = ""; // Reset
@@ -1133,6 +1147,7 @@ async function deleteInventory(id) {
 		if (error) {
 			showToast("Error :" + error.message, "failed");
 		} else {
+			cachedDecryptedInventory = null;
 			showToast(currentLang === 'en' ? "Item deleted" : "Aset dihapus");
 			closeConfirm();
 			fetchPortfolio(currentSessionUser);
