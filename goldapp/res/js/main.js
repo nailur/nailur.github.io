@@ -640,8 +640,8 @@ async function fetchGoals() {
         const progress = Math.min((walletValue / Number(goal.goal_amount)) * 100, 100).toFixed(1);
 
 		const displayProgress = isAmountHidden ? "••%" : `${progress}%`;
-		const displayValue = isAmountHidden ? "••••••••" : `Rp ${walletValue.toLocaleString('id-ID')}`;
-		const displayTarget = isAmountHidden ? "••••••••" : `Rp ${Number(goal.goal_amount).toLocaleString('id-ID')}`;
+		const displayValue = isAmountHidden ? "Rp ••••••••" : `Rp ${walletValue.toLocaleString('id-ID')}`;
+		const displayTarget = isAmountHidden ? "Rp ••••••••" : `Rp ${Number(goal.goal_amount).toLocaleString('id-ID')}`;
 		const displayGrams = isAmountHidden ? "•••" : `${walletGrams.toFixed(2)}`;
 		const barWidth = isAmountHidden ? "0" : progress;
 
@@ -678,7 +678,7 @@ function updateGrandTotalDisplay(value, grams, cost) {
     if (isAmountHidden) {
         totalEl.innerText = "Rp ••••••••";
         gramsEl.innerText = "••• Grams";
-		plEl.innerText = "••••••••";
+		plEl.innerText = "Rp ••••••••";
         plEl.style.color = "inherit";
     } else {
         totalEl.innerText = `Rp ${value.toLocaleString('id-ID')}`;
@@ -981,7 +981,7 @@ async function fetchPortfolio(user, walletId = null) {
 					</div>
 					<div class="row-right">
 						<div class="coin-price price-font">Rp ${isAmountHidden ? "••••••••" : activePrice.toLocaleString('id-ID')}</div>
-						<div class="coin-sub" style="color:${isAmountHidden ? "--var(text-sub)" : color};font-weight:700" id="invent-diff">${isAmountHidden ? "Rp" : diff >= 0 ? '+Rp' : 'Rp'} ${isAmountHidden ? "••••••••" : diff.toLocaleString('id-ID')}</div>
+						<div class="coin-sub" style="color:${isAmountHidden ? "--var(text-sub)" : color};font-weight:700" id="invent-diff">${isAmountHidden ? "" : diff >= 0 ? '+' : ''}Rp ${isAmountHidden ? "••••••••" : diff.toLocaleString('id-ID')}</div>
 					</div>
 				</div>
 			</div>`;
@@ -1036,7 +1036,7 @@ function updatePortfolioDisplay() {
     const progressTargetEl = document.getElementById('progress-target');
     const barFill = document.getElementById('progress-bar-fill');
 
-    const mask = "••••••••";
+    const mask = "Rp ••••••••";
 
     if (isAmountHidden) {
 		if(totalEl) totalEl.innerText = mask;
