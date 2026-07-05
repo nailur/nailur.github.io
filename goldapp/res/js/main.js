@@ -5,9 +5,15 @@ const sbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- Encryption Core ---
 const APP_SALT = "NTGold_Secret_2026";
+let sessionVaultKey = null;
+
 function getSecretKey() {
     if (!currentSessionUser || !currentSessionUser.id) return APP_SALT;
-    return currentSessionUser.id + APP_SALT;
+    if (!sessionVaultKey) {
+        const pin = prompt("Enter your Vault PIN to unlock your encrypted data:") || "";
+        sessionVaultKey = CryptoJS.SHA256(pin + currentSessionUser.id + APP_SALT).toString();
+    }
+    return sessionVaultKey;
 }
 
 function encryptData(text) {
@@ -288,7 +294,7 @@ async function fetchMarketData() {
 		// Fetch all brands from database
 		const { data: brandsData, error: brandsError } = await sbClient
 			.from('tblbrand')
-			.select('*');
+			.select('id, brand_name');
 
 		if (brandsData) {
 			brandsData.forEach(brand => {
@@ -299,8 +305,9 @@ async function fetchMarketData() {
 		// Fetch latest prices from database (most recent price_date per brand/weight)
 		const { data: pricesData, error: pricesError } = await sbClient
 			.from('tblpricelog')
-			.select('*')
-			.order('created_date', { ascending: false });
+			.select('brand_id, weight_grams, price, buyback_price, created_date')
+			.order('created_date', { ascending: false })
+			.limit(150);
 
 		if (pricesData) {
 			const priceMap = new Set();
@@ -480,7 +487,7 @@ async function fetchGoals() {
     
     const { data: goals } = await sbClient
         .from('tblwallet')
-        .select('*')
+        .select('wallet_id, wallet_name, goal_amount')
         .eq('user_id', currentSessionUser.id)
 		.order('created_date', { ascending: true });
 
@@ -768,7 +775,7 @@ async function fetchPortfolio(user, walletId = null) {
 	const listEl = document.getElementById('portfolio-list');
 	const isBuybackMode = document.getElementById('buyback-toggle').checked;
 
-	const { data: goalData } = await sbClient.from('tblwallet').select('*').eq('wallet_id', activeWalletId).single();
+	const { data: goalData } = await sbClient.from('tblwallet').select('wallet_id, wallet_name, goal_amount').eq('wallet_id', activeWalletId).single();
     if (goalData) {
         currentGoalTarget = Number(goalData.goal_amount);
         currentWalletName = goalData.wallet_name;
@@ -1123,6 +1130,7 @@ async function handleRegister() {
 
 async function handleLogout() {
 	await sbClient.auth.signOut();
+	sessionVaultKey = null;
 	nav('market');
 }
 
@@ -1158,10 +1166,7 @@ async function updateName() {
 
 	let langid = "";
 
-	lang.forEach((asset) => {
-		const lang = asset.lang_id;
-		langid += `${lang}`;
-	});
+	langid = lang?.[0]?.lang_id || "";
 
 	await sbClient
 		.from('tbluser')
