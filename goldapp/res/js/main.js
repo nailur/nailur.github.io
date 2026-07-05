@@ -405,7 +405,7 @@ async function fetchMarketData() {
 			const isCheapest = index === 0;
 
 			const key = `${brandName}_${item.weight_grams}`;
-			const prevData = historyMap.get(key);
+			const prevData = typeof historyMap !== 'undefined' ? historyMap.get(key) : null;
 			const prevPrice = prevData ? prevData.price : item.price;
 			const diff = item.price - prevPrice;
 			const diffPer = prevPrice > 0 ? ((diff / prevPrice) * 100).toFixed(2) : 0;
@@ -493,7 +493,7 @@ async function fetchGoals() {
 
     let { data: allItemsRaw } = await sbClient
         .from('tblinventory')
-        .select('*, tblbrand(brand_name)')
+        .select('inventory_id, wallet_id, brand_id, weight_grams, purchase_price, purchase_date, tblbrand(brand_name)')
         .eq('user_id', currentSessionUser.id);
 		
 	let allItems = allItemsRaw ? allItemsRaw.map(a => ({
@@ -798,7 +798,7 @@ async function fetchPortfolio(user, walletId = null) {
 	} else {
 		let { data: rawAssets, error: e } = await sbClient
 			.from('tblinventory')
-			.select('*, tblbrand(brand_name)')
+			.select('inventory_id, wallet_id, brand_id, weight_grams, purchase_price, purchase_date, tblbrand(brand_name)')
 			.eq('user_id', user.id)
 			.eq('wallet_id', activeWalletId);
 			
