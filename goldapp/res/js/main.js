@@ -284,7 +284,7 @@ async function fetchMarketData() {
 	}
 
 	try {
-		const localApiUrl = "/api/harga-emas"; // Vercel All-in-One API Endpoint
+		const localApiUrl = "https://nailur.vercel.app/api/harga-emas"; // Vercel All-in-One API Endpoint
 
 		const localResponse = await fetch(localApiUrl).catch(() => null);
 
