@@ -285,10 +285,11 @@ async function fetchMarketData() {
 
 	try {
 		const cloudflareWorkerUrl = "https://api-gold.nailur-rohman29.workers.dev/";
+		const localApiUrl = "/api/harga-emas"; // Vercel API Endpoint
 
-		const [cfResponse, localData] = await Promise.all([
+		const [cfResponse, localResponse] = await Promise.all([
 			fetch(cloudflareWorkerUrl).catch(() => null),
-			window.fetchCustomMarketData ? window.fetchCustomMarketData().catch(() => []) : Promise.resolve([])
+			fetch(localApiUrl).catch(() => null)
 		]);
 
 		let itemsArray = [];
@@ -303,10 +304,11 @@ async function fetchMarketData() {
 			console.warn("Cloudflare API returned status:", cfResponse ? cfResponse.status : "failed");
 		}
 
-		// Merge data from local scraper (UBS, KingHalim, Emas Kita)
-		if (Array.isArray(localData) && localData.length > 0) {
+		// Merge data from local Vercel API (UBS, KingHalim)
+		if (localResponse && localResponse.ok) {
 			try {
-				const data = localData;
+				const localData = await localResponse.json();
+				const data = Array.isArray(localData) ? localData : (localData.data || []);
 				
 				if (Array.isArray(data)) {
 					// Transform local API format to match Cloudflare API format

@@ -31,13 +31,8 @@
 			<h1 class="mobile-title" onclick="nav('market')">NTGold</h1>
 			<span id="mobile-sub-badge" class="sub-badge"></span>
 		</div>
-		<div class="flex items-center gap-sm">
-			<button onclick="toggleLang((localStorage.getItem('lang') || 'en') === 'en' ? 'id' : 'en'); location.reload();" style="background:none; border:1px solid rgba(255,255,255,0.2); border-radius:4px; padding:2px 6px; cursor:pointer; font-weight:bold; color:inherit; font-size:10px;">
-				<script>document.write((localStorage.getItem('lang') || 'en').toUpperCase())</script>
-			</button>
-			<div id="mobile-avatar-container" style="display:none">
-				<img id="mobile-avatar-img" class="user-avatar" src="" alt="Profile" onclick="nav('profile')">
-			</div>
+		<div id="mobile-avatar-container" style="display:none">
+			<img id="mobile-avatar-img" class="user-avatar" src="" alt="Profile" onclick="nav('profile')">
 		</div>
 	</header>
 
@@ -88,7 +83,7 @@
 				</label>
 				<button class="btn-primary" style="margin-left:25px; padding:8px 16px; font-size:12px;" onclick="toggleGoalModal()" data-i18n="setnewgoal">+ New Goal</button>
 			</div>
-			<div id="goal-list-container" style="display:flex; flex-direction:column; gap:12px;">
+			<div id="goal-list-container" class="mobile-list-container">
 			</div>
 		</div>
 
@@ -286,7 +281,6 @@
 
     <div class="bottom-nav" id="mobile-nav"></div>
 
-	<script src="./res/js/harga-emas.js"></script>
 	<script src="./res/js/main.js"></script>
 </body>
 </html>
