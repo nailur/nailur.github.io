@@ -32,7 +32,7 @@ a { color: inherit; text-decoration: none; }
 .nav-links a:hover { opacity: 1; color: var(--accent); }
 
 /* Main Content */
-.container { flex-grow: 1; overflow-y: auto; width: 100%; max-width: 1000px; margin: 0 auto; padding: 0; }
+.container { flex-grow: 1; overflow-y: auto; width: 100%; max-width: 500px; margin: 0 auto; padding: 0; }
 .section { display: none; padding: 30px 20px; animation: fadeIn 0.3s ease; }
 .active-section { display: block; }
 
@@ -72,7 +72,7 @@ td a:hover { text-decoration: underline !important;opacity: 1; }
 }
 
 /* Mobile and Desktop List */
-.mobile-list-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.mobile-list-container { display: flex; flex-direction: column; gap: 12px; }
 .crypto-row { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border); }
 .crypto-row:active { background: #1a1a1a; transform: scale(0.98); transition: 0.1s; }
 
