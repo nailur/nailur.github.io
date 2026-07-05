@@ -280,7 +280,7 @@ const apiBrandMap = {
 async function fetchMarketData() {
 	if (Date.now() - lastMarketDataFetch < 300000) return;
 	lastMarketDataFetch = Date.now();
-	let apiData = null;
+	
 	let dbPrices = new Map();
 	let allBrands = new Map();
 
@@ -303,11 +303,11 @@ async function fetchMarketData() {
 			.order('created_date', { ascending: false });
 
 		if (pricesData) {
-			const priceMap = new Map();
+			const priceMap = new Set();
 			pricesData.forEach(price => {
 				const key = `${price.brand_id}_${price.weight_grams}`;
 				if (!priceMap.has(key)) {
-					priceMap.set(key, price);
+					priceMap.add(key);
 					dbPrices.set(key, price);
 				}
 			});
@@ -316,133 +316,19 @@ async function fetchMarketData() {
 		console.error("Failed to fetch database data:", error);
 	}
 
-	try {
-		const localApiUrl = "https://nailur.vercel.app/api/harga-emas"; // Vercel All-in-One API Endpoint
-
-		const localResponse = await fetch(localApiUrl).catch(() => null);
-
-		let itemsArray = [];
-
-		if (localResponse && localResponse.ok) {
-			try {
-				const localData = await localResponse.json();
-				const data = Array.isArray(localData) ? localData : (localData.data || []);
-				
-				if (Array.isArray(data)) {
-					itemsArray = data;
-				}
-			} catch (err) {
-				console.error("Failed to parse Vercel API data", err);
-			}
-		} else {
-			console.warn("Vercel API returned status:", localResponse ? localResponse.status : "failed");
-		}
-
-		if (itemsArray.length > 0) {
-			apiData = itemsArray;
-		}
-	} catch (error) {
-		console.error("Failed to fetch API data:", error);
-	}
-
 	const brands = new Set();
 	const uniqueMap = new Map();
-	const historyMap = new Map();
-
 	brandWeightMap = {};
 
-	// Process API data with mapping
-	if (apiData && apiData.length > 0) {
-		apiData.forEach(apiItem => {
-			const weight = Number(apiItem.product?.weight || 0);
-			const productName = apiItem.product?.name || "GOLD";
-
-			const mappingKey = `${apiItem.vendor?.id}_${apiItem.product?.brand_id}`;
-			let brandName = apiBrandMap[mappingKey];
-
-			if (!brandName) {
-				const prodName = productName.toLowerCase();
-				if (prodName.includes('antam')) brandName = 'Antam';
-				else if (prodName.includes('ubs')) brandName = 'UBS';
-				else if (prodName.includes('lotus')) brandName = 'Lotus Archi';
-				else if (prodName.includes('galeri')) brandName = 'Galeri24';
-				else if (prodName.includes('sampoerna')) brandName = 'Sampoerna';
-				else if (prodName.includes('emas kita')) brandName = 'Emas Kita';
-				else brandName = apiItem.vendor?.name || "Unknown Brand";
-			}
-
-			if (!brandName || brandName === "Unknown Brand") return;
-
-			const key = `${brandName}_${weight}`;
-			const brandIdToSave = {
-				"Antam": "3_2",
-				"Emas Kita": "19_14",
-				"Galeri24": "2_3",
-				"Lotus Archi": "4_5",
-				"Sampoerna": "5_10",
-				"UBS": "ubs",
-				"KingHalim": "kinghalim"
-			}[brandName] || mappingKey;
-
-			const formattedItem = {
-				id: key,
-				weight_grams: weight,
-				price: Number(apiItem.buy_price || 0),
-				buyback_price: Number(apiItem.buyback_price || apiItem.buy_price || 0),
-				log_date: apiItem.price_date || new Date().toISOString(),
-				tblbrand: {
-					brand_id: brandIdToSave,
-					brand_name: brandName
-				}
-			};
-
-			if (!uniqueMap.has(key)) {
-				uniqueMap.set(key, formattedItem);
-				brands.add(formattedItem.tblbrand.brand_id + "|" + formattedItem.tblbrand.brand_name);
-				if (!brandWeightMap[formattedItem.tblbrand.brand_id]) {
-					brandWeightMap[formattedItem.tblbrand.brand_id] = new Set();
-				}
-				brandWeightMap[formattedItem.tblbrand.brand_id].add(weight);
-				
-				// Duplikasi Antam Retro & Antam Series
-				if (brandName === 'Antam') {
-					const retroKey = `Antam Retro_${weight}`;
-					const retroItem = { ...formattedItem, id: retroKey, tblbrand: { brand_id: 'antam_retro', brand_name: 'Antam Retro' } };
-					uniqueMap.set(retroKey, retroItem);
-					brands.add("antam_retro|Antam Retro");
-					if (!brandWeightMap["antam_retro"]) brandWeightMap["antam_retro"] = new Set();
-					brandWeightMap["antam_retro"].add(weight);
-
-					const seriesKey = `Antam Series_${weight}`;
-					const seriesItem = { ...formattedItem, id: seriesKey, tblbrand: { brand_id: 'antam_series', brand_name: 'Antam Series' } };
-					uniqueMap.set(seriesKey, seriesItem);
-					brands.add("antam_series|Antam Series");
-					if (!brandWeightMap["antam_series"]) brandWeightMap["antam_series"] = new Set();
-					brandWeightMap["antam_series"].add(weight);
-				}
-				
-				// Duplikasi UBS Old
-				if (brandName === 'UBS') {
-					const ubsOldKey = `UBS Old_${weight}`;
-					const ubsOldItem = { ...formattedItem, id: ubsOldKey, tblbrand: { brand_id: 'ubs_old', brand_name: 'UBS Old' } };
-					uniqueMap.set(ubsOldKey, ubsOldItem);
-					brands.add("ubs_old|UBS Old");
-					if (!brandWeightMap["ubs_old"]) brandWeightMap["ubs_old"] = new Set();
-					brandWeightMap["ubs_old"].add(weight);
-				}
-			}
-		});
-	}
-
-	// Add database brands that don't have API data
 	dbPrices.forEach((price, key) => {
-		const [brandId, weight] = key.split('_');
+		const [brandId, weightStr] = key.split('_');
+		const weight = Number(weightStr);
 		const brandName = allBrands.get(brandId);
 
-		if (brandName && !uniqueMap.has(`${brandName}_${weight}`)) {
+		if (brandName) {
 			const formattedItem = {
 				id: `${brandName}_${weight}`,
-				weight_grams: Number(weight),
+				weight_grams: weight,
 				price: Number(price.price || 0),
 				buyback_price: Number(price.buyback_price || 0),
 				log_date: price.created_date || new Date().toISOString(),
@@ -454,10 +340,8 @@ async function fetchMarketData() {
 
 			uniqueMap.set(`${brandName}_${weight}`, formattedItem);
 			brands.add(brandId + "|" + brandName);
-			if (!brandWeightMap[brandId]) {
-				brandWeightMap[brandId] = new Set();
-			}
-			brandWeightMap[brandId].add(Number(weight));
+			if (!brandWeightMap[brandId]) brandWeightMap[brandId] = new Set();
+			brandWeightMap[brandId].add(weight);
 		}
 	});
 
