@@ -328,7 +328,8 @@ async function fetchMarketData() {
 	brandWeightMap = {};
 
 	dbPrices.forEach((price, key) => {
-		const [brandId, weightStr] = key.split('_');
+		const brandId = price.brand_id;
+		const weightStr = price.weight_grams;
 		const weight = Number(weightStr);
 		const brandName = allBrands.get(brandId);
 
