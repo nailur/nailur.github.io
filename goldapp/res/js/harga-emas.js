@@ -1,6 +1,3 @@
-export const config = { runtime: "nodejs" };
-import { JSDOM } from "jsdom";
-
 const REQUEST_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
@@ -22,43 +19,29 @@ const fetchWithTimeout = async (url, ms = 15000) => {
     }
 };
 
-export default async function handler(req, res) {
-    if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-
+window.fetchCustomMarketData = async function() {
     try {
-        // const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed, ubsPages ] = await Promise.all([
-		// const [galeriHTML, bullionHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed ] = await Promise.all([
 		const [galeriHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed ] = await Promise.all([
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
-            // fetchWithTimeout("https://idbullion.com/").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
             fetchWithTimeout("https://lotusarchi.com/pricing/").catch(() => ""),
 			fetchWithTimeout("https://www.kinghalim.com/goldbarwithamala").catch(() => ""),
-			// fetchWithTimeout("https://emasantam.id/harga-emas-hari-ini/").catch(() => ""),
             fetchUBSFixed().catch(() => ({}))
-			// fetchUBS().catch(() => ({}))
         ]);
 
         const rawData = [
             ...(galeriHTML ? parseGaleri24(galeriHTML) : []),
-            // ...(bullionHTML ? parseBullion(bullionHTML, sampoernaHTML, lotusHTML) : []),
-			// ...(bullionHTML ? parseBullion(bullionHTML, lotusHTML) : []),
             ...(emasKitaHTML ? parseEmasKita(emasKitaHTML) : []),
 			...(sampoernaHTML ? parseSampoerna(sampoernaHTML) : []),
 			...(kingHalimHTML ? parseKingHalim(kingHalimHTML) : []),
-			// ...(emasAntamHTML ? parseEmasAntamOfficial(emasAntamHTML) : []),
 			...parseUBSLifestyleFixed(ubsPagesFixed)
-            // ...parseUBSLifestyle(ubsPages)
         ];
 
 		const filteredData = rawData.filter(item => {
 			const hasGram = item.gram && String(item.gram).trim() !== "";
 			const hasPrice = item.jual && item.jual !== 0 && item.jual !== "0";
-
-			// Exclude UBS Bundle 0.05g
     		const isUbs005 = item.category === "UBS" && (item.gram === "0.05" || item.gram === 0.05);
-
 			return hasGram && hasPrice && !isUbs005;
 		});
 
@@ -72,39 +55,24 @@ export default async function handler(req, res) {
 		data.sort((a, b) => {
 			const brandA = String(a.category || "").toUpperCase();
     		const brandB = String(b.category || "").toUpperCase();
-			
 			if (brandA < brandB) return -1;
 			if (brandA > brandB) return 1;
-
 			const priceA = parseFloat(String(a.jual).replace(/[^\d]/g, "")) || 0;
 			const priceB = parseFloat(String(b.jual).replace(/[^\d]/g, "")) || 0;
-			
 			return priceA - priceB;
 		});
 
-        res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate");
-        res.setHeader("Access-Control-Allow-Origin", "*"); // Change to your domain in production
-        res.setHeader("Content-Type", "application/json");
-        
-        res.status(200).json({ 
-            success: true,
-            timestamp: new Date().toISOString(),
-            count: data.length,
-            data 
-        });
-
+        return data;
     } catch (e) {
-		res.status(500).json({ success: false, error: e.message, stack: e.stack });
+        console.error("Custom Market Fetch Error:", e);
+        return [];
     }
 }
 
 function parseGaleri24(html) {
     if (!html) return [];
-    const { window } = new JSDOM(html);
-    const doc = window.document;
+    const doc = new DOMParser().parseFromString(html, "text/html");
     const result = [];
-
-    // const categories = doc.querySelectorAll('#ANTAM, #ANTAM\\ MULIA\\ RETRO, #GALERI\\ 24, #UBS, #LOTUS\\ ARCHI');
 	const categories = doc.querySelectorAll('#GALERI\\ 24');
 
     categories.forEach(categoryEl => {
@@ -117,8 +85,6 @@ function parseGaleri24(html) {
             const cols = row.querySelectorAll("div");
             if (cols.length < 3) return;
             result.push({
-				// code: category.trim().replace(/\s+/g, "")+cols[0].textContent.trim().replace(/[^\d]/g, "")+`_GALERI24`,
-                // category: `${category} - GALERI24`,
 				code: category.trim().replace(/\s+/g, "")+cols[0].textContent.trim().replace(/[^\d]/g, ""),
 				category: `${category}`,
                 gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace("01", "0.1").replace("02", "0.2").replace("03", "0.3").replace("04", "0.4").replace("05", "0.5"),
@@ -131,53 +97,9 @@ function parseGaleri24(html) {
     return result;
 }
 
-/* Old Bullion Website */
-/* function parseBullion(bullionHtml, lotusHtml) {
-    if (!bullionHtml) return [];
-    const doc = new JSDOM(bullionHtml).window.document;
-
-    // let sampoernaUpdate = "";
-    // if (sampoernaHtml) {
-    //     const sDoc = new JSDOM(sampoernaHtml).window.document;
-    //     sampoernaUpdate = formatGaleriDate(sDoc.querySelector(".small-text")?.textContent || "");
-    // }
-
-    let lotusUpdate = "";
-    if (lotusHtml) {
-        const lDoc = new JSDOM(lotusHtml).window.document;
-        const lUpdateEl = lDoc.querySelector(".section-content.relative h4") || lDoc.querySelector(".elementor-widget-container h4");
-        lotusUpdate = lUpdateEl ? formatGaleriDate(lUpdateEl.textContent.split("||")[0]) : "";
-    }
-
-    const data = [];
-    const processTable = (id, category, updateDate = "") => {
-        const tbl = doc.getElementById(id);
-        if (!tbl) return;
-        tbl.querySelectorAll("table tr").forEach(row => {
-            const cols = row.querySelectorAll("td");
-            if (cols.length >= 3) {
-                data.push({
-					code: category.replace(/\s+/g,"") + cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1").replace(".",""),
-                    category,
-                    gram: cols[0].textContent.trim().replace(/[^\d]/g, "").replace(/^0([125])/, "0.$1"),
-                    jual: cols[1].textContent.trim().replace(/[^\d]/g, ""),
-                    buyback: cols[2].textContent.trim().replace(/[^\d]/g, ""),
-                    last_update: updateDate
-                });
-            }
-        });
-    };
-
-    processTable("modalAntam", "ANTAM");
-    processTable("modalLotus", "LOTUS ARCHI", lotusUpdate);
-    // processTable("modalSampoerna", "SAMPOERNA", sampoernaUpdate);
-
-    return data;
-} */
-
 function parseEmasKita(html) {
     if (!html) return [];
-    const doc = new JSDOM(html).window.document;
+    const doc = new DOMParser().parseFromString(html, "text/html");
     const result = [];
     const rows = Array.from(doc.querySelectorAll("table tr")).slice(3);
     const updateEl = doc.querySelector(".d-flex.justify-content-center.mt-3");
@@ -207,12 +129,9 @@ function parseEmasKita(html) {
 function parseSampoerna(html) {
     if (!html) return [];
     try {
-        const { window } = new JSDOM(html);
-        const doc = window.document;
+        const doc = new DOMParser().parseFromString(html, "text/html");
         const result = [];
-
         const formattedUpdate = formatGaleriDate(doc.querySelector(".small-text")?.textContent || "");
-
         const table = doc.querySelector('.table-emas');
         if (!table) return [];
 
@@ -240,8 +159,6 @@ function parseSampoerna(html) {
                 }
             }
         });
-
-        window.close();
         return result;
     } catch (e) {
         console.error("Sampoerna Parse Error:", e);
@@ -252,29 +169,21 @@ function parseSampoerna(html) {
 function parseKingHalim(html) {
     if (!html) return [];
     try {
-        const { window } = new JSDOM(html);
-        const doc = window.document;
+        const doc = new DOMParser().parseFromString(html, "text/html");
         const result = [];
-
         const updateEl = doc.querySelector('.kv-ee-section-subtitle.kv-ee-section-subtitle--sm');
         const formattedUpdate = formatGaleriDate(updateEl?.textContent || "");
-
 		const buyBackPrice = doc.querySelector('.kv-ee-section-description.kv-ee-description.kv-ee-body--md').textContent.trim().split('.')[0].replace(/[^\d]/g, "");
-
         const items = doc.querySelectorAll('.kv-ee-item');
 
         items.forEach((item) => {
             const titleEl = item.querySelector('.kv-ee-title.kv-ee-title--md');
             const priceEl = item.querySelector('.kv-ee-price.kv-ee-section-title--lg');
-
             if (titleEl && priceEl) {
                 const gramRaw = titleEl.textContent.trim();
                 const jualRaw = priceEl.textContent.trim();
-
 				const cleanJual = jualRaw.split('.')[0].replace(/[^\d]/g, "");
-
                 const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
-
                 if (gramValue && cleanJual && cleanJual !== "0") {
                     result.push({
                         code: "KINGHALIM" + gramValue.replace(".", ""),
@@ -287,8 +196,6 @@ function parseKingHalim(html) {
                 }
             }
         });
-
-        window.close();
         return result;
     } catch (e) {
         console.error("King Halim Parse Error:", e.message);
@@ -300,14 +207,11 @@ async function fetchUBSFixed() {
     const urls = {
         "0.1": "https://ubslifestyle.com/ubs-logam-mulia-disney-mickey-minnie-mouse-thank-you-0-1-gr/",
 		"0.25": "https://ubslifestyle.com/ubs-logam-mulia-disney-minnie-mouse-daisy-duck-thank-you-0-25-gr/",
-        // "0.5": "https://ubslifestyle.com/fine-gold-0.5gram/",
 		"0.5": "https://ubslifestyle.com/ubs-logam-mulia-new-born-0-5-gr/",
         "1": "https://ubslifestyle.com/fine-gold-1gram/",
 		"2": "https://ubslifestyle.com/ubs-gold-logam-mulia-new-born-baby-girl-2-gr/",
-		// "3": "https://ubslifestyle.com/fine-gold-3gram/",
 		"3": "https://ubslifestyle.com/ubs-gold-logam-mulia-new-born-baby-boy-3-gr/",
 		"4": "https://ubslifestyle.com/fine-gold-4gram/",
-        // "5": "https://ubslifestyle.com/fine-gold-5gram/",
 		"5": "https://ubslifestyle.com/fine-gold-disney-5-gr-donald-duck/",
         "10": "https://ubslifestyle.com/fine-gold-10gram/",
         "25": "https://ubslifestyle.com/ubs-logam-mulia-25-gram-classic/",
@@ -326,9 +230,8 @@ function parseUBSLifestyleFixed(pages) {
     const data = [];
     const buybackMap = {};
     let ubsUpdate = "";
-
     if (pages.buyback) {
-        const bDoc = new JSDOM(pages.buyback).window.document;
+        const bDoc = new DOMParser().parseFromString(pages.buyback, "text/html");
         ubsUpdate = formatGaleriDate(bDoc.querySelector('.text-xs.font-semibold')?.textContent || "");
         bDoc.querySelectorAll("table tr").forEach(row => {
             const cols = row.querySelectorAll("td");
@@ -341,7 +244,7 @@ function parseUBSLifestyleFixed(pages) {
 
     for (const gram in pages) {
         if (gram === "buyback") continue;
-        const doc = new JSDOM(pages[gram]).window.document;
+        const doc = new DOMParser().parseFromString(pages[gram], "text/html");
         const priceEl = doc.querySelector(".product_price");
         if (priceEl) {
             data.push({
@@ -357,156 +260,6 @@ function parseUBSLifestyleFixed(pages) {
     return data;
 }
 
-/* async function fetchUBS() {
-    const baseUrl = "https://ubslifestyle.com/fine-gold/page/";
-    const buybackUrl = "https://ubslifestyle.com/harga-buyback-hari-ini/";
-
-    try {
-        // 1. Get Page 1 first to determine how many pages exist
-        const firstPageHTML = await fetchWithTimeout(`${baseUrl}1/?orderby=price&pagesize=100`);
-        const buybackHTML = await fetchWithTimeout(buybackUrl);
-        
-        const dom = new JSDOM(firstPageHTML);
-        const doc = dom.window.document;
-
-        // 2. Extract the last page number
-        const totalPagesEl = doc.querySelector(".as-pagination-totalnumbers");
-        const totalPages = totalPagesEl ? parseInt(totalPagesEl.textContent.replace(/[^\d]/g, "")) : 1;
-
-        let allListHTMLs = [firstPageHTML];
-
-        // 3. If there are more pages, fetch them in parallel
-        if (totalPages > 1) {
-            const extraPages = [];
-            for (let i = 2; i <= totalPages; i++) {
-                extraPages.push(`${baseUrl}${i}/?orderby=price`);
-            }
-            
-            const results = await Promise.all(
-                extraPages.map(url => fetchWithTimeout(url).catch(() => ""))
-            );
-            allListHTMLs.push(...results);
-        }
-
-        return { allListHTMLs, buybackHTML };
-    } catch (e) {
-        console.error("UBS Dynamic Fetch Error:", e);
-        return { allListHTMLs: [], buybackHTML: "" };
-    }
-} */
-
-/* function parseUBSLifestyle(ubsData) {
-    if (!ubsData.allListHTMLs || ubsData.allListHTMLs.length === 0) return [];
-    
-    const result = [];
-    const buybackMap = {};
-    let ubsUpdate = "";
-
-    // 1. Map Buyback (Remains the same for lookup)
-    if (ubsData.buybackHTML) {
-        const bDoc = new JSDOM(ubsData.buybackHTML).window.document;
-        ubsUpdate = formatGaleriDate(bDoc.querySelector('.text-xs.font-semibold')?.textContent || "");
-        bDoc.querySelectorAll("table tr").forEach(row => {
-            const cols = row.querySelectorAll("td");
-            if (cols.length >= 3) {
-                const g = cols[0].textContent.replace(/[^\d,.]/g, "").replace(",", ".");
-                buybackMap[g] = cols[2].textContent.replace(/[^\d]/g, "");
-            }
-        });
-    }
-
-    // 2. Loop through every page fetched
-    ubsData.allListHTMLs.forEach(html => {
-        if (!html) return;
-        const { window } = new JSDOM(html);
-        const doc = window.document;
-
-        const containers = doc.querySelectorAll('.as-producttile-info');
-        containers.forEach(container => {
-            const titleEl = container.querySelector('.ase-truncate-title');
-            const priceEl = container.querySelector('.woocommerce-Price-amount.amount');
-
-            if (titleEl && priceEl) {
-                const titleText = titleEl.textContent.trim();
-                const priceText = priceEl.textContent.trim();
-
-                if (priceText.includes("NaN") || !priceText) return;
-
-                const gramMatch = titleText.toLowerCase().match(/(\d+[.,]?\d*)\s*(gr|gram)/);
-                if (gramMatch) {
-                    const gramValue = gramMatch[1].replace(",", ".");
-                    const priceValue = priceText.replace(/[^\d]/g, "");
-
-                    if (priceValue && priceValue !== "0") {
-                        result.push({
-                            code: "UBS" + gramValue.replace(".", ""),
-                            category: "UBS",
-                            gram: gramValue,
-                            jual: priceValue,
-                            buyback: buybackMap[gramValue] || "",
-                            last_update: ubsUpdate
-                        });
-                    }
-                }
-            }
-        });
-        window.close(); // Important for memory!
-    });
-
-    return result;
-} */
-
-/* function parseEmasAntamOfficial(html) {
-    if (!html) return [];
-    try {
-        const { window } = new JSDOM(html);
-        const doc = window.document;
-        const result = [];
-
-        const updateEl = doc.querySelector('.harga-emas');
-        const rawUpdateText = updateEl ? updateEl.textContent.trim() : "";
-        const formattedUpdate = formatGaleriDate(rawUpdateText);
-
-        const table = doc.querySelector('table.table-bordered.table-hover.table-striped.nowrap');
-        if (!table) return [];
-
-        const rows = table.querySelectorAll('tbody tr');
-
-        rows.forEach((row) => {
-            const cols = row.querySelectorAll('td');
-            
-            if (cols.length >= 2) {
-                const gramRaw = cols[0].textContent.trim();
-                const priceRaw = cols[1].textContent.trim();
-                
-                const buybackRaw = cols[2] ? cols[2].textContent.trim() : "0";
-                const gramValue = gramRaw.toLowerCase().replace(/[^\d,.]/g, "").replace(",", ".").trim();
-                
-                const priceValue = priceRaw.split('.')[0].replace(/[^\d]/g, "");
-                const buybackValue = buybackRaw.split('.')[0].replace(/[^\d]/g, "");
-
-                if (gramValue && priceValue && priceValue !== "0") {
-                    result.push({
-                        code: "ANTAM" + gramValue.replace(".", ""),
-                        category: "ANTAM",
-                        gram: gramValue,
-                        jual: priceValue * 1.0025, // Include Tax PPh 0.25%
-                        buyback: buybackValue || "0",
-                        last_update: formattedUpdate
-                    });
-                }
-            }
-        });
-
-        window.close();
-        return result;
-    } catch (e) {
-        console.error("EmasAntam Parse Error:", e.message);
-        return [];
-    }
-} */
-
-// Global Formatter
 function formatGaleriDate(text) {
     let str = String(text || "").trim();
     if (!str) return null;

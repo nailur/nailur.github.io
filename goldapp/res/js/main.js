@@ -7,6 +7,7 @@ let latestPricesMap = new Map();
 
 let currentWalletId = null;
 let currentWalletName = "";
+let currentWalletItemCount = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
 	document.getElementById('lang_select').value = currentLang;
@@ -20,7 +21,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 	
 	sbClient.auth.onAuthStateChange((event, session) => { 
         handleSessionSync(session);
-        if(event === 'SIGNED_IN') nav('market');
     });
 
 	applyLang();
@@ -34,7 +34,7 @@ function handleSessionSync(session) {
         if(typeof loadProfile === 'function') loadProfile(session.user);
         if(typeof fetchGoals === 'function') fetchGoals();
     } else {
-        nav('market');
+        nav('market', null, false);
     }
 }
 
@@ -134,6 +134,9 @@ function updateUI(session) {
 		avatarImg.src = avatarUrl; profilePageImg.src = avatarUrl; profilePageName.innerText = seed;
 
 		desktop.innerHTML = `
+			<button onclick="toggleLang(currentLang === 'en' ? 'id' : 'en'); applyLang(); location.reload();" style="background:none; border:1px solid rgba(255,255,255,0.2); border-radius:4px; padding:4px 8px; cursor:pointer; font-weight:bold; color:inherit; margin-right:15px; font-size:12px;">
+				${currentLang === 'en' ? 'EN' : 'ID'}
+			</button>
 			<a onclick="nav('market')" class="nav-item" data-page="market" data-i18n="market">${t('market')}</a>
 			<a onclick="nav('portfolio')" class="nav-item" data-page="portfolio" data-i18n="portfolio">${t('portfolio')}</a>
 			<a onclick="nav('profile')" class="nav-item" data-page="profile" data-i18n="profile">${t('profile')}</a>`;
@@ -146,10 +149,15 @@ function updateUI(session) {
         nav(savedPage);
 	} else {
 		avatarContainer.style.display = 'none';
-		desktop.innerHTML = `<a onclick="nav('market')">Market</a><button class="btn-primary" style="width:auto; padding:8px 20px" onclick="nav('auth')" data-i18n="login">Login</button>`;
-		mobileNav.innerHTML = `<a onclick="nav('market', this)" data-page="market" class="nav-item">${iconHome}<div data-i18n="market">Market</div></a><a onclick="nav('auth', this)" data-page="auth" class="nav-item">${iconUser}<div data-i18n="login">Login</div></a>`;
+		desktop.innerHTML = `
+			<button onclick="toggleLang(currentLang === 'en' ? 'id' : 'en'); applyLang(); location.reload();" style="background:none; border:1px solid rgba(255,255,255,0.2); border-radius:4px; padding:4px 8px; cursor:pointer; font-weight:bold; color:inherit; margin-right:15px; font-size:12px;">
+				${currentLang === 'en' ? 'EN' : 'ID'}
+			</button>
+			<a onclick="nav('market')" data-i18n="market">${t('market')}</a>
+			<button class="btn-primary" style="width:auto; padding:8px 20px" onclick="nav('auth')" data-i18n="login">${t('login') || 'Login'}</button>`;
+		mobileNav.innerHTML = `<a onclick="nav('market', this)" data-page="market" class="nav-item">${iconHome}<div data-i18n="market">${t('market')}</div></a><a onclick="nav('auth', this)" data-page="auth" class="nav-item">${iconUser}<div data-i18n="login">${t('login') || 'Login'}</div></a>`;
 
-		nav('market');
+		nav('market', null, false);
 
 		// By Default is blank when no session
 		const badges = [document.getElementById('desktop-sub-badge'), document.getElementById('mobile-sub-badge')];
@@ -160,9 +168,11 @@ function updateUI(session) {
 	}
 }
 
-function nav(page, el) {
+function nav(page, el, saveState = true) {
 	// Save current page state
-	localStorage.setItem('last_page', page);
+	if (saveState) {
+		localStorage.setItem('last_page', page);
+	}
 
 	// Toggle Section Visibility
 	document.querySelectorAll('.section').forEach(e => e.classList.remove('active-section'));
@@ -275,21 +285,82 @@ async function fetchMarketData() {
 
 	try {
 		const cloudflareWorkerUrl = "https://api-gold.nailur-rohman29.workers.dev/";
-		const response = await fetch(cloudflareWorkerUrl);
 
-		if (response.ok) {
-			const allData = await response.json();
-			const itemsArray = Array.isArray(allData) ? allData : (allData.data || []);
+		const [cfResponse, localData] = await Promise.all([
+			fetch(cloudflareWorkerUrl).catch(() => null),
+			window.fetchCustomMarketData ? window.fetchCustomMarketData().catch(() => []) : Promise.resolve([])
+		]);
 
-			if (Array.isArray(itemsArray)) {
-				apiData = itemsArray.filter(apiItem => {
-					const type = (apiItem.vendor && apiItem.vendor.type);
-					return String(type).toLowerCase() === 'physical';
-				});
+		let itemsArray = [];
+
+		if (cfResponse && cfResponse.ok) {
+			const allData = await cfResponse.json();
+			const data = Array.isArray(allData) ? allData : (allData.data || []);
+			if (Array.isArray(data)) {
+				itemsArray = data;
 			}
 		} else {
-			console.warn("API returned status:", response.status);
+			console.warn("Cloudflare API returned status:", cfResponse ? cfResponse.status : "failed");
 		}
+
+		// Merge data from local scraper (UBS, KingHalim, Emas Kita)
+		if (Array.isArray(localData) && localData.length > 0) {
+			try {
+				const data = localData;
+				
+				if (Array.isArray(data)) {
+					// Transform local API format to match Cloudflare API format
+					const transformedLocal = data.map(item => ({
+						buy_price: parseFloat(String(item.jual).replace(/[^\d]/g, "")),
+						buyback_price: item.buyback ? parseFloat(String(item.buyback).replace(/[^\d]/g, "")) : 0,
+						currency: "IDR",
+						price_date: new Date().toISOString(),
+						vendor: {
+							id: `local_${item.category}`,
+							name: item.category,
+							type: "physical"
+						},
+						product: {
+							brand_id: `brand_${item.category}`,
+							name: `${item.category} ${item.gram} Gram`,
+							weight: parseFloat(item.gram)
+						}
+					}));
+					
+					itemsArray = itemsArray.concat(transformedLocal);
+				}
+			} catch (err) {
+				console.error("Failed to parse local API data", err);
+			}
+		}
+
+		if (itemsArray.length > 0) {
+			apiData = itemsArray.filter(apiItem => {
+					const type = String(apiItem.vendor?.type || '').toLowerCase();
+					const currency = String(apiItem.currency || '').toUpperCase();
+					const brandName = apiItem.product?.name || '';
+					const vendorName = apiItem.vendor?.name || '';
+					
+					if (type !== 'physical' || currency !== 'IDR') return false;
+					
+					// Filter for ANTAM: only take from vendor ANTAM
+					if (brandName.toLowerCase().includes('antam')) {
+						if (!vendorName.toLowerCase().includes('antam')) return false;
+					}
+
+					// Filter for Lotus Archi: only take from vendor Lotus Archi
+					if (brandName.toLowerCase().includes('lotus archi')) {
+						if (!vendorName.toLowerCase().includes('lotus')) return false;
+					}
+
+					// Filter for Emas Kita: only take from local API (official website)
+					if (brandName.toLowerCase().includes('emas kita')) {
+						if (!String(apiItem.vendor?.id).startsWith('local_')) return false;
+					}
+					
+					return true;
+				});
+			}
 	} catch (error) {
 		console.error("Failed to fetch API data:", error);
 	}
@@ -305,12 +376,33 @@ async function fetchMarketData() {
 		apiData.forEach(apiItem => {
 			const weight = Number(apiItem.product?.weight || 0);
 			const productName = apiItem.product?.name || "GOLD";
-			const key = `${productName}_${weight}`;
 
 			const mappingKey = `${apiItem.vendor?.id}_${apiItem.product?.brand_id}`;
-			const brandName = apiBrandMap[mappingKey];
+			let brandName = apiBrandMap[mappingKey];
 
-			if (!brandName) return;
+			if (!brandName) {
+				const prodName = productName.toLowerCase();
+				if (prodName.includes('antam')) brandName = 'Antam';
+				else if (prodName.includes('ubs')) brandName = 'UBS';
+				else if (prodName.includes('lotus')) brandName = 'Lotus Archi';
+				else if (prodName.includes('galeri')) brandName = 'Galeri24';
+				else if (prodName.includes('sampoerna')) brandName = 'Sampoerna';
+				else if (prodName.includes('emas kita')) brandName = 'Emas Kita';
+				else brandName = apiItem.vendor?.name || "Unknown Brand";
+			}
+
+			if (!brandName || brandName === "Unknown Brand") return;
+
+			const key = `${brandName}_${weight}`;
+			const brandIdToSave = {
+				"Antam": "3_2",
+				"Emas Kita": "19_14",
+				"Galeri24": "2_3",
+				"Lotus Archi": "4_5",
+				"Sampoerna": "5_10",
+				"UBS": "ubs",
+				"KingHalim": "kinghalim"
+			}[brandName] || mappingKey;
 
 			const formattedItem = {
 				id: key,
@@ -319,7 +411,7 @@ async function fetchMarketData() {
 				buyback_price: Number(apiItem.buyback_price || apiItem.buy_price || 0),
 				log_date: apiItem.price_date || new Date().toISOString(),
 				tblbrand: {
-					brand_id: mappingKey,
+					brand_id: brandIdToSave,
 					brand_name: brandName
 				}
 			};
@@ -331,6 +423,33 @@ async function fetchMarketData() {
 					brandWeightMap[formattedItem.tblbrand.brand_id] = new Set();
 				}
 				brandWeightMap[formattedItem.tblbrand.brand_id].add(weight);
+				
+				// Duplikasi Antam Retro & Antam Series
+				if (brandName === 'Antam') {
+					const retroKey = `Antam Retro_${weight}`;
+					const retroItem = { ...formattedItem, id: retroKey, tblbrand: { brand_id: 'antam_retro', brand_name: 'Antam Retro' } };
+					uniqueMap.set(retroKey, retroItem);
+					brands.add("antam_retro|Antam Retro");
+					if (!brandWeightMap["antam_retro"]) brandWeightMap["antam_retro"] = new Set();
+					brandWeightMap["antam_retro"].add(weight);
+
+					const seriesKey = `Antam Series_${weight}`;
+					const seriesItem = { ...formattedItem, id: seriesKey, tblbrand: { brand_id: 'antam_series', brand_name: 'Antam Series' } };
+					uniqueMap.set(seriesKey, seriesItem);
+					brands.add("antam_series|Antam Series");
+					if (!brandWeightMap["antam_series"]) brandWeightMap["antam_series"] = new Set();
+					brandWeightMap["antam_series"].add(weight);
+				}
+				
+				// Duplikasi UBS Old
+				if (brandName === 'UBS') {
+					const ubsOldKey = `UBS Old_${weight}`;
+					const ubsOldItem = { ...formattedItem, id: ubsOldKey, tblbrand: { brand_id: 'ubs_old', brand_name: 'UBS Old' } };
+					uniqueMap.set(ubsOldKey, ubsOldItem);
+					brands.add("ubs_old|UBS Old");
+					if (!brandWeightMap["ubs_old"]) brandWeightMap["ubs_old"] = new Set();
+					brandWeightMap["ubs_old"].add(weight);
+				}
 			}
 		});
 	}
@@ -383,7 +502,7 @@ async function fetchMarketData() {
 	// const sortedWeights = Array.from(distinctWeights).sort((a, b) => a - b);
 	// weightSelect.innerHTML = sortedWeights.map(w => `<option value="${w}">${w} Gram</option>`).join('');
 
-	const excludedMain = ['antam retro', 'ubs old'];
+	const excludedMain = ['antam retro', 'antam series', 'ubs old'];
 	const items = Array.from(uniqueMap.values())
 		.filter(item => {
 			const name = item.tblbrand?.brand_name?.toLowerCase() || "";
@@ -532,21 +651,24 @@ async function fetchGoals() {
         // Calculate total market value for items in THIS wallet
         const walletItems = allItems ? allItems.filter(i => i.wallet_id === goal.wallet_id) : [];
 		
+		let walletGrams = 0;
 		const walletValue = walletItems.reduce((acc, item) => {
             const mData = latestPricesMap.get(`${item.tblbrand.brand_name}_${item.weight_grams}`);
             const priceToUse = isBuybackMode ? (mData?.buyback_price || 0) : (mData?.price || 0);
             
+            walletGrams += item.weight_grams;
             grandTotalGrams += item.weight_grams;
 			grandTotalCost += (item.purchase_price || 0);
             return acc + priceToUse;
         }, 0);
 
 		grandTotalValue += walletValue;
-        const progress = Math.min((walletValue / goal.goal_amount) * 100, 100).toFixed(1);
+        const progress = Math.min((walletValue / Number(goal.goal_amount)) * 100, 100).toFixed(1);
 
 		const displayProgress = isAmountHidden ? "••%" : `${progress}%`;
 		const displayValue = isAmountHidden ? "••••••••" : `Rp ${walletValue.toLocaleString('id-ID')}`;
-		const displayTarget = isAmountHidden ? "••••••••" : `Rp ${goal.goal_amount.toLocaleString('id-ID')}`;
+		const displayTarget = isAmountHidden ? "••••••••" : `Rp ${Number(goal.goal_amount).toLocaleString('id-ID')}`;
+		const displayGrams = isAmountHidden ? "•••" : `${walletGrams.toFixed(2)}`;
 		const barWidth = isAmountHidden ? "0" : progress;
 
         return `
@@ -558,8 +680,11 @@ async function fetchGoals() {
 				<div class="progress-container">
 					<div class="progress-bar" style="width: ${barWidth}%"></div>
 				</div>
-				<div style="display:flex; justify-content:space-between; font-size:12px;">
-					<span class="price-font">${displayValue}</span>
+				<div style="display:flex; justify-content:space-between; font-size:12px; align-items:center;">
+					<div>
+						<span class="price-font">${displayValue}</span>
+						<span style="font-size:10px; color:var(--text-sub); margin-left:4px;">(${displayGrams} gr)</span>
+					</div>
 					<span style="color:var(--text-sub)">Target: ${displayTarget}</span>
 				</div>
 			</div>`;
@@ -605,18 +730,7 @@ function openWalletDetail(id, name, count) {
     localStorage.setItem('current_wallet_id', id);
     localStorage.setItem('current_wallet_name', name);
 
-	const deleteContainer = document.getElementById('modal-delete-container');
-
-	if (count === 0) {
-        deleteContainer.innerHTML = `
-            <span style="color:#999; font-size:12px;" onclick="deleteGoal('${id}')">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-            </span>`;
-    } else {
-        deleteContainer.innerHTML = "";
-    }
-    
-    document.getElementById('wallet-name-display').innerText = name;
+	document.getElementById('wallet-name-display').innerText = name;
     nav('wallet-detail');
     fetchPortfolio(currentSessionUser, id);
 }
@@ -632,7 +746,17 @@ function toggleGoalModal(action, gname = "", gtarget = 0) {
 		document.getElementById('goal-target').value = gtarget;
 		formatRupiahInput(document.getElementById('goal-target'));
 
-		document.getElementById("modal-delete-container").style.display = "";
+		const deleteContainer = document.getElementById("modal-delete-container");
+		deleteContainer.style.display = "";
+		if (currentWalletItemCount === 0) {
+			deleteContainer.innerHTML = `
+				<span style="color:#999; font-size:12px;" onclick="deleteGoal('${currentWalletId}')">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+				</span>`;
+		} else {
+			deleteContainer.innerHTML = "";
+		}
+
 		modal.querySelector('h3').innerText = "Edit Portfolio";
 		submitBtn.innerText = "Update";
 		submitBtn.onclick = function() { updateGoal(); };
@@ -769,15 +893,15 @@ async function fetchPortfolio(user, walletId = null) {
 
 	const { data: goalData } = await sbClient.from('tblwallet').select('*').eq('wallet_id', activeWalletId).single();
     if (goalData) {
-        currentGoalTarget = goalData.goal_amount;
+        currentGoalTarget = Number(goalData.goal_amount);
         currentWalletName = goalData.wallet_name;
         document.getElementById('wallet-name-display').innerText = goalData.wallet_name;
-		rawTargetLabel = `Target: Rp ${goalData.goal_amount.toLocaleString('id-ID')}`;
+		rawTargetLabel = `Target: Rp ${currentGoalTarget.toLocaleString('id-ID')}`;
     }
 
 	const sortVal = document.getElementById('portfolio-sort').value;
 	let sortAsc = false;
-	let sortCol = 'created_date';
+	let sortCol = 'purchase_date';
 
 	if (sortVal.startsWith('weight')) sortCol = 'weight_grams';
 	if (sortVal.startsWith('brand')) sortCol = 'tblbrand(brand_name)';
@@ -791,6 +915,7 @@ async function fetchPortfolio(user, walletId = null) {
 		.order(sortCol, { ascending: sortAsc });
 
 	if (error || !assets || assets.length === 0) {
+		currentWalletItemCount = 0;
         listEl.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-sub);">${t('vaultisempty')}</div>`;
         if (tableEl) tableEl.innerHTML = "";
         updatePortfolioDisplay();
@@ -799,13 +924,15 @@ async function fetchPortfolio(user, walletId = null) {
         return;
     }
 
+	currentWalletItemCount = assets.length;
+
 	let desktopHTML = "";
 	let mobileHTML = "";
 
 	assets.forEach((asset) => {
 		const brand = asset.tblbrand?.brand_name || "Unknown";
-		const weight = asset.weight_grams || 0;
-		const cost = asset.purchase_price || 0;
+		const weight = Number(asset.weight_grams) || 0;
+		const cost = Number(asset.purchase_price) || 0;
 		const pDate = asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : 'No Date';
 
 		const marketData = latestPricesMap.get(`${brand}_${weight}`);
@@ -890,7 +1017,8 @@ function toggleAmountVisibility() {
     
 	updatePortfolioDisplay();
 
-	if (localStorage.getItem('last_page') === 'portfolio') {
+	const page = localStorage.getItem('last_page');
+	if (page === 'portfolio' || page === 'wallet-detail') {
         fetchGoals(); 
 		
 		if(currentSessionUser) fetchPortfolio(currentSessionUser);
