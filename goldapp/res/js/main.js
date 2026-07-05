@@ -591,10 +591,16 @@ async function fetchGoals() {
         .eq('user_id', currentSessionUser.id)
 		.order('created_date', { ascending: true });
 
-    const { data: allItems } = await sbClient
+    let { data: allItemsRaw } = await sbClient
         .from('tblinventory')
         .select('weight_grams, purchase_price, wallet_id, tblbrand(brand_name)')
         .eq('user_id', currentSessionUser.id);
+		
+	let allItems = allItemsRaw ? allItemsRaw.map(a => ({
+		...a,
+		weight_grams: Number(decryptData(a.weight_grams)) || 0,
+		purchase_price: Number(decryptData(a.purchase_price)) || 0
+	})) : [];
 
     const goalContainer = document.getElementById('goal-list-container');
 
@@ -1453,11 +1459,16 @@ async function openPortfolioChart() {
     title.innerText = `Portfolio Net Worth History`;
     modal.style.display = 'flex';
 
-    const { data: invData } = await sbClient
+    let { data: invDataRaw } = await sbClient
         .from('tblinventory')
         .select('brand_id, weight_grams, purchase_price')
         .eq('user_id', currentSessionUser.id);
         
+    let invData = invDataRaw ? invDataRaw.map(a => ({
+		...a,
+		weight_grams: Number(decryptData(a.weight_grams)) || 0,
+		purchase_price: Number(decryptData(a.purchase_price)) || 0
+	})) : [];
     if (!invData || invData.length === 0) {
         renderChart([]);
         return;
