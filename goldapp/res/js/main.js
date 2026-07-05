@@ -524,7 +524,7 @@ async function fetchMarketData() {
 		const logoUrl = getBrandLogo(item.tblbrand?.brand_name || "");
 		
 		return `
-		<div class="crypto-row" onclick="window.open('${getBrandUrl(item.tblbrand?.brand_name)}', '_blank')" style="cursor:pointer;">
+		<div class="crypto-row" onclick="openMarketChart('${item.tblbrand?.brand_id}', '${item.weight_grams}', '${item.tblbrand?.brand_name}')" style="cursor:pointer;">
 			<div class="row-left">
 				<img src="${logoUrl}" class="brand-logo-img" alt="logo" onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/217/217853.png';">
 				<div>
@@ -651,6 +651,18 @@ function updateGrandTotalDisplay(value, grams, cost) {
         plEl.style.color = color;
         plEl.innerText = `${diff >= 0 ? '+' : ''}Rp ${diff.toLocaleString('id-ID')} (${percent}%)`;
     }
+
+	const zakatBanner = document.getElementById('zakat-banner');
+	const zakatAmount = document.getElementById('zakat-amount');
+	if (grams >= 85) {
+		const zakatValue = value * 0.025;
+		if (zakatBanner) {
+			zakatBanner.style.display = 'flex';
+			zakatAmount.innerText = isAmountHidden ? "Rp ••••••••" : `Rp ${zakatValue.toLocaleString('id-ID')}`;
+		}
+	} else {
+		if (zakatBanner) zakatBanner.style.display = 'none';
+	}
 }
 
 document.getElementById('goal-buyback-toggle').addEventListener('change', (e) => {
@@ -1342,6 +1354,141 @@ const i18n = {
 		goal_target: "Target Goal"
 	}
 };
+
+let chartInstance = null;
+function closeChartModal() {
+    document.getElementById('chart-modal').style.display = 'none';
+}
+
+async function openMarketChart(brandId, weight, brandName) {
+    const modal = document.getElementById('chart-modal');
+    const title = document.getElementById('chart-title');
+    title.innerText = `${brandName} ${weight}g Price History`;
+    modal.style.display = 'flex';
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const { data, error } = await sbClient
+        .from('tblpricelog')
+        .select('price, created_date')
+        .eq('brand_id', brandId)
+        .eq('weight_grams', weight)
+        .gte('created_date', thirtyDaysAgo.toISOString())
+        .order('created_date', { ascending: true });
+        
+    if (error || !data || data.length === 0) {
+        console.error(error);
+		renderChart([]);
+        return;
+    }
+    
+    renderChart(data.map(d => ({ date: d.created_date, value: d.price })));
+}
+
+async function openPortfolioChart() {
+    if (!currentSessionUser) return;
+    const modal = document.getElementById('chart-modal');
+    const title = document.getElementById('chart-title');
+    title.innerText = `Portfolio Net Worth History`;
+    modal.style.display = 'flex';
+
+    const { data: invData } = await sbClient
+        .from('tblinventory')
+        .select('brand_id, weight_grams, purchase_price')
+        .eq('user_id', currentSessionUser.id);
+        
+    if (!invData || invData.length === 0) {
+        renderChart([]);
+        return;
+    }
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: priceData } = await sbClient
+        .from('tblpricelog')
+        .select('brand_id, weight_grams, price, created_date')
+        .gte('created_date', thirtyDaysAgo.toISOString())
+        .order('created_date', { ascending: true });
+
+    if (!priceData) {
+		renderChart([]);
+		return;
+	}
+
+    const dateMap = {};
+    priceData.forEach(p => {
+        const dateKey = p.created_date.split('T')[0];
+        if (!dateMap[dateKey]) dateMap[dateKey] = {};
+        dateMap[dateKey][`${p.brand_id}_${p.weight_grams}`] = p.price;
+    });
+
+    const chartData = [];
+    const sortedDates = Object.keys(dateMap).sort();
+    
+    sortedDates.forEach(date => {
+        let dailyTotal = 0;
+        invData.forEach(item => {
+            const bId = item.brand_id; 
+            const price = dateMap[date][`${bId}_${item.weight_grams}`];
+            if (price) {
+                dailyTotal += price;
+            } else {
+                dailyTotal += item.purchase_price;
+            }
+        });
+        chartData.push({ date: date, value: dailyTotal });
+    });
+
+    renderChart(chartData);
+}
+
+function renderChart(data) {
+    const ctx = document.getElementById('historyChart');
+	if (!ctx) return;
+
+    if (chartInstance) chartInstance.destroy();
+    
+    const labels = data.map(d => new Date(d.date).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' }));
+    const values = data.map(d => d.value);
+    
+    chartInstance = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Value (Rp)',
+                data: values,
+                borderColor: '#F5C518',
+                backgroundColor: 'rgba(245, 197, 24, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0,
+                pointHitRadius: 20
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#888', maxTicksLimit: 7 }
+                },
+                y: {
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { 
+                        color: '#888',
+                        callback: function(value) { return 'Rp ' + (value / 1000).toLocaleString('id-ID') + 'k'; }
+                    }
+                }
+            }
+        }
+    });
+}
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
