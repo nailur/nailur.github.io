@@ -17,13 +17,20 @@ function encryptData(text) {
 
 function decryptData(ciphertext) {
     if (!ciphertext) return ciphertext;
+    const str = ciphertext.toString();
+    
+    // Skip decryption for old plaintext data (numbers or dates) to avoid random CryptoJS parsing errors
+    if (!str.startsWith('U2Fsd')) {
+        return str;
+    }
+
     try {
-        const bytes = CryptoJS.AES.decrypt(ciphertext.toString(), getSecretKey());
+        const bytes = CryptoJS.AES.decrypt(str, getSecretKey());
         const decrypted = bytes.toString(CryptoJS.enc.Utf8);
         if (decrypted) return decrypted;
-        return ciphertext; // Fallback for old plaintext data
+        return str; 
     } catch (e) {
-        return ciphertext; // Fallback for old plaintext data
+        return str; 
     }
 }
 
