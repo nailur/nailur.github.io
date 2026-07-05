@@ -905,9 +905,10 @@ async function fetchPortfolio(user, walletId = null) {
 					${trashIcon}
 				</div>
 				<div class="crypto-row crypto-row-swipeable" 
-					ontouchstart="handleTouchStart(event)" 
-					ontouchmove="handleTouchMove(event)" 
-					ontouchend="handleTouchEnd(event)">
+					onpointerdown="handlePointerDown(event)" 
+					onpointermove="handlePointerMove(event)" 
+					onpointerup="handlePointerUp(event)"
+					onpointercancel="handlePointerUp(event)">
 					<div class="row-left">
 						<img src="${getBrandLogo(brand)}" class="brand-logo-img">
 						<div>
@@ -1085,16 +1086,23 @@ function closeConfirm() {
 let startX = 0;
 let currentTarget = null;
 
-function handleTouchStart(e) {
+let isPointerDown = false;
+
+function handlePointerDown(e) {
 	document.querySelectorAll('.crypto-row-swipeable').forEach(el => {
 		if (el !== e.currentTarget) el.classList.remove('swiped');
 	});
-	startX = e.touches[0].clientX;
+	startX = e.clientX;
 	currentTarget = e.currentTarget;
+	isPointerDown = true;
+	if (currentTarget.setPointerCapture) {
+		currentTarget.setPointerCapture(e.pointerId);
+	}
 }
 
-function handleTouchMove(e) {
-	let moveX = e.touches[0].clientX;
+function handlePointerMove(e) {
+	if (!isPointerDown || !currentTarget) return;
+	let moveX = e.clientX;
 	let diff = startX - moveX;
 
 	if (diff > 30) {
@@ -1105,8 +1113,11 @@ function handleTouchMove(e) {
 	}
 }
 
-function handleTouchEnd(e) {
-	// Logic is handled by classes, but we reset the target
+function handlePointerUp(e) {
+	if (currentTarget && currentTarget.releasePointerCapture) {
+		currentTarget.releasePointerCapture(e.pointerId);
+	}
+	isPointerDown = false;
 	currentTarget = null;
 }
 
