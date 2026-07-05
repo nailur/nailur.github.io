@@ -306,7 +306,8 @@ async function fetchMarketData() {
 		const { data: pricesData, error: pricesError } = await sbClient
 			.from('tblpricelog')
 			.select('brand_id, weight_grams, price, buyback_price, created_date')
-			.order('created_date', { ascending: false });
+			.order('created_date', { ascending: false })
+			.limit(10000);
 
 		if (pricesData) {
 			const priceMap = new Set();
