@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "goldapp/res/js/harga-emas.js": {
+      "runtime": "nodejs"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/harga-emas",
+      "destination": "/goldapp/res/js/harga-emas.js"
+    }
+  ]
+}
