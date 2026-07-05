@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.93.3",
     "bcryptjs": "^2.4.3",
+    "jimp": "^0.22.10",
     "jsdom": "26.1.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.11.0"
