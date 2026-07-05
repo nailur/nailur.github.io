@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link href="./res/css/main.min.css" rel="stylesheet">
+    <link rel="manifest" href="./manifest.json">
 </head>
 
 <body>
@@ -45,13 +46,6 @@
 			<div id="market-summary-container" class="mb-30" style="display: none;">
 				<div id="summary-cards-list" class="flex gap-md" style="overflow-x: auto; padding-bottom: 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;"></div>
 			</div>
-
-            <div class="desktop-table-container">
-                <table>
-                    <thead><tr><th data-i18n="brand">Brand</th><th data-i18n="weight">Weight</th><th data-i18n="price" style="text-align:right">Price</th><th data-i18n="buyback" style="text-align:right">Buyback</th><th data-i18n="updated" style="text-align:right">Updated</th></tr></thead>
-                    <tbody id="desktop-tbody"><tr><td colspan="5" style="text-align:center; padding:40px">Loading...</td></tr></tbody>
-                </table>
-            </div>
 
             <div class="mobile-list-container" id="mobile-list"></div>
         </div>
@@ -164,26 +158,7 @@
 				</div>
 			</div>
 			
-			<!-- Desktop Wallet List-->
-			<div class="wallet-desktop-view">
-				<div class="desktop-table-container">
-					<table>
-						<thead>
-							<tr>
-								<th data-i18n="brand">Brand</th>
-								<th data-i18n="purchase_date">Purchase Date</th>
-								<th data-i18n="weight" style="text-align:right">Weight</th>
-								<th data-i18n="cost" style="text-align:right">Buy Price</th>
-								<th data-i18n="market_value" style="text-align:right">Market Value</th>
-								<th data-i18n="pl" style="text-align:right">Profit/Loss</th>
-							</tr>
-						</thead>
-						<tbody id="portfolio-desktop-tbody"></tbody>
-					</table>
-				</div>
-			</div>
-            
-			<!-- Mobile Wallet List -->
+			<!-- Wallet List -->
             <div id="portfolio-list" class="mobile-list-container">
                 <div style="text-align:center; padding:60px 20px; border:2px dashed var(--border); border-radius:16px; color:var(--text-sub);">
                     <div style="font-size:40px; margin-bottom:10px">✨</div>

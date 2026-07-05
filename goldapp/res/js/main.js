@@ -515,17 +515,7 @@ async function fetchMarketData() {
 	}
 
 
-	// Render Market Desktop
-	document.getElementById('desktop-tbody').innerHTML = items.map(item => {
-		const { time, color } = formatTime(item);
-		return `<tr>
-			<td><span style="color:var(--accent); font-weight:700">${item.tblbrand?.brand_name}</span></td>
-			<td>${item.weight_grams}g</td>
-			<td style="text-align:right" class="price-font">Rp ${item.price.toLocaleString('id-ID')}</td>
-			<td style="text-align:right; opacity:0.6">Rp ${item.buyback_price.toLocaleString('id-ID')}</td>
-			<td style="text-align:right; font-size:12px; color:${color}">${time}</td>
-		</tr>`;
-	}).join('');
+	// Removed Desktop Table Render to use Grid instead
 
 	// Render Market Mobile
 	document.getElementById('mobile-list').innerHTML = items.map(item => {
@@ -835,7 +825,6 @@ async function fetchPortfolio(user, walletId = null) {
     rawTargetLabel = "Target: Rp 0";
 
 	const listEl = document.getElementById('portfolio-list');
-	const tableEl = document.getElementById('portfolio-desktop-tbody');
 	const isBuybackMode = document.getElementById('buyback-toggle').checked;
 
 	const { data: goalData } = await sbClient.from('tblwallet').select('*').eq('wallet_id', activeWalletId).single();
@@ -864,7 +853,6 @@ async function fetchPortfolio(user, walletId = null) {
 	if (error || !assets || assets.length === 0) {
 		currentWalletItemCount = 0;
         listEl.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-sub);">${t('vaultisempty')}</div>`;
-        if (tableEl) tableEl.innerHTML = "";
         updatePortfolioDisplay();
         updateProgressBar(0);
 		
@@ -899,17 +887,6 @@ async function fetchPortfolio(user, walletId = null) {
 
 		const trashIcon = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>`;
 
-		desktopHTML += `
-			<tr>
-				<td><img src="${getBrandLogo(brand)}" style="width:24px; vertical-align:middle; margin-right:10px;"> <b>${brand}</b></td>
-				<td style="color:var(--text-sub)">${pDate}</td>
-				<td style="text-align:right">${isAmountHidden ? "•" : weight}g</td>
-				<td style="text-align:right">Rp ${isAmountHidden ? "••••••••" : cost.toLocaleString('id-ID')}</td>
-				<td style="text-align:right" class="price-font">Rp ${isAmountHidden ? "••••••••" : activePrice.toLocaleString('id-ID')}</td>
-				<td style="text-align:right; color:${isAmountHidden ? "--var(text-sub)" : color}; font-weight:700">${isAmountHidden ? "Rp" : diff >= 0 ? '+Rp' : 'Rp'} ${isAmountHidden ? "••••••••" : diff.toLocaleString('id-ID')}</td>
-				<td style="text-align:right"><button onclick="deleteInventory('${asset.inventory_id}')" style="background:none; border:none; color:var(--text-sub); cursor:pointer; padding:5px;">${trashIcon}</button></td>
-			</tr>`;
-
 		mobileHTML += `
 			<div class="swipe-container">
 				<div class="swipe-action-bg" onclick="deleteInventory('${asset.inventory_id}')">
@@ -935,7 +912,6 @@ async function fetchPortfolio(user, walletId = null) {
 			</div>`;
 	});
 
-	tableEl.innerHTML = desktopHTML;
 	listEl.innerHTML = mobileHTML;
 
 	// Total Net Worth
@@ -1366,3 +1342,16 @@ const i18n = {
 		goal_target: "Target Goal"
 	}
 };
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(error => {
+                console.log('ServiceWorker registration failed: ', error);
+            });
+    });
+}

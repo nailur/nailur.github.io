@@ -71,8 +71,8 @@ td a:hover { text-decoration: underline !important;opacity: 1; }
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Mobile List */
-.mobile-list-container { display: none; flex-direction: column; gap: 12px; }
+/* Mobile and Desktop List */
+.mobile-list-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .crypto-row { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border); }
 .crypto-row:active { background: #1a1a1a; transform: scale(0.98); transition: 0.1s; }
 
@@ -121,7 +121,7 @@ input:checked + .slider:before { transform: translateX(18px); }
 	.desktop-nav { display: none; }
 	.desktop-table-container { display: none !important; } 
 
-	.mobile-list-container { display: flex !important; }
+	.mobile-list-container { display: flex !important; flex-direction: column; gap: 12px; }
 	.wallet-desktop-view { display: none !important; }
 	
 	.mobile-header { flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; height: 60px; padding: 0 20px; background: rgba(18, 18, 18, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 50; }
