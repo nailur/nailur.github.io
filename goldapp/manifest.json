@@ -1,6 +1,6 @@
 {
-  "name": "Gold Monitor App",
-  "short_name": "GoldApp",
+  "name": "NTGold",
+  "short_name": "NTGold",
   "description": "Pantau pergerakan harga emas lokal secara real-time.",
   "start_url": "./index.html",
   "display": "standalone",
@@ -8,7 +8,7 @@
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/217/217853.png",
+      "src": "./res/img/icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
