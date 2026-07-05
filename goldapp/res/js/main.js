@@ -254,7 +254,7 @@ const BRAND_CONFIG = {
     'antam': { logo: './logos/antam.jpg', url: 'https://www.logammulia.com/id/harga-emas-hari-ini' },
     'emas kita': { logo: './logos/emaskita.jpg', url: 'https://emaskita.id/Harga_emas' },
     'galeri24': { logo: './logos/galeri24.jpg', url: 'https://galeri24.co.id/harga-emas' },
-    'king halim': { logo: './logos/kinghalim.jpg', url: 'https://www.kinghalim.com/goldbarwithamala' },
+    'kinghalim': { logo: './logos/kinghalim.jpg', url: 'https://www.kinghalim.com/goldbarwithamala' },
     'lotus archi': { logo: './logos/lotusarchi.jpg', url: 'https://lotusarchi.com/pricing' },
     'sampoerna': { logo: './logos/sampoerna.jpg', url: 'https://sampoernagold.com' },
     'ubs': { logo: './logos/ubs.jpg', url: 'https://ubslifestyle.com/fine-gold/' }
@@ -306,8 +306,7 @@ async function fetchMarketData() {
 		const { data: pricesData, error: pricesError } = await sbClient
 			.from('tblpricelog')
 			.select('brand_id, weight_grams, price, buyback_price, created_date')
-			.order('created_date', { ascending: false })
-			.limit(150);
+			.order('created_date', { ascending: false });
 
 		if (pricesData) {
 			const priceMap = new Set();
