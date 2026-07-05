@@ -3,6 +3,30 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = supabase;
 const sbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// --- Encryption Core ---
+const APP_SALT = "NTGold_Secret_2026";
+function getSecretKey() {
+    if (!currentSessionUser || !currentSessionUser.id) return APP_SALT;
+    return currentSessionUser.id + APP_SALT;
+}
+
+function encryptData(text) {
+    if (text === null || text === undefined || text === '') return text;
+    return CryptoJS.AES.encrypt(text.toString(), getSecretKey()).toString();
+}
+
+function decryptData(ciphertext) {
+    if (!ciphertext) return ciphertext;
+    try {
+        const bytes = CryptoJS.AES.decrypt(ciphertext.toString(), getSecretKey());
+        const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+        if (decrypted) return decrypted;
+        return ciphertext; // Fallback for old plaintext data
+    } catch (e) {
+        return ciphertext; // Fallback for old plaintext data
+    }
+}
+
 let latestPricesMap = new Map();
 
 let currentWalletId = null;
@@ -852,15 +876,17 @@ async function fetchPortfolio(user, walletId = null) {
 	let sortCol = 'purchase_date';
 
 	if (sortVal.startsWith('weight')) sortCol = 'weight_grams';
-	if (sortVal.startsWith('brand')) sortCol = 'tblbrand(brand_name)';
+	if (sortVal.startsWith('brand')) sortCol = 'brand_name';
 	if (sortVal.endsWith('asc')) sortAsc = true;
 
-	const { data: assets, error } = await sbClient
+	let { data: rawAssets, error } = await sbClient
         .from('tblinventory')
         .select('*, tblbrand(brand_name)')
 		.eq('user_id', user.id)
-        .eq('wallet_id', activeWalletId)
-		.order(sortCol, { ascending: sortAsc });
+        .eq('wallet_id', activeWalletId);
+		
+	let assets = rawAssets;
+
 
 	if (error || !assets || assets.length === 0) {
 		currentWalletItemCount = 0;
@@ -873,13 +899,36 @@ async function fetchPortfolio(user, walletId = null) {
 
 	currentWalletItemCount = assets.length;
 
+	assets = assets.map(a => {
+		return {
+			...a,
+			weight_grams: Number(decryptData(a.weight_grams)),
+			purchase_price: Number(decryptData(a.purchase_price)),
+			purchase_date: decryptData(a.purchase_date),
+			brand_name: a.tblbrand?.brand_name || "Unknown"
+		};
+	});
+
+	// Client-side sort for decrypted data
+	assets.sort((a, b) => {
+		let valA = a[sortCol];
+		let valB = b[sortCol];
+		if (sortCol === 'purchase_date') {
+			valA = new Date(valA).getTime() || 0;
+			valB = new Date(valB).getTime() || 0;
+		}
+		if (valA < valB) return sortAsc ? -1 : 1;
+		if (valA > valB) return sortAsc ? 1 : -1;
+		return 0;
+	});
+
 	let desktopHTML = "";
 	let mobileHTML = "";
 
 	assets.forEach((asset) => {
-		const brand = asset.tblbrand?.brand_name || "Unknown";
-		const weight = Number(asset.weight_grams) || 0;
-		const cost = Number(asset.purchase_price) || 0;
+		const brand = asset.brand_name;
+		const weight = asset.weight_grams || 0;
+		const cost = asset.purchase_price || 0;
 		const pDate = asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : 'No Date';
 
 		const marketData = latestPricesMap.get(`${brand}_${weight}`);
@@ -1043,9 +1092,9 @@ async function saveInventory() {
 	const { error } = await sbClient.from('tblinventory').insert({
 		user_id: currentSessionUser.id,
 		brand_id: b,
-		weight_grams: w,
-		purchase_price: p,
-		purchase_date: d,
+		weight_grams: encryptData(w.toString()),
+		purchase_price: encryptData(p.toString()),
+		purchase_date: encryptData(d.toString()),
 		wallet_id: currentWalletId
 	});
 
