@@ -308,9 +308,9 @@ async function fetchMarketData() {
 			.from('tblpricelog')
 			.select('brand_id, weight_grams, price, buyback_price, created_date')
 			.order('created_date', { ascending: false })
-			.limit(10000);
+			.limit(1000);
 
-		if (pricesData) {
+		if (pricesData && pricesData.length > 0) {
 			const priceMap = new Set();
 			pricesData.forEach(price => {
 				const key = `${price.brand_id}_${price.weight_grams}`;
@@ -319,19 +319,31 @@ async function fetchMarketData() {
 				if (!priceMap.has(key)) {
 					priceMap.add(key);
 					dbPrices.set(key, price);
-				} else if (brandName) {
-					const latestPrice = dbPrices.get(key);
-					const latestDateStr = latestPrice.created_date || latestPrice.log_date;
-					const thisDateStr = price.created_date || price.log_date;
-					const latestDate = latestDateStr.includes('T') ? latestDateStr.split('T')[0] : new Date(latestDateStr).toDateString();
-					const thisDate = thisDateStr.includes('T') ? thisDateStr.split('T')[0] : new Date(thisDateStr).toDateString();
-					const historyKey = `${price.brand_id}_${price.weight_grams}`;
-					
-					if (latestDate !== thisDate && !historyMap.has(historyKey)) {
-						historyMap.set(historyKey, price);
-					}
 				}
 			});
+
+			const latestRecord = pricesData[0];
+			const latestDateStr = latestRecord.created_date || latestRecord.log_date;
+			const latestDateOnly = latestDateStr.includes('T') ? latestDateStr.split('T')[0] : new Date(latestDateStr).toISOString().split('T')[0];
+			const todayStart = `${latestDateOnly}T00:00:00+07:00`;
+
+			const { data: historyData } = await sbClient
+				.from('tblpricelog')
+				.select('brand_id, weight_grams, price')
+				.lt('created_date', todayStart)
+				.order('created_date', { ascending: false })
+				.limit(1000);
+
+			if (historyData) {
+				const historyPriceMap = new Set();
+				historyData.forEach(price => {
+					const key = `${price.brand_id}_${price.weight_grams}`;
+					if (!historyPriceMap.has(key)) {
+						historyPriceMap.add(key);
+						historyMap.set(key, price);
+					}
+				});
+			}
 		}
 	} catch (error) {
 		console.error("Failed to fetch database data:", error);
