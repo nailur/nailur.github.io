@@ -21,20 +21,21 @@
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
           appId: "5864759a-82e3-4534-9e1b-17f6597bef10",
-          notifyButton: { 
-              enable: true,
-              position: 'bottom-left' 
-          },
+          notifyButton: { enable: false },
           serviceWorkerParam: { scope: "/goldapp/" },
-          serviceWorkerPath: "goldapp/sw.js"
+          serviceWorkerPath: "/goldapp/sw.js"
         });
       });
       
-      function promptOneSignal() {
-          if (window.OneSignal) {
-              OneSignal.Slidedown.promptPush();
-          } else {
+      async function promptOneSignal() {
+          if (!window.OneSignal) {
               alert("OneSignal is still loading. Please wait a moment and try again.");
+              return;
+          }
+          try {
+              await OneSignal.Slidedown.promptPush();
+          } catch (e) {
+              alert("Error triggering push prompt: " + e.message);
           }
       }
     </script>
@@ -234,9 +235,10 @@
             <div class="profile-card">
                 <label class="input-label">App Maintenance & Alerts</label>
                 
+                <button class="btn-primary" style="background:#E5C07B; color:#000; border:none; margin-bottom:10px;" onclick="promptOneSignal()">Subscribe to Gold Alerts</button>
+                
                 <button class="btn-primary" style="background:#4A90E2; color:#fff; border:none" onclick="forceAppUpdate()">Clear Cache & Update App</button>
                 <p style="font-size:11px; color:#888; text-align:center; margin-top:8px;">Use this if the app is stuck or you want to force download the latest version.</p>
-                <p style="font-size:11px; color:#E5C07B; text-align:center; margin-top:8px;">To enable notifications, tap the floating Bell icon at the bottom left corner.</p>
             </div>
 
             <div class="profile-card">
