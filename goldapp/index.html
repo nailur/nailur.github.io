@@ -29,13 +29,23 @@
         const toggle = document.getElementById("onesignal-toggle");
         if (toggle) {
             toggle.disabled = false;
-            if (OneSignal.Notifications.permission === "granted" && OneSignal.User.PushSubscription.optedIn) {
+            
+            // Read from local storage for instant UI update
+            const savedState = localStorage.getItem('gold_alert_enabled');
+            if (savedState === 'true') {
                 toggle.checked = true;
+            } else if (OneSignal.Notifications.permission === "granted" && OneSignal.User.PushSubscription.optedIn) {
+                toggle.checked = true;
+                localStorage.setItem('gold_alert_enabled', 'true');
             }
             
+            // Listen for changes from OneSignal
             OneSignal.User.PushSubscription.addEventListener("change", (e) => {
                 const toggleBtn = document.getElementById("onesignal-toggle");
-                if (toggleBtn) toggleBtn.checked = e.current.optedIn;
+                if (toggleBtn) {
+                    toggleBtn.checked = e.current.optedIn;
+                    localStorage.setItem('gold_alert_enabled', e.current.optedIn ? 'true' : 'false');
+                }
             });
         }
       });
@@ -50,19 +60,24 @@
                   return;
               }
               try {
+                  localStorage.setItem('gold_alert_enabled', 'true');
                   await OneSignal.User.PushSubscription.optIn();
                   if (OneSignal.Notifications.permission === "default") {
                       await OneSignal.Slidedown.promptPush();
                   }
                   
-                  // Check final state after prompt
                   setTimeout(() => {
-                      if (!OneSignal.User.PushSubscription.optedIn) checkbox.checked = false;
-                  }, 1000);
+                      if (!OneSignal.User.PushSubscription.optedIn) {
+                          checkbox.checked = false;
+                          localStorage.setItem('gold_alert_enabled', 'false');
+                      }
+                  }, 1500);
               } catch (e) {
                   checkbox.checked = false;
+                  localStorage.setItem('gold_alert_enabled', 'false');
               }
           } else {
+              localStorage.setItem('gold_alert_enabled', 'false');
               OneSignal.User.PushSubscription.optOut();
           }
       }
