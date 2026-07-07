@@ -1284,17 +1284,15 @@ window.sendCustomNotification = async function(e) {
     let sendSuccess = false;
     
     if (target === 'all') {
-        // Send to GLOBAL channel — all devices receive it
-        if (globalChannel) {
-            const resp = await globalChannel.send({
-                type: 'broadcast',
-                event: 'system_announcement',
-                payload: { title, body, target }
-            });
-            sendSuccess = resp === 'ok';
-        }
+        // Send global broadcast via supabase
+        const resp = await globalChannel.send({
+            type: 'broadcast',
+            event: 'system_announcement',
+            payload: { title, body, target }
+        });
+        sendSuccess = resp === 'ok';
     } else {
-        // Send to specific USER's channel — only that user receives it
+        // Send to specific USER's channel via supabase
         const targetChannel = supabase.channel(`system_events:user_${target}`);
         await new Promise(resolve => {
             targetChannel.subscribe((status) => {
@@ -1309,6 +1307,20 @@ window.sendCustomNotification = async function(e) {
         sendSuccess = resp === 'ok';
         // Unsubscribe from temporary channel after sending
         supabase.removeChannel(targetChannel);
+    }
+    
+    // Kirim Push Notification via Vercel API (OneSignal)
+    try {
+        const pushResp = await fetch('/api/pos-broadcast', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, body, target })
+        });
+        if (!pushResp.ok) {
+            console.warn('OneSignal Push Failed:', await pushResp.text());
+        }
+    } catch(err) {
+        console.error('Error triggering push notification:', err);
     }
     
     if (sendSuccess) {

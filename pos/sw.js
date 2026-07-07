@@ -1,14 +1,16 @@
-const CACHE_NAME = 'pos-kasir-cache-v32';
+importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+
+const CACHE_NAME = 'pos-kasir-cache-v33';
 const urlsToCache = [
   './',
   './index.html',
-  './style.css',
-  './app.js',
-  './auth.js',
-  './printer.js',
+  './css/style.css',
+  './js/app.js',
+  './js/auth.js',
+  './js/printer.js',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
+  './assets/img/icon-192.png',
+  './assets/img/icon-512.png',
   'https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css',
   'https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css'
 ];

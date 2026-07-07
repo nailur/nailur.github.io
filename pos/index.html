@@ -8,9 +8,23 @@
     
     <!-- PWA Settings -->
     <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./icon-192.png">
-    <link rel="icon" type="image/png" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./assets/img/icon-192.png">
+    <link rel="icon" type="image/png" href="./assets/img/icon-192.png">
     <meta name="theme-color" content="#6366f1">
+
+    <!-- OneSignal SDK -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "5864759a-82e3-4534-9e1b-17f6597bef10",
+          notifyButton: { enable: false },
+          serviceWorkerParam: { scope: "/pos/" },
+          serviceWorkerPath: "/pos/sw.js"
+        });
+      });
+    </script>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,8 +41,8 @@
     <!-- Chart.js for Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <link rel="stylesheet" href="./style.css?v=11">
-    <link rel="stylesheet" href="./style-modals.css">
+    <link rel="stylesheet" href="./css/style.css?v=11">
+    <link rel="stylesheet" href="./css/style-modals.css">
 </head>
 
 <body>
@@ -1104,7 +1118,7 @@
     <div id="receipt-view" class="receipt-container">
         <div class="receipt">
             <div class="receipt-header">
-                <img src="receipt_logo.png" alt="Logo" class="receipt-logo" onerror="this.style.display='none'">
+                <img src="./assets/img/receipt_logo.png" alt="Logo" class="receipt-logo" onerror="this.style.display='none'">
                 <h3 id="receipt-store-name">NAMA TOKO</h3>
                 <p id="receipt-store-address">Alamat Toko</p>
                 <p id="receipt-store-phone">No. Telp</p>
@@ -1184,7 +1198,7 @@
 
     <!-- MAIN SCRIPT (ES MODULE) -->
     <!-- MAIN SCRIPT (ES MODULE) -->
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./js/app.js"></script>
 </body>
 
 </html>

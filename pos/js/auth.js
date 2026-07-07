@@ -32,6 +32,12 @@ export async function checkSession() {
             localStorage.removeItem('pos_profile');
             return null; // Force logout
         }
+        
+        if (window.OneSignalDeferred) {
+            window.OneSignalDeferred.push(function(OneSignal) {
+                OneSignal.login(currentUser.id);
+            });
+        }
 
         return { user: currentUser, profile: currentProfile };
     }
@@ -78,6 +84,12 @@ export async function login(email, password) {
         return null;
     }
 
+    if (window.OneSignalDeferred) {
+        window.OneSignalDeferred.push(function(OneSignal) {
+            OneSignal.login(currentUser.id);
+        });
+    }
+
     return { user: currentUser, profile: currentProfile };
 }
 
@@ -89,6 +101,11 @@ export async function logout() {
         currentUser = null;
         currentProfile = null;
         localStorage.removeItem('pos_profile');
+        if (window.OneSignalDeferred) {
+            window.OneSignalDeferred.push(function(OneSignal) {
+                OneSignal.logout();
+            });
+        }
         window.location.reload();
     }
 }
