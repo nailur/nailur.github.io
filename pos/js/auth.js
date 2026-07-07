@@ -36,7 +36,11 @@ export async function checkSession() {
         if (window.OneSignalDeferred) {
             window.OneSignalDeferred.push(function(OneSignal) {
                 OneSignal.login(currentUser.id);
-                OneSignal.Slidedown.promptPush();
+                OneSignal.User.addTag("app", "pos");
+                if (OneSignal.Notifications.permission !== "granted") {
+                    OneSignal.Slidedown.promptPush();
+                }
+                OneSignal.User.PushSubscription.optIn();
             });
         }
 
@@ -88,7 +92,11 @@ export async function login(email, password) {
     if (window.OneSignalDeferred) {
         window.OneSignalDeferred.push(function(OneSignal) {
             OneSignal.login(currentUser.id);
-            OneSignal.Slidedown.promptPush();
+            OneSignal.User.addTag("app", "pos");
+            if (OneSignal.Notifications.permission !== "granted") {
+                OneSignal.Slidedown.promptPush();
+            }
+            OneSignal.User.PushSubscription.optIn();
         });
     }
 

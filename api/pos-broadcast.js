@@ -37,7 +37,9 @@ export default async function handler(req, res) {
         };
 
         if (target === 'all') {
-            payload.included_segments = ['Subscribed Users'];
+            payload.filters = [
+                { field: "tag", key: "app", relation: "=", value: "pos" }
+            ];
         } else {
             payload.include_aliases = { external_id: [target] };
             payload.target_channel = 'push';
