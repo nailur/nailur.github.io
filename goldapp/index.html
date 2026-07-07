@@ -25,17 +25,45 @@
           serviceWorkerParam: { scope: "/goldapp/" },
           serviceWorkerPath: "/goldapp/sw.js"
         });
+
+        const toggle = document.getElementById("onesignal-toggle");
+        if (toggle) {
+            toggle.disabled = false;
+            if (OneSignal.Notifications.permission === "granted" && OneSignal.User.PushSubscription.optedIn) {
+                toggle.checked = true;
+            }
+            
+            OneSignal.User.PushSubscription.addEventListener("change", (e) => {
+                const toggleBtn = document.getElementById("onesignal-toggle");
+                if (toggleBtn) toggleBtn.checked = e.current.optedIn;
+            });
+        }
       });
       
-      async function promptOneSignal() {
-          if (!window.OneSignal) {
-              alert("OneSignal is still loading. Please wait a moment and try again.");
-              return;
-          }
-          try {
-              await OneSignal.Slidedown.promptPush();
-          } catch (e) {
-              alert("Error triggering push prompt: " + e.message);
+      async function toggleOneSignal(checkbox) {
+          if (!window.OneSignal) return;
+          
+          if (checkbox.checked) {
+              if (OneSignal.Notifications.permission === "denied") {
+                  alert("Notifications are blocked in your browser settings. Please allow them first.");
+                  checkbox.checked = false;
+                  return;
+              }
+              try {
+                  await OneSignal.User.PushSubscription.optIn();
+                  if (OneSignal.Notifications.permission === "default") {
+                      await OneSignal.Slidedown.promptPush();
+                  }
+                  
+                  // Check final state after prompt
+                  setTimeout(() => {
+                      if (!OneSignal.User.PushSubscription.optedIn) checkbox.checked = false;
+                  }, 1000);
+              } catch (e) {
+                  checkbox.checked = false;
+              }
+          } else {
+              OneSignal.User.PushSubscription.optOut();
           }
       }
     </script>
@@ -233,12 +261,22 @@
             </div>
             
             <div class="profile-card">
-                <label class="input-label">App Maintenance & Alerts</label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <div>
+                        <label class="input-label" style="margin:0; font-size:14px; font-weight:bold; color:var(--accent);">Daily Gold Alerts</label>
+                        <span style="font-size:11px; color:var(--text-sub);">Receive price updates at 09:00 AM</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="onesignal-toggle" disabled onchange="toggleOneSignal(this)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
                 
-                <button class="btn-primary" style="background:#E5C07B; color:#000; border:none; margin-bottom:10px;" onclick="promptOneSignal()">Subscribe to Gold Alerts</button>
-                
-                <button class="btn-primary" style="background:#4A90E2; color:#fff; border:none" onclick="forceAppUpdate()">Clear Cache & Update App</button>
-                <p style="font-size:11px; color:#888; text-align:center; margin-top:8px;">Use this if the app is stuck or you want to force download the latest version.</p>
+                <div style="border-top:1px solid var(--border); margin:15px 0; padding-top:15px;">
+                    <label class="input-label">App Maintenance</label>
+                    <button class="btn-primary" style="background:#4A90E2; color:#fff; border:none" onclick="forceAppUpdate()">Clear Cache & Update App</button>
+                    <p style="font-size:11px; color:#888; text-align:center; margin-top:8px;">Use this if the app is stuck or you want to force download the latest version.</p>
+                </div>
             </div>
 
             <div class="profile-card">
