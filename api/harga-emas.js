@@ -171,6 +171,7 @@ function parseGaleri24(html) {
             });
         });
     });
+    window.close();
     return result;
 }
 
@@ -220,7 +221,8 @@ function parseGaleri24(html) {
 
 function parseEmasKita(html) {
     if (!html) return [];
-    const doc = new JSDOM(html).window.document;
+    const { window } = new JSDOM(html);
+    const doc = window.document;
     const result = [];
     const rows = Array.from(doc.querySelectorAll("table tr")).slice(3);
     const updateEl = doc.querySelector(".d-flex.justify-content-center.mt-3");
@@ -244,6 +246,7 @@ function parseEmasKita(html) {
             }
         }
     });
+    window.close();
     return result;
 }
 
@@ -371,7 +374,8 @@ function parseUBSLifestyleFixed(pages) {
     let ubsUpdate = "";
 
     if (pages.buyback) {
-        const bDoc = new JSDOM(pages.buyback).window.document;
+        const { window: bWindow } = new JSDOM(pages.buyback);
+        const bDoc = bWindow.document;
         ubsUpdate = formatGaleriDate(bDoc.querySelector('.text-xs.font-semibold')?.textContent || "");
         bDoc.querySelectorAll("table tr").forEach(row => {
             const cols = row.querySelectorAll("td");
@@ -384,7 +388,8 @@ function parseUBSLifestyleFixed(pages) {
 
     for (const gram in pages) {
         if (gram === "buyback") continue;
-        const doc = new JSDOM(pages[gram]).window.document;
+        const { window } = new JSDOM(pages[gram]);
+        const doc = window.document;
         const priceEl = doc.querySelector(".product_price");
         if (priceEl) {
             data.push({
@@ -396,6 +401,7 @@ function parseUBSLifestyleFixed(pages) {
                 last_update: ubsUpdate
             });
         }
+        window.close();
     }
     return data;
 }

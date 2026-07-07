@@ -85,8 +85,28 @@ export default async function cronHandler(req, res) {
         }
     });
 
+    // --- Deduplication: Avoid inserting duplicate prices on the same day ---
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0); // Start of UTC day
+    
+    const { data: existingData, error: fetchErr } = await sbClient
+        .from('tblpricelog')
+        .select('brand_id, weight_grams, price')
+        .gte('created_at', todayStart.toISOString());
+
+    if (!fetchErr && existingData) {
+        recordsToInsert = recordsToInsert.filter(newRec => {
+            // Check if exact same record (brand, weight, price) already exists today
+            return !existingData.some(exRec => 
+                exRec.brand_id === newRec.brand_id &&
+                exRec.weight_grams === newRec.weight_grams &&
+                exRec.price === newRec.price
+            );
+        });
+    }
+
     if (recordsToInsert.length === 0) {
-        return res.status(200).json({ status: 'success', message: 'No records to insert' });
+        return res.status(200).json({ status: 'success', message: 'No records to insert (all prices unchanged)' });
     }
 
     const { error } = await sbClient.from('tblpricelog').insert(recordsToInsert);
