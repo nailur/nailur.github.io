@@ -111,7 +111,7 @@ export default async function cronHandler(req, res) {
             const msg = `Antam: ${getPrice1g('3_2')}\nGaleri24: ${getPrice1g('2_3')}\nUBS: ${getPrice1g('ubs')}\nLotus Archi: ${getPrice1g('4_5')}`;
             const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
-            await fetch("https://onesignal.com/api/v1/notifications", {
+            const pushRes = await fetch("https://onesignal.com/api/v1/notifications", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -126,10 +126,19 @@ export default async function cronHandler(req, res) {
                     chrome_web_icon: "https://nailur.github.io/goldapp/res/img/icon.png"
                 })
             });
+            
+            const pushData = await pushRes.json();
+            if (!pushRes.ok) {
+                console.error("OneSignal API Rejected:", pushData);
+                return res.status(200).json({ status: 'success_but_push_failed', inserted: recordsToInsert.length, onesignal_error: pushData });
+            }
+        } else {
+            console.warn("OneSignal Env Vars Missing!");
+            return res.status(200).json({ status: 'success_but_push_skipped', inserted: recordsToInsert.length, reason: "Missing ENV vars" });
         }
     } catch (pushErr) {
         console.error("OneSignal push error:", pushErr);
-        // Do not fail the whole cron job if push fails
+        return res.status(200).json({ status: 'success_but_push_error', inserted: recordsToInsert.length, error: pushErr.message });
     }
 
     return res.status(200).json({ status: 'success', inserted: recordsToInsert.length });
