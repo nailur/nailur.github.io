@@ -21,24 +21,21 @@
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
           appId: "5864759a-82e3-4534-9e1b-17f6597bef10",
-          notifyButton: {
-            enable: false, // We'll trigger prompt programmatically or keep it hidden
-          },
-          promptOptions: {
-            customlink: {
-              enabled: true,
-              style: "button",
-              size: "medium",
-              color: { button: '#E5C07B', text: '#000000' },
-              text: {
-                subscribe: "Subscribe to Gold Alerts",
-                unsubscribe: "Unsubscribe from Gold Alerts",
-                explanation: "Get daily push notifications for gold prices."
-              }
-            }
+          notifyButton: { enable: false },
+          serviceWorker: {
+            path: "/goldapp/sw.js",
+            scope: "/goldapp/"
           }
         });
       });
+      
+      function promptOneSignal() {
+          if (window.OneSignal) {
+              OneSignal.Slidedown.promptPush();
+          } else {
+              alert("OneSignal is still loading. Please wait a moment and try again.");
+          }
+      }
     </script>
 </head>
 
@@ -235,8 +232,8 @@
             
             <div class="profile-card">
                 <label class="input-label">App Maintenance & Alerts</label>
-                <!-- OneSignal Subscription Button -->
-                <div class="onesignal-customlink-container" style="margin-bottom:15px;"></div>
+                
+                <button class="btn-primary" style="background:#E5C07B; color:#000; border:none; margin-bottom:10px;" onclick="promptOneSignal()">Subscribe to Gold Alerts</button>
                 
                 <button class="btn-primary" style="background:#4A90E2; color:#fff; border:none" onclick="forceAppUpdate()">Clear Cache & Update App</button>
                 <p style="font-size:11px; color:#888; text-align:center; margin-top:8px;">Use this if the app is stuck or you want to force download the latest version.</p>
