@@ -1,9 +1,9 @@
-const CACHE_NAME = 'goldapp-v2';
+const CACHE_NAME = 'goldapp-v3';
 const ASSETS_TO_CACHE = [
-    './index.html',
+    './index.html?v=3',
     './manifest.json',
-    './res/css/main.min.css',
-    './res/js/main.js'
+    './res/css/main.min.css?v=3',
+    './res/js/main.js?v=3'
 ];
 
 self.addEventListener('install', event => {
