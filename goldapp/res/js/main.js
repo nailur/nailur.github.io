@@ -321,8 +321,10 @@ async function fetchMarketData() {
 					dbPrices.set(key, price);
 				} else if (brandName) {
 					const latestPrice = dbPrices.get(key);
-					const latestDate = new Date(latestPrice.created_date || latestPrice.log_date).toDateString();
-					const thisDate = new Date(price.created_date || price.log_date).toDateString();
+					const latestDateStr = latestPrice.created_date || latestPrice.log_date;
+					const thisDateStr = price.created_date || price.log_date;
+					const latestDate = latestDateStr.includes('T') ? latestDateStr.split('T')[0] : new Date(latestDateStr).toDateString();
+					const thisDate = thisDateStr.includes('T') ? thisDateStr.split('T')[0] : new Date(thisDateStr).toDateString();
 					const historyKey = `${price.brand_id}_${price.weight_grams}`;
 					
 					if (latestDate !== thisDate && !historyMap.has(historyKey)) {
