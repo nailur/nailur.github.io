@@ -65,3 +65,7 @@ Aplikasi ini memanfaatkan beberapa layanan dan pustaka eksternal untuk memperkay
 
 4. **[Chart.js](https://www.chartjs.org/)** (`chart.js`)
    - Digunakan pada modul Analitik & Dashboard untuk membuat grafik interaktif (Visualisasi Data Pendapatan, Penjualan Produk, dan Metode Pembayaran).
+
+5. **[OneSignal](https://onesignal.com/)** (`OneSignalSDK.page.js`)
+   - Digunakan untuk sistem *Push Notification*.
+   - Mengirim pengumuman atau *broadcast* dari Superadmin ke seluruh perangkat (Mobile/Desktop) yang menginstal aplikasi POS ini.
