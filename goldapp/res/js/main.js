@@ -1374,16 +1374,27 @@ async function openMarketChart(brandId, weight, brandName) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
-    const { data, error } = await sbClient
-        .from('tblpricelog')
-        .select('price, created_date')
-        .eq('brand_id', brandId)
-        .eq('weight_grams', weight)
-        .gte('created_date', thirtyDaysAgo.toISOString())
-        .order('created_date', { ascending: true });
+    let data = [];
+    let start = 0;
+    const limit = 1000;
+    
+    while (true) {
+        const { data: pageData, error } = await sbClient
+            .from('tblpricelog')
+            .select('price, created_date')
+            .eq('brand_id', brandId)
+            .eq('weight_grams', weight)
+            .gte('created_date', thirtyDaysAgo.toISOString())
+            .order('created_date', { ascending: true })
+            .range(start, start + limit - 1);
+            
+        if (error || !pageData || pageData.length === 0) break;
+        data = data.concat(pageData);
+        if (pageData.length < limit) break;
+        start += limit;
+    }
         
-    if (error || !data || data.length === 0) {
-        console.error(error);
+    if (!data || data.length === 0) {
 		renderChart([]);
         return;
     }
@@ -1425,13 +1436,25 @@ async function openPortfolioChart() {
 
     const isBuybackMode = document.getElementById('buyback-toggle') ? document.getElementById('buyback-toggle').checked : false;
 
-    const { data: priceData } = await sbClient
-        .from('tblpricelog')
-        .select('brand_id, weight_grams, price, buyback_price, created_date')
-        .gte('created_date', thirtyDaysAgo.toISOString())
-        .order('created_date', { ascending: true });
+    let priceData = [];
+    let start = 0;
+    const limit = 1000;
+    
+    while (true) {
+        const { data } = await sbClient
+            .from('tblpricelog')
+            .select('brand_id, weight_grams, price, buyback_price, created_date')
+            .gte('created_date', thirtyDaysAgo.toISOString())
+            .order('created_date', { ascending: true })
+            .range(start, start + limit - 1);
+            
+        if (!data || data.length === 0) break;
+        priceData = priceData.concat(data);
+        if (data.length < limit) break;
+        start += limit;
+    }
 
-    if (!priceData) {
+    if (!priceData || priceData.length === 0) {
 		renderChart([]);
 		return;
 	}
