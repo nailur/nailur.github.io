@@ -122,7 +122,8 @@ export default async function cronHandler(req, res) {
                     included_segments: ["Subscribed Users"],
                     headings: { "en": `Harga Emas 1g ${dateStr}` },
                     contents: { "en": msg },
-                    url: "https://nailur.github.io/goldapp/"
+                    url: "https://nailur.github.io/goldapp/",
+                    chrome_web_icon: "https://nailur.github.io/goldapp/res/img/icon.png"
                 })
             });
         }
