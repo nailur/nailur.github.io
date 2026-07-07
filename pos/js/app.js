@@ -799,8 +799,10 @@ async function initPos() {
     });
 
     generateOrderId(false);
-    if (activeOutletId) await loadProducts();
-    
+    if (activeOutletId) {
+        await loadProducts();
+        renderCart();
+    }
     // Restore active tab
     const savedTab = localStorage.getItem('pos_active_tab') || 'pos-tab-content';
     const btn = document.querySelector(`.pos-nav-btn[data-target="${savedTab}"]`);
@@ -1311,7 +1313,7 @@ window.sendCustomNotification = async function(e) {
     
     // Kirim Push Notification via Vercel API (OneSignal)
     try {
-        const pushResp = await fetch('/api/pos-broadcast', {
+        const pushResp = await fetch('https://nailur.vercel.app/api/pos-broadcast', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title, body, target })
@@ -1366,33 +1368,6 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
             .then(registration => {
                 console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            const container = document.getElementById('toast-container');
-                            if (container) {
-                                const toast = document.createElement('div');
-                                toast.className = `toast toast-info`;
-                                toast.style.background = 'var(--primary)';
-                                toast.style.display = 'flex';
-                                toast.style.flexDirection = 'column';
-                                toast.style.gap = '10px';
-                                toast.style.opacity = '1';
-                                toast.innerHTML = `
-                                    <span>Versi terbaru aplikasi telah tersedia!</span>
-                                    <button id="btn-pwa-refresh" style="padding: 6px 12px; border: none; border-radius: 4px; background: white; color: var(--primary); font-weight: bold; cursor: pointer;">Refresh Sekarang</button>
-                                `;
-                                container.appendChild(toast);
-                                
-                                document.getElementById('btn-pwa-refresh').addEventListener('click', () => {
-                                    newWorker.postMessage({ type: 'SKIP_WAITING' });
-                                });
-                            }
-                        }
-                    });
-                });
             })
             .catch(err => {
                 console.log('ServiceWorker registration failed: ', err);
