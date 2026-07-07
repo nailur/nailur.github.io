@@ -42,7 +42,7 @@ export async function checkAttendanceStatus() {
         .eq('profile_id', profile.id)
         .eq('outlet_id', activeOutletId)
         .eq('date', today)
-        .single();
+        .maybeSingle();
 
     currentAttendanceRecord = data;
     renderAttendanceButton();
