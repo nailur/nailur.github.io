@@ -26,28 +26,35 @@
           serviceWorkerPath: "/goldapp/sw.js"
         });
 
-        const toggle = document.getElementById("onesignal-toggle");
-        if (toggle) {
-            toggle.disabled = false;
-            
-            // Read from local storage for instant UI update
-            const savedState = localStorage.getItem('gold_alert_enabled');
-            if (savedState === 'true') {
-                toggle.checked = true;
-            } else if (OneSignal.Notifications.permission === "granted" && OneSignal.User.PushSubscription.optedIn) {
-                toggle.checked = true;
-                localStorage.setItem('gold_alert_enabled', 'true');
+
+        
+        // Listen for changes from OneSignal (this needs OneSignal object)
+        OneSignal.User.PushSubscription.addEventListener("change", (e) => {
+            const toggleBtn = document.getElementById("onesignal-toggle");
+            if (toggleBtn) {
+                toggleBtn.checked = e.current.optedIn;
+                localStorage.setItem('gold_alert_enabled', e.current.optedIn ? 'true' : 'false');
             }
-            
-            // Listen for changes from OneSignal
-            OneSignal.User.PushSubscription.addEventListener("change", (e) => {
-                const toggleBtn = document.getElementById("onesignal-toggle");
-                if (toggleBtn) {
-                    toggleBtn.checked = e.current.optedIn;
-                    localStorage.setItem('gold_alert_enabled', e.current.optedIn ? 'true' : 'false');
-                }
-            });
+        });
+        
+        // Final sync check
+        const toggleBtn = document.getElementById("onesignal-toggle");
+        if (toggleBtn && OneSignal.Notifications.permission === "granted" && OneSignal.User.PushSubscription.optedIn) {
+            toggleBtn.checked = true;
+            localStorage.setItem('gold_alert_enabled', 'true');
         }
+      });
+      
+      // Initialize UI independently of OneSignal loading
+      window.addEventListener('DOMContentLoaded', () => {
+          const toggle = document.getElementById("onesignal-toggle");
+          if (toggle) {
+              toggle.disabled = false; // Enable it immediately
+              const savedState = localStorage.getItem('gold_alert_enabled');
+              if (savedState === 'true') {
+                  toggle.checked = true;
+              }
+          }
       });
       
       async function toggleOneSignal(checkbox) {
