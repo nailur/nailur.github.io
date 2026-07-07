@@ -289,6 +289,7 @@ async function fetchMarketData() {
 	
 	let dbPrices = new Map();
 	let allBrands = new Map();
+	const historyMap = new Map();
 
 	try {
 		// Fetch all brands from database
@@ -313,9 +314,20 @@ async function fetchMarketData() {
 			const priceMap = new Set();
 			pricesData.forEach(price => {
 				const key = `${price.brand_id}_${price.weight_grams}`;
+				const brandName = allBrands.get(price.brand_id);
+				
 				if (!priceMap.has(key)) {
 					priceMap.add(key);
 					dbPrices.set(key, price);
+				} else if (brandName) {
+					const latestPrice = dbPrices.get(key);
+					const latestDate = new Date(latestPrice.created_date || latestPrice.log_date).toDateString();
+					const thisDate = new Date(price.created_date || price.log_date).toDateString();
+					const historyKey = `${brandName}_${price.weight_grams}`;
+					
+					if (latestDate !== thisDate && !historyMap.has(historyKey)) {
+						historyMap.set(historyKey, price);
+					}
 				}
 			});
 		}
@@ -1361,7 +1373,14 @@ async function openMarketChart(brandId, weight, brandName) {
         return;
     }
     
-    renderChart(data.map(d => ({ date: d.created_date, value: d.price })));
+    const uniqueByDate = new Map();
+    data.forEach(d => {
+        const dateStr = d.created_date.split('T')[0];
+        uniqueByDate.set(dateStr, d.price);
+    });
+
+    const chartData = Array.from(uniqueByDate.entries()).map(([date, value]) => ({ date, value }));
+    renderChart(chartData);
 }
 
 async function openPortfolioChart() {
@@ -1389,9 +1408,11 @@ async function openPortfolioChart() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    const isBuybackMode = document.getElementById('buyback-toggle') ? document.getElementById('buyback-toggle').checked : false;
+
     const { data: priceData } = await sbClient
         .from('tblpricelog')
-        .select('brand_id, weight_grams, price, created_date')
+        .select('brand_id, weight_grams, price, buyback_price, created_date')
         .gte('created_date', thirtyDaysAgo.toISOString())
         .order('created_date', { ascending: true });
 
@@ -1404,7 +1425,8 @@ async function openPortfolioChart() {
     priceData.forEach(p => {
         const dateKey = p.created_date.split('T')[0];
         if (!dateMap[dateKey]) dateMap[dateKey] = {};
-        dateMap[dateKey][`${p.brand_id}_${p.weight_grams}`] = p.price;
+        const activePrice = isBuybackMode ? (p.buyback_price || p.price) : p.price;
+        dateMap[dateKey][`${p.brand_id}_${p.weight_grams}`] = activePrice;
     });
 
     const chartData = [];
