@@ -96,5 +96,40 @@ export default async function cronHandler(req, res) {
         return res.status(500).json({ error: 'Failed to save to database', details: error.message });
     }
 
+    // --- Send OneSignal Web Push Notification ---
+    try {
+        const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
+        const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
+
+        if (ONESIGNAL_APP_ID && ONESIGNAL_API_KEY) {
+            // Find 1g prices for top brands
+            const getPrice1g = (bId) => {
+                const rec = recordsToInsert.find(r => r.brand_id === bId && r.weight_grams === 1);
+                return rec ? `Rp ${rec.price.toLocaleString('id-ID')}` : '-';
+            };
+
+            const msg = `Antam: ${getPrice1g('3_2')}\nGaleri24: ${getPrice1g('2_3')}\nUBS: ${getPrice1g('ubs')}\nLotus Archi: ${getPrice1g('4_5')}`;
+            const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
+            await fetch("https://onesignal.com/api/v1/notifications", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Basic ${ONESIGNAL_API_KEY}`
+                },
+                body: JSON.stringify({
+                    app_id: ONESIGNAL_APP_ID,
+                    included_segments: ["Subscribed Users"],
+                    headings: { "en": `Harga Emas 1g ${dateStr}` },
+                    contents: { "en": msg },
+                    url: "https://nailur.github.io/goldapp/"
+                })
+            });
+        }
+    } catch (pushErr) {
+        console.error("OneSignal push error:", pushErr);
+        // Do not fail the whole cron job if push fails
+    }
+
     return res.status(200).json({ status: 'success', inserted: recordsToInsert.length });
 }
