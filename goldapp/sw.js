@@ -1,9 +1,11 @@
-const CACHE_NAME = 'goldapp-v3';
+importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+
+const CACHE_NAME = 'goldapp-v4';
 const ASSETS_TO_CACHE = [
-    './index.html?v=3',
+    './index.html?v=4',
     './manifest.json',
-    './res/css/main.min.css?v=3',
-    './res/js/main.js?v=3'
+    './res/css/main.min.css?v=4',
+    './res/js/main.js?v=4'
 ];
 
 self.addEventListener('install', event => {

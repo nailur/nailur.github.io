@@ -10,10 +10,36 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-	<link href="./res/css/main.min.css?v=3" rel="stylesheet">
+	<link href="./res/css/main.min.css?v=4" rel="stylesheet">
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/png" href="./res/img/icon.png">
     <link rel="apple-touch-icon" href="./res/img/icon.png">
+    
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "5864759a-82e3-4534-9e1b-17f6597bef10",
+          notifyButton: {
+            enable: false, // We'll trigger prompt programmatically or keep it hidden
+          },
+          promptOptions: {
+            customlink: {
+              enabled: true,
+              style: "button",
+              size: "medium",
+              color: { button: '#E5C07B', text: '#000000' },
+              text: {
+                subscribe: "Subscribe to Gold Alerts",
+                unsubscribe: "Unsubscribe from Gold Alerts",
+                explanation: "Get daily push notifications for gold prices."
+              }
+            }
+          }
+        });
+      });
+    </script>
 </head>
 
 <body>
@@ -297,6 +323,6 @@
 
     <div class="bottom-nav" id="mobile-nav"></div>
 
-	<script src="./res/js/main.js?v=3"></script>
+	<script src="./res/js/main.js?v=4"></script>
 </body>
 </html>
