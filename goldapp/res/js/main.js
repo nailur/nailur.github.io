@@ -1545,3 +1545,29 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+async function forceAppUpdate() {
+    const btn = document.querySelector('button[onclick="forceAppUpdate()"]');
+    if (btn) btn.innerText = "Clearing caches...";
+
+    try {
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+        }
+
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+                await registration.unregister();
+            }
+        }
+        
+        if (btn) btn.innerText = "Reloading...";
+        setTimeout(() => {
+            window.location.href = window.location.pathname + '?v=' + new Date().getTime();
+        }, 500);
+    } catch (e) {
+        console.error("Force update failed", e);
+        if (btn) btn.innerText = "Failed";
+    }
+}

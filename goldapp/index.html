@@ -199,13 +199,20 @@
                 <input type="text" id="prof-email" disabled style="opacity:0.5">
                 <label data-i18n="full_name" class="input-label">Full Name</label>
                 <input type="text" id="prof-name" placeholder="Enter your name">
-				<label data-i18n="lang_pref" class="input-label">Language Preference</label>
+                <label data-i18n="lang_pref" class="input-label">Language Preference</label>
                 <select id="lang_select">
                     <option value="en">English (US)</option>
                     <option value="id">Bahasa Indonesia</option>
                 </select>
                 <button data-i18n="update_profile_btn" class="btn-primary" onclick="updateName()">Save Changes</button>
             </div>
+            
+            <div class="profile-card">
+                <label class="input-label">App Maintenance</label>
+                <button class="btn-primary" style="background:#4A90E2; color:#fff; border:none" onclick="forceAppUpdate()">Clear Cache & Update App</button>
+                <p style="font-size:11px; color:#888; text-align:center; margin-top:8px;">Use this if the app is stuck or you want to force download the latest version.</p>
+            </div>
+
             <div class="profile-card">
                 <label data-i18n="change_pass" class="input-label">Change Password</label>
                 <input type="password" id="prof-pass" placeholder="New password">
