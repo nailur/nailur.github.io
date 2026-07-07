@@ -102,6 +102,23 @@ export default async function cronHandler(req, res) {
         const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
 
         if (ONESIGNAL_APP_ID && ONESIGNAL_API_KEY) {
+            // Get current time in Jakarta
+            const currentUtcHour = new Date().getUTCHours();
+            const currentMinute = new Date().getUTCMinutes();
+            const currentJakartaHour = (currentUtcHour + 7) % 24;
+
+            // Optional override for manual testing
+            const forcePush = req.query?.forcePush === 'true';
+
+            // Only push between 09:00 and 09:10 Jakarta time (to catch the 09:00 cron and ignore 09:15)
+            if (!forcePush && (currentJakartaHour !== 9 || currentMinute > 10)) {
+                return res.status(200).json({ 
+                    status: 'success_but_push_skipped', 
+                    inserted: recordsToInsert.length, 
+                    reason: `Push is only scheduled for 09:00 AM. Current Jakarta time: ${currentJakartaHour}:${currentMinute.toString().padStart(2, '0')}` 
+                });
+            }
+
             // Find 1g prices for top brands
             const getPrice1g = (bId) => {
                 const rec = recordsToInsert.find(r => r.brand_id === bId && r.weight_grams === 1);
