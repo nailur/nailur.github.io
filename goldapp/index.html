@@ -45,18 +45,6 @@
         }
       });
       
-      // Initialize UI independently of OneSignal loading
-      window.addEventListener('DOMContentLoaded', () => {
-          const toggle = document.getElementById("onesignal-toggle");
-          if (toggle) {
-              toggle.disabled = false; // Enable it immediately
-              const savedState = localStorage.getItem('gold_alert_enabled');
-              if (savedState === 'true') {
-                  toggle.checked = true;
-              }
-          }
-      });
-      
       async function toggleOneSignal(checkbox) {
           if (!window.OneSignal) return;
           
@@ -289,9 +277,14 @@
                         <span style="font-size:11px; color:var(--text-sub);">Receive price updates at 09:00 AM</span>
                     </div>
                     <label class="switch">
-                        <input type="checkbox" id="onesignal-toggle" disabled onchange="toggleOneSignal(this)">
+                        <input type="checkbox" id="onesignal-toggle" onchange="toggleOneSignal(this)">
                         <span class="slider"></span>
                     </label>
+                    <script>
+                        if (localStorage.getItem('gold_alert_enabled') === 'true') {
+                            document.getElementById("onesignal-toggle").checked = true;
+                        }
+                    </script>
                 </div>
                 
                 <div style="border-top:1px solid var(--border); margin:15px 0; padding-top:15px;">
