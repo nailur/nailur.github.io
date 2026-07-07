@@ -323,7 +323,7 @@ async function fetchMarketData() {
 					const latestPrice = dbPrices.get(key);
 					const latestDate = new Date(latestPrice.created_date || latestPrice.log_date).toDateString();
 					const thisDate = new Date(price.created_date || price.log_date).toDateString();
-					const historyKey = `${brandName}_${price.weight_grams}`;
+					const historyKey = `${price.brand_id}_${price.weight_grams}`;
 					
 					if (latestDate !== thisDate && !historyMap.has(historyKey)) {
 						historyMap.set(historyKey, price);
@@ -415,9 +415,10 @@ async function fetchMarketData() {
 		summaryContainer.style.display = 'block';
 		summaryList.innerHTML = summaryItems.map((item, index) => {
 			const brandName = item.tblbrand?.brand_name || "Unknown";
+			const brandId = item.tblbrand?.brand_id;
 			const isCheapest = index === 0;
 
-			const key = `${brandName}_${item.weight_grams}`;
+			const key = `${brandId}_${item.weight_grams}`;
 			const prevData = typeof historyMap !== 'undefined' ? historyMap.get(key) : null;
 			const prevPrice = prevData ? prevData.price : item.price;
 			const diff = item.price - prevPrice;
