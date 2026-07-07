@@ -36,6 +36,7 @@ export async function checkSession() {
         if (window.OneSignalDeferred) {
             window.OneSignalDeferred.push(function(OneSignal) {
                 OneSignal.login(currentUser.id);
+                OneSignal.Slidedown.promptPush();
             });
         }
 
@@ -87,6 +88,7 @@ export async function login(email, password) {
     if (window.OneSignalDeferred) {
         window.OneSignalDeferred.push(function(OneSignal) {
             OneSignal.login(currentUser.id);
+            OneSignal.Slidedown.promptPush();
         });
     }
 
