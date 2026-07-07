@@ -132,6 +132,9 @@ export default async function cronHandler(req, res) {
                 console.error("OneSignal API Rejected:", pushData);
                 return res.status(200).json({ status: 'success_but_push_failed', inserted: recordsToInsert.length, onesignal_error: pushData });
             }
+            
+            // Return the pushData on success so we can inspect it!
+            return res.status(200).json({ status: 'success', inserted: recordsToInsert.length, onesignal_response: pushData });
         } else {
             console.warn("OneSignal Env Vars Missing!");
             return res.status(200).json({ status: 'success_but_push_skipped', inserted: recordsToInsert.length, reason: "Missing ENV vars" });
