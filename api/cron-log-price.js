@@ -156,7 +156,9 @@ export default async function cronHandler(req, res) {
                 },
                 body: JSON.stringify({
                     app_id: ONESIGNAL_APP_ID,
-                    included_segments: ["Subscribed Users", "Total Subscriptions"],
+                    filters: [
+                        { field: "tag", key: "app", relation: "=", value: "goldapp" }
+                    ],
                     headings: { "en": `Harga Emas 1g ${dateStr}` },
                     contents: { "en": msg },
                     url: "https://nailur.github.io/goldapp/",

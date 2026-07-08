@@ -42,6 +42,7 @@
         if (toggleBtn && OneSignal.Notifications.permission === "granted" && OneSignal.User.PushSubscription.optedIn) {
             toggleBtn.checked = true;
             localStorage.setItem('gold_alert_enabled', 'true');
+            OneSignal.User.addTag("app", "goldapp");
         }
       });
       
@@ -61,6 +62,8 @@
                       await OneSignal.Slidedown.promptPush();
                   }
                   
+                  OneSignal.User.addTag("app", "goldapp");
+                  
                   setTimeout(() => {
                       if (!OneSignal.User.PushSubscription.optedIn) {
                           checkbox.checked = false;
@@ -74,6 +77,7 @@
           } else {
               localStorage.setItem('gold_alert_enabled', 'false');
               OneSignal.User.PushSubscription.optOut();
+              OneSignal.User.removeTag("app");
           }
       }
     </script>
