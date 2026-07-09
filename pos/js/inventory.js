@@ -1,16 +1,16 @@
 import { supabase } from './supabase.js';
-import { activeOutletId } from './state.js';
+import { getActiveOutletId } from './state.js';
 import { showToast } from './app.js';
 
 let inventoryList = [];
 
 export async function loadInventory() {
-    if (!activeOutletId) return;
+    if (!getActiveOutletId()) return;
     
     const { data, error } = await supabase
         .from('inventory_items')
         .select('*')
-        .eq('outlet_id', activeOutletId)
+        .eq('outlet_id', getActiveOutletId())
         .order('name');
         
     if (error) {
@@ -83,7 +83,7 @@ export function openInventoryModal(id = null) {
 
 export async function handleSaveInventory(e) {
     e.preventDefault();
-    if (!activeOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
+    if (!getActiveOutletId()) return showToast('Pilih outlet terlebih dahulu', 'error');
     
     const btn = document.getElementById('form-inventory')?.querySelector('button[type="submit"]');
     if (btn) {
@@ -93,7 +93,7 @@ export async function handleSaveInventory(e) {
     
     const id = document.getElementById('inventory-id').value;
     const payload = {
-        outlet_id: activeOutletId,
+        outlet_id: getActiveOutletId(),
         item_code: document.getElementById('inventory-name').value.substring(0,3).toUpperCase() + '-' + Math.floor(Math.random() * 10000), // generated
         name: document.getElementById('inventory-name').value,
         category: document.getElementById('inventory-category').value,

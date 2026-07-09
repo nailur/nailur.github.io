@@ -1,16 +1,16 @@
 import { supabase } from './supabase.js';
-import { activeOutletId } from './state.js';
+import { getActiveOutletId } from './state.js';
 import { showToast, getLocalToday, generateRandomDocNumber } from './app.js';
 import { getCurrentProfile } from './auth.js';
 
 let depositsList = [];
 
 export async function loadDeposits() {
-    if (!activeOutletId) return;
+    if (!getActiveOutletId()) return;
     const { data, error } = await supabase
         .from('sales_deposits')
         .select('*, profiles:created_by (name)')
-        .eq('outlet_id', activeOutletId)
+        .eq('outlet_id', getActiveOutletId())
         .order('created_at', { ascending: false })
         .limit(100);
         
@@ -49,7 +49,7 @@ export function renderDeposits() {
 
 export async function handleSaveDeposit(e) {
     e.preventDefault();
-    if (!activeOutletId) return showToast('Pilih outlet', 'error');
+    if (!getActiveOutletId()) return showToast('Pilih outlet', 'error');
     
     const btn = document.getElementById('form-deposit').querySelector('button[type="submit"]');
     btn.disabled = true;
@@ -60,7 +60,7 @@ export async function handleSaveDeposit(e) {
     const docNumber = generateRandomDocNumber('ST'); // Setoran
     
     const payload = {
-        outlet_id: activeOutletId,
+        outlet_id: getActiveOutletId(),
         document_number: docNumber,
         deposit_date: getLocalToday(),
         amount,

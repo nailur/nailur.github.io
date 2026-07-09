@@ -18,3 +18,7 @@ export function setPosOutletsList(list) {
 export function setActiveOutletId(id) {
     activeOutletId = id;
 }
+
+export function getActiveOutletId() {
+    return activeOutletId;
+}

@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { activeOutletId } from './state.js';
+import { getActiveOutletId } from './state.js';
 import { showToast, getLocalToday, generateRandomDocNumber } from './app.js';
 import { getActiveShiftSession } from './shift.js';
 import { getCurrentProfile } from './auth.js';
@@ -8,19 +8,19 @@ let expensesList = [];
 let expenseItemsMaster = [];
 
 export async function loadExpenseMaster() {
-    if (!activeOutletId) return;
-    const { data } = await supabase.from('expense_items').select('*').eq('outlet_id', activeOutletId).order('name');
+    if (!getActiveOutletId()) return;
+    const { data } = await supabase.from('expense_items').select('*').eq('outlet_id', getActiveOutletId()).order('name');
     expenseItemsMaster = data || [];
     renderExpenseMasterTable();
     populateExpenseSelect();
 }
 
 export async function loadExpenses() {
-    if (!activeOutletId) return;
+    if (!getActiveOutletId()) return;
     const { data, error } = await supabase
         .from('operational_costs')
         .select('*, profiles:created_by (name)')
-        .eq('outlet_id', activeOutletId)
+        .eq('outlet_id', getActiveOutletId())
         .order('created_at', { ascending: false })
         .limit(100);
         
@@ -93,7 +93,7 @@ export async function handleSaveExpenseMaster(e) {
     const name = document.getElementById('expense-master-name').value;
     const category = document.getElementById('expense-master-category').value;
     
-    const payload = { outlet_id: activeOutletId, name, category };
+    const payload = { outlet_id: getActiveOutletId(), name, category };
     
     let submitError;
     const btn = document.getElementById('form-expense-master').querySelector('button[type="submit"]');
@@ -147,7 +147,7 @@ export function openAddExpenseMaster() {
 
 export async function handleSaveExpense(e) {
     e.preventDefault();
-    if (!activeOutletId) return showToast('Pilih outlet', 'error');
+    if (!getActiveOutletId()) return showToast('Pilih outlet', 'error');
     
     const profile = getCurrentProfile();
     let sessionId = null;
@@ -171,7 +171,7 @@ export async function handleSaveExpense(e) {
         const profileId = getCurrentProfile().id;
         
         const { data, error } = await supabase.from('operational_costs').insert([{
-            outlet_id: activeOutletId,
+            outlet_id: getActiveOutletId(),
             shift_session_id: sessionId,
             document_number: docNumber,
             cost_date: getLocalToday(),

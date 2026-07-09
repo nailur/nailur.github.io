@@ -164,12 +164,12 @@ export async function initOperations() {
     // Bind shift button
     const btnAddShift = document.getElementById('btn-add-shift');
     if (btnAddShift && !btnAddShift.hasAttribute('data-bound')) {
-        btnAddShift.addEventListener('click', () => { if(window.openShiftModal) window.openShiftModal(); });
+        btnAddShift.addEventListener('click', () => openShiftModal());
         btnAddShift.setAttribute('data-bound', 'true');
     }
 
     if (['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) {
-        if (window.loadShifts) window.loadShifts();
+        loadShifts();
         if (window.loadInventoryForManagement) window.loadInventoryForManagement();
         if (window.loadExpensesForManagement) window.loadExpensesForManagement();
         if (window.loadDepositsForManagement) window.loadDepositsForManagement();

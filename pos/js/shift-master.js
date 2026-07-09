@@ -1,12 +1,14 @@
 import { supabase } from './supabase.js';
-import { activeOutletId } from './state.js';
+import { getActiveOutletId } from './state.js';
 import { showToast } from './app.js';
 
 let shiftsList = [];
 
 export async function loadShifts() {
-    if (!activeOutletId) return;
-    const { data, error } = await supabase.from('shifts').select('*').eq('outlet_id', activeOutletId);
+    const currentOutletId = getActiveOutletId();
+    console.log("loadShifts called, activeOutletId:", currentOutletId);
+    if (!currentOutletId) return;
+    const { data, error } = await supabase.from('shifts').select('*').eq('outlet_id', currentOutletId);
     if (!error) {
         shiftsList = data || [];
         renderShifts();
@@ -63,11 +65,12 @@ export function openShiftModal(id = null) {
 
 export async function handleSaveShift(e) {
     e.preventDefault();
-    if (!activeOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
+    const currentOutletId = getActiveOutletId();
+    if (!currentOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
     
     const id = document.getElementById('shift-master-id').value;
     const payload = {
-        outlet_id: activeOutletId,
+        outlet_id: currentOutletId,
         name: document.getElementById('shift-master-name').value,
         start_time: document.getElementById('shift-master-start').value,
         end_time: document.getElementById('shift-master-end').value
@@ -104,3 +107,5 @@ export async function deleteShift(id) {
 
 window.editShift = openShiftModal;
 window.deleteShift = deleteShift;
+window.loadShifts = loadShifts;
+window.openShiftModal = openShiftModal;
