@@ -16,6 +16,14 @@ CREATE TABLE IF NOT EXISTS public.inventory_items (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Rename old 'code' column to 'item_code' safely if exists from previous versions
+DO $$ 
+BEGIN 
+  IF EXISTS(SELECT * FROM information_schema.columns WHERE table_name='inventory_items' AND column_name='code') THEN
+    ALTER TABLE public.inventory_items RENAME COLUMN code TO item_code;
+  END IF;
+END $$;
+
 -- Pastikan kolom baru ada jika tabel sudah pernah dibuat sebelumnya
 ALTER TABLE public.inventory_items ADD COLUMN IF NOT EXISTS item_code TEXT DEFAULT '-';
 ALTER TABLE public.inventory_items ADD COLUMN IF NOT EXISTS category TEXT;

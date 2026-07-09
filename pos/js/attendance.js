@@ -33,7 +33,7 @@ export async function checkAttendanceStatus() {
 
     const { data } = await supabase
         .from('attendances')
-        .select('id, clock_in, clock_out')
+        .select('*, shifts(name, start_time, end_time)')
         .eq('user_id', profile.id)
         .eq('outlet_id', activeOutletId)
         .gte('clock_in', startOfDay.toISOString())
@@ -42,6 +42,23 @@ export async function checkAttendanceStatus() {
         .maybeSingle();
 
     currentAttendanceRecord = data;
+
+    // Populate User Info in the UI
+    const nameEl = document.getElementById('att-user-name');
+    const roleEl = document.getElementById('att-user-role');
+    const initialsEl = document.getElementById('att-initials');
+    if (nameEl) nameEl.textContent = profile.name || 'User';
+    if (roleEl) roleEl.textContent = profile.role.replace('_', ' ').toUpperCase();
+    if (initialsEl) initialsEl.textContent = (profile.name || 'U').substring(0, 1).toUpperCase();
+
+    if (data && data.shifts) {
+        document.getElementById('att-user-shift').textContent = data.shifts.name;
+        document.getElementById('att-shift-schedule').textContent = `${data.shifts.start_time.slice(0,5)} - ${data.shifts.end_time.slice(0,5)}`;
+    } else {
+        document.getElementById('att-user-shift').textContent = 'Tanpa Shift / Default';
+        document.getElementById('att-shift-schedule').textContent = '-';
+    }
+
     renderAttendanceButton();
     loadAttendanceHistory();
 }
@@ -56,21 +73,30 @@ export function renderAttendanceButton() {
         btnIn.classList.remove('hidden');
         btnOut.classList.add('hidden');
         btnIn.onclick = handleClockIn;
-        if(statusText) statusText.textContent = '';
+        if(statusText) statusText.textContent = 'Anda belum clock in hari ini.';
+        document.getElementById('att-actual-in').textContent = '-';
+        document.getElementById('att-actual-out').textContent = '-';
     } else if (!currentAttendanceRecord.clock_out) {
         btnIn.classList.add('hidden');
         btnOut.classList.remove('hidden');
         btnOut.onclick = handleClockOut;
         
-        const timeIn = new Date(currentAttendanceRecord.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
-        if(statusText) statusText.textContent = `Anda sudah masuk (Clock In) pada ${timeIn}`;
+        const inTime = new Date(currentAttendanceRecord.clock_in).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        if(statusText) statusText.innerHTML = `Anda sudah masuk pada <strong style="color:var(--success)">${inTime}</strong>`;
+        
+        document.getElementById('att-actual-in').textContent = inTime;
+        document.getElementById('att-actual-out').textContent = '-';
     } else {
         btnIn.classList.add('hidden');
-        btnOut.classList.remove('hidden');
-        btnOut.onclick = handleClockOut; // Allow re-clock out
+        btnOut.classList.remove('hidden'); // allow edit
+        btnOut.onclick = handleClockOut;
         
-        const timeOut = new Date(currentAttendanceRecord.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
-        if(statusText) statusText.textContent = `Anda sudah pulang pada ${timeOut}. (Klik Clock Out lagi jika ingin revisi)`;
+        const inTime = new Date(currentAttendanceRecord.clock_in).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const outTime = new Date(currentAttendanceRecord.clock_out).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        if(statusText) statusText.innerHTML = `Selesai! Jam Masuk: <strong style="color:var(--success)">${inTime}</strong>, Pulang: <strong style="color:var(--danger)">${outTime}</strong>.`;
+        
+        document.getElementById('att-actual-in').textContent = inTime;
+        document.getElementById('att-actual-out').textContent = outTime;
     }
 }
 
@@ -128,9 +154,11 @@ async function handleClockOut() {
     btn.disabled = false;
     if (error) {
         showToast('Gagal Clock Out: ' + error.message, 'error');
+        btn.innerHTML = '<i class="ph-bold ph-sign-out"></i> Clock Out';
     } else {
         currentAttendanceRecord = data;
         showToast('Berhasil Clock Out!', 'success');
+        btn.innerHTML = '<i class="ph-bold ph-sign-out"></i> Clock Out';
         renderAttendanceButton();
         loadAttendanceHistory();
     }
@@ -143,6 +171,11 @@ export async function loadAttendanceHistory() {
     // 3 Hari Terakhir
     const pastDate = new Date();
     pastDate.setDate(pastDate.getDate() - 3);
+    pastDate.setHours(0,0,0,0);
+    
+    // Start of Today
+    const today = new Date();
+    today.setHours(0,0,0,0);
     
     const { data, error } = await supabase
         .from('attendances')
@@ -150,6 +183,7 @@ export async function loadAttendanceHistory() {
         .eq('outlet_id', activeOutletId)
         .eq('user_id', profile.id)
         .gte('clock_in', pastDate.toISOString())
+        .lt('clock_in', today.toISOString()) // Exclude today's data from history
         .order('clock_in', { ascending: false });
         
     const tbody = document.getElementById('attendance-table')?.querySelector('tbody');

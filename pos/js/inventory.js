@@ -84,9 +84,11 @@ export async function handleSaveInventory(e) {
     e.preventDefault();
     if (!activeOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
     
-    const btn = document.getElementById('form-inventory').querySelector('button[type="submit"]');
-    btn.disabled = true;
-    btn.textContent = 'Menyimpan...';
+    const btn = document.getElementById('form-inventory')?.querySelector('button[type="submit"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Menyimpan...';
+    }
     
     const id = document.getElementById('inventory-id').value;
     const payload = {
@@ -112,12 +114,17 @@ export async function handleSaveInventory(e) {
         }
         
         document.getElementById('modal-inventory').classList.add('hidden');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Simpan Barang';
+        }
         loadInventory();
     } catch (err) {
-        showToast('Gagal menyimpan item: ' + err.message, 'error');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'Simpan';
+        showToast(err.message, 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Simpan Barang';
+        }
     }
 }
 

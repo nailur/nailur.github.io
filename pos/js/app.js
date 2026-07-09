@@ -808,20 +808,26 @@ function handleRoleSelectionChange() {
     const role = document.getElementById('user-role').value;
     const branchGroup = document.getElementById('group-user-branch');
     const outletGroup = document.getElementById('group-user-outlet');
+    const shiftGroup = document.getElementById('group-user-shift');
     const myRole = getCurrentProfile()?.role;
     
     if (role === 'owner' || role === 'superadmin') {
         branchGroup.classList.add('hidden');
         outletGroup.classList.add('hidden');
+        if(shiftGroup) shiftGroup.classList.add('hidden');
     } else if (role === 'kepala_cabang') {
         if(myRole === 'superadmin' || myRole === 'owner') branchGroup.classList.remove('hidden');
         else branchGroup.classList.add('hidden');
         outletGroup.classList.add('hidden');
+        if(shiftGroup) shiftGroup.classList.add('hidden');
     } else {
         if(myRole === 'superadmin' || myRole === 'owner') branchGroup.classList.remove('hidden');
         else branchGroup.classList.add('hidden');
         if(myRole === 'kepala_toko') outletGroup.classList.add('hidden'); // Kepala toko can't change outlet
         else outletGroup.classList.remove('hidden');
+        
+        // Populate shift will handle showing shiftGroup if there are shifts available
+        if(window.populateShiftOptions) window.populateShiftOptions(document.getElementById('user-outlet').value);
     }
 
     filterUserOutlets();

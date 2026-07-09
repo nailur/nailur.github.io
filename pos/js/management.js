@@ -5,7 +5,6 @@ import {
     setBranchesList, setOutletsList 
 } from './state.js';
 import { loadShifts, openShiftModal } from './shift-master.js';
-
 export async function initManagement() {
     const profile = window.getCurrentProfile();
     const role = profile?.role;
@@ -276,6 +275,7 @@ export async function handleAddUser(e) {
     const status = document.getElementById('user-status').value;
     let branch_id = null;
     let outlet_id = null;
+    let shift_id = document.getElementById('user-shift').value || null;
 
     const profile = window.getCurrentProfile();
 
@@ -298,7 +298,7 @@ export async function handleAddUser(e) {
     btn.textContent = 'Menyimpan...';
 
     if (id) {
-        const { error } = await supabase.from('profiles').update({ name, role, branch_id, outlet_id, status }).eq('id', id);
+        const { error } = await supabase.from('profiles').update({ name, role, branch_id, outlet_id, status, shift_id }).eq('id', id);
         if (error) showToast('Gagal update: ' + error.message, 'error');
         else { showToast('Pegawai diperbarui!', 'success'); document.getElementById('modal-user').classList.add('hidden'); loadUsers(); }
         btn.disabled = false; btn.textContent = 'Simpan';
@@ -320,6 +320,10 @@ export async function handleAddUser(e) {
         if (resData && resData.error) {
             showToast('Gagal membuat user: ' + resData.error, 'error');
             btn.disabled = false; btn.textContent = 'Simpan'; return;
+        }
+
+        if (shift_id && resData && resData.user) {
+            await supabase.from('profiles').update({ shift_id }).eq('id', resData.user.id);
         }
 
         showToast('Pegawai berhasil ditambahkan!', 'success'); 
@@ -353,14 +357,47 @@ export async function editUser(id) {
     document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id===initialBranch?'selected':''}>${b.name}</option>`).join('');
     
     const filteredOutlets = outletsList.filter(o => o.branch_id === initialBranch);
-    document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}" ${o.id===data.outlet_id?'selected':''}>${o.name}</option>`).join('');
-    
+    if (filteredOutlets.length > 0) {
+        document.getElementById('user-outlet').innerHTML = '<option value="">-- Pilih Outlet --</option>' + filteredOutlets.map(o => `<option value="${o.id}" ${o.id===data.outlet_id?'selected':''}>${o.name}</option>').join('');
+    } else {
+        document.getElementById('user-outlet').innerHTML = '<option value="">-- Pilih Outlet --</option>';
+    }
+
+    if (data.outlet_id) {
+        populateShiftOptions(data.outlet_id, data.shift_id);
+    } else {
+        document.getElementById('group-user-shift').classList.add('hidden');
+    }
+
     if (window.handleRoleSelectionChange) window.handleRoleSelectionChange();
     setTimeout(() => {
         document.getElementById('user-outlet').value = data.outlet_id || '';
+        document.getElementById('user-shift').value = data.shift_id || '';
     }, 50);
     document.getElementById('modal-user').classList.remove('hidden');
 }
+
+export async function populateShiftOptions(outletId, selectedShiftId = null) {
+    const shiftGroup = document.getElementById('group-user-shift');
+    const shiftSelect = document.getElementById('user-shift');
+    if (!outletId) {
+        shiftGroup.classList.add('hidden');
+        return;
+    }
+
+    const { data } = await supabase.from('shifts').select('id, name, start_time, end_time').eq('outlet_id', outletId);
+    if (data && data.length > 0) {
+        shiftSelect.innerHTML = '<option value="">-- Pilih Shift (Opsional) --</option>' + data.map(s => `<option value="${s.id}" ${s.id === selectedShiftId ? 'selected' : ''}>${s.name} (${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)})</option>`).join('');
+        shiftGroup.classList.remove('hidden');
+    } else {
+        shiftSelect.innerHTML = '<option value="">-- Belum Ada Shift Master --</option>';
+        shiftGroup.classList.remove('hidden');
+    }
+}
+
+document.getElementById('user-outlet')?.addEventListener('change', (e) => {
+    populateShiftOptions(e.target.value);
+});
 
 export async function deleteUser(id) {
     const profile = window.getCurrentProfile();
