@@ -358,7 +358,7 @@ export async function editUser(id) {
     
     const filteredOutlets = outletsList.filter(o => o.branch_id === initialBranch);
     if (filteredOutlets.length > 0) {
-        document.getElementById('user-outlet').innerHTML = '<option value="">-- Pilih Outlet --</option>' + filteredOutlets.map(o => `<option value="${o.id}" ${o.id===data.outlet_id?'selected':''}>${o.name}</option>').join('');
+        document.getElementById('user-outlet').innerHTML = '<option value="">-- Pilih Outlet --</option>' + filteredOutlets.map(o => `<option value="${o.id}" ${o.id===data.outlet_id?'selected':''}>${o.name}</option>`).join('');
     } else {
         document.getElementById('user-outlet').innerHTML = '<option value="">-- Pilih Outlet --</option>';
     }
@@ -387,7 +387,14 @@ export async function populateShiftOptions(outletId, selectedShiftId = null) {
 
     const { data } = await supabase.from('shifts').select('id, name, start_time, end_time').eq('outlet_id', outletId);
     if (data && data.length > 0) {
-        shiftSelect.innerHTML = '<option value="">-- Pilih Shift (Opsional) --</option>' + data.map(s => `<option value="${s.id}" ${s.id === selectedShiftId ? 'selected' : ''}>${s.name} (${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)})</option>`).join('');
+        let opts = '<option value="">-- Pilih Shift (Opsional) --</option>';
+        data.forEach(s => {
+            const isSel = (s.id === selectedShiftId) ? 'selected' : '';
+            const tStart = s.start_time ? s.start_time.slice(0,5) : '';
+            const tEnd = s.end_time ? s.end_time.slice(0,5) : '';
+            opts += '<option value="' + s.id + '" ' + isSel + '>' + s.name + ' (' + tStart + ' - ' + tEnd + ')</option>';
+        });
+        shiftSelect.innerHTML = opts;
         shiftGroup.classList.remove('hidden');
     } else {
         shiftSelect.innerHTML = '<option value="">-- Belum Ada Shift Master --</option>';
