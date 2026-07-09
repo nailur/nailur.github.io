@@ -34,14 +34,18 @@ export async function checkAttendanceStatus() {
     const profile = getCurrentProfile();
     if (!profile || !activeOutletId) return;
 
-    const today = getLocalToday();
-    
+    // We check attendance by looking for the latest clock_in for today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
     const { data } = await supabase
-        .from('attendance')
-        .select('id, clock_in, clock_out, date')
-        .eq('profile_id', profile.id)
+        .from('attendances')
+        .select('id, clock_in, clock_out')
+        .eq('user_id', profile.id)
         .eq('outlet_id', activeOutletId)
-        .eq('date', today)
+        .gte('clock_in', startOfDay.toISOString())
+        .order('clock_in', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
     currentAttendanceRecord = data;
@@ -77,18 +81,17 @@ async function handleClockIn() {
     btn.disabled = true;
     btn.textContent = 'Menyimpan...';
 
-    const today = getLocalToday();
     const now = new Date().toISOString();
 
     const { data, error } = await supabase
-        .from('attendance')
+        .from('attendances')
         .insert([{
-            profile_id: profile.id,
+            user_id: profile.id,
             outlet_id: activeOutletId,
-            date: today,
+            shift_id: profile.shift_id || null,
             clock_in: now
         }])
-        .select('id, clock_in, clock_out, date')
+        .select('id, clock_in, clock_out')
         .single();
 
     btn.disabled = false;
@@ -115,10 +118,10 @@ async function handleClockOut() {
     const now = new Date().toISOString();
 
     const { data, error } = await supabase
-        .from('attendance')
+        .from('attendances')
         .update({ clock_out: now })
         .eq('id', currentAttendanceRecord.id)
-        .select('id, clock_in, clock_out, date')
+        .select('id, clock_in, clock_out')
         .single();
 
     btn.disabled = false;

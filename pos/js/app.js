@@ -17,6 +17,10 @@ import {
     branchesList, outletsList, posOutletsList, activeOutletId, 
     setPosOutletsList, setActiveOutletId 
 } from './state.js';
+import { checkActiveShift, handleOpenShift, handleCloseShift } from './shift.js';
+import { loadInventory, handleSaveInventory } from './inventory.js';
+import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMaster } from './expenses.js';
+import { loadDeposits, handleSaveDeposit } from './deposits.js';
 
 window.getCurrentProfile = getCurrentProfile;
 window.getCurrentUser = getCurrentUser;
@@ -243,6 +247,7 @@ async function initPosMultiOutlet(profile) {
             localStorage.setItem('pos_active_outlet_id', activeOutletId);
             generateOrderId();
             checkAttendanceStatus();
+            checkActiveShift();
             loadProducts();
             loadHistory();
             if(window.loadDashboard) window.loadDashboard();
@@ -397,6 +402,45 @@ function setupEventListeners() {
     document.querySelectorAll('.btn-logout').forEach(btn => {
         btn.addEventListener('click', () => logout());
     });
+
+    // Modals (General Close Button)
+    document.querySelectorAll('[data-close]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const targetId = e.currentTarget.getAttribute('data-close');
+            document.getElementById(targetId)?.classList.add('hidden');
+        });
+    });
+
+    // Shift Events
+    const btnOpenShiftModal = document.getElementById('btn-open-shift-modal');
+    if (btnOpenShiftModal) {
+        btnOpenShiftModal.addEventListener('click', () => {
+            document.getElementById('modal-open-shift').classList.remove('hidden');
+        });
+    }
+
+    const btnCloseShift = document.getElementById('btn-close-shift');
+    if (btnCloseShift) {
+        btnCloseShift.addEventListener('click', () => {
+            document.getElementById('modal-close-shift').classList.remove('hidden');
+        });
+    }
+
+    document.getElementById('form-open-shift')?.addEventListener('submit', handleOpenShift);
+    document.getElementById('form-close-shift')?.addEventListener('submit', handleCloseShift);
+
+    // New modules form binding
+    document.getElementById('btn-add-inventory')?.addEventListener('click', () => window.editInventory(null));
+    document.getElementById('form-inventory')?.addEventListener('submit', handleSaveInventory);
+
+    document.getElementById('btn-add-expense')?.addEventListener('click', () => document.getElementById('modal-expense').classList.remove('hidden'));
+    document.getElementById('form-expense')?.addEventListener('submit', handleSaveExpense);
+
+    document.getElementById('btn-add-expense-master')?.addEventListener('click', () => document.getElementById('modal-expense-master').classList.remove('hidden'));
+    document.getElementById('form-expense-master')?.addEventListener('submit', handleSaveExpenseMaster);
+
+    document.getElementById('btn-add-deposit')?.addEventListener('click', () => document.getElementById('modal-deposit').classList.remove('hidden'));
+    document.getElementById('form-deposit')?.addEventListener('submit', handleSaveDeposit);
 
     // Mobile Sidebar Logic
     const btnMobileMenu = document.getElementById('btn-mobile-menu');
@@ -790,6 +834,7 @@ function handleRoleSelectionChange() {
 async function initPos() {
     startAttendanceClock();
     checkAttendanceStatus();
+    await checkActiveShift();
 
     const today = getLocalToday();
     const initIds = ['history-date-start', 'history-date-end', 'dashboard-date-start', 'dashboard-date-end', 'attendance-date-start', 'attendance-date-end'];
@@ -802,6 +847,10 @@ async function initPos() {
     if (activeOutletId) {
         await loadProducts();
         renderCart();
+        loadInventory();
+        loadExpenseMaster();
+        loadExpenses();
+        loadDeposits();
     }
     // Restore active tab
     const savedTab = localStorage.getItem('pos_active_tab') || 'pos-tab-content';
