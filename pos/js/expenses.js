@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
 import { activeOutletId } from './state.js';
 import { showToast, getLocalToday, generateRandomDocNumber } from './app.js';
-import { currentShiftSession } from './shift.js';
+import { getActiveShiftSession } from './shift.js';
 import { getCurrentProfile } from './auth.js';
 
 let expensesList = [];
@@ -104,7 +104,9 @@ export async function handleSaveExpenseMaster(e) {
 export async function handleSaveExpense(e) {
     e.preventDefault();
     if (!activeOutletId) return showToast('Pilih outlet', 'error');
-    if (!currentShiftSession) return showToast('Anda belum membuka shift', 'error');
+    
+    const currentSession = getActiveShiftSession();
+    if (!currentSession) return showToast('Anda belum membuka shift', 'error');
     
     const btn = document.getElementById('form-expense').querySelector('button[type="submit"]');
     btn.disabled = true;
@@ -121,7 +123,7 @@ export async function handleSaveExpense(e) {
         
         const { data, error } = await supabase.from('operational_costs').insert([{
             outlet_id: activeOutletId,
-            shift_session_id: currentShiftSession.id,
+            shift_session_id: currentSession.id,
             document_number: docNumber,
             cost_date: getLocalToday(),
             total_amount: total,
