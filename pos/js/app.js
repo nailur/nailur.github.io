@@ -901,6 +901,10 @@ export function generateOrderId(resetCart = true) {
     }
 }
 
+export function generateRandomDocNumber(prefix) {
+    return prefix + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
 // Attendance logic moved to attendance.js
 
 // Products logic moved to products.js
