@@ -16,6 +16,14 @@ CREATE TABLE IF NOT EXISTS public.inventory_items (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Pastikan kolom baru ada jika tabel sudah pernah dibuat sebelumnya
+ALTER TABLE public.inventory_items ADD COLUMN IF NOT EXISTS item_code TEXT DEFAULT '-';
+ALTER TABLE public.inventory_items ADD COLUMN IF NOT EXISTS category TEXT;
+ALTER TABLE public.inventory_items ADD COLUMN IF NOT EXISTS base_unit TEXT DEFAULT 'pcs';
+ALTER TABLE public.inventory_items ADD COLUMN IF NOT EXISTS purchase_unit TEXT;
+ALTER TABLE public.inventory_items ADD COLUMN IF NOT EXISTS conversion_factor NUMERIC DEFAULT 1;
+ALTER TABLE public.inventory_items ADD COLUMN IF NOT EXISTS stock_quantity NUMERIC DEFAULT 0;
+
 -- 2. Master Data Biaya Operasional
 CREATE TABLE IF NOT EXISTS public.expense_items (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -24,6 +32,8 @@ CREATE TABLE IF NOT EXISTS public.expense_items (
     category TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public.expense_items ADD COLUMN IF NOT EXISTS category TEXT;
 
 -- 3. Master Shift
 CREATE TABLE IF NOT EXISTS public.shifts (

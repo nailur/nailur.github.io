@@ -41,16 +41,16 @@ export function openShiftModal(id = null) {
     const title = document.getElementById('modal-shift-master-title') || modal.querySelector('h2');
     
     form.reset();
-    document.getElementById('shift-id').value = '';
+    document.getElementById('shift-master-id').value = '';
     
     if (id) {
         const shift = shiftsList.find(s => s.id === id);
         if (shift) {
             if(title) title.textContent = 'Edit Shift';
-            document.getElementById('shift-id').value = shift.id;
-            document.getElementById('shift-name').value = shift.name;
-            document.getElementById('shift-start').value = shift.start_time;
-            document.getElementById('shift-end').value = shift.end_time;
+            document.getElementById('shift-master-id').value = shift.id;
+            document.getElementById('shift-master-name').value = shift.name;
+            document.getElementById('shift-master-start').value = shift.start_time;
+            document.getElementById('shift-master-end').value = shift.end_time;
         }
     } else {
         if(title) title.textContent = 'Tambah Shift Baru';
@@ -62,12 +62,12 @@ export async function handleSaveShift(e) {
     e.preventDefault();
     if (!activeOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
     
-    const id = document.getElementById('shift-id').value;
+    const id = document.getElementById('shift-master-id').value;
     const payload = {
         outlet_id: activeOutletId,
-        name: document.getElementById('shift-name').value,
-        start_time: document.getElementById('shift-start').value,
-        end_time: document.getElementById('shift-end').value
+        name: document.getElementById('shift-master-name').value,
+        start_time: document.getElementById('shift-master-start').value,
+        end_time: document.getElementById('shift-master-end').value
     };
     
     const btn = document.getElementById('form-shift-master').querySelector('button[type="submit"]');

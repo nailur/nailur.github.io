@@ -146,7 +146,7 @@ export async function loadAttendanceHistory() {
     
     const { data, error } = await supabase
         .from('attendances')
-        .select('*, profiles:user_id(name, role), shifts:shift_id(name)')
+        .select('*, profiles(name, role), shifts(name)')
         .eq('outlet_id', activeOutletId)
         .eq('user_id', profile.id)
         .gte('clock_in', pastDate.toISOString())

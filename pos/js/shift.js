@@ -91,7 +91,10 @@ export async function handleOpenShift(e) {
 
 export async function handleCloseShift(e) {
     e.preventDefault();
-    if (!currentShiftSession) return;
+    if (!currentShiftSession) {
+        document.getElementById('modal-close-shift').classList.add('hidden');
+        return showToast('Anda tidak memiliki sesi shift aktif (atau login sebagai superadmin)', 'info');
+    }
 
     const endingCash = parseFloat(document.getElementById('input-ending-cash').value) || 0;
 
