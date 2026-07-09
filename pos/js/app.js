@@ -23,6 +23,11 @@ import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMa
 import { loadDeposits, handleSaveDeposit } from './deposits.js';
 import { loadShifts, handleSaveShift, openShiftModal } from './shift-master.js';
 
+window.loadInventoryForManagement = loadInventory;
+window.loadExpensesForManagement = loadExpenses;
+window.loadDepositsForManagement = loadDeposits;
+window.loadShifts = loadShifts;
+
 window.getCurrentProfile = getCurrentProfile;
 window.getCurrentUser = getCurrentUser;
 window.supabase = supabase;
@@ -227,24 +232,29 @@ async function initPosMultiOutlet(profile) {
     const mobileNameLabel = document.getElementById('mobile-pos-outlet-name');
     const selector = document.getElementById('active-outlet-selector');
     const mobileSelector = document.getElementById('mobile-active-outlet-selector');
+    const mgmtSelector = document.getElementById('mgmt-active-outlet-selector');
     
     if (posOutletsList.length > 1) {
         nameLabel.classList.add('hidden');
         if(mobileNameLabel) mobileNameLabel.classList.add('hidden'); // Also hide mobile label if using dropdown
         selector.classList.remove('hidden');
         if(mobileSelector) mobileSelector.classList.remove('hidden');
+        if(mgmtSelector) mgmtSelector.classList.remove('hidden');
         
         const optionsHtml = posOutletsList.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
         selector.innerHTML = optionsHtml;
         if(mobileSelector) mobileSelector.innerHTML = optionsHtml;
+        if(mgmtSelector) mgmtSelector.innerHTML = optionsHtml;
         
         selector.value = activeOutletId;
         if(mobileSelector) mobileSelector.value = activeOutletId;
+        if(mgmtSelector) mgmtSelector.value = activeOutletId;
         
         const handleChange = (e) => {
             setActiveOutletId(e.target.value);
             selector.value = activeOutletId;
             if(mobileSelector) mobileSelector.value = activeOutletId;
+            if(mgmtSelector) mgmtSelector.value = activeOutletId;
             localStorage.setItem('pos_active_outlet_id', activeOutletId);
             generateOrderId();
             checkAttendanceStatus();
@@ -252,6 +262,12 @@ async function initPosMultiOutlet(profile) {
             loadProducts();
             loadHistory();
             if(window.loadDashboard) window.loadDashboard();
+            
+            // Reload management data if they are bound
+            if (window.loadInventoryForManagement) window.loadInventoryForManagement();
+            if (window.loadExpensesForManagement) window.loadExpensesForManagement();
+            if (window.loadDepositsForManagement) window.loadDepositsForManagement();
+            if (window.loadShifts) window.loadShifts();
         };
         
         // Guard: mencegah listener bertumpuk saat re-login tanpa reload
@@ -262,6 +278,10 @@ async function initPosMultiOutlet(profile) {
         if (mobileSelector && !mobileSelector._outletChangeAttached) {
             mobileSelector.addEventListener('change', handleChange);
             mobileSelector._outletChangeAttached = true;
+        }
+        if (mgmtSelector && !mgmtSelector._outletChangeAttached) {
+            mgmtSelector.addEventListener('change', handleChange);
+            mgmtSelector._outletChangeAttached = true;
         }
     } else {
         const outlet = posOutletsList.find(o => o.id === activeOutletId);
