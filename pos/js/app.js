@@ -19,7 +19,7 @@ import {
 } from './state.js';
 import { checkActiveShift, handleOpenShift, handleCloseShift } from './shift.js';
 import { loadInventory, handleSaveInventory } from './inventory.js';
-import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMaster } from './expenses.js';
+import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMaster, openAddExpenseMaster } from './expenses.js';
 import { loadDeposits, handleSaveDeposit } from './deposits.js';
 import { loadShifts, handleSaveShift, openShiftModal } from './shift-master.js';
 
@@ -437,7 +437,7 @@ function setupEventListeners() {
     document.getElementById('btn-add-expense')?.addEventListener('click', () => document.getElementById('modal-expense').classList.remove('hidden'));
     document.getElementById('form-expense')?.addEventListener('submit', handleSaveExpense);
 
-    document.getElementById('btn-add-expense-master')?.addEventListener('click', () => document.getElementById('modal-expense-master').classList.remove('hidden'));
+    document.getElementById('btn-add-expense-master')?.addEventListener('click', openAddExpenseMaster);
     document.getElementById('form-expense-master')?.addEventListener('submit', handleSaveExpenseMaster);
 
     document.getElementById('btn-add-deposit')?.addEventListener('click', () => document.getElementById('modal-deposit').classList.remove('hidden'));

@@ -77,7 +77,8 @@ export function renderExpenseMasterTable() {
             <td>${item.name}</td>
             <td>${item.category || '-'}</td>
             <td>
-                <button class="btn btn-icon btn-danger" onclick="window.deleteExpenseMaster('${item.id}')"><i class="ph ph-trash"></i></button>
+                <button class="btn btn-icon btn-secondary" onclick="window.editExpenseMaster('${item.id}')" title="Edit"><i class="ph ph-pencil"></i></button>
+                <button class="btn btn-icon btn-danger" onclick="window.deleteExpenseMaster('${item.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
             </td>
         </tr>
     `).join('');
@@ -85,20 +86,60 @@ export function renderExpenseMasterTable() {
 
 export async function handleSaveExpenseMaster(e) {
     e.preventDefault();
+    const id = document.getElementById('expense-master-id').value;
     const name = document.getElementById('expense-master-name').value;
     const category = document.getElementById('expense-master-category').value;
     
-    const { error } = await supabase.from('expense_items').insert([{
-        outlet_id: activeOutletId, name, category
-    }]);
+    const payload = { outlet_id: activeOutletId, name, category };
     
-    if (error) {
-        showToast('Gagal menambah kategori biaya', 'error');
+    let submitError;
+    const btn = document.getElementById('form-expense-master').querySelector('button[type="submit"]');
+    btn.disabled = true;
+    
+    if (id) {
+        const { error: err } = await supabase.from('expense_items').update(payload).eq('id', id);
+        submitError = err;
     } else {
-        showToast('Kategori biaya berhasil ditambahkan', 'success');
+        const { error: err } = await supabase.from('expense_items').insert([payload]);
+        submitError = err;
+    }
+    
+    btn.disabled = false;
+    
+    if (submitError) {
+        showToast('Gagal menyimpan kategori biaya', 'error');
+    } else {
+        showToast('Kategori biaya berhasil disimpan', 'success');
         document.getElementById('modal-expense-master').classList.add('hidden');
         loadExpenseMaster();
     }
+}
+
+export function editExpenseMaster(id) {
+    const item = expenseItemsMaster.find(i => i.id === id);
+    if (!item) return;
+    
+    document.getElementById('expense-master-id').value = item.id;
+    document.getElementById('expense-master-name').value = item.name;
+    document.getElementById('expense-master-category').value = item.category || 'Bahan Tambahan';
+    
+    const modal = document.getElementById('modal-expense-master');
+    const title = modal.querySelector('h2');
+    if (title) title.textContent = 'Edit Kategori Biaya';
+    
+    modal.classList.remove('hidden');
+}
+
+export function openAddExpenseMaster() {
+    const form = document.getElementById('form-expense-master');
+    form.reset();
+    document.getElementById('expense-master-id').value = '';
+    
+    const modal = document.getElementById('modal-expense-master');
+    const title = modal.querySelector('h2');
+    if (title) title.textContent = 'Tambah Kategori Biaya';
+    
+    modal.classList.remove('hidden');
 }
 
 export async function handleSaveExpense(e) {
@@ -176,3 +217,4 @@ export async function deleteExpenseMaster(id) {
 
 window.deleteExpense = deleteExpense;
 window.deleteExpenseMaster = deleteExpenseMaster;
+window.editExpenseMaster = editExpenseMaster;

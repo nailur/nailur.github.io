@@ -84,7 +84,7 @@ export async function handleSaveInventory(e) {
     e.preventDefault();
     if (!activeOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
     
-    const btn = document.getElementById('btn-save-inventory');
+    const btn = document.getElementById('form-inventory').querySelector('button[type="submit"]');
     btn.disabled = true;
     btn.textContent = 'Menyimpan...';
     
