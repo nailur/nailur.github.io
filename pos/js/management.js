@@ -4,6 +4,7 @@ import {
     branchesList, outletsList, 
     setBranchesList, setOutletsList 
 } from './state.js';
+import { loadShifts, openShiftModal } from './shift-master.js';
 
 export async function initManagement() {
     const profile = window.getCurrentProfile();
@@ -59,7 +60,20 @@ export async function initManagement() {
         }
     }
     
-    if (tabToClick) tabToClick.click();
+    if (tabToClick) {
+        tabToClick.click();
+    } else {
+        loadUsers();
+    }
+    
+    loadShifts(); // Load shift master data
+    
+    // Bind button
+    const btnAddShift = document.getElementById('btn-add-shift');
+    if (btnAddShift && !btnAddShift.hasAttribute('data-bound')) {
+        btnAddShift.addEventListener('click', () => openShiftModal());
+        btnAddShift.setAttribute('data-bound', 'true');
+    }
 
     if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadBranches();
     if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadOutlets();

@@ -56,7 +56,7 @@ export function renderInventory() {
 export function openInventoryModal(id = null) {
     const form = document.getElementById('form-inventory');
     const modal = document.getElementById('modal-inventory');
-    const title = document.getElementById('inventory-modal-title');
+    const title = document.getElementById('modal-inventory-title');
     
     form.reset();
     document.getElementById('inventory-id').value = '';

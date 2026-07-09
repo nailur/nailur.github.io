@@ -21,6 +21,7 @@ import { checkActiveShift, handleOpenShift, handleCloseShift } from './shift.js'
 import { loadInventory, handleSaveInventory } from './inventory.js';
 import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMaster } from './expenses.js';
 import { loadDeposits, handleSaveDeposit } from './deposits.js';
+import { loadShifts, handleSaveShift, openShiftModal } from './shift-master.js';
 
 window.getCurrentProfile = getCurrentProfile;
 window.getCurrentUser = getCurrentUser;
@@ -441,6 +442,8 @@ function setupEventListeners() {
 
     document.getElementById('btn-add-deposit')?.addEventListener('click', () => document.getElementById('modal-deposit').classList.remove('hidden'));
     document.getElementById('form-deposit')?.addEventListener('submit', handleSaveDeposit);
+
+    document.getElementById('form-shift-master')?.addEventListener('submit', handleSaveShift);
 
     // Mobile Sidebar Logic
     const btnMobileMenu = document.getElementById('btn-mobile-menu');

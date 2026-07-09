@@ -105,8 +105,13 @@ export async function handleSaveExpense(e) {
     e.preventDefault();
     if (!activeOutletId) return showToast('Pilih outlet', 'error');
     
-    const currentSession = getActiveShiftSession();
-    if (!currentSession) return showToast('Anda belum membuka shift', 'error');
+    const profile = getCurrentProfile();
+    let sessionId = null;
+    if (profile.role !== 'superadmin' && profile.role !== 'owner') {
+        const currentSession = getActiveShiftSession();
+        if (!currentSession) return showToast('Anda belum membuka shift', 'error');
+        sessionId = currentSession.id;
+    }
     
     const btn = document.getElementById('form-expense').querySelector('button[type="submit"]');
     btn.disabled = true;
@@ -123,7 +128,7 @@ export async function handleSaveExpense(e) {
         
         const { data, error } = await supabase.from('operational_costs').insert([{
             outlet_id: activeOutletId,
-            shift_session_id: currentSession.id,
+            shift_session_id: sessionId,
             document_number: docNumber,
             cost_date: getLocalToday(),
             total_amount: total,
