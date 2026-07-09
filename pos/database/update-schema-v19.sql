@@ -130,49 +130,65 @@ ALTER TABLE public.sales_deposits ENABLE ROW LEVEL SECURITY;
 -- public.get_my_role() mengembalikan text role user ('superadmin', 'kepala_toko', 'kasir')
 
 -- 1. inventory_items
+DROP POLICY IF EXISTS "Superadmin ALL inventory" ON public.inventory_items;
 CREATE POLICY "Superadmin ALL inventory" ON public.inventory_items FOR ALL USING (public.get_my_role() = 'superadmin');
+DROP POLICY IF EXISTS "Outlet ALL inventory" ON public.inventory_items;
 CREATE POLICY "Outlet ALL inventory" ON public.inventory_items FOR ALL USING (
     outlet_id = public.get_my_outlet_id()
 );
 
 -- 2. expense_items
+DROP POLICY IF EXISTS "Superadmin ALL expenses" ON public.expense_items;
 CREATE POLICY "Superadmin ALL expenses" ON public.expense_items FOR ALL USING (public.get_my_role() = 'superadmin');
+DROP POLICY IF EXISTS "Outlet ALL expenses" ON public.expense_items;
 CREATE POLICY "Outlet ALL expenses" ON public.expense_items FOR ALL USING (
     outlet_id = public.get_my_outlet_id()
 );
 
 -- 3. shifts
+DROP POLICY IF EXISTS "Superadmin ALL shifts" ON public.shifts;
 CREATE POLICY "Superadmin ALL shifts" ON public.shifts FOR ALL USING (public.get_my_role() = 'superadmin');
+DROP POLICY IF EXISTS "Outlet ALL shifts" ON public.shifts;
 CREATE POLICY "Outlet ALL shifts" ON public.shifts FOR ALL USING (
     outlet_id = public.get_my_outlet_id()
 );
 
 -- 4. shift_sessions
+DROP POLICY IF EXISTS "Superadmin ALL shift_sessions" ON public.shift_sessions;
 CREATE POLICY "Superadmin ALL shift_sessions" ON public.shift_sessions FOR ALL USING (public.get_my_role() = 'superadmin');
+DROP POLICY IF EXISTS "Outlet ALL shift_sessions" ON public.shift_sessions;
 CREATE POLICY "Outlet ALL shift_sessions" ON public.shift_sessions FOR ALL USING (
     outlet_id = public.get_my_outlet_id()
 );
 
 -- 5. operational_costs
+DROP POLICY IF EXISTS "Superadmin ALL op_costs" ON public.operational_costs;
 CREATE POLICY "Superadmin ALL op_costs" ON public.operational_costs FOR ALL USING (public.get_my_role() = 'superadmin');
+DROP POLICY IF EXISTS "Outlet ALL op_costs" ON public.operational_costs;
 CREATE POLICY "Outlet ALL op_costs" ON public.operational_costs FOR ALL USING (
     outlet_id = public.get_my_outlet_id()
 );
 
 -- 6. operational_cost_items
+DROP POLICY IF EXISTS "Superadmin ALL op_cost_items" ON public.operational_cost_items;
 CREATE POLICY "Superadmin ALL op_cost_items" ON public.operational_cost_items FOR ALL USING (public.get_my_role() = 'superadmin');
+DROP POLICY IF EXISTS "Outlet ALL op_cost_items" ON public.operational_cost_items;
 CREATE POLICY "Outlet ALL op_cost_items" ON public.operational_cost_items FOR ALL USING (
     operational_cost_id IN (SELECT id FROM public.operational_costs WHERE outlet_id = public.get_my_outlet_id())
 );
 
 -- 7. attendances
+DROP POLICY IF EXISTS "Superadmin ALL attendances" ON public.attendances;
 CREATE POLICY "Superadmin ALL attendances" ON public.attendances FOR ALL USING (public.get_my_role() = 'superadmin');
+DROP POLICY IF EXISTS "Outlet ALL attendances" ON public.attendances;
 CREATE POLICY "Outlet ALL attendances" ON public.attendances FOR ALL USING (
     outlet_id = public.get_my_outlet_id()
 );
 
 -- 8. sales_deposits
+DROP POLICY IF EXISTS "Superadmin ALL sales_deposits" ON public.sales_deposits;
 CREATE POLICY "Superadmin ALL sales_deposits" ON public.sales_deposits FOR ALL USING (public.get_my_role() = 'superadmin');
+DROP POLICY IF EXISTS "Outlet ALL sales_deposits" ON public.sales_deposits;
 CREATE POLICY "Outlet ALL sales_deposits" ON public.sales_deposits FOR ALL USING (
     outlet_id = public.get_my_outlet_id()
 );
