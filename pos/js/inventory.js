@@ -23,30 +23,31 @@ export async function loadInventory() {
 }
 
 export function renderInventory() {
-    const tbody = document.getElementById('inventory-table-body');
+    const tbody = document.getElementById('inventory-table-body') || document.getElementById('inventory-table')?.querySelector('tbody');
     if (!tbody) return;
     
     if (inventoryList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">Belum ada data inventaris/bahan baku</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">Belum ada data inventaris/bahan baku</td></tr>';
         return;
     }
     
+    const role = window._managementRole;
+    const canEdit = ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role);
+    const canDelete = ['superadmin', 'owner', 'kepala_cabang'].includes(role);
+    
     tbody.innerHTML = inventoryList.map((item, index) => `
         <tr>
-            <td>${index + 1}</td>
-            <td>${item.item_code}</td>
+            <td>${item.item_code || '-'}</td>
             <td>${item.name}</td>
             <td>${item.category || '-'}</td>
+            <td>${item.purchase_unit || '-'}</td>
+            <td>${item.base_unit || '-'}</td>
+            <td>${item.conversion_factor || 1}</td>
             <td>${item.stock_quantity || 0}</td>
-            <td>${item.base_unit}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn btn-icon btn-secondary" onclick="window.editInventory('${item.id}')" title="Edit">
-                        <i class="ph ph-pencil-simple"></i>
-                    </button>
-                    <button class="btn btn-icon btn-danger" onclick="window.deleteInventory('${item.id}')" title="Hapus">
-                        <i class="ph ph-trash"></i>
-                    </button>
+                    ${canEdit ? `<button class="btn btn-icon btn-secondary" onclick="window.editInventory('${item.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>` : ''}
+                    ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="window.deleteInventory('${item.id}')" title="Hapus"><i class="ph ph-trash"></i></button>` : ''}
                 </div>
             </td>
         </tr>

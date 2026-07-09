@@ -5,40 +5,67 @@ import {
     setBranchesList, setOutletsList 
 } from './state.js';
 import { loadShifts, openShiftModal } from './shift-master.js';
+
 export async function initManagement() {
     const profile = window.getCurrentProfile();
     const role = profile?.role;
     
-    const tabBranches = document.querySelector('.tab-btn[data-target="branches-tab"]');
-    const tabOutlets = document.querySelector('.tab-btn[data-target="outlets-tab"]');
-    const tabServerInfo = document.querySelector('.tab-btn[data-target="server-info-tab"]');
-    const tabAnnouncement = document.querySelector('.tab-btn[data-target="announcement-tab"]');
+    // ====== ROLE-BASED TAB ACCESS ======
+    // Role matrix:
+    // superadmin: ALL tabs
+    // owner: all except server-info & announcement
+    // kepala_cabang: outlets, users, shifts, stock, expenses, deposits, analytics (no branches, server-info, announcement)
+    // kepala_toko: users, shifts, stock, expenses (add only), deposits (add only), (no branches, outlets, analytics, server-info, announcement)
+    // kasir: NO access to management at all (button hidden)
     
-    if (role === 'superadmin' || role === 'owner') {
-        tabBranches.classList.remove('hidden');
-        tabOutlets.classList.remove('hidden');
-        if(role === 'superadmin') {
-            if (tabServerInfo) tabServerInfo.classList.remove('hidden');
-            if (tabAnnouncement) tabAnnouncement.classList.remove('hidden');
-        } else {
-            if (tabServerInfo) tabServerInfo.classList.add('hidden');
-            if (tabAnnouncement) tabAnnouncement.classList.add('hidden');
+    const tabMap = {
+        'branches-tab': { roles: ['superadmin', 'owner'] },
+        'outlets-tab': { roles: ['superadmin', 'owner', 'kepala_cabang'] },
+        'users-tab': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
+        'shifts-tab': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
+        'stock-tab-content': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
+        'expenses-tab-content': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
+        'deposits-tab-content': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
+        'expenses-master-tab': { roles: ['superadmin', 'owner', 'kepala_cabang'] },
+        'analytics-tab': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
+        'server-info-tab': { roles: ['superadmin'] },
+        'announcement-tab': { roles: ['superadmin'] },
+    };
+    
+    // Show/hide tabs based on role
+    Object.entries(tabMap).forEach(([tabId, config]) => {
+        const btn = document.querySelector(`.tab-btn[data-target="${tabId}"]`);
+        if (btn) {
+            if (config.roles.includes(role)) {
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+            }
         }
-        document.getElementById('management-title').textContent = 'Manajemen Sistem';
-    } else if (role === 'kepala_cabang') {
-        tabBranches.classList.add('hidden');
-        tabOutlets.classList.remove('hidden');
-        if(tabServerInfo) tabServerInfo.classList.add('hidden');
-        if(tabAnnouncement) tabAnnouncement.classList.add('hidden');
-        document.getElementById('management-title').textContent = 'Panel Kepala Cabang';
-    } else if (role === 'kepala_toko') {
-        tabBranches.classList.add('hidden');
-        tabOutlets.classList.add('hidden');
-        if(tabServerInfo) tabServerInfo.classList.add('hidden');
-        if(tabAnnouncement) tabAnnouncement.classList.add('hidden');
-        document.getElementById('management-title').textContent = 'Panel Kepala Toko';
+    });
+    
+    // Set management title based on role
+    const titleEl = document.getElementById('management-title');
+    if (titleEl) {
+        if (role === 'superadmin') titleEl.textContent = 'Manajemen Sistem (Superadmin)';
+        else if (role === 'owner') titleEl.textContent = 'Manajemen Sistem';
+        else if (role === 'kepala_cabang') titleEl.textContent = 'Panel Kepala Cabang';
+        else if (role === 'kepala_toko') titleEl.textContent = 'Panel Kepala Toko';
     }
     
+    // ====== ROLE-BASED ACTION BUTTON VISIBILITY ======
+    // Branches: only owner can add/edit/delete (superadmin too)
+    // Already handled by tab visibility + buttons are always shown within the tab
+    
+    // Shifts: kepala_toko cannot delete
+    // Stock: kepala_toko cannot delete
+    // Deposits: kepala_toko can only add (no edit/delete)
+    // Users: kepala_toko can add+edit but not delete
+    
+    // Store role globally for use in render functions
+    window._managementRole = role;
+    
+    // ====== TAB RESTORE LOGIC ======
     const savedMgmtTab = localStorage.getItem('management_active_tab');
     let tabToClick = null;
     
@@ -50,12 +77,13 @@ export async function initManagement() {
     }
     
     if (!tabToClick) {
-        if (!tabBranches.classList.contains('hidden')) {
-            tabToClick = tabBranches;
-        } else if (!tabOutlets.classList.contains('hidden')) {
-            tabToClick = tabOutlets;
-        } else {
-            tabToClick = document.querySelector('.tab-btn[data-target="users-tab"]');
+        // Find first visible tab
+        const allTabs = document.querySelectorAll('#sa-tabs-container .tab-btn');
+        for (const btn of allTabs) {
+            if (!btn.classList.contains('hidden')) {
+                tabToClick = btn;
+                break;
+            }
         }
     }
     
@@ -65,18 +93,29 @@ export async function initManagement() {
         loadUsers();
     }
     
-    loadShifts(); // Load shift master data
+    // ====== LOAD DATA ======
+    loadShifts();
     
-    // Bind button
+    // Bind shift button
     const btnAddShift = document.getElementById('btn-add-shift');
     if (btnAddShift && !btnAddShift.hasAttribute('data-bound')) {
         btnAddShift.addEventListener('click', () => openShiftModal());
         btnAddShift.setAttribute('data-bound', 'true');
     }
 
-    if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadBranches();
-    if (role === 'superadmin' || role === 'owner' || role === 'kepala_cabang') await loadOutlets();
+    if (['superadmin', 'owner', 'kepala_cabang'].includes(role)) {
+        await loadBranches();
+        await loadOutlets();
+    }
     await loadUsers();
+    
+    // Load inventory, expenses, deposits data when tabs are accessible
+    if (['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) {
+        // These are loaded via app.js initPos, but we also need them in management
+        if (window.loadInventoryForManagement) window.loadInventoryForManagement();
+        if (window.loadExpensesForManagement) window.loadExpensesForManagement();
+        if (window.loadDepositsForManagement) window.loadDepositsForManagement();
+    }
     
     if (role === 'superadmin') {
         const formAnnouncement = document.getElementById('form-announcement');
@@ -157,6 +196,9 @@ export async function loadUsers() {
     if (error) return showToast('Gagal memuat pegawai', 'error');
     const tbody = document.querySelector('#users-table tbody');
     if (tbody) {
+        const role = window._managementRole;
+        const canEdit = ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role);
+        const canDelete = ['superadmin', 'owner', 'kepala_cabang'].includes(role);
         tbody.innerHTML = data.map(u => `
             <tr>
                 <td>${u.name || '-'}</td>
@@ -166,8 +208,8 @@ export async function loadUsers() {
                 <td>${u.outlets?.name || '-'}</td>
                 <td>${u.status === 'inactive' ? '<span class="user-badge" style="background:var(--danger)">Inactive</span>' : '<span class="user-badge" style="background:var(--success)">Active</span>'}</td>
                 <td>
-                    <button class="btn btn-icon" style="color:var(--primary)" onclick="editUser('${u.id}')"><i class="ph ph-pencil-simple"></i></button>
-                    <button class="btn btn-icon" onclick="deleteUser('${u.id}')"><i class="ph ph-trash"></i></button>
+                    ${canEdit ? `<button class="btn btn-icon" style="color:var(--primary)" onclick="editUser('${u.id}')"><i class="ph ph-pencil-simple"></i></button>` : ''}
+                    ${canDelete ? `<button class="btn btn-icon" onclick="deleteUser('${u.id}')"><i class="ph ph-trash"></i></button>` : ''}
                 </td>
             </tr>
         `).join('');

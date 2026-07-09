@@ -303,6 +303,97 @@
 
 
 
+                    
+                <!-- MANAJEMEN STOK TAB -->
+                <div id="stock-tab-content" class="tab-pane hidden" style="padding: 10px;">
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Manajemen Stok (Inventaris)</h3>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" id="btn-add-inventory">
+                                <i class="ph ph-plus"></i> Tambah / Update Stok
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>Kode Barang</th>
+                                    <th>Nama Barang</th>
+                                    <th>Kategori</th>
+                                    <th>Satuan Beli</th>
+                                    <th>Satuan Pakai</th>
+                                    <th>Konversi</th>
+                                    <th>Sisa Stok (Pakai)</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Inventory rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- BIAYA OPERASIONAL TAB -->
+                <div id="expenses-tab-content" class="tab-pane hidden" style="padding: 10px;">
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Biaya Operasional</h3>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" id="btn-add-expense">
+                                <i class="ph ph-plus"></i> Catat Pengeluaran
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="expenses-table">
+                            <thead>
+                                <tr>
+                                    <th>No. Dokumen</th>
+                                    <th>Tgl Biaya</th>
+                                    <th>Total (Rp)</th>
+                                    <th>Keterangan</th>
+                                    <th>Kasir</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Expenses rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SETORAN PENJUALAN TAB -->
+                <div id="deposits-tab-content" class="tab-pane hidden" style="padding: 10px;">
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Setoran Penjualan</h3>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" id="btn-add-deposit">
+                                <i class="ph ph-plus"></i> Input Setoran
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="deposits-table">
+                            <thead>
+                                <tr>
+                                    <th>ID Setoran</th>
+                                    <th>Tanggal</th>
+                                    <th>Jumlah (Rp)</th>
+                                    <th>Tipe Setoran</th>
+                                    <th>Keterangan</th>
+                                    <th>Kasir</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Deposits rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                     <!-- ANALITIK TAB -->
                     <div id="analytics-tab" class="tab-pane hidden">
                         <div class="action-bar" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -715,33 +806,7 @@
             </div>
 
             
-            <div id="expenses-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
-                <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
-                    <h2>Biaya Operasional</h2>
-                    <div class="filter-group">
-                        <button class="btn btn-primary" id="btn-add-expense">
-                            <i class="ph ph-plus"></i> Catat Pengeluaran
-                        </button>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="data-table" id="expenses-table">
-                        <thead>
-                            <tr>
-                                <th>No. Dokumen</th>
-                                <th>Tgl Biaya</th>
-                                <th>Total (Rp)</th>
-                                <th>Keterangan</th>
-                                <th>Kasir</th>
-                                <th class="action-col">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Expenses rows injected here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            
 
             
             <div id="attendance-tab-content" class="pos-tab-pane hidden glass-panel history-panel">

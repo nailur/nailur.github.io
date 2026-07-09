@@ -194,14 +194,14 @@ async function routeUser(profile) {
         logout();
     }
     
-    // Tampilkan tombol manajemen dan tab absensi untuk role manajerial
+    // Tampilkan tombol manajemen untuk role manajerial
     if (['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(profile.role)) {
         document.getElementById('btn-management').classList.remove('hidden');
-        document.getElementById('nav-attendance').classList.remove('hidden');
     } else {
         document.getElementById('btn-management').classList.add('hidden');
-        document.getElementById('nav-attendance').classList.add('hidden');
     }
+    // Absensi selalu tampil untuk semua role yang masuk POS view
+    document.getElementById('nav-attendance').classList.remove('hidden');
 }
 
 async function initPosMultiOutlet(profile) {
@@ -602,7 +602,7 @@ function setupEventListeners() {
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
             e.currentTarget.classList.add('active');
             const targetId = e.currentTarget.getAttribute('data-target');
-            document.getElementById(targetId).classList.remove('hidden');
+            document.getElementById(targetId)?.classList.remove('hidden');
             localStorage.setItem('management_active_tab', targetId);
             
             if (targetId === 'analytics-tab') {

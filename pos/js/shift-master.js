@@ -22,6 +22,9 @@ function renderShifts() {
         return;
     }
     
+    const role = window._managementRole;
+    const canDelete = ['superadmin', 'owner', 'kepala_cabang'].includes(role);
+    
     tbody.innerHTML = shiftsList.map(s => `
         <tr>
             <td>${s.name}</td>
@@ -29,7 +32,7 @@ function renderShifts() {
             <td>${s.end_time}</td>
             <td>
                 <button class="btn btn-icon btn-secondary" onclick="window.editShift('${s.id}')" title="Edit"><i class="ph ph-pencil"></i></button>
-                <button class="btn btn-icon btn-danger" onclick="window.deleteShift('${s.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
+                ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="window.deleteShift('${s.id}')" title="Hapus"><i class="ph ph-trash"></i></button>` : ''}
             </td>
         </tr>
     `).join('');

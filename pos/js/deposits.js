@@ -29,16 +29,19 @@ export function renderDeposits() {
         return;
     }
     
+    const role = window._managementRole;
+    const canDelete = ['superadmin', 'owner', 'kepala_cabang'].includes(role);
+    
     tbody.innerHTML = depositsList.map(dep => `
         <tr>
             <td>${dep.document_number}</td>
             <td>${new Date(dep.deposit_date).toLocaleDateString('id-ID')}</td>
             <td>Rp ${dep.amount.toLocaleString('id-ID')}</td>
-            <td>${dep.account_type}</td>
-            <td><span class="badge ${dep.status === 'Diposting' ? 'badge-success' : 'badge-secondary'}">${dep.status}</span></td>
+            <td>${dep.account_type || '-'}</td>
             <td>${dep.notes || '-'}</td>
+            <td>${dep.profiles?.name || '-'}</td>
             <td>
-                <button class="btn btn-icon btn-danger" onclick="window.deleteDeposit('${dep.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
+                ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="window.deleteDeposit('${dep.id}')" title="Hapus"><i class="ph ph-trash"></i></button>` : ''}
             </td>
         </tr>
     `).join('');

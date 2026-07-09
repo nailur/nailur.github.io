@@ -49,6 +49,9 @@ export function renderExpenses() {
         return;
     }
     
+    const role = window._managementRole;
+    const canDelete = ['superadmin', 'owner', 'kepala_cabang'].includes(role);
+    
     tbody.innerHTML = expensesList.map(exp => `
         <tr>
             <td>${exp.document_number}</td>
@@ -57,7 +60,7 @@ export function renderExpenses() {
             <td>${exp.notes || '-'}</td>
             <td>${exp.profiles?.name || '-'}</td>
             <td>
-                <button class="btn btn-icon btn-danger" onclick="window.deleteExpense('${exp.id}')"><i class="ph ph-trash"></i></button>
+                ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="window.deleteExpense('${exp.id}')"><i class="ph ph-trash"></i></button>` : ''}
             </td>
         </tr>
     `).join('');
