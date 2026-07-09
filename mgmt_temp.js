@@ -47,10 +47,10 @@ export async function initManagement() {
     // Set management title based on role
     const titleEl = document.getElementById('management-title');
     if (titleEl) {
-        if (role === 'superadmin') titleEl.textContent = 'Pengaturan (Superadmin)';
-        else if (role === 'owner') titleEl.textContent = 'Pengaturan (Owner)';
-        else if (role === 'kepala_cabang') titleEl.textContent = 'Pengaturan (Kepala Cabang)';
-        else if (role === 'kepala_toko') titleEl.textContent = 'Pengaturan (Kepala Toko)';
+        if (role === 'superadmin') titleEl.textContent = 'Manajemen Sistem (Superadmin)';
+        else if (role === 'owner') titleEl.textContent = 'Manajemen Sistem';
+        else if (role === 'kepala_cabang') titleEl.textContent = 'Panel Kepala Cabang';
+        else if (role === 'kepala_toko') titleEl.textContent = 'Panel Kepala Toko';
     }
     
     // ====== ROLE-BASED ACTION BUTTON VISIBILITY ======
@@ -122,14 +122,6 @@ export async function initOperations() {
         'expenses-tab-content': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
         'deposits-tab-content': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] }
     };
-    
-    const titleEl = document.getElementById('operations-title');
-    if (titleEl) {
-        if (role === 'superadmin') titleEl.textContent = 'Manajemen (Superadmin)';
-        else if (role === 'owner') titleEl.textContent = 'Manajemen (Owner)';
-        else if (role === 'kepala_cabang') titleEl.textContent = 'Manajemen (Kepala Cabang)';
-        else if (role === 'kepala_toko') titleEl.textContent = 'Manajemen (Kepala Toko)';
-    }
     
     Object.entries(opTabMap).forEach(([tabId, config]) => {
         const btn = document.querySelector(`.tab-btn[data-target="${tabId}"]`);

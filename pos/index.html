@@ -1,7 +1,4 @@
-<!DOCTYPE html>
-<html lang="id">
-
-<head>
+<!DOCTYPE html><html lang="id"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NTPOS | Point of Sale | Manage Stock and Sales</title>
@@ -13,7 +10,7 @@
     <meta name="theme-color" content="#6366f1">
 
     <!-- OneSignal SDK -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer=""></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
@@ -28,8 +25,8 @@
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
     <!-- Phosphor Icons for modern icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <!-- Supabase Client -->
@@ -68,19 +65,18 @@
                         <label for="email">Email</label>
                         <div class="input-icon">
                             <i class="ph ph-envelope"></i>
-                            <input type="email" id="email" required placeholder="admin@pos.com">
+                            <input type="email" id="email" required="" placeholder="admin@pos.com">
                         </div>
                     </div>
                     <div class="input-group">
                         <label for="password">Password</label>
                         <div class="input-icon">
                             <i class="ph ph-lock-key"></i>
-                            <input type="password" id="password" required placeholder="••••••••">
+                            <input type="password" id="password" required="" placeholder="••••••••">
                             <i class="ph ph-eye toggle-password" style="left: auto; right: 12px; cursor: pointer;"></i>
                         </div>
                         <div style="text-align: right; margin-top: 8px;">
-                            <a href="#" id="btn-forgot-password"
-                                style="font-size: 0.85rem; color: var(--primary); text-decoration: none;">Lupa
+                            <a href="#" id="btn-forgot-password" style="font-size: 0.85rem; color: var(--primary); text-decoration: none;">Lupa
                                 Password?</a>
                         </div>
                     </div>
@@ -90,7 +86,7 @@
                     </button>
                 </form>
                 <div style="margin-top: 1.5rem; text-align: center; font-size: 0.75rem; color: var(--text-muted);">
-                    &copy; <span id="current-year"></span> NTGroup. All rights reserved.<br>
+                    © <span id="current-year"></span> NTGroup. All rights reserved.<br>
                     v1.0
                 </div>
             </div>
@@ -113,16 +109,14 @@
                         <label for="forgot-email">Email</label>
                         <div class="input-icon">
                             <i class="ph ph-envelope"></i>
-                            <input type="email" id="forgot-email" required placeholder="admin@pos.com">
+                            <input type="email" id="forgot-email" required="" placeholder="admin@pos.com">
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary btn-block" id="reset-btn">
                         <span>Kirim Link Reset</span>
                     </button>
                     <div style="margin-top: 15px; text-align: center;">
-                        <a href="#" id="btn-back-login"
-                            style="font-size: 0.9rem; color: var(--text-muted); text-decoration: none;"><i
-                                class="ph ph-arrow-left"></i> Kembali ke Login</a>
+                        <a href="#" id="btn-back-login" style="font-size: 0.9rem; color: var(--text-muted); text-decoration: none;"><i class="ph ph-arrow-left"></i> Kembali ke Login</a>
                     </div>
                 </form>
             </div>
@@ -142,10 +136,8 @@
                     <div class="input-group">
                         <label for="new-password">Password Baru</label>
                         <div class="password-wrapper" style="position: relative;">
-                            <input type="password" id="new-password" required placeholder="Minimal 6 karakter"
-                                style="width: 100%; padding-right: 40px;">
-                            <i class="ph ph-eye toggle-password"
-                                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
+                            <input type="password" id="new-password" required="" placeholder="Minimal 6 karakter" style="width: 100%; padding-right: 40px;">
+                            <i class="ph ph-eye toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary btn-block" id="btn-save-new-password">
@@ -159,10 +151,12 @@
         <!-- ======================= -->
         <!-- 2. SUPERADMIN DASHBOARD -->
         <!-- ======================= -->
-        <section id="superadmin-view" class="view-section hidden pos-view-container">
+        
+<!-- Tampilan Manajemen (Operations) -->
+<section id="operations-view" class="view-section hidden pos-view-container">
             <!-- Mobile Header for SA -->
             <div class="mobile-pos-header hidden-desktop glass-panel">
-                <button class="btn btn-icon" id="btn-sa-mobile-menu">
+                <button class="btn btn-icon" id="btn-op-mobile-menu">
                     <i class="ph ph-list" style="font-size: 24px;"></i>
                 </button>
                 <div class="mobile-brand">
@@ -172,47 +166,43 @@
             </div>
 
             <!-- Sidebar Overlay -->
-            <div class="sidebar-overlay" id="sa-sidebar-overlay"></div>
+            <div class="sidebar-overlay" id="op-sidebar-overlay"></div>
 
-            <nav class="pos-nav glass-panel" id="sa-sidebar">
+            <nav class="pos-nav glass-panel" id="op-sidebar">
                 <div class="nav-left">
                     <div class="nav-brand">
                         <i class="ph-fill ph-crown"></i>
-                        <span id="management-title">Manajemen Sistem</span>
-                        <select id="mgmt-active-outlet-selector" class="input-sm hidden" style="margin-left: 15px; max-width: 200px; color: var(--text); background: var(--bg);"></select>
+                        <span id="operations-title">Manajemen</span>
+                        <select id="op-active-outlet-selector" class="input-sm hidden" style="margin-left: 15px; max-width: 200px; color: var(--text); background: var(--bg);"></select>
                     </div>
                 </div>
-                <div class="pos-tabs-nav tabs" id="sa-tabs-container">
-                    <button class="tab-btn active" data-target="branches-tab">Kelola Cabang</button>
-                    <button class="tab-btn" data-target="outlets-tab">Kelola Outlets</button>
-                    <button class="tab-btn" data-target="users-tab">Kelola Users</button>
-                    <button class="tab-btn" data-target="shifts-tab">Master Shift</button>
+                <div class="pos-tabs-nav tabs" id="op-tabs-container">
+                    
+                    
+                    
+                    <button class="tab-btn active" data-target="shifts-tab">Master Shift</button>
                     <button class="tab-btn" data-target="stock-tab-content">Manajemen Stok</button>
                     <button class="tab-btn" data-target="expenses-tab-content">Biaya Operasional</button>
                     <button class="tab-btn" data-target="deposits-tab-content">Setoran Penjualan</button>
-                    <button class="tab-btn" data-target="analytics-tab">Analitik</button>
-                    <button class="tab-btn" data-target="server-info-tab">Info Server</button>
-                    <button class="tab-btn" data-target="announcement-tab">Pengumuman</button>
+                    
+                    
+                    
                 </div>
                 <div class="nav-right" style="gap: 5px;">
-                    <span id="sa-user-info" class="user-badge hide-mobile" style="margin-right: 15px;">Superadmin</span>
-                    <button class="btn btn-icon" id="btn-back-pos" title="Kembali ke Kasir"
-                        style="justify-content: flex-start;">
+                    <span id="op-user-info" class="user-badge hide-mobile" style="margin-right: 15px;">Superadmin</span>
+                    <button class="btn btn-icon" id="btn-back-pos-op" title="Kembali ke Kasir" style="justify-content: flex-start;">
                         <i class="ph ph-storefront"></i>
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">POS Kasir</span>
                     </button>
-                    <button class="btn btn-icon" id="btn-edit-profile-sa" title="Edit Profile"
-                        style="justify-content: flex-start;">
+                    <button class="btn btn-icon" id="btn-edit-profile-op" title="Edit Profile" style="justify-content: flex-start;">
                         <i class="ph ph-user-circle"></i>
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Edit Profile</span>
                     </button>
-                    <button class="btn btn-icon btn-logout" title="Logout"
-                        style="justify-content: flex-start;">
+                    <button class="btn btn-icon btn-logout" title="Logout" style="justify-content: flex-start;">
                         <i class="ph ph-sign-out"></i>
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Keluar</span>
                     </button>
-                    <button class="btn btn-icon" title="Update / Refresh App"
-                        style="justify-content: flex-start;" onclick="document.getElementById('btn-hard-refresh')?.click()">
+                    <button class="btn btn-icon" title="Update / Refresh App" style="justify-content: flex-start;" onclick="document.getElementById('btn-hard-refresh')?.click()">
                         <i class="ph ph-arrows-clockwise"></i>
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Refresh</span>
                     </button>
@@ -226,81 +216,13 @@
 
                 <div class="tab-content">
                     <!-- BRANCHES TAB -->
-                    <div id="branches-tab" class="tab-pane active">
-                        <div class="action-bar">
-                            <h3>Daftar Cabang</h3>
-                            <button class="btn btn-primary" id="btn-add-branch">
-                                <i class="ph ph-plus"></i> Tambah Cabang
-                            </button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="data-table" id="branches-table">
-                                <thead>
-                                    <tr>
-                                        <th>Nama Cabang</th>
-                                        <th class="action-col">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Branch rows injected here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    
 
                     <!-- OUTLETS TAB -->
-                    <div id="outlets-tab" class="tab-pane hidden">
-                        <div class="action-bar">
-                            <h3>Daftar Outlet</h3>
-                            <button class="btn btn-primary" id="btn-add-outlet">
-                                <i class="ph ph-plus"></i> Tambah Outlet
-                            </button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="data-table" id="outlets-table">
-                                <thead>
-                                    <tr>
-                                        <th>Nama Outlet</th>
-                                        <th>Kode</th>
-                                        <th>Cabang</th>
-                                        <th>Alamat</th>
-                                        <th class="action-col">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Outlet rows injected here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    
 
                     <!-- 3. KELOLA USERS TAB -->
-                    <div id="users-tab" class="tab-pane hidden">
-                        <div class="action-bar">
-                            <h3>Daftar Pengguna</h3>
-                            <button class="btn btn-primary" id="btn-add-user">
-                                <i class="ph ph-plus"></i> Tambah Pengguna
-                            </button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="data-table" id="users-table">
-                                <thead>
-                                    <tr>
-                                        <th>Nama Lengkap</th>
-                                        <th>Email / Username</th>
-                                        <th>Role / Jabatan</th>
-                                        <th>Cabang (Opsional)</th>
-                                        <th>Outlet (Opsional)</th>
-                                        <th>Status</th>
-                                        <th style="width: 120px;">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- User rows injected here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    
 
 
 
@@ -396,9 +318,198 @@
                 </div>
 
                     <!-- ANALITIK TAB -->
+                    
+
+                    <!-- 4. INFO SERVER TAB -->
+                    
+                </div>
+
+                <!-- ANNOUNCEMENT TAB -->
+                
+
+                <!-- SHIFTS TAB -->
+                <div id="shifts-tab" class="tab-pane active" style="padding: 10px;">
+                    <div class="action-bar">
+                        <h3>Daftar Master Shift</h3>
+                        <button class="btn btn-primary" id="btn-add-shift">
+                            <i class="ph ph-plus"></i> Tambah Shift
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="shifts-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama Shift</th>
+                                    <th>Jam Masuk</th>
+                                    <th>Jam Selesai</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Shift rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- EXPENSE MASTERS TAB -->
+                
+            </main>
+        </section><section id="superadmin-view" class="view-section hidden pos-view-container">
+            <!-- Mobile Header for SA -->
+            <div class="mobile-pos-header hidden-desktop glass-panel">
+                <button class="btn btn-icon" id="btn-sa-mobile-menu">
+                    <i class="ph ph-list" style="font-size: 24px;"></i>
+                </button>
+                <div class="mobile-brand">
+                    <i class="ph-fill ph-crown"></i>
+                    <span>Manajemen Sistem</span>
+                </div>
+            </div>
+
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay" id="sa-sidebar-overlay"></div>
+
+            <nav class="pos-nav glass-panel" id="sa-sidebar">
+                <div class="nav-left">
+                    <div class="nav-brand">
+                        <i class="ph-fill ph-crown"></i>
+                        <span id="management-title">Pengaturan</span>
+                        <select id="mgmt-active-outlet-selector" class="input-sm hidden" style="margin-left: 15px; max-width: 200px; color: var(--text); background: var(--bg);"></select>
+                    </div>
+                </div>
+                <div class="pos-tabs-nav tabs" id="sa-tabs-container">
+                    <button class="tab-btn active" data-target="branches-tab">Kelola Cabang</button>
+                    <button class="tab-btn" data-target="outlets-tab">Kelola Outlets</button>
+                    <button class="tab-btn" data-target="users-tab">Kelola Users</button>
+                    
+                    
+                    
+                    
+                    <button class="tab-btn" data-target="analytics-tab">Analitik</button>
+                    <button class="tab-btn" data-target="server-info-tab">Info Server</button>
+                    <button class="tab-btn" data-target="announcement-tab">Pengumuman</button>
+                </div>
+                <div class="nav-right" style="gap: 5px;">
+                    <span id="sa-user-info" class="user-badge hide-mobile" style="margin-right: 15px;">Superadmin</span>
+                    <button class="btn btn-icon" id="btn-back-pos" title="Kembali ke Kasir" style="justify-content: flex-start;">
+                        <i class="ph ph-storefront"></i>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">POS Kasir</span>
+                    </button>
+                    <button class="btn btn-icon" id="btn-edit-profile-sa" title="Edit Profile" style="justify-content: flex-start;">
+                        <i class="ph ph-user-circle"></i>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Edit Profile</span>
+                    </button>
+                    <button class="btn btn-icon btn-logout" title="Logout" style="justify-content: flex-start;">
+                        <i class="ph ph-sign-out"></i>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Keluar</span>
+                    </button>
+                    <button class="btn btn-icon" title="Update / Refresh App" style="justify-content: flex-start;" onclick="document.getElementById('btn-hard-refresh')?.click()">
+                        <i class="ph ph-arrows-clockwise"></i>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Refresh</span>
+                    </button>
+                </div>
+            </nav>
+
+            <main class="glass-panel history-panel">
+                <header class="page-header hidden-desktop">
+                    <h1 style="font-size: 1.5rem;">Manajemen Sistem</h1>
+                </header>
+
+                <div class="tab-content">
+                    <!-- BRANCHES TAB -->
+                    <div id="branches-tab" class="tab-pane active">
+                        <div class="action-bar">
+                            <h3>Daftar Cabang</h3>
+                            <button class="btn btn-primary" id="btn-add-branch">
+                                <i class="ph ph-plus"></i> Tambah Cabang
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="branches-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Cabang</th>
+                                        <th class="action-col">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Branch rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- OUTLETS TAB -->
+                    <div id="outlets-tab" class="tab-pane hidden">
+                        <div class="action-bar">
+                            <h3>Daftar Outlet</h3>
+                            <button class="btn btn-primary" id="btn-add-outlet">
+                                <i class="ph ph-plus"></i> Tambah Outlet
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="outlets-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Outlet</th>
+                                        <th>Kode</th>
+                                        <th>Cabang</th>
+                                        <th>Alamat</th>
+                                        <th class="action-col">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Outlet rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 3. KELOLA USERS TAB -->
+                    <div id="users-tab" class="tab-pane hidden">
+                        <div class="action-bar">
+                            <h3>Daftar Pengguna</h3>
+                            <button class="btn btn-primary" id="btn-add-user">
+                                <i class="ph ph-plus"></i> Tambah Pengguna
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Lengkap</th>
+                                        <th>Email / Username</th>
+                                        <th>Role / Jabatan</th>
+                                        <th>Cabang (Opsional)</th>
+                                        <th>Outlet (Opsional)</th>
+                                        <th>Status</th>
+                                        <th style="width: 120px;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- User rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+
+
+                    
+                <!-- MANAJEMEN STOK TAB -->
+                
+
+                <!-- BIAYA OPERASIONAL TAB -->
+                
+
+                <!-- SETORAN PENJUALAN TAB -->
+                
+
+                    <!-- ANALITIK TAB -->
                     <div id="analytics-tab" class="tab-pane hidden">
                         <div class="action-bar" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                            <h3>Laporan & Analitik</h3>
+                            <h3>Laporan &amp; Analitik</h3>
                             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                                 <select id="analytics-outlet-filter" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">
                                     <option value="">Semua Outlet</option>
@@ -452,24 +563,20 @@
                         <div class="action-bar" style="display: flex; justify-content: space-between; align-items: center;">
                             <h3>Info Penggunaan Server</h3>
                             <div style="display: flex; gap: 10px;">
-                                <button class="btn btn-secondary btn-sm" id="btn-refresh-server"
-                                    style="display: flex; align-items: center; gap: 5px;" onclick="loadServerInfo()">
+                                <button class="btn btn-secondary btn-sm" id="btn-refresh-server" style="display: flex; align-items: center; gap: 5px;" onclick="loadServerInfo()">
                                     <i class="ph ph-arrows-clockwise"></i> Refresh
                                 </button>
-                                <button class="btn btn-danger btn-sm" id="btn-force-global-refresh"
-                                    style="display: flex; align-items: center; gap: 5px;" onclick="triggerGlobalRefresh()">
+                                <button class="btn btn-danger btn-sm" id="btn-force-global-refresh" style="display: flex; align-items: center; gap: 5px;" onclick="triggerGlobalRefresh()">
                                     <i class="ph ph-warning-circle"></i> Paksa Refresh Global
                                 </button>
                             </div>
                         </div>
-                        <div
-                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 10px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 10px;">
 
                             <!-- Supabase Storage -->
                             <div class="glass-panel" style="padding: 20px;">
                                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                                    <div
-                                        style="width: 40px; height: 40px; border-radius: 8px; background: rgba(62, 207, 142, 0.1); display: flex; align-items: center; justify-content: center; color: #3ECF8E;">
+                                    <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(62, 207, 142, 0.1); display: flex; align-items: center; justify-content: center; color: #3ECF8E;">
                                         <i class="ph-fill ph-database" style="font-size: 24px;"></i>
                                     </div>
                                     <div>
@@ -478,15 +585,12 @@
                                             MB</span>
                                     </div>
                                 </div>
-                                <div
-                                    style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
                                     <span style="color: var(--text-secondary);">Terpakai:</span>
                                     <strong id="supabase-usage-text">Loading...</strong>
                                 </div>
-                                <div
-                                    style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
-                                    <div id="supabase-usage-bar"
-                                        style="height: 100%; width: 0%; background: #3ECF8E; transition: width 0.5s ease;">
+                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
+                                    <div id="supabase-usage-bar" style="height: 100%; width: 0%; background: #3ECF8E; transition: width 0.5s ease;">
                                     </div>
                                 </div>
                             </div>
@@ -494,8 +598,7 @@
                             <!-- GitHub Storage -->
                             <div class="glass-panel" style="padding: 20px;">
                                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                                    <div
-                                        style="width: 40px; height: 40px; border-radius: 8px; background: rgba(24, 23, 23, 0.1); display: flex; align-items: center; justify-content: center; color: #181717;">
+                                    <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(24, 23, 23, 0.1); display: flex; align-items: center; justify-content: center; color: #181717;">
                                         <i class="ph-fill ph-github-logo" style="font-size: 24px;"></i>
                                     </div>
                                     <div>
@@ -504,21 +607,17 @@
                                             GB</span>
                                     </div>
                                 </div>
-                                <div
-                                    style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
                                     <span style="color: var(--text-secondary);">Terpakai:</span>
                                     <strong id="github-usage-text">Loading...</strong>
                                 </div>
-                                <div
-                                    style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
-                                    <div id="github-usage-bar"
-                                        style="height: 100%; width: 0%; background: #181717; transition: width 0.5s ease;">
+                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
+                                    <div id="github-usage-bar" style="height: 100%; width: 0%; background: #181717; transition: width 0.5s ease;">
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div
-                            style="margin-top: 20px; font-size: 0.85rem; color: var(--text-muted); background: rgba(255, 165, 0, 0.1); padding: 10px; border-radius: 8px; border-left: 4px solid orange;">
+                        <div style="margin-top: 20px; font-size: 0.85rem; color: var(--text-muted); background: rgba(255, 165, 0, 0.1); padding: 10px; border-radius: 8px; border-left: 4px solid orange;">
                             <i class="ph-fill ph-info"></i> <strong>Pemberitahuan:</strong> Sistem tidak dapat
                             menampilkan penggunaan <em>Bandwidth</em> secara langsung karena keterbatasan akses API dari
                             paket gratis Supabase maupun GitHub Pages. Mohon cek dasbor resmi mereka jika Anda mendapati
@@ -543,7 +642,7 @@
                                     <label style="font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text);">
                                         <i class="ph-fill ph-users" style="color: var(--primary);"></i> Target Penerima
                                     </label>
-                                    <select id="announcement-target" class="input" required style="cursor: pointer; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 0.95rem;">
+                                    <select id="announcement-target" class="input" required="" style="cursor: pointer; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 0.95rem;">
                                         <option value="all">Semua Kasir (Global)</option>
                                         <!-- specific users will be loaded here -->
                                     </select>
@@ -552,13 +651,13 @@
                                     <label style="font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text);">
                                         <i class="ph-fill ph-text-t" style="color: var(--primary);"></i> Judul Notifikasi
                                     </label>
-                                    <input type="text" id="announcement-title" class="input" placeholder="Contoh: Pembaruan Sistem atau Promo Baru" required style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 0.95rem;">
+                                    <input type="text" id="announcement-title" class="input" placeholder="Contoh: Pembaruan Sistem atau Promo Baru" required="" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 0.95rem;">
                                 </div>
                                 <div class="form-group">
                                     <label style="font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text);">
                                         <i class="ph-fill ph-chat-text" style="color: var(--primary);"></i> Isi Pesan
                                     </label>
-                                    <textarea id="announcement-body" class="input" rows="4" placeholder="Ketikkan pesan lengkap di sini..." required style="resize: vertical; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 0.95rem;"></textarea>
+                                    <textarea id="announcement-body" class="input" rows="4" placeholder="Ketikkan pesan lengkap di sini..." required="" style="resize: vertical; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 0.95rem;"></textarea>
                                 </div>
                                 
                                 <div style="display: flex; align-items: flex-start; gap: 12px; background: rgba(59, 130, 246, 0.08); padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary);">
@@ -577,29 +676,7 @@
                 </div>
 
                 <!-- SHIFTS TAB -->
-                <div id="shifts-tab" class="tab-pane hidden" style="padding: 10px;">
-                    <div class="action-bar">
-                        <h3>Daftar Master Shift</h3>
-                        <button class="btn btn-primary" id="btn-add-shift">
-                            <i class="ph ph-plus"></i> Tambah Shift
-                        </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table" id="shifts-table">
-                            <thead>
-                                <tr>
-                                    <th>Nama Shift</th>
-                                    <th>Jam Masuk</th>
-                                    <th>Jam Selesai</th>
-                                    <th class="action-col">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Shift rows injected here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                
 
                 <!-- EXPENSE MASTERS TAB -->
                 <div id="expenses-master-tab" class="tab-pane hidden" style="padding: 10px;">
@@ -640,8 +717,7 @@
                 <div class="mobile-brand">
                     <i class="ph-duotone ph-storefront"></i>
                     <span id="mobile-pos-outlet-name">Loading...</span>
-                    <select id="mobile-active-outlet-selector" class="input-sm hidden"
-                        style="margin-left: 10px; max-width: 150px; padding: 4px 8px; font-size: 0.9rem;"></select>
+                    <select id="mobile-active-outlet-selector" class="input-sm hidden" style="margin-left: 10px; max-width: 150px; padding: 4px 8px; font-size: 0.9rem;"></select>
                 </div>
             </div>
 
@@ -672,23 +748,22 @@
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Koneksi Printer</span>
                     </button>
 
-                    <button class="btn btn-icon hidden" id="btn-management" title="Manajemen Sistem"
-                        style="justify-content: flex-start;">
+                    <button class="btn btn-icon hidden" id="btn-operations" title="Manajemen" style="justify-content: flex-start;">
+                        <i class="ph ph-briefcase"></i>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Manajemen</span>
+                    </button><button class="btn btn-icon hidden" id="btn-management" title="Pengaturan" style="justify-content: flex-start;">
                         <i class="ph ph-gear"></i>
-                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Manajemen Sistem</span>
+                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Pengaturan</span>
                     </button>
-                    <button class="btn btn-icon" id="btn-edit-profile-pos" title="Edit Profile"
-                        style="justify-content: flex-start;">
+                    <button class="btn btn-icon" id="btn-edit-profile-pos" title="Edit Profile" style="justify-content: flex-start;">
                         <i class="ph ph-user-circle"></i>
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Edit Profile</span>
                     </button>
-                    <button class="btn btn-icon btn-logout" title="Logout"
-                        style="justify-content: flex-start;">
+                    <button class="btn btn-icon btn-logout" title="Logout" style="justify-content: flex-start;">
                         <i class="ph ph-sign-out"></i>
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Keluar</span>
                     </button>
-                    <button class="btn btn-icon" id="btn-hard-refresh" title="Update / Refresh App"
-                        style="justify-content: flex-start;">
+                    <button class="btn btn-icon" id="btn-hard-refresh" title="Update / Refresh App" style="justify-content: flex-start;">
                         <i class="ph ph-arrows-clockwise"></i>
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Refresh</span>
                     </button>
@@ -715,8 +790,7 @@
                             <i class="ph ph-magnifying-glass"></i>
                             <input type="text" id="product-search" placeholder="Cari produk...">
                         </div>
-                        <button class="btn btn-icon" id="btn-toggle-layout" title="Ubah Tampilan"
-                            style="border: 1px solid var(--border); border-radius: var(--radius-md);" onclick="toggleLayout()">
+                        <button class="btn btn-icon" id="btn-toggle-layout" title="Ubah Tampilan" style="border: 1px solid var(--border); border-radius: var(--radius-md);" onclick="toggleLayout()">
                             <i class="ph ph-list-dashes"></i>
                         </button>
                         <button class="btn btn-danger hidden" id="btn-close-shift" title="Tutup Shift">
@@ -760,7 +834,7 @@
                             <span id="cart-total">Rp 0</span>
                         </div>
 
-                        <button class="btn btn-primary btn-block btn-checkout" id="btn-checkout" disabled>
+                        <button class="btn btn-primary btn-block btn-checkout" id="btn-checkout" disabled="">
                             Lanjut Bayar
                         </button>
                     </div>
@@ -776,8 +850,7 @@
                         <input type="date" id="history-date-start" class="input-sm">
                         <span>-</span>
                         <input type="date" id="history-date-end" class="input-sm">
-                        <button class="btn btn-secondary" id="btn-export-excel"
-                            style="display: flex; align-items: center; gap: 5px;">
+                        <button class="btn btn-secondary" id="btn-export-excel" style="display: flex; align-items: center; gap: 5px;">
                             <i class="ph ph-file-xls"></i> Export Excel
                         </button>
                     </div>
@@ -866,8 +939,7 @@
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                     <h2>Riwayat Absensi (3 Hari Terakhir)</h2>
                     <div class="filter-group">
-                        <button class="btn btn-secondary" id="btn-export-attendance"
-                            style="display: flex; align-items: center; gap: 5px;" onclick="exportAttendanceExcel()">
+                        <button class="btn btn-secondary" id="btn-export-attendance" style="display: flex; align-items: center; gap: 5px;" onclick="exportAttendanceExcel()">
                             <i class="ph ph-file-xls"></i> Export Excel
                         </button>
                     </div>
@@ -903,33 +975,27 @@
                     </div>
                 </div>
 
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <div class="glass-panel" style="padding: 15px; text-align: center;">
                         <h4 style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Total Pendapatan</h4>
-                        <div id="dash-total-revenue"
-                            style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-top: 5px;">Rp 0
+                        <div id="dash-total-revenue" style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-top: 5px;">Rp 0
                         </div>
                     </div>
                     <div class="glass-panel" style="padding: 15px; text-align: center;">
                         <h4 style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Total Transaksi</h4>
-                        <div id="dash-total-trx"
-                            style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-top: 5px;">0</div>
+                        <div id="dash-total-trx" style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-top: 5px;">0</div>
                     </div>
                     <div class="glass-panel" style="padding: 15px; text-align: center;">
                         <h4 style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Total Diskon</h4>
-                        <div id="dash-total-discount"
-                            style="font-size: 1.5rem; font-weight: 700; color: var(--danger); margin-top: 5px;">Rp 0</div>
+                        <div id="dash-total-discount" style="font-size: 1.5rem; font-weight: 700; color: var(--danger); margin-top: 5px;">Rp 0</div>
                     </div>
                     <div class="glass-panel" style="padding: 15px; text-align: center;">
                         <h4 style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Total Pajak</h4>
-                        <div id="dash-total-tax"
-                            style="font-size: 1.5rem; font-weight: 700; color: var(--warning); margin-top: 5px;">Rp 0</div>
+                        <div id="dash-total-tax" style="font-size: 1.5rem; font-weight: 700; color: var(--warning); margin-top: 5px;">Rp 0</div>
                     </div>
                 </div>
 
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
                     <div>
                         <h3>Metode Pembayaran</h3>
                         <div class="table-responsive" style="margin-top: 10px;">
@@ -985,7 +1051,7 @@
                 <input type="hidden" id="branch-id">
                 <div class="input-group">
                     <label for="branch-name">Nama Cabang</label>
-                    <input type="text" id="branch-name" required placeholder="Cabang Jakarta Raya">
+                    <input type="text" id="branch-name" required="" placeholder="Cabang Jakarta Raya">
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" data-close="modal-branch">Batal</button>
@@ -1006,15 +1072,15 @@
                 <input type="hidden" id="outlet-id">
                 <div class="input-group">
                     <label for="outlet-name">Nama Outlet</label>
-                    <input type="text" id="outlet-name" required placeholder="Outlet Thamrin">
+                    <input type="text" id="outlet-name" required="" placeholder="Outlet Thamrin">
                 </div>
                 <div class="input-group">
                     <label for="outlet-code">Kode Outlet (Struk)</label>
-                    <input type="text" id="outlet-code" required placeholder="THM" maxlength="5">
+                    <input type="text" id="outlet-code" required="" placeholder="THM" maxlength="5">
                 </div>
                 <div class="input-group">
                     <label for="outlet-branch">Cabang Induk</label>
-                    <select id="outlet-branch" required>
+                    <select id="outlet-branch" required="">
                         <!-- Options injected via JS -->
                     </select>
                 </div>
@@ -1049,24 +1115,22 @@
                 <input type="hidden" id="user-id">
                 <div class="input-group">
                     <label for="user-name">Nama Lengkap</label>
-                    <input type="text" id="user-name" required placeholder="">
+                    <input type="text" id="user-name" required="" placeholder="">
                 </div>
                 <div class="input-group">
                     <label for="user-email">Email</label>
-                    <input type="email" id="user-email" required placeholder="">
+                    <input type="email" id="user-email" required="" placeholder="">
                 </div>
                 <div class="input-group">
                     <label for="user-password">Password</label>
                     <div class="password-wrapper" style="position: relative;">
-                        <input type="password" id="user-password" required placeholder=""
-                            style="width: 100%; padding-right: 40px;">
-                        <i class="ph ph-eye toggle-password"
-                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
+                        <input type="password" id="user-password" required="" placeholder="" style="width: 100%; padding-right: 40px;">
+                        <i class="ph ph-eye toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
                     </div>
                 </div>
                 <div class="input-group">
                     <label for="user-role">Jabatan</label>
-                    <select id="user-role" required>
+                    <select id="user-role" required="">
                         <option value="owner">Owner Bisnis</option>
                         <option value="kepala_cabang">Kepala Cabang</option>
                         <option value="kepala_toko">Kepala Toko</option>
@@ -1075,7 +1139,7 @@
                 </div>
                 <div class="input-group">
                     <label for="user-status">Status</label>
-                    <select id="user-status" required>
+                    <select id="user-status" required="">
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                     </select>
@@ -1118,12 +1182,12 @@
                 <input type="hidden" id="product-id">
                 <div class="input-group">
                     <label for="product-name">Nama Produk</label>
-                    <input type="text" id="product-name" required placeholder="">
+                    <input type="text" id="product-name" required="" placeholder="">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div class="input-group" style="margin-bottom:0;">
                         <label for="product-price">Reguler (Rp)</label>
-                        <input type="number" id="product-price" required>
+                        <input type="number" id="product-price" required="">
                     </div>
                     <div class="input-group" style="margin-bottom:0;">
                         <label for="product-price-gofood">GoFood (Rp)</label>
@@ -1140,15 +1204,13 @@
                 </div>
                 <div class="input-group">
                     <label for="product-stock">Stok Awal</label>
-                    <input type="number" id="product-stock" required placeholder="100">
+                    <input type="number" id="product-stock" required="" placeholder="100">
                 </div>
                 <div class="input-group">
                     <label for="product-image">Foto Produk</label>
                     <input type="file" id="product-image" accept="image/*" style="padding: 8px;">
-                    <div id="product-image-preview-container" class="hidden"
-                        style="margin-top: 10px; text-align: center;">
-                        <img id="product-image-preview" src="" alt="Preview"
-                            style="max-height: 120px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div id="product-image-preview-container" class="hidden" style="margin-top: 10px; text-align: center;">
+                        <img id="product-image-preview" src="" alt="Preview" style="max-height: 120px; border-radius: 8px; border: 1px solid var(--border);">
                     </div>
                 </div>
                 <div class="modal-actions">
@@ -1210,22 +1272,20 @@
             <form id="form-edit-profile">
                 <div class="input-group">
                     <label for="my-name">Nama Lengkap</label>
-                    <input type="text" id="my-name" required placeholder="Nama Anda">
+                    <input type="text" id="my-name" required="" placeholder="Nama Anda">
                 </div>
                 <div class="input-group">
                     <label for="my-old-password">Password Lama</label>
                     <div class="password-wrapper" style="position: relative;">
                         <input type="password" id="my-old-password" placeholder="Isi untuk verifikasi">
-                        <i class="ph ph-eye toggle-password"
-                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
+                        <i class="ph ph-eye toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
                     </div>
                 </div>
                 <div class="input-group">
                     <label for="my-password">Password Baru</label>
                     <div class="password-wrapper" style="position: relative;">
                         <input type="password" id="my-password" placeholder="Isi jika ingin ganti password">
-                        <i class="ph ph-eye toggle-password"
-                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
+                        <i class="ph ph-eye toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); font-size: 1.2rem;"></i>
                     </div>
                 </div>
                 <div class="modal-actions">
@@ -1312,7 +1372,7 @@
             </div>
             <div class="modal-actions" style="margin-top: 15px;">
                 <button type="button" class="btn btn-secondary" data-close="modal-checkout">Batal</button>
-                <button type="button" class="btn btn-primary" id="btn-confirm-payment">Konfirmasi & Cetak</button>
+                <button type="button" class="btn btn-primary" id="btn-confirm-payment">Konfirmasi &amp; Cetak</button>
             </div>
         </div>
     </div>
@@ -1328,7 +1388,7 @@
             <form id="form-open-shift">
                 <div class="input-group" style="text-align: left;">
                     <label>Uang Modal Laci (Rp)</label>
-                    <input type="number" id="input-starting-cash" class="input" required min="0" placeholder="0">
+                    <input type="number" id="input-starting-cash" class="input" required="" min="0" placeholder="0">
                 </div>
                 <div class="modal-actions" style="margin-top: 20px;">
                     <button type="submit" class="btn btn-primary btn-block">Buka Kasir Sekarang</button>
@@ -1349,7 +1409,7 @@
                 <form id="form-close-shift">
                     <div class="input-group">
                         <label>Uang Tunai Akhir Laci (Rp)</label>
-                        <input type="number" id="input-ending-cash" class="input" required min="0" placeholder="0">
+                        <input type="number" id="input-ending-cash" class="input" required="" min="0" placeholder="0">
                     </div>
                     <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--danger); padding: 10px 15px; border-radius: 8px; margin-top: 15px; margin-bottom: 20px;">
                         <p style="margin:0; font-size: 0.85rem; color: var(--danger-dark);"><strong>PENTING:</strong> Setelah menutup shift, jangan lupa mencatat <strong>Biaya Operasional</strong> jika ada pengeluaran hari ini.</p>
@@ -1374,15 +1434,15 @@
                 <form id="form-expense">
                     <div class="input-group">
                         <label>Kategori Biaya</label>
-                        <select id="expense-item-select" class="input" required></select>
+                        <select id="expense-item-select" class="input" required=""></select>
                     </div>
                     <div class="input-group">
                         <label>Jumlah Item (Qty)</label>
-                        <input type="number" id="expense-qty" class="input" required min="1" value="1" step="any">
+                        <input type="number" id="expense-qty" class="input" required="" min="1" value="1" step="any">
                     </div>
                     <div class="input-group">
                         <label>Total Harga (Rp)</label>
-                        <input type="number" id="expense-total" class="input" required min="0" placeholder="Total biaya dibayar">
+                        <input type="number" id="expense-total" class="input" required="" min="0" placeholder="Total biaya dibayar">
                     </div>
                     <div class="input-group">
                         <label>Keterangan Tambahan</label>
@@ -1408,11 +1468,11 @@
                 <form id="form-deposit">
                     <div class="input-group">
                         <label>Jumlah Setoran (Rp)</label>
-                        <input type="number" id="deposit-amount" class="input" required min="1" placeholder="0">
+                        <input type="number" id="deposit-amount" class="input" required="" min="1" placeholder="0">
                     </div>
                     <div class="input-group">
                         <label>Tujuan Setoran / Tipe</label>
-                        <select id="deposit-type" class="input" required>
+                        <select id="deposit-type" class="input" required="">
                             <option value="Bank BCA">Bank BCA</option>
                             <option value="Bank Mandiri">Bank Mandiri</option>
                             <option value="Bank BRI">Bank BRI</option>
@@ -1445,11 +1505,11 @@
                     <input type="hidden" id="inventory-id">
                     <div class="input-group">
                         <label>Nama Barang / Bahan Baku</label>
-                        <input type="text" id="inventory-name" class="input" required placeholder="Contoh: Minyak Goreng">
+                        <input type="text" id="inventory-name" class="input" required="" placeholder="Contoh: Minyak Goreng">
                     </div>
                     <div class="input-group">
                         <label>Kategori</label>
-                        <select id="inventory-category" class="input" required>
+                        <select id="inventory-category" class="input" required="">
                             <option value="Bahan Baku">Bahan Baku</option>
                             <option value="Logistik/Pendukung">Logistik/Pendukung</option>
                             <option value="Lainnya">Lainnya</option>
@@ -1458,20 +1518,20 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="input-group">
                             <label>Satuan Beli (Pemesanan)</label>
-                            <input type="text" id="inventory-purchase-unit" class="input" required placeholder="Contoh: Dus">
+                            <input type="text" id="inventory-purchase-unit" class="input" required="" placeholder="Contoh: Dus">
                         </div>
                         <div class="input-group">
                             <label>Satuan Pakai (Resep)</label>
-                            <input type="text" id="inventory-base-unit" class="input" required placeholder="Contoh: Kg">
+                            <input type="text" id="inventory-base-unit" class="input" required="" placeholder="Contoh: Kg">
                         </div>
                     </div>
                     <div class="input-group">
                         <label>Nilai Konversi (1 Satuan Beli = ? Satuan Pakai)</label>
-                        <input type="number" id="inventory-conversion" class="input" required step="any" placeholder="Contoh: 15 (1 Dus = 15 Kg)">
+                        <input type="number" id="inventory-conversion" class="input" required="" step="any" placeholder="Contoh: 15 (1 Dus = 15 Kg)">
                     </div>
                     <div class="input-group">
                         <label>Jumlah Stok Fisik (Dalam Satuan Pakai)</label>
-                        <input type="number" id="inventory-stock" class="input" required step="any" placeholder="0">
+                        <input type="number" id="inventory-stock" class="input" required="" step="any" placeholder="0">
                     </div>
                     <div class="modal-actions">
                         <button type="button" class="btn btn-secondary" data-close="modal-inventory">Batal</button>
@@ -1494,16 +1554,16 @@
                     <input type="hidden" id="shift-master-id">
                     <div class="input-group">
                         <label>Nama Shift</label>
-                        <input type="text" id="shift-master-name" class="input" required placeholder="Contoh: Shift Pagi">
+                        <input type="text" id="shift-master-name" class="input" required="" placeholder="Contoh: Shift Pagi">
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="input-group">
                             <label>Jam Masuk</label>
-                            <input type="time" id="shift-master-start" class="input" required>
+                            <input type="time" id="shift-master-start" class="input" required="">
                         </div>
                         <div class="input-group">
                             <label>Jam Selesai</label>
-                            <input type="time" id="shift-master-end" class="input" required>
+                            <input type="time" id="shift-master-end" class="input" required="">
                         </div>
                     </div>
                     <div class="modal-actions">
@@ -1527,11 +1587,11 @@
                     <input type="hidden" id="expense-master-id">
                     <div class="input-group">
                         <label>Nama Pengeluaran</label>
-                        <input type="text" id="expense-master-name" class="input" required placeholder="Contoh: Gas Elpiji 3kg">
+                        <input type="text" id="expense-master-name" class="input" required="" placeholder="Contoh: Gas Elpiji 3kg">
                     </div>
                     <div class="input-group">
                         <label>Grup Kategori</label>
-                        <select id="expense-master-category" class="input" required>
+                        <select id="expense-master-category" class="input" required="">
                             <option value="Bahan Tambahan">Bahan Tambahan</option>
                             <option value="Operasional (Listrik, Gas, Air)">Operasional (Listrik, Gas, Air)</option>
                             <option value="Kebersihan">Kebersihan</option>
@@ -1634,6 +1694,6 @@
     <!-- MAIN SCRIPT (ES MODULE) -->
     <!-- MAIN SCRIPT (ES MODULE) -->
     <script type="module" src="./js/app.js"></script>
-</body>
 
-</html>
+
+</body></html>
