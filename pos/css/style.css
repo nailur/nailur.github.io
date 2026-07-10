@@ -451,6 +451,9 @@ body {
     overflow-x: auto;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    max-width: 40vw;
+    min-width: 0;
+    white-space: nowrap;
 }
 
 .pos-tabs-nav::-webkit-scrollbar {
@@ -1089,6 +1092,7 @@ body {
     .pos-tabs-nav {
         flex-direction: column;
         width: 100%;
+        max-width: none;
         background: transparent;
         padding: 0;
     }
