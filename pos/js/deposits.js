@@ -30,6 +30,7 @@ export function renderDeposits() {
     }
     
     const role = window._managementRole || window.getCurrentProfile()?.role;
+    const canEdit = ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role);
     const canDelete = ['superadmin', 'owner', 'kepala_cabang'].includes(role);
     
     tbody.innerHTML = depositsList.map(dep => `
@@ -41,6 +42,7 @@ export function renderDeposits() {
             <td>${dep.notes || '-'}</td>
             <td>${dep.profiles?.name || '-'}</td>
             <td>
+                ${canEdit ? `<button class="btn btn-icon btn-secondary" onclick="window.editDeposit('${dep.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>` : ''}
                 ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="window.deleteDeposit('${dep.id}')" title="Hapus"><i class="ph ph-trash"></i></button>` : ''}
             </td>
         </tr>
@@ -54,6 +56,7 @@ export async function handleSaveDeposit(e) {
     const btn = document.getElementById('form-deposit').querySelector('button[type="submit"]');
     btn.disabled = true;
     
+    const id = document.getElementById('deposit-id')?.value;
     const amount = parseFloat(document.getElementById('deposit-amount').value);
     const account_type = document.getElementById('deposit-type').value;
     const notes = document.getElementById('deposit-notes').value;
@@ -61,20 +64,26 @@ export async function handleSaveDeposit(e) {
     
     const payload = {
         outlet_id: getActiveOutletId(),
-        document_number: docNumber,
-        deposit_date: getLocalToday(),
         amount,
         account_type,
         notes,
-        created_by: getCurrentProfile().id,
-        status: 'Diposting'
     };
     
     try {
-        const { error } = await supabase.from('sales_deposits').insert([payload]);
-        if (error) throw error;
+        if (id) {
+            const { error } = await supabase.from('sales_deposits').update(payload).eq('id', id);
+            if (error) throw error;
+            showToast('Setoran berhasil diperbarui', 'success');
+        } else {
+            payload.document_number = docNumber;
+            payload.deposit_date = getLocalToday();
+            payload.created_by = getCurrentProfile().id;
+            payload.status = 'Diposting';
+            const { error } = await supabase.from('sales_deposits').insert([payload]);
+            if (error) throw error;
+            showToast('Setoran berhasil dicatat', 'success');
+        }
         
-        showToast('Setoran berhasil dicatat', 'success');
         document.getElementById('modal-deposit').classList.add('hidden');
         loadDeposits();
     } catch (err) {
@@ -94,3 +103,12 @@ export async function deleteDeposit(id) {
 }
 
 window.deleteDeposit = deleteDeposit;
+
+window.editDeposit = function(id) {
+    const deposit = depositsList.find(d => d.id === id);
+    if (!deposit) return;
+    document.getElementById('deposit-id').value = deposit.id;
+    document.getElementById('deposit-amount').value = deposit.amount;
+    document.getElementById('deposit-notes').value = deposit.notes || '';
+    document.getElementById('modal-deposit').classList.remove('hidden');
+}

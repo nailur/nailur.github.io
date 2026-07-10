@@ -480,7 +480,17 @@ function setupEventListeners() {
     document.getElementById('btn-add-inventory')?.addEventListener('click', () => window.editInventory(null));
     document.getElementById('form-inventory')?.addEventListener('submit', handleSaveInventory);
 
-    document.getElementById('btn-add-expense')?.addEventListener('click', () => document.getElementById('modal-expense').classList.remove('hidden'));
+    document.getElementById('btn-add-expense')?.addEventListener('click', () => {
+        const form = document.getElementById('form-expense');
+        if(form) form.reset();
+        if(window.expenseCurrentItems) window.expenseCurrentItems = [];
+        if(window.renderExpenseItemsTable) window.renderExpenseItemsTable();
+        document.getElementById('expense-id').value = '';
+        document.getElementById('modal-expense').classList.remove('hidden');
+    });
+    document.getElementById('btn-add-expense-item')?.addEventListener('click', () => {
+        if(window.addExpenseItem) window.addExpenseItem();
+    });
     document.getElementById('form-expense')?.addEventListener('submit', handleSaveExpense);
 
     document.getElementById('btn-add-expense-master')?.addEventListener('click', openAddExpenseMaster);

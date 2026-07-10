@@ -51,9 +51,15 @@ export async function checkAttendanceStatus() {
     if (roleEl) roleEl.textContent = profile.role.replace('_', ' ').toUpperCase();
     if (initialsEl) initialsEl.textContent = (profile.name || 'U').substring(0, 1).toUpperCase();
 
-    if (data && data.shifts) {
-        document.getElementById('att-user-shift').textContent = data.shifts.name;
-        document.getElementById('att-shift-schedule').textContent = `${data.shifts.start_time.slice(0,5)} - ${data.shifts.end_time.slice(0,5)}`;
+    if (profile.shift_id) {
+        const { data: shiftData } = await supabase.from('shifts').select('name, start_time, end_time').eq('id', profile.shift_id).single();
+        if (shiftData) {
+            document.getElementById('att-user-shift').textContent = shiftData.name;
+            document.getElementById('att-shift-schedule').textContent = `${shiftData.start_time.slice(0,5)} - ${shiftData.end_time.slice(0,5)}`;
+        } else {
+            document.getElementById('att-user-shift').textContent = 'Shift tidak ditemukan';
+            document.getElementById('att-shift-schedule').textContent = '-';
+        }
     } else {
         document.getElementById('att-user-shift').textContent = 'Tanpa Shift / Default';
         document.getElementById('att-shift-schedule').textContent = '-';

@@ -385,7 +385,9 @@ export async function editUser(id) {
     document.getElementById('user-password').placeholder = '(Tidak bisa diubah dari sini)';
     document.getElementById('user-password').removeAttribute('required');
     
-    document.getElementById('user-role').value = data.role;
+    const roleSelect = document.getElementById('user-role');
+    roleSelect.value = data.role;
+    roleSelect.dispatchEvent(new Event('change'));
     document.getElementById('user-status').value = data.status || 'active';
     let dataBranchId = data.branch_id;
     if (!dataBranchId && data.outlet_id) {
