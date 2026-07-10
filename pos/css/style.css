@@ -1309,3 +1309,48 @@ table.data-table th.action-col::after,
 table.data-table th:last-child::after {
     content: none !important;
 }
+
+/* RESPONSIVE ATTENDANCE LAYOUT */
+.attendance-layout {
+    padding: 25px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: center;
+}
+.attendance-info-side {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-right: 20px;
+    border-right: 1px solid var(--border);
+}
+.attendance-time-font {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 10px rgba(79,70,229,0.1);
+}
+
+@media (max-width: 768px) {
+    .attendance-layout {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        padding: 20px 15px;
+    }
+    .attendance-info-side {
+        padding-right: 0;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 20px;
+    }
+    .attendance-time-font {
+        font-size: 2.2rem;
+    }
+    #attendance-table th, #attendance-table td {
+        white-space: nowrap;
+    }
+}
