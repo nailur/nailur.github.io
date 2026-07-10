@@ -109,6 +109,9 @@ window.editDeposit = function(id) {
     if (!deposit) return;
     document.getElementById('deposit-id').value = deposit.id;
     document.getElementById('deposit-amount').value = deposit.amount;
+    if (deposit.account_type) {
+        document.getElementById('deposit-type').value = deposit.account_type;
+    }
     document.getElementById('deposit-notes').value = deposit.notes || '';
     document.getElementById('modal-deposit').classList.remove('hidden');
 }

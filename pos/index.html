@@ -191,7 +191,7 @@
                     <button class="tab-btn" data-target="outlets-tab">Kelola Outlets</button>
                     <button class="tab-btn" data-target="shifts-tab">Master Shift</button>
                     <button class="tab-btn" data-target="users-tab">Kelola Users</button>
-
+                    <button class="tab-btn" data-target="expenses-master-tab">Kategori Biaya</button>
 
 
 
@@ -553,18 +553,13 @@
                 </div>
 
                 <div class="pos-tabs-nav tabs" id="pos-tabs-container">
-                    <button class="pos-nav-btn active" data-target="pos-tab-content"><i class="ph ph-storefront"></i>
-                        Kasir</button>
-                    <button class="pos-nav-btn" data-target="history-tab-content"><i class="ph ph-receipt"></i>
-                        Transaksi</button>
-                    <button class="pos-nav-btn" data-target="attendance-tab-content" id="nav-attendance"><i
-                            class="ph ph-calendar-check"></i> Absensi</button>
-                    <button class="pos-nav-btn" data-target="dashboard-tab-content"><i class="ph ph-squares-four"></i>
-                        Dashboard</button>
-                    <button class="pos-nav-btn" data-target="stock-tab-content"><i class="ph ph-package"></i> Manajemen
-                        Stok</button><button class="pos-nav-btn" data-target="expenses-tab-content"><i
-                            class="ph ph-money"></i> Biaya Operasional</button><button class="pos-nav-btn"
-                        data-target="deposits-tab-content"><i class="ph ph-wallet"></i> Setoran Penjualan</button>
+                    <button class="pos-nav-btn active" data-target="pos-tab-content"><i class="ph ph-storefront"></i> Kasir</button>
+                    <button class="pos-nav-btn" data-target="history-tab-content"><i class="ph ph-receipt"></i> Transaksi</button>
+                    <button class="pos-nav-btn" data-target="dashboard-tab-content"><i class="ph ph-squares-four"></i> Dashboard</button>
+                    <button class="pos-nav-btn" data-target="attendance-tab-content" id="nav-attendance"><i class="ph ph-calendar-check"></i> Absensi</button>
+                    <button class="pos-nav-btn" data-target="expenses-tab-content"><i class="ph ph-money"></i> Operasional</button>
+                    <button class="pos-nav-btn" data-target="stock-tab-content"><i class="ph ph-package"></i> Stok</button>
+                    <button class="pos-nav-btn" data-target="deposits-tab-content"><i class="ph ph-wallet"></i> Setoran</button>
                 </div>
 
                 <div class="nav-right" style="gap: 5px;">
@@ -1491,6 +1486,7 @@
                         <label>Keterangan</label>
                         <input type="text" id="deposit-notes" class="input" placeholder="Opsional">
                     </div>
+                    <input type="hidden" id="deposit-id">
                     <div class="modal-actions">
                         <button type="button" class="btn btn-secondary" data-close="modal-deposit">Batal</button>
                         <button type="submit" class="btn btn-primary">Simpan Setoran</button>
