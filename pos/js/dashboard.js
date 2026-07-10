@@ -128,21 +128,20 @@ window.loadDashboard = async function() {
     });
 
     const methodLabels = paymentMethods.map(x => x.method);
-    const methodData = paymentMethods.map(x => x.total);
+    const methodValues = paymentMethods.map(x => x.total);
     
     if (window.methodsChartInst) window.methodsChartInst.destroy();
     window.methodsChartInst = new Chart(methodCtx.getContext('2d'), {
-        type: 'bar',
+        type: 'pie',
         data: {
             labels: methodLabels,
             datasets: [{
                 label: 'Omzet per Metode (Rp)',
-                data: methodData,
+                data: methodValues,
                 backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6']
             }]
         },
         options: { responsive: true, maintainAspectRatio: false }
     });
-}
 
 

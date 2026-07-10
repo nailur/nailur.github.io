@@ -31,7 +31,7 @@ export function renderInventory() {
         return;
     }
     
-    const role = window._managementRole;
+    const role = window._managementRole || window.getCurrentProfile()?.role;
     const canEdit = ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role);
     const canDelete = ['superadmin', 'owner', 'kepala_cabang'].includes(role);
     
@@ -40,8 +40,8 @@ export function renderInventory() {
             <td>${item.code || '-'}</td>
             <td>${item.name}</td>
             <td>${item.category || '-'}</td>
-            <td>${item.purchase_unit || '-'}</td>
-            <td>${item.base_unit || '-'}</td>
+            <td>${item.unit_large || '-'}</td>
+            <td>${item.unit_small || '-'}</td>
             <td>${item.conversion_factor || 1}</td>
             <td>${item.stock_quantity || 0}</td>
             <td>
@@ -69,8 +69,8 @@ export function openInventoryModal(id = null) {
             document.getElementById('inventory-id').value = item.id;
             document.getElementById('inventory-name').value = item.name;
             document.getElementById('inventory-category').value = item.category || 'Bahan Baku';
-            document.getElementById('inventory-purchase-unit').value = item.purchase_unit || '';
-            document.getElementById('inventory-base-unit').value = item.base_unit || '';
+            document.getElementById('inventory-purchase-unit').value = item.unit_large || '';
+            document.getElementById('inventory-base-unit').value = item.unit_small || '';
             document.getElementById('inventory-conversion').value = item.conversion_factor || 1;
             document.getElementById('inventory-stock').value = item.stock_quantity;
         }
@@ -97,8 +97,8 @@ export async function handleSaveInventory(e) {
         code: document.getElementById('inventory-name').value.substring(0,3).toUpperCase() + '-' + Math.floor(Math.random() * 10000), // generated
         name: document.getElementById('inventory-name').value,
         category: document.getElementById('inventory-category').value,
-        purchase_unit: document.getElementById('inventory-purchase-unit').value,
-        base_unit: document.getElementById('inventory-base-unit').value,
+        unit_large: document.getElementById('inventory-purchase-unit').value,
+        unit_small: document.getElementById('inventory-base-unit').value,
         conversion_factor: parseFloat(document.getElementById('inventory-conversion').value) || 1,
         stock_quantity: parseFloat(document.getElementById('inventory-stock').value) || 0
     };

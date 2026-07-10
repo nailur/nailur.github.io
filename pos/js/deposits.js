@@ -29,7 +29,7 @@ export function renderDeposits() {
         return;
     }
     
-    const role = window._managementRole;
+    const role = window._managementRole || window.getCurrentProfile()?.role;
     const canDelete = ['superadmin', 'owner', 'kepala_cabang'].includes(role);
     
     tbody.innerHTML = depositsList.map(dep => `
