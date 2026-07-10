@@ -390,10 +390,9 @@ export async function editUser(id) {
     }
 
     if (data.outlet_id) {
-        populateShiftOptions(data.outlet_id, data.shift_id);
-    } else {
-        document.getElementById('group-user-shift').classList.add('hidden');
+        // still call it but just pass shift_id
     }
+    populateShiftOptions(data.shift_id);
 
     if (window.handleRoleSelectionChange) window.handleRoleSelectionChange();
     setTimeout(() => {
@@ -403,15 +402,11 @@ export async function editUser(id) {
     document.getElementById('modal-user').classList.remove('hidden');
 }
 
-export async function populateShiftOptions(outletId, selectedShiftId = null) {
+export async function populateShiftOptions(selectedShiftId = null) {
     const shiftGroup = document.getElementById('group-user-shift');
     const shiftSelect = document.getElementById('user-shift');
-    if (!outletId) {
-        shiftGroup.classList.add('hidden');
-        return;
-    }
 
-    const { data } = await supabase.from('shifts').select('id, name, start_time, end_time').eq('outlet_id', outletId);
+    const { data } = await supabase.from('shifts').select('id, name, start_time, end_time');
     if (data && data.length > 0) {
         let opts = '<option value="">-- Pilih Shift (Opsional) --</option>';
         data.forEach(s => {
@@ -428,8 +423,10 @@ export async function populateShiftOptions(outletId, selectedShiftId = null) {
     }
 }
 
+// Tidak perlu merespon pada onchange outlet lagi untuk shift
+// Tapi mungkin masih dipanggil kalau role berubah
 document.getElementById('user-outlet')?.addEventListener('change', (e) => {
-    populateShiftOptions(e.target.value);
+    // nothing to do for shifts anymore, but we can leave it
 });
 
 export async function deleteUser(id) {
