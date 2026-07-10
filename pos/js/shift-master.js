@@ -30,7 +30,7 @@ function renderShifts() {
             <td>${s.start_time}</td>
             <td>${s.end_time}</td>
             <td>
-                <button class="btn btn-icon btn-secondary" onclick="window.editShift('${s.id}')" title="Edit"><i class="ph ph-pencil"></i></button>
+                <button class="btn btn-icon btn-secondary" onclick="window.editShift('${s.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
                 ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="window.deleteShift('${s.id}')" title="Hapus"><i class="ph ph-trash"></i></button>` : ''}
             </td>
         </tr>

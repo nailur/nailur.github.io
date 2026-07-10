@@ -129,8 +129,8 @@ export async function loadBranches() {
             <tr>
                 <td><strong>${b.name}</strong></td>
                 <td>
-                    <button class="btn btn-icon" style="color:var(--primary)" onclick="editBranch('${b.id}')"><i class="ph ph-pencil-simple"></i></button>
-                    <button class="btn btn-icon" onclick="deleteBranch('${b.id}')"><i class="ph ph-trash"></i></button>
+                    <button class="btn btn-icon btn-secondary" onclick="editBranch('${b.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
+                    <button class="btn btn-icon btn-danger" onclick="deleteBranch('${b.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
                 </td>
             </tr>
         `).join('');
@@ -156,8 +156,8 @@ export async function loadOutlets() {
                 <td>${o.branches?.name || '-'}</td>
                 <td>${o.address || '-'}</td>
                 <td>
-                    <button class="btn btn-icon" style="color:var(--primary)" onclick="editOutlet('${o.id}')"><i class="ph ph-pencil-simple"></i></button>
-                    <button class="btn btn-icon" onclick="deleteOutlet('${o.id}')"><i class="ph ph-trash"></i></button>
+                    <button class="btn btn-icon btn-secondary" onclick="editOutlet('${o.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
+                    <button class="btn btn-icon btn-danger" onclick="deleteOutlet('${o.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
                 </td>
             </tr>
         `).join('');
@@ -203,8 +203,8 @@ export async function loadUsers() {
                 <td>${shiftsMap[u.shift_id] || '-'}</td>
                 <td>${u.status === 'inactive' ? '<span class="user-badge" style="background:var(--danger)">Inactive</span>' : '<span class="user-badge" style="background:var(--success)">Active</span>'}</td>
                 <td>
-                    ${canEdit ? `<button class="btn btn-icon" style="color:var(--primary)" onclick="editUser('${u.id}')"><i class="ph ph-pencil-simple"></i></button>` : ''}
-                    ${canDelete ? `<button class="btn btn-icon" onclick="deleteUser('${u.id}')"><i class="ph ph-trash"></i></button>` : ''}
+                    ${canEdit ? `<button class="btn btn-icon btn-secondary" onclick="editUser('${u.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>` : ''}
+                    ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="deleteUser('${u.id}')" title="Hapus"><i class="ph ph-trash"></i></button>` : ''}
                 </td>
             </tr>
         `).join('');

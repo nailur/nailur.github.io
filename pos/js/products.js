@@ -69,8 +69,8 @@ export function renderProducts(search = '') {
             </div>
             ${canEdit ? `
                 <div style="margin-top:10px; display:flex; gap:5px; justify-content:center;" onclick="event.stopPropagation()">
-                    <button class="btn btn-icon" style="color:var(--primary)" onclick="editProduct('${p.id}')"><i class="ph ph-pencil-simple"></i></button>
-                    <button class="btn btn-icon" onclick="deleteProduct('${p.id}')"><i class="ph ph-trash"></i></button>
+                    <button class="btn btn-icon btn-secondary" onclick="editProduct('${p.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
+                    <button class="btn btn-icon btn-danger" onclick="deleteProduct('${p.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
                 </div>
             ` : ''}
         </div>

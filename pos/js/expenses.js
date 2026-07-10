@@ -1,4 +1,4 @@
-﻿import { supabase } from './supabase.js';
+import { supabase } from './supabase.js';
 import { getActiveOutletId } from './state.js';
 import { showToast, getLocalToday, generateRandomDocNumber } from './app.js';
 import { getActiveShiftSession } from './shift.js';
@@ -83,7 +83,7 @@ export function renderExpenseMasterTable() {
             <td>${item.name}</td>
             <td>${item.category || '-'}</td>
             <td>
-                <button class="btn btn-icon btn-secondary" onclick="window.editExpenseMaster('${item.id}')" title="Edit"><i class="ph ph-pencil"></i></button>
+                <button class="btn btn-icon btn-secondary" onclick="window.editExpenseMaster('${item.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
                 <button class="btn btn-icon btn-danger" onclick="window.deleteExpenseMaster('${item.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
             </td>
         </tr>

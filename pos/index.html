@@ -182,22 +182,16 @@
                     <div class="nav-brand">
                         <i class="ph-fill ph-crown"></i>
                         <span id="management-title">Pengaturan</span>
-                        <select id="mgmt-active-outlet-selector" class="input-sm hidden"
-                            style="margin-left: 15px; max-width: 200px; color: var(--text); background: var(--bg);"></select>
                     </div>
                 </div>
                 <div class="pos-tabs-nav tabs" id="sa-tabs-container">
-                    <button class="tab-btn active" data-target="branches-tab">Cabang</button>
-                    <button class="tab-btn" data-target="outlets-tab">Outlets</button>
-                    <button class="tab-btn" data-target="shifts-tab">Shift</button>
-                    <button class="tab-btn" data-target="users-tab">Users</button>
-                    <button class="tab-btn" data-target="expenses-master-tab">Kategori Operasional</button>
-
-
-
-                    <!-- removed Analitik btn -->
-                    <button class="tab-btn" data-target="server-info-tab">Info Server</button>
-                    <button class="tab-btn" data-target="announcement-tab">Pengumuman</button>
+                    <button class="tab-btn active" data-target="branches-tab"><i class="ph ph-buildings"></i> Cabang</button>
+                    <button class="tab-btn" data-target="outlets-tab"><i class="ph ph-storefront"></i> Outlets</button>
+                    <button class="tab-btn" data-target="shifts-tab"><i class="ph ph-clock"></i> Shift</button>
+                    <button class="tab-btn" data-target="users-tab"><i class="ph ph-users"></i> Users</button>
+                    <button class="tab-btn" data-target="expenses-master-tab"><i class="ph ph-list-dashes"></i> Kategori Operasional</button>
+                    <button class="tab-btn" data-target="server-info-tab"><i class="ph ph-server"></i> Info Server</button>
+                    <button class="tab-btn" data-target="announcement-tab"><i class="ph ph-megaphone"></i> Pengumuman</button>
                 </div>
                 <div class="nav-right" style="gap: 5px;">
                     <span id="sa-user-info" class="user-badge hide-mobile hidden"
@@ -857,21 +851,6 @@
                     </div>
                 </div>
 
-                <div class="analytics-charts-grid" style="display: grid; gap: 15px; margin-bottom: 20px;">
-                    <div class="glass-panel"
-                        style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px; grid-column: 1 / -1;">
-                        <canvas id="revenueChart"></canvas>
-                    </div>
-                    <div class="glass-panel"
-                        style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px;">
-                        <canvas id="productsChart"></canvas>
-                    </div>
-                    <div class="glass-panel"
-                        style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px;">
-                        <canvas id="methodsChart"></canvas>
-                    </div>
-                </div>
-
                 <div
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
                     <div>
@@ -909,13 +888,29 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="analytics-charts-grid" style="display: grid; gap: 15px; margin-bottom: 20px;">
+                    <div class="glass-panel"
+                        style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px; grid-column: 1 / -1;">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <div class="glass-panel"
+                        style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px;">
+                        <canvas id="productsChart"></canvas>
+                    </div>
+                    <div class="glass-panel"
+                        style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px;">
+                        <canvas id="methodsChart"></canvas>
+                    </div>
+                </div>
+
             </div>
             <div id="stock-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
-                    <h3>Manajemen Stok (Inventaris)</h3>
+                    <h3>Stok Inventaris</h3>
                     <div class="filter-group">
                         <button class="btn btn-primary" id="btn-add-inventory">
-                            <i class="ph ph-plus"></i> Tambah / Update Stok
+                            <i class="ph ph-plus"></i> Tambah Inventaris
                         </button>
                     </div>
                 </div>
@@ -1409,7 +1404,7 @@
 
     <!-- 3. Modal Biaya Operasional -->
     <div id="modal-expense" class="modal-overlay hidden">
-        <div class="modal-content glass-panel" style="max-width: 450px;">
+        <div class="modal-content glass-panel" style="max-width: 600px;">
             <div class="modal-header">
                 <h2>Catat Pengeluaran</h2>
                 <button class="btn btn-icon" data-close="modal-expense"><i class="ph ph-x"></i></button>
@@ -1421,11 +1416,11 @@
                             <label style="font-size: 0.85rem;">Kategori Biaya</label>
                             <select id="expense-item-select" class="input"></select>
                         </div>
-                        <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                        <div class="input-group" style="flex: 0.3; margin-bottom: 0;">
                             <label style="font-size: 0.85rem;">Qty</label>
                             <input type="number" id="expense-qty" class="input" min="1" value="1" step="any">
                         </div>
-                        <div class="input-group" style="flex: 2; margin-bottom: 0;">
+                        <div class="input-group" style="flex: 1; margin-bottom: 0;">
                             <label style="font-size: 0.85rem;">Nominal (Rp)</label>
                             <input type="number" id="expense-item-price" class="input" min="0">
                         </div>
@@ -1489,10 +1484,8 @@
                     <div class="input-group">
                         <label>Tujuan Setoran / Tipe</label>
                         <select id="deposit-type" class="input" required="">
-                            <option value="Bank BCA">Bank BCA</option>
-                            <option value="Bank Mandiri">Bank Mandiri</option>
-                            <option value="Bank BRI">Bank BRI</option>
-                            <option value="Diserahkan Tunai ke Pusat">Diserahkan Tunai ke Pusat</option>
+                            <option value="Bank">Bank Transfer</option>
+                            <option value="Tunai">Tunai</option>
                             <option value="Lainnya">Lainnya</option>
                         </select>
                     </div>

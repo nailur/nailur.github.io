@@ -248,7 +248,6 @@ async function initPosMultiOutlet(profile) {
     const mobileNameLabel = document.getElementById('mobile-pos-outlet-name');
     const selector = document.getElementById('active-outlet-selector');
     const mobileSelector = document.getElementById('mobile-active-outlet-selector');
-    const mgmtSelector = document.getElementById('mgmt-active-outlet-selector');
     const opSelector = document.getElementById('op-active-outlet-selector');
     
     if (posOutletsList.length > 1) {
@@ -256,25 +255,21 @@ async function initPosMultiOutlet(profile) {
         if(mobileNameLabel) mobileNameLabel.classList.add('hidden'); // Also hide mobile label if using dropdown
         selector.classList.remove('hidden');
         if(mobileSelector) mobileSelector.classList.remove('hidden');
-        if(mgmtSelector) mgmtSelector.classList.remove('hidden');
         if(opSelector) opSelector.classList.remove('hidden');
         
         const optionsHtml = posOutletsList.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
         selector.innerHTML = optionsHtml;
         if(mobileSelector) mobileSelector.innerHTML = optionsHtml;
-        if(mgmtSelector) mgmtSelector.innerHTML = optionsHtml;
         if(opSelector) opSelector.innerHTML = optionsHtml;
         
         selector.value = activeOutletId;
         if(mobileSelector) mobileSelector.value = activeOutletId;
-        if(mgmtSelector) mgmtSelector.value = activeOutletId;
         if(opSelector) opSelector.value = activeOutletId;
         
         const handleChange = (e) => {
             setActiveOutletId(e.target.value);
             selector.value = activeOutletId;
             if(mobileSelector) mobileSelector.value = activeOutletId;
-            if(mgmtSelector) mgmtSelector.value = activeOutletId;
             if(opSelector) opSelector.value = activeOutletId;
             localStorage.setItem('pos_active_outlet_id', activeOutletId);
             generateOrderId();
@@ -300,10 +295,7 @@ async function initPosMultiOutlet(profile) {
             mobileSelector.addEventListener('change', handleChange);
             mobileSelector._outletChangeAttached = true;
         }
-        if (mgmtSelector && !mgmtSelector._outletChangeAttached) {
-            mgmtSelector.addEventListener('change', handleChange);
-            mgmtSelector._outletChangeAttached = true;
-        }
+
         if (opSelector && !opSelector._outletChangeAttached) {
             opSelector.addEventListener('change', handleChange);
             opSelector._outletChangeAttached = true;
@@ -1509,3 +1501,56 @@ if ('serviceWorker' in navigator) {
 }
 
 // Offline logic moved to offline.js
+
+// --- GLOBAL TABLE SORTER ---
+document.addEventListener('click', function(e) {
+    const th = e.target.closest('th');
+    if (!th) return;
+    const table = th.closest('table.data-table');
+    if (!table) return;
+    
+    // Skip action columns
+    if (th.classList.contains('action-col') || th.textContent.trim().toLowerCase() === 'aksi' || th.cellIndex === th.parentNode.cells.length - 1) return;
+
+    // Remove sorting indicators from other ths in the same table
+    const allThs = table.querySelectorAll('th');
+    allThs.forEach(header => {
+        if (header !== th) header.removeAttribute('data-sort-dir');
+    });
+
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    
+    // Determine sort direction
+    let dir = th.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc';
+    th.setAttribute('data-sort-dir', dir);
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    if (rows.length === 0 || rows[0].querySelector('td[colspan]')) return; // empty table message
+    
+    const index = Array.from(th.parentNode.children).indexOf(th);
+    
+    rows.sort((a, b) => {
+        const aCol = a.children[index];
+        const bCol = b.children[index];
+        if (!aCol || !bCol) return 0;
+        
+        let aText = aCol.textContent.trim();
+        let bText = bCol.textContent.trim();
+        
+        const aNum = parseFloat(aText.replace(/[^0-9,-]+/g, '').replace(',', '.'));
+        const bNum = parseFloat(bText.replace(/[^0-9,-]+/g, '').replace(',', '.'));
+        
+        const isNum = !isNaN(aNum) && !isNaN(bNum) && 
+                      (aText.includes('Rp') || aText.match(/^[0-9.,]+$/));
+
+        if (isNum) {
+            return dir === 'asc' ? aNum - bNum : bNum - aNum;
+        } else {
+            return dir === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+        }
+    });
+
+    // Re-append sorted rows
+    rows.forEach(row => tbody.appendChild(row));
+});
