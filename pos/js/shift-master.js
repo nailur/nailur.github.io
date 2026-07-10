@@ -5,10 +5,7 @@ import { showToast } from './app.js';
 let shiftsList = [];
 
 export async function loadShifts() {
-    const currentOutletId = getActiveOutletId();
-    console.log("loadShifts called, activeOutletId:", currentOutletId);
-    if (!currentOutletId) return;
-    const { data, error } = await supabase.from('shifts').select('*').eq('outlet_id', currentOutletId);
+    const { data, error } = await supabase.from('shifts').select('*');
     if (!error) {
         shiftsList = data || [];
         renderShifts();
@@ -65,12 +62,9 @@ export function openShiftModal(id = null) {
 
 export async function handleSaveShift(e) {
     e.preventDefault();
-    const currentOutletId = getActiveOutletId();
-    if (!currentOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
     
     const id = document.getElementById('shift-master-id').value;
     const payload = {
-        outlet_id: currentOutletId,
         name: document.getElementById('shift-master-name').value,
         start_time: document.getElementById('shift-master-start').value,
         end_time: document.getElementById('shift-master-end').value
