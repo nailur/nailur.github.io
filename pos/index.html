@@ -187,11 +187,11 @@
                     </div>
                 </div>
                 <div class="pos-tabs-nav tabs" id="sa-tabs-container">
-                    <button class="tab-btn active" data-target="branches-tab">Kelola Cabang</button>
-                    <button class="tab-btn" data-target="outlets-tab">Kelola Outlets</button>
-                    <button class="tab-btn" data-target="shifts-tab">Master Shift</button>
-                    <button class="tab-btn" data-target="users-tab">Kelola Users</button>
-                    <button class="tab-btn" data-target="expenses-master-tab">Kategori Biaya</button>
+                    <button class="tab-btn active" data-target="branches-tab">Cabang</button>
+                    <button class="tab-btn" data-target="outlets-tab">Outlets</button>
+                    <button class="tab-btn" data-target="shifts-tab">Shift</button>
+                    <button class="tab-btn" data-target="users-tab">Users</button>
+                    <button class="tab-btn" data-target="expenses-master-tab">Kategori Operasional</button>
 
 
 
@@ -232,11 +232,12 @@
                 <div class="tab-content">
                     <!-- BRANCHES TAB -->
 
-                    <div id="shifts-tab" class="tab-pane hidden" style="padding: 10px;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div id="shifts-tab" class="tab-pane hidden">
+                        <div class="action-bar">
                             <h3>Master Shift</h3>
-                            <button class="btn btn-primary" onclick="window.openShiftModal()">Tambah Shift</button>
+                            <button class="btn btn-primary" onclick="window.openShiftModal()">
+                                <i class="ph ph-plus"></i>Tambah Shift
+                            </button>
                         </div>
                         <div class="table-responsive">
                             <table class="data-table" id="shifts-table">
@@ -245,7 +246,7 @@
                                         <th>Nama Shift</th>
                                         <th>Jam Mulai</th>
                                         <th>Jam Selesai</th>
-                                        <th>Aksi</th>
+                                        <th class="action-col">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -319,7 +320,7 @@
                                         <th>Outlet</th>
                                         <th>Shift</th>
                                         <th>Status</th>
-                                        <th style="width: 120px;">Aksi</th>
+                                        <th class="action-col">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -425,7 +426,7 @@
                 </div>
 
                 <!-- ANNOUNCEMENT TAB -->
-                <div id="announcement-tab" class="tab-pane hidden" style="padding: 10px;">
+                <div id="announcement-tab" class="tab-pane hidden">
                     <div class="card glass-panel fade-in"
                         style="max-width: 700px; margin: 0 auto; overflow: hidden; padding: 0; border: none;">
 
@@ -496,9 +497,9 @@
 
 
                 <!-- EXPENSE MASTERS TAB -->
-                <div id="expenses-master-tab" class="tab-pane hidden" style="padding: 10px;">
+                <div id="expenses-master-tab" class="tab-pane hidden">
                     <div class="action-bar">
-                        <h3>Master Data Biaya Operasional</h3>
+                        <h3>Master Kategori Biaya Operasional</h3>
                         <button class="btn btn-primary" id="btn-add-expense-master">
                             <i class="ph ph-plus"></i> Tambah Kategori Biaya
                         </button>
@@ -553,13 +554,20 @@
                 </div>
 
                 <div class="pos-tabs-nav tabs" id="pos-tabs-container">
-                    <button class="pos-nav-btn active" data-target="pos-tab-content"><i class="ph ph-storefront"></i> Kasir</button>
-                    <button class="pos-nav-btn" data-target="history-tab-content"><i class="ph ph-receipt"></i> Transaksi</button>
-                    <button class="pos-nav-btn" data-target="dashboard-tab-content"><i class="ph ph-squares-four"></i> Dashboard</button>
-                    <button class="pos-nav-btn" data-target="attendance-tab-content" id="nav-attendance"><i class="ph ph-calendar-check"></i> Absensi</button>
-                    <button class="pos-nav-btn" data-target="expenses-tab-content"><i class="ph ph-money"></i> Operasional</button>
-                    <button class="pos-nav-btn" data-target="stock-tab-content"><i class="ph ph-package"></i> Stok</button>
-                    <button class="pos-nav-btn" data-target="deposits-tab-content"><i class="ph ph-wallet"></i> Setoran</button>
+                    <button class="pos-nav-btn active" data-target="pos-tab-content"><i class="ph ph-storefront"></i>
+                        Kasir</button>
+                    <button class="pos-nav-btn" data-target="history-tab-content"><i class="ph ph-receipt"></i>
+                        Transaksi</button>
+                    <button class="pos-nav-btn" data-target="dashboard-tab-content"><i class="ph ph-squares-four"></i>
+                        Dashboard</button>
+                    <button class="pos-nav-btn" data-target="attendance-tab-content" id="nav-attendance"><i
+                            class="ph ph-calendar-check"></i> Absensi</button>
+                    <button class="pos-nav-btn" data-target="expenses-tab-content"><i class="ph ph-money"></i>
+                        Operasional</button>
+                    <button class="pos-nav-btn" data-target="stock-tab-content"><i class="ph ph-package"></i>
+                        Stok</button>
+                    <button class="pos-nav-btn" data-target="deposits-tab-content"><i class="ph ph-wallet"></i>
+                        Setoran</button>
                 </div>
 
                 <div class="nav-right" style="gap: 5px;">
@@ -783,7 +791,7 @@
                 </div>
 
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
-                    <h2>Riwayat Absensi (3 Hari Terakhir)</h2>
+                    <h2>Riwayat Absensi</h2>
                     <div class="filter-group">
                         <button class="btn btn-secondary" id="btn-export-attendance"
                             style="display: flex; align-items: center; gap: 5px;" onclick="exportAttendanceExcel()">
@@ -1421,10 +1429,12 @@
                             <label style="font-size: 0.85rem;">Nominal (Rp)</label>
                             <input type="number" id="expense-item-price" class="input" min="0">
                         </div>
-                        <button type="button" class="btn btn-secondary" id="btn-add-expense-item" style="padding: 8px 12px;"><i class="ph ph-plus"></i></button>
+                        <button type="button" class="btn btn-secondary" id="btn-add-expense-item"
+                            style="padding: 8px 12px;"><i class="ph ph-plus"></i></button>
                     </div>
 
-                    <div class="table-responsive" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                    <div class="table-responsive"
+                        style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
                         <table class="data-table" id="expense-items-table" style="margin-bottom: 0;">
                             <thead>
                                 <tr>
@@ -1436,14 +1446,18 @@
                             </thead>
                             <tbody>
                                 <!-- Items will be added here -->
-                                <tr><td colspan="4" style="text-align: center; padding: 10px;">Belum ada item ditambahkan</td></tr>
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 10px;">Belum ada item
+                                        ditambahkan</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
 
                     <div class="input-group">
                         <label>Total Keseluruhan (Rp)</label>
-                        <input type="number" id="expense-total" class="input" readonly style="background-color: var(--bg-tertiary); font-weight: bold; font-size: 1.1rem; color: var(--primary);">
+                        <input type="number" id="expense-total" class="input" readonly
+                            style="background-color: var(--bg-tertiary); font-weight: bold; font-size: 1.1rem; color: var(--primary);">
                     </div>
                     <div class="input-group">
                         <label>Keterangan Tambahan</label>
@@ -1587,7 +1601,7 @@
     <div id="modal-expense-master" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 400px;">
             <div class="modal-header">
-                <h2>Tambah Kategori Biaya</h2>
+                <h2>Tambah Kategori</h2>
                 <button class="btn btn-icon" data-close="modal-expense-master"><i class="ph ph-x"></i></button>
             </div>
             <div class="modal-body">
@@ -1602,7 +1616,7 @@
                         <label>Grup Kategori</label>
                         <select id="expense-master-category" class="input" required="">
                             <option value="Bahan Tambahan">Bahan Tambahan</option>
-                            <option value="Operasional (Listrik, Gas, Air)">Operasional (Listrik, Gas, Air)</option>
+                            <option value="Operasional">Operasional</option>
                             <option value="Kebersihan">Kebersihan</option>
                             <option value="Lain-lain">Lain-lain</option>
                         </select>

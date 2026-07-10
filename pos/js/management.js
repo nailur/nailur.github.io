@@ -1,15 +1,15 @@
 import { supabase } from './supabase.js';
 import { showToast } from './app.js';
-import { 
-    branchesList, outletsList, 
-    setBranchesList, setOutletsList 
+import {
+    branchesList, outletsList,
+    setBranchesList, setOutletsList
 } from './state.js';
 import { loadShifts, openShiftModal } from './shift-master.js';
 
 export async function initManagement() {
     const profile = window.getCurrentProfile();
     const role = profile?.role;
-    
+
     // ====== ROLE-BASED TAB ACCESS ======
     // Role matrix:
     // superadmin: ALL tabs
@@ -17,7 +17,7 @@ export async function initManagement() {
     // kepala_cabang: outlets, users, shifts, stock, expenses, deposits, analytics (no branches, server-info, announcement)
     // kepala_toko: users, shifts, stock, expenses (add only), deposits (add only), (no branches, outlets, analytics, server-info, announcement)
     // kasir: NO access to management at all (button hidden)
-    
+
     const tabMap = {
         'branches-tab': { roles: ['superadmin', 'owner'] },
         'outlets-tab': { roles: ['superadmin', 'owner', 'kepala_cabang'] },
@@ -28,7 +28,7 @@ export async function initManagement() {
         'server-info-tab': { roles: ['superadmin'] },
         'announcement-tab': { roles: ['superadmin'] },
     };
-    
+
     // Show/hide tabs based on role
     Object.entries(tabMap).forEach(([tabId, config]) => {
         const btn = document.querySelector(`.tab-btn[data-target="${tabId}"]`);
@@ -40,39 +40,39 @@ export async function initManagement() {
             }
         }
     });
-    
+
     // Set management title based on role
     const titleEl = document.getElementById('management-title');
     if (titleEl) {
-        if (role === 'superadmin') titleEl.textContent = 'Pengaturan (Superadmin)';
-        else if (role === 'owner') titleEl.textContent = 'Pengaturan (Owner)';
-        else if (role === 'kepala_cabang') titleEl.textContent = 'Pengaturan (Kepala Cabang)';
-        else if (role === 'kepala_toko') titleEl.textContent = 'Pengaturan (Kepala Toko)';
+        if (role === 'superadmin') titleEl.textContent = 'Pengaturan';
+        else if (role === 'owner') titleEl.textContent = 'Pengaturan';
+        else if (role === 'kepala_cabang') titleEl.textContent = 'Pengaturan';
+        else if (role === 'kepala_toko') titleEl.textContent = 'Pengaturan';
     }
-    
+
     // ====== ROLE-BASED ACTION BUTTON VISIBILITY ======
     // Branches: only owner can add/edit/delete (superadmin too)
     // Already handled by tab visibility + buttons are always shown within the tab
-    
+
     // Shifts: kepala_toko cannot delete
     // Stock: kepala_toko cannot delete
     // Deposits: kepala_toko can only add (no edit/delete)
     // Users: kepala_toko can add+edit but not delete
-    
+
     // Store role globally for use in render functions
     window._managementRole = role;
-    
+
     // ====== TAB RESTORE LOGIC ======
     const savedMgmtTab = localStorage.getItem('management_active_tab');
     let tabToClick = null;
-    
+
     if (savedMgmtTab) {
         const btn = document.querySelector(`.tab-btn[data-target="${savedMgmtTab}"]`);
         if (btn && !btn.classList.contains('hidden')) {
             tabToClick = btn;
         }
     }
-    
+
     if (!tabToClick) {
         // Find first visible tab
         const allTabs = document.querySelectorAll('#sa-tabs-container .tab-btn');
@@ -83,11 +83,11 @@ export async function initManagement() {
             }
         }
     }
-    
+
     if (tabToClick) {
         tabToClick.click();
     }
-    
+
     // ====== LOAD DATA ======
     if (['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) {
         if (window.loadShifts) window.loadShifts();
@@ -98,7 +98,7 @@ export async function initManagement() {
         await loadOutlets();
     }
     await loadUsers();
-    
+
     if (role === 'superadmin') {
         const formAnnouncement = document.getElementById('form-announcement');
         if (formAnnouncement && !formAnnouncement.dataset.bound) {
@@ -216,7 +216,7 @@ export async function handleAddBranch(e) {
     e.preventDefault();
     const id = document.getElementById('branch-id').value;
     const name = document.getElementById('branch-name').value;
-    
+
     if (id) {
         const { error } = await supabase.from('branches').update({ name }).eq('id', id);
         if (error) showToast(error.message, 'error');
@@ -239,14 +239,14 @@ export function editBranch(id) {
 }
 
 export async function deleteBranch(id) {
-    if(!confirm('Hapus cabang ini?')) return;
-    
+    if (!confirm('Hapus cabang ini?')) return;
+
     const { count, error: countErr } = await supabase.from('outlets').select('id', { count: 'exact', head: true }).eq('branch_id', id);
-    if(countErr) return showToast('Gagal memvalidasi cabang', 'error');
-    if(count > 0) return showToast('Cabang tidak bisa dihapus karena masih memiliki outlet!', 'error');
+    if (countErr) return showToast('Gagal memvalidasi cabang', 'error');
+    if (count > 0) return showToast('Cabang tidak bisa dihapus karena masih memiliki outlet!', 'error');
 
     const { error } = await supabase.from('branches').delete().eq('id', id);
-    if(error) showToast(error.message, 'error');
+    if (error) showToast(error.message, 'error');
     else loadBranches();
 }
 
@@ -283,7 +283,7 @@ export function editOutlet(id) {
     document.getElementById('outlet-id').value = o.id;
     document.getElementById('outlet-name').value = o.name;
     document.getElementById('outlet-code').value = o.code || '';
-    document.getElementById('outlet-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id===o.branch_id?'selected':''}>${b.name}</option>`).join('');
+    document.getElementById('outlet-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id === o.branch_id ? 'selected' : ''}>${b.name}</option>`).join('');
     document.getElementById('outlet-address').value = o.address || '';
     document.getElementById('outlet-phone').value = o.phone || '';
     document.getElementById('outlet-tax').value = o.tax_rate_percent || 0;
@@ -291,16 +291,16 @@ export function editOutlet(id) {
 }
 
 export async function deleteOutlet(id) {
-    if(!confirm('Hapus outlet ini?')) return;
-    
+    if (!confirm('Hapus outlet ini?')) return;
+
     const { count: txCount } = await supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('outlet_id', id);
-    if(txCount > 0) return showToast('Outlet tidak bisa dihapus karena sudah memiliki transaksi!', 'error');
+    if (txCount > 0) return showToast('Outlet tidak bisa dihapus karena sudah memiliki transaksi!', 'error');
 
     const { count: prodCount } = await supabase.from('products').select('id', { count: 'exact', head: true }).eq('outlet_id', id);
-    if(prodCount > 0) return showToast('Outlet tidak bisa dihapus karena memiliki produk!', 'error');
+    if (prodCount > 0) return showToast('Outlet tidak bisa dihapus karena memiliki produk!', 'error');
 
     const { error } = await supabase.from('outlets').delete().eq('id', id);
-    if(error) showToast(error.message, 'error');
+    if (error) showToast(error.message, 'error');
     else loadOutlets();
 }
 
@@ -365,8 +365,8 @@ export async function handleAddUser(e) {
             await supabase.from('profiles').update({ shift_id }).eq('id', resData.user.id);
         }
 
-        showToast('Pegawai berhasil ditambahkan!', 'success'); 
-        document.getElementById('modal-user').classList.add('hidden'); 
+        showToast('Pegawai berhasil ditambahkan!', 'success');
+        document.getElementById('modal-user').classList.add('hidden');
         loadUsers();
         btn.disabled = false; btn.textContent = 'Simpan';
     }
@@ -375,16 +375,16 @@ export async function handleAddUser(e) {
 export async function editUser(id) {
     const { data, error } = await supabase.from('profiles').select('id, name, email, role, branch_id, outlet_id, status, shift_id').eq('id', id).single();
     if (error || !data) return showToast('Gagal memuat profil', 'error');
-    
+
     document.getElementById('modal-user-title').textContent = 'Edit Pegawai';
     document.getElementById('user-id').value = data.id;
     document.getElementById('user-email').value = data.email;
     document.getElementById('user-name').value = data.name || '';
-    document.getElementById('user-email').disabled = true; 
-    document.getElementById('user-password').value = ''; 
+    document.getElementById('user-email').disabled = true;
+    document.getElementById('user-password').value = '';
     document.getElementById('user-password').placeholder = '(Tidak bisa diubah dari sini)';
     document.getElementById('user-password').removeAttribute('required');
-    
+
     const roleSelect = document.getElementById('user-role');
     roleSelect.value = data.role;
     roleSelect.dispatchEvent(new Event('change'));
@@ -395,12 +395,12 @@ export async function editUser(id) {
         if (out) dataBranchId = out.branch_id;
     }
     const initialBranch = dataBranchId || (branchesList.length > 0 ? branchesList[0].id : null);
-    
-    document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id===initialBranch?'selected':''}>${b.name}</option>`).join('');
-    
+
+    document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id === initialBranch ? 'selected' : ''}>${b.name}</option>`).join('');
+
     const filteredOutlets = outletsList.filter(o => o.branch_id === initialBranch);
     if (filteredOutlets.length > 0) {
-        document.getElementById('user-outlet').innerHTML = '<option value="">-- Pilih Outlet --</option>' + filteredOutlets.map(o => `<option value="${o.id}" ${o.id===data.outlet_id?'selected':''}>${o.name}</option>`).join('');
+        document.getElementById('user-outlet').innerHTML = '<option value="">-- Pilih Outlet --</option>' + filteredOutlets.map(o => `<option value="${o.id}" ${o.id === data.outlet_id ? 'selected' : ''}>${o.name}</option>`).join('');
     } else {
         document.getElementById('user-outlet').innerHTML = '<option value="">-- Pilih Outlet --</option>';
     }
@@ -427,8 +427,8 @@ export async function populateShiftOptions(selectedShiftId = null) {
         let opts = '<option value="">-- Pilih Shift (Opsional) --</option>';
         data.forEach(s => {
             const isSel = (s.id === selectedShiftId) ? 'selected' : '';
-            const tStart = s.start_time ? s.start_time.slice(0,5) : '';
-            const tEnd = s.end_time ? s.end_time.slice(0,5) : '';
+            const tStart = s.start_time ? s.start_time.slice(0, 5) : '';
+            const tEnd = s.end_time ? s.end_time.slice(0, 5) : '';
             opts += '<option value="' + s.id + '" ' + isSel + '>' + s.name + ' (' + tStart + ' - ' + tEnd + ')</option>';
         });
         shiftSelect.innerHTML = opts;
@@ -447,18 +447,18 @@ document.getElementById('user-outlet')?.addEventListener('change', (e) => {
 
 export async function deleteUser(id) {
     const profile = window.getCurrentProfile();
-    if(id === profile?.id) return showToast('Tidak dapat menghapus diri sendiri', 'error');
+    if (id === profile?.id) return showToast('Tidak dapat menghapus diri sendiri', 'error');
 
-    if(!confirm('Hapus pegawai ini? Aksesnya akan dicabut.')) return;
-    
+    if (!confirm('Hapus pegawai ini? Aksesnya akan dicabut.')) return;
+
     const { count: txCount } = await supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('cashier_id', id);
-    if(txCount > 0) return showToast('User tidak bisa dihapus karena memiliki riwayat transaksi!', 'error');
+    if (txCount > 0) return showToast('User tidak bisa dihapus karena memiliki riwayat transaksi!', 'error');
 
     const { count: attCount } = await supabase.from('attendance').select('id', { count: 'exact', head: true }).eq('profile_id', id);
-    if(attCount > 0) return showToast('User tidak bisa dihapus karena memiliki riwayat absensi!', 'error');
+    if (attCount > 0) return showToast('User tidak bisa dihapus karena memiliki riwayat absensi!', 'error');
 
     const { error } = await supabase.from('profiles').delete().eq('id', id);
-    if(error) showToast(error.message, 'error');
+    if (error) showToast(error.message, 'error');
     else loadUsers();
 }
 window.populateShiftOptions = populateShiftOptions;
