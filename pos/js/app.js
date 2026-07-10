@@ -151,21 +151,15 @@ async function init() {
     setupEventListeners();
 }
 
-const operationsView = document.getElementById('operations-view');
-
 function showView(viewName) {
     loginView.classList.add('hidden');
     superadminView.classList.add('hidden');
-    if(operationsView) operationsView.classList.add('hidden');
     posView.classList.add('hidden');
     
     if (viewName === 'login') {
         loginView.classList.remove('hidden');
-        loginView.classList.add('active');
     } else if (viewName === 'superadmin') {
         superadminView.classList.remove('hidden');
-    } else if (viewName === 'operations') {
-        if(operationsView) operationsView.classList.remove('hidden');
     } else if (viewName === 'pos') {
         posView.classList.remove('hidden');
     }
@@ -208,14 +202,25 @@ async function routeUser(profile) {
     if (['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(profile.role)) {
         const btnMgmt = document.getElementById('btn-management');
         if (btnMgmt) btnMgmt.classList.remove('hidden');
-        const btnOp = document.getElementById('btn-operations');
-        if (btnOp) btnOp.classList.remove('hidden');
     } else {
         const btnMgmt = document.getElementById('btn-management');
         if (btnMgmt) btnMgmt.classList.add('hidden');
-        const btnOp = document.getElementById('btn-operations');
-        if (btnOp) btnOp.classList.add('hidden');
     }
+    
+    // Sembunyikan tab POS tertentu untuk kasir
+    const posStockBtn = document.querySelector('.pos-nav-btn[data-target="stock-tab-content"]');
+    const posExpensesBtn = document.querySelector('.pos-nav-btn[data-target="expenses-tab-content"]');
+    const posDepositsBtn = document.querySelector('.pos-nav-btn[data-target="deposits-tab-content"]');
+    if (profile.role === 'kasir') {
+        if(posStockBtn) posStockBtn.classList.add('hidden');
+        if(posExpensesBtn) posExpensesBtn.classList.add('hidden');
+        if(posDepositsBtn) posDepositsBtn.classList.add('hidden');
+    } else {
+        if(posStockBtn) posStockBtn.classList.remove('hidden');
+        if(posExpensesBtn) posExpensesBtn.classList.remove('hidden');
+        if(posDepositsBtn) posDepositsBtn.classList.remove('hidden');
+    }
+
     // Absensi selalu tampil untuk semua role yang masuk POS view
     document.getElementById('nav-attendance').classList.remove('hidden');
 }
@@ -426,11 +431,7 @@ function setupEventListeners() {
         btn.innerHTML = '<span>Masuk</span><i class="ph ph-arrow-right"></i>';
     });
 
-    // Navigasi POS <-> Manajemen <-> Operations
-    document.getElementById('btn-operations').addEventListener('click', () => {
-        showView('operations');
-        if (window.initOperations) window.initOperations();
-    });
+    
 
     document.getElementById('btn-management').addEventListener('click', () => {
         showView('superadmin');
@@ -671,9 +672,8 @@ function setupEventListeners() {
     // Main Tabs (Pengaturan & Manajemen)
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const containerId = e.currentTarget.closest('.tabs').id; // sa-tabs-container or op-tabs-container
-            const viewId = containerId === 'sa-tabs-container' ? 'superadmin-view' : 'operations-view';
-            const storageKey = containerId === 'sa-tabs-container' ? 'management_active_tab' : 'op_active_tab';
+            const viewId = 'superadmin-view';
+            const storageKey = 'management_active_tab';
             
             const prevTab = localStorage.getItem(storageKey);
             if (prevTab === 'analytics-tab' && e.currentTarget.getAttribute('data-target') !== 'analytics-tab') {

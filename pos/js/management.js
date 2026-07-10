@@ -23,9 +23,6 @@ export async function initManagement() {
         'outlets-tab': { roles: ['superadmin', 'owner', 'kepala_cabang'] },
         'users-tab': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
         'shifts-tab': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
-        'stock-tab-content': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
-        'expenses-tab-content': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
-        'deposits-tab-content': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
         'expenses-master-tab': { roles: ['superadmin', 'owner', 'kepala_cabang'] },
         'analytics-tab': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
         'server-info-tab': { roles: ['superadmin'] },
@@ -89,8 +86,11 @@ export async function initManagement() {
     
     if (tabToClick) {
         tabToClick.click();
-    } else {
-        loadUsers();
+    }
+    
+    // ====== LOAD DATA ======
+    if (['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) {
+        if (window.loadShifts) window.loadShifts();
     }
 
     if (['superadmin', 'owner', 'kepala_cabang'].includes(role)) {
@@ -109,73 +109,7 @@ export async function initManagement() {
     }
 }
 
-export async function initOperations() {
-    const profile = window.getCurrentProfile();
-    const role = profile?.role;
-    
-    // Store role globally for use in render functions
-    window._managementRole = role;
 
-    const opTabMap = {
-        'shifts-tab': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
-        'stock-tab-content': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
-        'expenses-tab-content': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] },
-        'deposits-tab-content': { roles: ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'] }
-    };
-    
-    const titleEl = document.getElementById('operations-title');
-    if (titleEl) {
-        if (role === 'superadmin') titleEl.textContent = 'Manajemen (Superadmin)';
-        else if (role === 'owner') titleEl.textContent = 'Manajemen (Owner)';
-        else if (role === 'kepala_cabang') titleEl.textContent = 'Manajemen (Kepala Cabang)';
-        else if (role === 'kepala_toko') titleEl.textContent = 'Manajemen (Kepala Toko)';
-    }
-    
-    Object.entries(opTabMap).forEach(([tabId, config]) => {
-        const btn = document.querySelector(`.tab-btn[data-target="${tabId}"]`);
-        if (btn) {
-            if (config.roles.includes(role)) {
-                btn.classList.remove('hidden');
-            } else {
-                btn.classList.add('hidden');
-            }
-        }
-    });
-
-    const savedOpTab = localStorage.getItem('op_active_tab');
-    let opTabToClick = null;
-    if (savedOpTab) {
-        const btn = document.querySelector(`#op-tabs-container .tab-btn[data-target="${savedOpTab}"]`);
-        if (btn && !btn.classList.contains('hidden')) {
-            opTabToClick = btn;
-        }
-    }
-    if (!opTabToClick) {
-        const allTabs = document.querySelectorAll('#op-tabs-container .tab-btn');
-        for (const btn of allTabs) {
-            if (!btn.classList.contains('hidden')) {
-                opTabToClick = btn;
-                break;
-            }
-        }
-    }
-    if (opTabToClick) opTabToClick.click();
-    
-    // Bind shift button
-    const btnAddShift = document.getElementById('btn-add-shift');
-    if (btnAddShift && !btnAddShift.hasAttribute('data-bound')) {
-        btnAddShift.addEventListener('click', () => openShiftModal());
-        btnAddShift.setAttribute('data-bound', 'true');
-    }
-
-    if (['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) {
-        loadShifts();
-        if (window.loadInventoryForManagement) window.loadInventoryForManagement();
-        if (window.loadExpensesForManagement) window.loadExpensesForManagement();
-        if (window.loadDepositsForManagement) window.loadDepositsForManagement();
-    }
-}
-window.initOperations = initOperations;
 
 export async function loadBranches() {
     let query = supabase.from('branches').select('id, name, created_at').order('created_at', { ascending: false });

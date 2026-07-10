@@ -153,209 +153,7 @@
         <!-- ======================= -->
         
 <!-- Tampilan Manajemen (Operations) -->
-<section id="operations-view" class="view-section hidden pos-view-container">
-            <!-- Mobile Header for SA -->
-            <div class="mobile-pos-header hidden-desktop glass-panel">
-                <button class="btn btn-icon" id="btn-op-mobile-menu">
-                    <i class="ph ph-list" style="font-size: 24px;"></i>
-                </button>
-                <div class="mobile-brand">
-                    <i class="ph-fill ph-crown"></i>
-                    <span>Manajemen Sistem</span>
-                </div>
-            </div>
-
-            <!-- Sidebar Overlay -->
-            <div class="sidebar-overlay" id="op-sidebar-overlay"></div>
-
-            <nav class="pos-nav glass-panel" id="op-sidebar">
-                <div class="nav-left">
-                    <div class="nav-brand">
-                        <i class="ph-fill ph-crown"></i>
-                        <span id="operations-title">Manajemen</span>
-                        <select id="op-active-outlet-selector" class="input-sm hidden" style="margin-left: 15px; max-width: 200px; color: var(--text); background: var(--bg);"></select>
-                    </div>
-                </div>
-                <div class="pos-tabs-nav tabs" id="op-tabs-container">
-                    
-                    
-                    
-                    <button class="tab-btn active" data-target="shifts-tab">Master Shift</button>
-                    <button class="tab-btn" data-target="stock-tab-content">Manajemen Stok</button>
-                    <button class="tab-btn" data-target="expenses-tab-content">Biaya Operasional</button>
-                    <button class="tab-btn" data-target="deposits-tab-content">Setoran Penjualan</button>
-                    
-                    
-                    
-                </div>
-                <div class="nav-right" style="gap: 5px;">
-                    <span id="op-user-info" class="user-badge hide-mobile hidden" style="margin-right: 15px;">Superadmin</span>
-                    <button class="btn btn-icon" id="btn-back-pos-op" title="Kembali ke Kasir" style="justify-content: flex-start;">
-                        <i class="ph ph-storefront"></i>
-                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">POS Kasir</span>
-                    </button>
-                    <button class="btn btn-icon" id="btn-edit-profile-op" title="Edit Profile" style="justify-content: flex-start;">
-                        <i class="ph ph-user-circle"></i>
-                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Edit Profile</span>
-                    </button>
-                    <button class="btn btn-icon btn-logout" title="Logout" style="justify-content: flex-start;">
-                        <i class="ph ph-sign-out"></i>
-                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Keluar</span>
-                    </button>
-                    <button class="btn btn-icon" title="Update / Refresh App" style="justify-content: flex-start;" onclick="document.getElementById('btn-hard-refresh')?.click()">
-                        <i class="ph ph-arrows-clockwise"></i>
-                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Refresh</span>
-                    </button>
-                </div>
-            </nav>
-
-            <main class="glass-panel history-panel">
-                <header class="page-header hidden-desktop">
-                    <h1 style="font-size: 1.5rem;">Manajemen Sistem</h1>
-                </header>
-
-                <div class="tab-content">
-                    <!-- BRANCHES TAB -->
-                    
-
-                    <!-- OUTLETS TAB -->
-                    
-
-                    <!-- 3. KELOLA USERS TAB -->
-                    
-
-
-
-                    
-                <!-- MANAJEMEN STOK TAB -->
-                <div id="stock-tab-content" class="tab-pane hidden" style="padding: 10px;">
-                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
-                        <h3>Manajemen Stok (Inventaris)</h3>
-                        <div class="filter-group">
-                            <button class="btn btn-primary" id="btn-add-inventory">
-                                <i class="ph ph-plus"></i> Tambah / Update Stok
-                            </button>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table" id="inventory-table">
-                            <thead>
-                                <tr>
-                                    <th>Kode Barang</th>
-                                    <th>Nama Barang</th>
-                                    <th>Kategori</th>
-                                    <th>Satuan Beli</th>
-                                    <th>Satuan Pakai</th>
-                                    <th>Konversi</th>
-                                    <th>Sisa Stok (Pakai)</th>
-                                    <th class="action-col">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Inventory rows injected here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- BIAYA OPERASIONAL TAB -->
-                <div id="expenses-tab-content" class="tab-pane hidden" style="padding: 10px;">
-                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
-                        <h3>Biaya Operasional</h3>
-                        <div class="filter-group">
-                            <button class="btn btn-primary" id="btn-add-expense">
-                                <i class="ph ph-plus"></i> Catat Pengeluaran
-                            </button>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table" id="expenses-table">
-                            <thead>
-                                <tr>
-                                    <th>No. Dokumen</th>
-                                    <th>Tgl Biaya</th>
-                                    <th>Total (Rp)</th>
-                                    <th>Keterangan</th>
-                                    <th>Kasir</th>
-                                    <th class="action-col">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Expenses rows injected here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- SETORAN PENJUALAN TAB -->
-                <div id="deposits-tab-content" class="tab-pane hidden" style="padding: 10px;">
-                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
-                        <h3>Setoran Penjualan</h3>
-                        <div class="filter-group">
-                            <button class="btn btn-primary" id="btn-add-deposit">
-                                <i class="ph ph-plus"></i> Input Setoran
-                            </button>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table" id="deposits-table">
-                            <thead>
-                                <tr>
-                                    <th>ID Setoran</th>
-                                    <th>Tanggal</th>
-                                    <th>Jumlah (Rp)</th>
-                                    <th>Tipe Setoran</th>
-                                    <th>Keterangan</th>
-                                    <th>Kasir</th>
-                                    <th class="action-col">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Deposits rows injected here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                    <!-- ANALITIK TAB -->
-                    
-
-                    <!-- 4. INFO SERVER TAB -->
-                    
-                </div>
-
-                <!-- ANNOUNCEMENT TAB -->
-                
-
-                <!-- SHIFTS TAB -->
-                <div id="shifts-tab" class="tab-pane active" style="padding: 10px;">
-                    <div class="action-bar">
-                        <h3>Daftar Master Shift</h3>
-                        <button class="btn btn-primary" id="btn-add-shift">
-                            <i class="ph ph-plus"></i> Tambah Shift
-                        </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table" id="shifts-table">
-                            <thead>
-                                <tr>
-                                    <th>Nama Shift</th>
-                                    <th>Jam Masuk</th>
-                                    <th>Jam Selesai</th>
-                                    <th class="action-col">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Shift rows injected here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- EXPENSE MASTERS TAB -->
-                
-            </main>
-        </section><section id="superadmin-view" class="view-section hidden pos-view-container">
+<section id="superadmin-view" class="view-section hidden pos-view-container">
             <!-- Mobile Header for SA -->
             <div class="mobile-pos-header hidden-desktop glass-panel">
                 <button class="btn btn-icon" id="btn-sa-mobile-menu">
@@ -378,7 +176,7 @@
                         <select id="mgmt-active-outlet-selector" class="input-sm hidden" style="margin-left: 15px; max-width: 200px; color: var(--text); background: var(--bg);"></select>
                     </div>
                 </div>
-                <div class="pos-tabs-nav tabs" id="sa-tabs-container">
+                <div class="pos-tabs-nav tabs" id="sa-tabs-container"><button class="tab-btn active" data-target="shifts-tab">Master Shift</button>
                     <button class="tab-btn active" data-target="branches-tab">Kelola Cabang</button>
                     <button class="tab-btn" data-target="outlets-tab">Kelola Outlets</button>
                     <button class="tab-btn" data-target="users-tab">Kelola Users</button>
@@ -739,7 +537,7 @@
                     <button class="pos-nav-btn" data-target="history-tab-content">Riwayat Transaksi</button>
                     <button class="pos-nav-btn" data-target="attendance-tab-content" id="nav-attendance">Absensi</button>
                     <button class="pos-nav-btn" data-target="dashboard-tab-content">Dashboard</button>
-                </div>
+                <button class="pos-nav-btn" data-target="stock-tab-content"><i class="ph ph-package"></i> Manajemen Stok</button><button class="pos-nav-btn" data-target="expenses-tab-content"><i class="ph ph-money"></i> Biaya Operasional</button><button class="pos-nav-btn" data-target="deposits-tab-content"><i class="ph ph-wallet"></i> Setoran Penjualan</button></div>
 
                 <div class="nav-right" style="gap: 5px;">
 
@@ -748,10 +546,7 @@
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Koneksi Printer</span>
                     </button>
 
-                    <button class="btn btn-icon hidden" id="btn-operations" title="Manajemen" style="justify-content: flex-start;">
-                        <i class="ph ph-briefcase"></i>
-                        <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Manajemen</span>
-                    </button><button class="btn btn-icon hidden" id="btn-management" title="Pengaturan" style="justify-content: flex-start;">
+                    <button class="btn btn-icon hidden" id="btn-management" title="Pengaturan" style="justify-content: flex-start;">
                         <i class="ph ph-gear"></i>
                         <span class="sidebar-label hidden-desktop" style="margin-left: 8px;">Pengaturan</span>
                     </button>
@@ -1032,7 +827,88 @@
                     </div>
                 </div>
             </div>
-        </section>
+        <div id="stock-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Manajemen Stok (Inventaris)</h3>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" id="btn-add-inventory">
+                                <i class="ph ph-plus"></i> Tambah / Update Stok
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>Kode Barang</th>
+                                    <th>Nama Barang</th>
+                                    <th>Kategori</th>
+                                    <th>Satuan Beli</th>
+                                    <th>Satuan Pakai</th>
+                                    <th>Konversi</th>
+                                    <th>Sisa Stok (Pakai)</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Inventory rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div><div id="expenses-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Biaya Operasional</h3>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" id="btn-add-expense">
+                                <i class="ph ph-plus"></i> Catat Pengeluaran
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="expenses-table">
+                            <thead>
+                                <tr>
+                                    <th>No. Dokumen</th>
+                                    <th>Tgl Biaya</th>
+                                    <th>Total (Rp)</th>
+                                    <th>Keterangan</th>
+                                    <th>Kasir</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Expenses rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div><div id="deposits-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Setoran Penjualan</h3>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" id="btn-add-deposit">
+                                <i class="ph ph-plus"></i> Input Setoran
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="deposits-table">
+                            <thead>
+                                <tr>
+                                    <th>ID Setoran</th>
+                                    <th>Tanggal</th>
+                                    <th>Jumlah (Rp)</th>
+                                    <th>Tipe Setoran</th>
+                                    <th>Keterangan</th>
+                                    <th>Kasir</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Deposits rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div></section>
 
     </div> <!-- END APP CONTAINER -->
 
