@@ -445,12 +445,6 @@ function setupEventListeners() {
         // Pastikan tab kasir terbuka
         document.querySelector('.pos-nav-btn[data-target="pos-tab-content"]')?.click();
     });
-    
-    document.getElementById('btn-back-pos-op').addEventListener('click', () => {
-        showView('pos');
-        document.querySelector('.pos-nav-btn[data-target="pos-tab-content"]')?.click();
-    });
-
     // Logout
     document.querySelectorAll('.btn-logout').forEach(btn => {
         btn.addEventListener('click', () => logout());
@@ -546,33 +540,6 @@ function setupEventListeners() {
                 if (window.innerWidth <= 768) {
                     saSidebar.classList.remove('open');
                     saSidebarOverlay.classList.remove('active');
-                }
-            });
-        });
-    }
-
-    // OP Mobile Sidebar Logic
-    const btnOpMobileMenu = document.getElementById('btn-op-mobile-menu');
-    const opSidebar = document.getElementById('op-sidebar');
-    const opSidebarOverlay = document.getElementById('op-sidebar-overlay');
-
-    if (btnOpMobileMenu && opSidebar && opSidebarOverlay) {
-        btnOpMobileMenu.addEventListener('click', () => {
-            opSidebar.classList.add('open');
-            opSidebarOverlay.classList.add('active');
-        });
-
-        opSidebarOverlay.addEventListener('click', () => {
-            opSidebar.classList.remove('open');
-            opSidebarOverlay.classList.remove('active');
-        });
-
-        const opTabBtns = opSidebar.querySelectorAll('.tab-btn');
-        opTabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    opSidebar.classList.remove('open');
-                    opSidebarOverlay.classList.remove('active');
                 }
             });
         });
@@ -722,7 +689,7 @@ function setupEventListeners() {
             
             // Show/Hide Add Product Button
             const btnAdd = document.getElementById('btn-add-product');
-            if (btnAdd && !btnAdd.classList.contains('hidden') || getCurrentUser()?.role === 'kepala_toko' || getCurrentUser()?.role === 'owner' || getCurrentUser()?.role === 'kepala_cabang') {
+            if (btnAdd && !btnAdd.classList.contains('hidden') || getCurrentProfile()?.role === 'kepala_toko' || getCurrentProfile()?.role === 'owner' || getCurrentProfile()?.role === 'kepala_cabang') {
                  btnAdd.style.display = (targetId === 'pos-tab-content') ? 'block' : 'none';
             }
             

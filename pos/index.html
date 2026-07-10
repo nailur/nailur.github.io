@@ -216,7 +216,27 @@
 
                 <div class="tab-content">
                     <!-- BRANCHES TAB -->
-                    <div id="branches-tab" class="tab-pane active">
+                    
+                    <div id="shifts-tab" class="tab-pane hidden" style="padding: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3>Master Shift</h3>
+                            <button class="btn btn-primary" onclick="window.openShiftModal()">Tambah Shift</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table" id="shifts-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Shift</th>
+                                        <th>Jam Mulai</th>
+                                        <th>Jam Selesai</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+<div id="branches-tab" class="tab-pane active">
                         <div class="action-bar">
                             <h3>Daftar Cabang</h3>
                             <button class="btn btn-primary" id="btn-add-branch">
