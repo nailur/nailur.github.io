@@ -422,6 +422,8 @@ body {
     animation: fadeIn 0.3s ease;
     will-change: opacity, transform;
     transform: translateZ(0);
+    margin: 12px 16px 16px 16px;
+    flex: 1;
 }
 
 .nav-left {
@@ -451,7 +453,7 @@ body {
     overflow-x: auto;
     -ms-overflow-style: none;
     scrollbar-width: none;
-    max-width: 40vw;
+    max-width: 57vw;
     min-width: 0;
     white-space: nowrap;
 }
@@ -460,7 +462,8 @@ body {
     display: none;
 }
 
-.pos-nav-btn, .tab-btn {
+.pos-nav-btn,
+.tab-btn {
     padding: 6px 12px;
     border: none;
     background: transparent;
@@ -473,7 +476,8 @@ body {
     transition: all 0.2s;
 }
 
-.pos-nav-btn.active, .tab-btn.active {
+.pos-nav-btn.active,
+.tab-btn.active {
     background: #fff;
     color: var(--primary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
