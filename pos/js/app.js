@@ -714,12 +714,14 @@ function setupEventListeners() {
 
     // Superadmin Actions
     document.getElementById('btn-add-branch').addEventListener('click', () => {
+        document.getElementById('modal-branch-title').textContent = 'Tambah Cabang Baru';
         document.getElementById('form-branch').reset();
         document.getElementById('branch-id').value = '';
         document.getElementById('modal-branch').classList.remove('hidden');
     });
 
     document.getElementById('btn-add-outlet').addEventListener('click', () => {
+        document.getElementById('modal-outlet-title').textContent = 'Tambah Outlet Baru';
         document.getElementById('form-outlet').reset();
         document.getElementById('outlet-id').value = '';
         document.getElementById('outlet-branch').innerHTML = branchesList.map(b => `<option value="${b.id}">${b.name}</option>`).join('');

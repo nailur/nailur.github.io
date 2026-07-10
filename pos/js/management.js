@@ -166,7 +166,7 @@ export async function loadOutlets() {
 }
 
 export async function loadUsers() {
-    let query = supabase.from('profiles').select('id, email, name, role, branch_id, outlet_id, status, created_at, outlets(name), branches(name)').neq('role', 'superadmin');
+    let query = supabase.from('profiles').select('id, email, name, role, branch_id, outlet_id, shift_id, status, created_at, outlets(name), branches(name), shifts(name)').neq('role', 'superadmin');
     const profile = window.getCurrentProfile();
     if (profile?.role === 'kepala_cabang') {
         const { data: bOutlets } = await supabase.from('outlets').select('id').eq('branch_id', profile.branch_id);
@@ -193,6 +193,7 @@ export async function loadUsers() {
                 <td><span class="user-badge">${u.role}</span></td>
                 <td>${u.branches?.name || '-'}</td>
                 <td>${u.outlets?.name || '-'}</td>
+                <td>${u.shifts?.name || '-'}</td>
                 <td>${u.status === 'inactive' ? '<span class="user-badge" style="background:var(--danger)">Inactive</span>' : '<span class="user-badge" style="background:var(--success)">Active</span>'}</td>
                 <td>
                     ${canEdit ? `<button class="btn btn-icon" style="color:var(--primary)" onclick="editUser('${u.id}')"><i class="ph ph-pencil-simple"></i></button>` : ''}
@@ -223,6 +224,7 @@ export async function handleAddBranch(e) {
 export function editBranch(id) {
     const b = branchesList.find(x => x.id === id);
     if (!b) return;
+    document.getElementById('modal-branch-title').textContent = 'Edit Cabang';
     document.getElementById('branch-id').value = b.id;
     document.getElementById('branch-name').value = b.name;
 
@@ -270,6 +272,7 @@ export async function handleAddOutlet(e) {
 export function editOutlet(id) {
     const o = outletsList.find(x => x.id === id);
     if (!o) return;
+    document.getElementById('modal-outlet-title').textContent = 'Edit Outlet';
     document.getElementById('outlet-id').value = o.id;
     document.getElementById('outlet-name').value = o.name;
     document.getElementById('outlet-code').value = o.code || '';

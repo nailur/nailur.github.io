@@ -37,7 +37,7 @@ export function renderInventory() {
     
     tbody.innerHTML = inventoryList.map((item, index) => `
         <tr>
-            <td>${item.item_code || '-'}</td>
+            <td>${item.code || '-'}</td>
             <td>${item.name}</td>
             <td>${item.category || '-'}</td>
             <td>${item.purchase_unit || '-'}</td>
@@ -94,7 +94,7 @@ export async function handleSaveInventory(e) {
     const id = document.getElementById('inventory-id').value;
     const payload = {
         outlet_id: getActiveOutletId(),
-        item_code: document.getElementById('inventory-name').value.substring(0,3).toUpperCase() + '-' + Math.floor(Math.random() * 10000), // generated
+        code: document.getElementById('inventory-name').value.substring(0,3).toUpperCase() + '-' + Math.floor(Math.random() * 10000), // generated
         name: document.getElementById('inventory-name').value,
         category: document.getElementById('inventory-category').value,
         purchase_unit: document.getElementById('inventory-purchase-unit').value,

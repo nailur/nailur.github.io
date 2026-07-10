@@ -5,7 +5,7 @@ import { showToast } from './app.js';
 let shiftsList = [];
 
 export async function loadShifts() {
-    const { data, error } = await supabase.from('shifts').select('*');
+    const { data, error } = await supabase.from('shifts').select('*').order('start_time', { ascending: true });
     if (!error) {
         shiftsList = data || [];
         renderShifts();
@@ -35,12 +35,13 @@ function renderShifts() {
             </td>
         </tr>
     `).join('');
+    if (window.enableTableSort) window.enableTableSort('shifts-table');
 }
 
 export function openShiftModal(id = null) {
     const form = document.getElementById('form-shift-master');
     const modal = document.getElementById('modal-shift-master');
-    const title = document.getElementById('modal-shift-master-title') || modal.querySelector('h2');
+    const title = document.getElementById('modal-shift-master-title') || modal.querySelector('h3');
     
     form.reset();
     document.getElementById('shift-master-id').value = '';
