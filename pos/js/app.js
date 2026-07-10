@@ -727,11 +727,13 @@ function setupEventListeners() {
     });
 
     document.getElementById('btn-add-user').addEventListener('click', () => {
+        document.getElementById('modal-user-title').textContent = 'Tambah Pegawai Baru';
         document.getElementById('form-user').reset();
         document.getElementById('user-id').value = '';
         document.getElementById('user-name').value = '';
         document.getElementById('user-email').disabled = false;
         document.getElementById('user-password').placeholder = 'Minimal 6 karakter';
+        if (window.populateShiftOptions) window.populateShiftOptions();
         document.getElementById('user-password').setAttribute('required', 'true');
         document.getElementById('user-status').value = 'active';
         document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}">${b.name}</option>`).join('');

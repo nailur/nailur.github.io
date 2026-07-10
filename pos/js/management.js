@@ -105,6 +105,9 @@ export async function initManagement() {
             formAnnouncement.addEventListener('submit', window.sendCustomNotification);
             formAnnouncement.dataset.bound = 'true';
         }
+        window.editUser = editUser;
+        window.deleteUser = deleteUser;
+        window.populateShiftOptions = populateShiftOptions;
         if (window.loadTargetUsers) await window.loadTargetUsers();
     }
 }
@@ -360,9 +363,10 @@ export async function handleAddUser(e) {
 }
 
 export async function editUser(id) {
-    const { data, error } = await supabase.from('profiles').select('id, name, email, role, branch_id, outlet_id, status').eq('id', id).single();
+    const { data, error } = await supabase.from('profiles').select('id, name, email, role, branch_id, outlet_id, status, shift_id').eq('id', id).single();
     if (error || !data) return showToast('Gagal memuat profil', 'error');
     
+    document.getElementById('modal-user-title').textContent = 'Edit Pegawai';
     document.getElementById('user-id').value = data.id;
     document.getElementById('user-email').value = data.email;
     document.getElementById('user-name').value = data.name || '';
@@ -445,3 +449,4 @@ export async function deleteUser(id) {
     if(error) showToast(error.message, 'error');
     else loadUsers();
 }
+window.populateShiftOptions = populateShiftOptions;

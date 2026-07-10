@@ -176,9 +176,10 @@
                         <select id="mgmt-active-outlet-selector" class="input-sm hidden" style="margin-left: 15px; max-width: 200px; color: var(--text); background: var(--bg);"></select>
                     </div>
                 </div>
-                <div class="pos-tabs-nav tabs" id="sa-tabs-container"><button class="tab-btn active" data-target="shifts-tab">Master Shift</button>
+                <div class="pos-tabs-nav tabs" id="sa-tabs-container">
                     <button class="tab-btn active" data-target="branches-tab">Kelola Cabang</button>
                     <button class="tab-btn" data-target="outlets-tab">Kelola Outlets</button>
+                    <button class="tab-btn" data-target="shifts-tab">Master Shift</button>
                     <button class="tab-btn" data-target="users-tab">Kelola Users</button>
                     
                     
@@ -1004,7 +1005,7 @@
     <div id="modal-user" class="modal-overlay hidden">
         <div class="modal-content glass-panel">
             <div class="modal-header">
-                <h3>Tambah Pegawai Baru</h3>
+                <h3 id="modal-user-title">Tambah Pegawai Baru</h3>
                 <button class="btn-close" data-close="modal-user"><i class="ph ph-x"></i></button>
             </div>
             <form id="form-user">
