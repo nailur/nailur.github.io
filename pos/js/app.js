@@ -488,7 +488,10 @@ function setupEventListeners() {
     document.getElementById('btn-add-expense-master')?.addEventListener('click', openAddExpenseMaster);
     document.getElementById('form-expense-master')?.addEventListener('submit', handleSaveExpenseMaster);
 
-    document.getElementById('btn-add-deposit')?.addEventListener('click', () => document.getElementById('modal-deposit').classList.remove('hidden'));
+    document.getElementById('btn-add-deposit')?.addEventListener('click', () => {
+        if(window.openAddDeposit) window.openAddDeposit();
+        else document.getElementById('modal-deposit').classList.remove('hidden');
+    });
     document.getElementById('form-deposit')?.addEventListener('submit', handleSaveDeposit);
 
     document.getElementById('form-shift-master')?.addEventListener('submit', handleSaveShift);

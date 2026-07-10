@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js';
+﻿import { supabase } from './supabase.js';
 import { getActiveOutletId } from './state.js';
 import { showToast, getLocalToday, generateRandomDocNumber } from './app.js';
 import { getCurrentProfile } from './auth.js';
@@ -41,7 +41,8 @@ export function renderDeposits() {
             <td>${dep.account_type || '-'}</td>
             <td>${dep.notes || '-'}</td>
             <td>${dep.profiles?.name || '-'}</td>
-            <td>
+            <td style="white-space:nowrap;">
+                ${dep.attachment_url ? `<button class="btn btn-icon btn-secondary" onclick="window.viewAttachment('${dep.attachment_url}')" title="Lihat Bukti"><i class="ph ph-image"></i></button>` : ''}
                 ${canEdit ? `<button class="btn btn-icon btn-secondary" onclick="window.editDeposit('${dep.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>` : ''}
                 ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="window.deleteDeposit('${dep.id}')" title="Hapus"><i class="ph ph-trash"></i></button>` : ''}
             </td>
@@ -60,21 +61,64 @@ export async function handleSaveDeposit(e) {
     const amount = parseFloat(document.getElementById('deposit-amount').value);
     const account_type = document.getElementById('deposit-type').value;
     const notes = document.getElementById('deposit-notes').value;
-    const docNumber = generateRandomDocNumber('ST'); // Setoran
-    
-    const payload = {
-        outlet_id: getActiveOutletId(),
-        amount,
-        account_type,
-        notes,
-    };
+    const fileInput = document.getElementById('deposit-attachment');
+    let attachment_url = null;
     
     try {
+        // Upload & Compress Image if selected
+        if (fileInput.files && fileInput.files.length > 0) {
+            btn.innerHTML = 'Mengompres...';
+            const file = fileInput.files[0];
+            const options = {
+                maxSizeMB: 0.5,
+                maxWidthOrHeight: 1280,
+                useWebWorker: true
+            };
+            
+            let compressedFile;
+            try {
+                compressedFile = await imageCompression(file, options);
+            } catch (err) {
+                console.error('Compression error', err);
+                compressedFile = file; // fallback to original
+            }
+            
+            btn.innerHTML = 'Mengunggah...';
+            const ext = compressedFile.name.split('.').pop() || 'jpg';
+            const fileName = `deposit_${Date.now()}_${Math.random().toString(36).substr(2,9)}.${ext}`;
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('attachments')
+                .upload(fileName, compressedFile, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+                
+            if (uploadError) throw uploadError;
+            
+            // Get public URL
+            const { data: publicData } = supabase.storage.from('attachments').getPublicUrl(fileName);
+            attachment_url = publicData.publicUrl;
+        }
+        
+        btn.innerHTML = 'Menyimpan...';
+        
+        const payload = {
+            outlet_id: getActiveOutletId(),
+            amount,
+            account_type,
+            notes,
+        };
+        
+        if (attachment_url) {
+            payload.attachment_url = attachment_url;
+        }
+        
         if (id) {
             const { error } = await supabase.from('sales_deposits').update(payload).eq('id', id);
             if (error) throw error;
             showToast('Setoran berhasil diperbarui', 'success');
         } else {
+            const docNumber = generateRandomDocNumber('ST');
             payload.document_number = docNumber;
             payload.deposit_date = getLocalToday();
             payload.created_by = getCurrentProfile().id;
@@ -89,6 +133,7 @@ export async function handleSaveDeposit(e) {
     } catch (err) {
         showToast('Gagal mencatat setoran: ' + err.message, 'error');
     } finally {
+        btn.innerHTML = 'Simpan Setoran';
         btn.disabled = false;
     }
 }
@@ -113,5 +158,56 @@ window.editDeposit = function(id) {
         document.getElementById('deposit-type').value = deposit.account_type;
     }
     document.getElementById('deposit-notes').value = deposit.notes || '';
+    
+    // reset file input
+    document.getElementById('deposit-attachment').value = '';
+    const previewContainer = document.getElementById('deposit-attachment-preview-container');
+    const previewImg = document.getElementById('deposit-attachment-preview');
+    if (deposit.attachment_url) {
+        previewImg.src = deposit.attachment_url;
+        previewContainer.classList.remove('hidden');
+    } else {
+        previewImg.src = '';
+        previewContainer.classList.add('hidden');
+    }
+    
     document.getElementById('modal-deposit').classList.remove('hidden');
 }
+
+window.openAddDeposit = function() {
+    const form = document.getElementById('form-deposit');
+    if(form) form.reset();
+    document.getElementById('deposit-id').value = '';
+    document.getElementById('deposit-attachment-preview-container').classList.add('hidden');
+    document.getElementById('deposit-attachment-preview').src = '';
+    document.getElementById('modal-deposit').classList.remove('hidden');
+}
+
+window.viewAttachment = function(url) {
+    document.getElementById('image-viewer-img').src = url;
+    document.getElementById('image-viewer-download').href = url;
+    document.getElementById('modal-image-viewer').classList.remove('hidden');
+}
+
+// Attach image preview listener
+document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('deposit-attachment');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const previewContainer = document.getElementById('deposit-attachment-preview-container');
+            const previewImg = document.getElementById('deposit-attachment-preview');
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewContainer.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            } else {
+                previewImg.src = '';
+                previewContainer.classList.add('hidden');
+            }
+        });
+    }
+});
