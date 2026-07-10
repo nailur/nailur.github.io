@@ -166,7 +166,7 @@ export async function loadOutlets() {
 }
 
 export async function loadUsers() {
-    let query = supabase.from('profiles').select('id, email, name, role, branch_id, outlet_id, shift_id, status, created_at, outlets(name), branches(name), shifts(name)').neq('role', 'superadmin');
+    let query = supabase.from('profiles').select('id, email, name, role, branch_id, outlet_id, shift_id, status, created_at, outlets(name), branches(name)').neq('role', 'superadmin');
     const profile = window.getCurrentProfile();
     if (profile?.role === 'kepala_cabang') {
         const { data: bOutlets } = await supabase.from('outlets').select('id').eq('branch_id', profile.branch_id);
@@ -181,6 +181,13 @@ export async function loadUsers() {
     }
     const { data, error } = await query;
     if (error) return showToast('Gagal memuat pegawai', 'error');
+
+    const { data: shiftsData } = await supabase.from('shifts').select('id, name');
+    const shiftsMap = {};
+    if (shiftsData) {
+        shiftsData.forEach(s => shiftsMap[s.id] = s.name);
+    }
+
     const tbody = document.querySelector('#users-table tbody');
     if (tbody) {
         const role = window._managementRole;
@@ -193,7 +200,7 @@ export async function loadUsers() {
                 <td><span class="user-badge">${u.role}</span></td>
                 <td>${u.branches?.name || '-'}</td>
                 <td>${u.outlets?.name || '-'}</td>
-                <td>${u.shifts?.name || '-'}</td>
+                <td>${shiftsMap[u.shift_id] || '-'}</td>
                 <td>${u.status === 'inactive' ? '<span class="user-badge" style="background:var(--danger)">Inactive</span>' : '<span class="user-badge" style="background:var(--success)">Active</span>'}</td>
                 <td>
                     ${canEdit ? `<button class="btn btn-icon" style="color:var(--primary)" onclick="editUser('${u.id}')"><i class="ph ph-pencil-simple"></i></button>` : ''}
