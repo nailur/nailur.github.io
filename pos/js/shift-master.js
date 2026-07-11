@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { getActiveOutletId } from './state.js';
-import { showToast } from './app.js';
+import { showToast, escapeHtml } from './app.js';
 
 let shiftsList = [];
 
@@ -26,9 +26,9 @@ function renderShifts() {
     
     tbody.innerHTML = shiftsList.map(s => `
         <tr>
-            <td>${s.name}</td>
-            <td>${s.start_time}</td>
-            <td>${s.end_time}</td>
+            <td>${escapeHtml(s.name)}</td>
+            <td>${escapeHtml(s.start_time)}</td>
+            <td>${escapeHtml(s.end_time)}</td>
             <td>
                 <button class="btn btn-icon btn-secondary" onclick="window.editShift('${s.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
                 ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="window.deleteShift('${s.id}')" title="Hapus"><i class="ph ph-trash"></i></button>` : ''}

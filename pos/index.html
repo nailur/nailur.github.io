@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NTPOS | Point of Sale | Manage Stock and Sales</title>
+    
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.onesignal.com https://unpkg.com https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https://* blob:; connect-src 'self' https://* wss://*; frame-src 'self' https://*;">
 
     <!-- PWA Settings -->
     <link rel="manifest" href="./manifest.json">
@@ -39,8 +42,7 @@
     <!-- SheetJS for Excel Export -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
-    <!-- Chart.js for Analytics -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js loaded dynamically in dashboard.js -->
 
     <!-- Image Compression -->
     <script
@@ -792,7 +794,11 @@
 
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                     <h2>Riwayat Absensi</h2>
-                    <div class="filter-group">
+                    <div class="filter-group" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <input type="date" id="attendance-start-date" class="input-field" style="width: auto;">
+                        <span style="color:var(--text-muted)">-</span>
+                        <input type="date" id="attendance-end-date" class="input-field" style="width: auto;">
+                        <button class="btn btn-primary" onclick="window.loadAttendanceHistory()"><i class="ph ph-funnel"></i> Filter</button>
                         <button class="btn btn-secondary" id="btn-export-attendance"
                             style="display: flex; align-items: center; gap: 5px;" onclick="exportAttendanceExcel()">
                             <i class="ph ph-file-xls"></i> Export Excel
@@ -966,6 +972,9 @@
                         </tbody>
                     </table>
                 </div>
+                <div id="expenses-load-more-container" style="text-align:center; margin-top:15px; display:none;">
+                    <button class="btn btn-secondary" onclick="window.loadMoreExpenses()">Muat Lebih Banyak</button>
+                </div>
             </div>
             <div id="deposits-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
@@ -993,6 +1002,9 @@
                             <!-- Deposits rows injected here -->
                         </tbody>
                     </table>
+                </div>
+                <div id="deposits-load-more-container" style="text-align:center; margin-top:15px; display:none;">
+                    <button class="btn btn-secondary" onclick="window.loadMoreDeposits()">Muat Lebih Banyak</button>
                 </div>
             </div>
         </section>

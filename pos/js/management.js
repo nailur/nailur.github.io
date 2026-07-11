@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { showToast } from './app.js';
+import { showToast, escapeHtml } from './app.js';
 import {
     branchesList, outletsList,
     setBranchesList, setOutletsList
@@ -127,7 +127,7 @@ export async function loadBranches() {
     if (tbody) {
         tbody.innerHTML = data.map(b => `
             <tr>
-                <td><strong>${b.name}</strong></td>
+                <td><strong>${escapeHtml(b.name)}</strong></td>
                 <td>
                     <button class="btn btn-icon btn-secondary" onclick="editBranch('${b.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
                     <button class="btn btn-icon btn-danger" onclick="deleteBranch('${b.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
@@ -151,10 +151,10 @@ export async function loadOutlets() {
     if (tbody) {
         tbody.innerHTML = data.map(o => `
             <tr>
-                <td><strong>${o.name}</strong></td>
-                <td><strong>${o.code || '-'}</strong></td>
-                <td>${o.branches?.name || '-'}</td>
-                <td>${o.address || '-'}</td>
+                <td><strong>${escapeHtml(o.name)}</strong></td>
+                <td><strong>${escapeHtml(o.code || '-')}</strong></td>
+                <td>${escapeHtml(o.branches?.name || '-')}</td>
+                <td>${escapeHtml(o.address || '-')}</td>
                 <td>
                     <button class="btn btn-icon btn-secondary" onclick="editOutlet('${o.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
                     <button class="btn btn-icon btn-danger" onclick="deleteOutlet('${o.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
@@ -195,12 +195,12 @@ export async function loadUsers() {
         const canDelete = ['superadmin', 'owner', 'kepala_cabang'].includes(role);
         tbody.innerHTML = data.map(u => `
             <tr>
-                <td>${u.name || '-'}</td>
-                <td>${u.email}</td>
-                <td><span class="user-badge">${u.role}</span></td>
-                <td>${u.branches?.name || '-'}</td>
-                <td>${u.outlets?.name || '-'}</td>
-                <td>${shiftsMap[u.shift_id] || '-'}</td>
+                <td>${escapeHtml(u.name || '-')}</td>
+                <td>${escapeHtml(u.email)}</td>
+                <td><span class="user-badge">${escapeHtml(u.role)}</span></td>
+                <td>${escapeHtml(u.branches?.name || '-')}</td>
+                <td>${escapeHtml(u.outlets?.name || '-')}</td>
+                <td>${escapeHtml(shiftsMap[u.shift_id] || '-')}</td>
                 <td>${u.status === 'inactive' ? '<span class="user-badge" style="background:var(--danger)">Inactive</span>' : '<span class="user-badge" style="background:var(--success)">Active</span>'}</td>
                 <td>
                     ${canEdit ? `<button class="btn btn-icon btn-secondary" onclick="editUser('${u.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>` : ''}

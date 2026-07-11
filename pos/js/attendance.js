@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { getCurrentProfile } from './auth.js';
-import { getLocalToday, showToast } from './app.js';
+import { getLocalToday, showToast, escapeHtml } from './app.js';
 import { activeOutletId } from './state.js';
 
 let attendanceTimer;
@@ -172,31 +172,54 @@ async function handleClockOut() {
 
 export async function loadAttendanceHistory() {
     const profile = getCurrentProfile();
-    if (!profile || !activeOutletId) return;
+    if (!profile) return;
     
-    // 3 Hari Terakhir
-    const pastDate = new Date();
-    pastDate.setDate(pastDate.getDate() - 3);
-    pastDate.setHours(0,0,0,0);
+    const startInput = document.getElementById('attendance-start-date');
+    const endInput = document.getElementById('attendance-end-date');
     
-    // Start of Today
-    const today = new Date();
-    today.setHours(0,0,0,0);
+    if (startInput && !startInput.value) {
+        startInput.value = getLocalToday();
+    }
+    if (endInput && !endInput.value) {
+        endInput.value = getLocalToday();
+    }
     
-    const { data, error } = await supabase
+    let startDate = startInput?.value ? new Date(startInput.value) : new Date();
+    startDate.setHours(0,0,0,0);
+    
+    let endDate = endInput?.value ? new Date(endInput.value) : new Date();
+    endDate.setHours(23,59,59,999);
+    
+    let query = supabase
         .from('attendances')
-        .select('*, profiles(name, role), shifts(name)')
-        .eq('outlet_id', activeOutletId)
-        .eq('user_id', profile.id)
-        .gte('clock_in', pastDate.toISOString())
-        .lt('clock_in', today.toISOString()) // Exclude today's data from history
+        .select('*, profiles!inner(name, role, branch_id), shifts(name)')
+        .gte('clock_in', startDate.toISOString())
+        .lte('clock_in', endDate.toISOString())
         .order('clock_in', { ascending: false });
+
+    // Role-based visibility
+    if (profile.role === 'kasir') {
+        query = query.eq('user_id', profile.id);
+    } else if (profile.role === 'kepala_toko') {
+        if (activeOutletId) {
+            query = query.eq('outlet_id', activeOutletId);
+        }
+    } else if (profile.role === 'kepala_cabang') {
+        if (profile.branch_id) {
+            query = query.eq('profiles.branch_id', profile.branch_id);
+        } else {
+            query = query.eq('id', '00000000-0000-0000-0000-000000000000'); // Force empty if no branch assigned
+        }
+    }
+    // owner and superadmin can see all
+
+    const { data, error } = await query;
         
     const tbody = document.getElementById('attendance-table')?.querySelector('tbody');
     if (!tbody) return;
     
     if (error || !data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Belum ada riwayat presensi</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Belum ada riwayat presensi</td></tr>';
         return;
     }
     
@@ -212,12 +235,14 @@ export async function loadAttendanceHistory() {
         return `
             <tr>
                 <td>${dateStr}</td>
-                <td>${record.profiles?.name || 'Kasir'}</td>
-                <td>${roleShift}</td>
+                <td>${escapeHtml(record.profiles?.name || 'Kasir')}</td>
+                <td>${escapeHtml(roleShift.replace('_', ' ').toUpperCase())}</td>
                 <td>${timeIn}</td>
                 <td>${timeOut}</td>
                 <td>${statusBadge}</td>
             </tr>
         `;
     }).join('');
+}
+window.loadAttendanceHistory = loadAttendanceHistory;
 }

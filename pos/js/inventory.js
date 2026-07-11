@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { getActiveOutletId } from './state.js';
-import { showToast } from './app.js';
+import { showToast, escapeHtml } from './app.js';
 
 let inventoryList = [];
 
@@ -37,11 +37,11 @@ export function renderInventory() {
     
     tbody.innerHTML = inventoryList.map((item, index) => `
         <tr>
-            <td>${item.code || '-'}</td>
-            <td>${item.name}</td>
-            <td>${item.category || '-'}</td>
-            <td>${item.unit_large || '-'}</td>
-            <td>${item.unit_small || '-'}</td>
+            <td>${escapeHtml(item.code || '-')}</td>
+            <td>${escapeHtml(item.name)}</td>
+            <td>${escapeHtml(item.category || '-')}</td>
+            <td>${escapeHtml(item.unit_large || '-')}</td>
+            <td>${escapeHtml(item.unit_small || '-')}</td>
             <td>${item.conversion_factor || 1}</td>
             <td>${item.stock_quantity || 0}</td>
             <td>
@@ -94,7 +94,6 @@ export async function handleSaveInventory(e) {
     const id = document.getElementById('inventory-id').value;
     const payload = {
         outlet_id: getActiveOutletId(),
-        code: document.getElementById('inventory-name').value.substring(0,3).toUpperCase() + '-' + Math.floor(Math.random() * 10000), // generated
         name: document.getElementById('inventory-name').value,
         category: document.getElementById('inventory-category').value,
         unit_large: document.getElementById('inventory-purchase-unit').value,
@@ -109,6 +108,7 @@ export async function handleSaveInventory(e) {
             if (error) throw error;
             showToast('Item berhasil diperbarui', 'success');
         } else {
+            payload.code = document.getElementById('inventory-name').value.substring(0,3).toUpperCase() + '-' + Math.floor(Math.random() * 10000);
             const { error } = await supabase.from('inventory_items').insert([payload]);
             if (error) throw error;
             showToast('Item berhasil ditambahkan', 'success');

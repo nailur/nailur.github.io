@@ -13,7 +13,7 @@ export async function checkSession() {
         const cachedStr = localStorage.getItem('pos_profile');
         if (cachedStr) {
             try {
-                const cached = JSON.parse(cachedStr);
+                const cached = JSON.parse(decodeURIComponent(atob(cachedStr)));
                 if (cached._timestamp && (Date.now() - cached._timestamp < 15 * 60 * 1000)) {
                     currentProfile = cached;
                     needsRefresh = false;
@@ -61,21 +61,38 @@ export async function loadProfile(userId) {
         return null;
     }
     currentProfile = data;
+    
     currentProfile._timestamp = Date.now();
-    localStorage.setItem('pos_profile', JSON.stringify(currentProfile)); // Cache ke localStorage
+    // Obfuscate cached data to prevent easy reading
+    const encodedStr = btoa(encodeURIComponent(JSON.stringify(currentProfile)));
+    localStorage.setItem('pos_profile', encodedStr); // Cache ke localStorage
     return currentProfile;
 }
 
+let loginAttempts = 0;
+let lastLoginAttempt = 0;
+
 export async function login(email, password) {
+    const now = Date.now();
+    if (loginAttempts >= 5 && now - lastLoginAttempt < 60000) {
+        showToast('Terlalu banyak percobaan. Tunggu 1 menit.', 'error');
+        return null;
+    }
+    
+    lastLoginAttempt = now;
+
     const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
     });
     
     if (error) {
+        loginAttempts++;
         showToast(error.message, 'error');
         return null;
     }
+    
+    loginAttempts = 0;
     
     currentUser = data.user;
     await loadProfile(currentUser.id);

@@ -6,7 +6,12 @@ import { saveOfflineTransaction } from './offline.js';
 import { getCurrentProfile } from './auth.js';
 import { printReceiptNative } from './printer.js';
 
-export let cart = JSON.parse(localStorage.getItem('pos_cart')) || [];
+export let cart = [];
+try {
+    cart = JSON.parse(localStorage.getItem('pos_cart')) || [];
+} catch (e) {
+    cart = [];
+}
 
 export function addToCart(id) {
     const product = products.find(p => p.id === id);

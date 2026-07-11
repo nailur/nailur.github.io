@@ -1,24 +1,49 @@
-﻿import { supabase } from './supabase.js';
+import { supabase } from './supabase.js';
 import { getActiveOutletId } from './state.js';
-import { showToast, getLocalToday, generateRandomDocNumber } from './app.js';
+import { showToast, getLocalToday, generateRandomDocNumber, escapeHtml } from './app.js';
 import { getCurrentProfile } from './auth.js';
 
 let depositsList = [];
+let depositsPage = 0;
+const DEPOSITS_PAGE_SIZE = 50;
+let hasMoreDeposits = true;
 
-export async function loadDeposits() {
+export async function loadDeposits(append = false) {
     if (!getActiveOutletId()) return;
+    
+    if (!append) {
+        depositsPage = 0;
+        hasMoreDeposits = true;
+    }
+    
+    if (!hasMoreDeposits) return;
+    
     const { data, error } = await supabase
         .from('sales_deposits')
         .select('*, profiles:created_by (name)')
         .eq('outlet_id', getActiveOutletId())
         .order('created_at', { ascending: false })
-        .limit(100);
+        .range(depositsPage * DEPOSITS_PAGE_SIZE, (depositsPage + 1) * DEPOSITS_PAGE_SIZE - 1);
         
     if (!error) {
-        depositsList = data || [];
+        if (data.length < DEPOSITS_PAGE_SIZE) {
+            hasMoreDeposits = false;
+        }
+        
+        if (append) {
+            depositsList = [...depositsList, ...(data || [])];
+        } else {
+            depositsList = data || [];
+        }
+        
+        depositsPage++;
         renderDeposits();
     }
 }
+
+window.loadMoreDeposits = function() {
+    loadDeposits(true);
+};
 
 export function renderDeposits() {
     const tbody = document.getElementById('deposits-table')?.querySelector('tbody');
@@ -35,19 +60,24 @@ export function renderDeposits() {
     
     tbody.innerHTML = depositsList.map(dep => `
         <tr>
-            <td>${dep.document_number}</td>
+            <td>${escapeHtml(dep.document_number)}</td>
             <td>${new Date(dep.deposit_date).toLocaleDateString('id-ID')}</td>
             <td>Rp ${dep.amount.toLocaleString('id-ID')}</td>
-            <td>${dep.account_type || '-'}</td>
-            <td>${dep.notes || '-'}</td>
-            <td>${dep.profiles?.name || '-'}</td>
+            <td>${escapeHtml(dep.account_type || '-')}</td>
+            <td>${escapeHtml(dep.notes || '-')}</td>
+            <td>${escapeHtml(dep.profiles?.name || '-')}</td>
             <td style="white-space:nowrap;">
-                ${dep.attachment_url ? `<button class="btn btn-icon btn-secondary" onclick="window.viewAttachment('${dep.attachment_url}')" title="Lihat Bukti"><i class="ph ph-image"></i></button>` : ''}
+                ${dep.attachment_url ? `<button class="btn btn-icon btn-secondary" data-attachment-url="${escapeHtml(dep.attachment_url)}" onclick="window.viewAttachment(this.dataset.attachmentUrl)" title="Lihat Bukti"><i class="ph ph-image"></i></button>` : ''}
                 ${canEdit ? `<button class="btn btn-icon btn-secondary" onclick="window.editDeposit('${dep.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>` : ''}
                 ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="window.deleteDeposit('${dep.id}')" title="Hapus"><i class="ph ph-trash"></i></button>` : ''}
             </td>
         </tr>
     `).join('');
+    
+    const loadMoreBtn = document.getElementById('deposits-load-more-container');
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = hasMoreDeposits ? 'block' : 'none';
+    }
 }
 
 export async function handleSaveDeposit(e) {

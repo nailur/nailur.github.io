@@ -116,6 +116,7 @@ export function escapeHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
+window.escapeHtml = escapeHtml;
 
 // Global State
 // products state moved to products.js
@@ -611,7 +612,8 @@ function setupEventListeners() {
                 const { error } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
                 if(error) throw error;
                 profile.name = newName; // Update local state directly
-                localStorage.setItem('pos_profile', JSON.stringify(profile)); // Update cache
+                const encodedStr = btoa(encodeURIComponent(JSON.stringify(profile)));
+                localStorage.setItem('pos_profile', encodedStr); // Update cache
             }
             if(newPassword) {
                 const oldPassword = document.getElementById('my-old-password').value;
@@ -1050,66 +1052,15 @@ init();
 // ------------------------------
 // ATTENDANCE HISTORY & EXPORT
 // ------------------------------
-async function loadAttendanceHistory() {
-    const profile = getCurrentProfile();
-    const role = profile?.role;
-    if (!['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) return;
-
-    const startDate = document.getElementById('attendance-date-start');
-    const endDate = document.getElementById('attendance-date-end');
-    if (!startDate || !startDate.value || !endDate || !endDate.value) return;
-
-    const { data, error } = await supabase.rpc('get_attendance_report', {
-        p_start_date: startDate.value,
-        p_end_date: endDate.value
-    });
-
-    if (error) {
-        showToast('Gagal memuat riwayat absensi', 'error');
-        return;
-    }
-
-    const tbody = document.querySelector('#attendance-table tbody');
-    if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Belum ada data absensi</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = data.map(record => {
-        const name = record.name || record.email || 'Unknown';
-        const roleName = record.role || '-';
-        const branchName = record.branch_name || '-';
-        const dateStr = new Date(record.record_date).toLocaleDateString('id-ID');
-        const clockIn = record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-';
-        const clockOut = record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-';
-        
-        const statusBadge = record.status === 'PRS' 
-            ? '<span style="background:var(--success); color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">PRS</span>'
-            : '<span style="background:var(--danger); color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">OFF</span>';
-
-        return `
-            <tr>
-                <td>${dateStr}</td>
-                <td><strong>${name}</strong></td>
-                <td style="text-transform: capitalize;">${roleName.replace('_', ' ')}</td>
-                <td>${branchName}</td>
-                <td>${clockIn}</td>
-                <td>${clockOut}</td>
-                <td>${statusBadge}</td>
-            </tr>
-        `;
-    }).join('');
-    
-    enableTableSort('attendance-table');
-}
+// loadAttendanceHistory handled by attendance.js
 
 window.exportAttendanceExcel = async () => {
     const profile = getCurrentProfile();
     const role = profile?.role;
     if (!['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role)) return;
 
-    const startDate = document.getElementById('attendance-date-start').value;
-    const endDate = document.getElementById('attendance-date-end').value;
+    const startDate = document.getElementById('attendance-start-date').value;
+    const endDate = document.getElementById('attendance-end-date').value;
     if (!startDate || !endDate) return showToast('Pilih rentang tanggal', 'error');
 
     const btn = document.getElementById('btn-export-attendance');

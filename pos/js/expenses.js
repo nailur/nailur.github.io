@@ -1,11 +1,14 @@
 import { supabase } from './supabase.js';
 import { getActiveOutletId } from './state.js';
-import { showToast, getLocalToday, generateRandomDocNumber } from './app.js';
+import { showToast, getLocalToday, generateRandomDocNumber, escapeHtml } from './app.js';
 import { getActiveShiftSession } from './shift.js';
 import { getCurrentProfile } from './auth.js';
 
 let expenseItemsMaster = [];
 let expensesList = [];
+let expensesPage = 0;
+const EXPENSES_PAGE_SIZE = 50;
+let hasMoreExpenses = true;
 window.expenseCurrentItems = [];
 
 export async function loadExpenseMaster() {
@@ -16,20 +19,42 @@ export async function loadExpenseMaster() {
     populateExpenseSelect();
 }
 
-export async function loadExpenses() {
+export async function loadExpenses(append = false) {
     if (!getActiveOutletId()) return;
+    
+    if (!append) {
+        expensesPage = 0;
+        hasMoreExpenses = true;
+    }
+    
+    if (!hasMoreExpenses) return;
+    
     const { data, error } = await supabase
         .from('operational_costs')
         .select('*, profiles:created_by (name)')
         .eq('outlet_id', getActiveOutletId())
         .order('created_at', { ascending: false })
-        .limit(100);
+        .range(expensesPage * EXPENSES_PAGE_SIZE, (expensesPage + 1) * EXPENSES_PAGE_SIZE - 1);
         
     if (!error) {
-        expensesList = data || [];
+        if (data.length < EXPENSES_PAGE_SIZE) {
+            hasMoreExpenses = false;
+        }
+        
+        if (append) {
+            expensesList = [...expensesList, ...(data || [])];
+        } else {
+            expensesList = data || [];
+        }
+        
+        expensesPage++;
         renderExpenses();
     }
 }
+
+window.loadMoreExpenses = function() {
+    loadExpenses(true);
+};
 
 export function populateExpenseSelect() {
     const select = document.getElementById('expense-item-select');
@@ -37,7 +62,7 @@ export function populateExpenseSelect() {
     if (expenseItemsMaster.length === 0) {
         select.innerHTML = '<option value="">Belum ada kategori biaya</option>';
     } else {
-        select.innerHTML = expenseItemsMaster.map(item => `<option value="${item.id}">${item.name}</option>`).join('');
+        select.innerHTML = expenseItemsMaster.map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
     }
 }
 
@@ -56,17 +81,22 @@ export function renderExpenses() {
     
     tbody.innerHTML = expensesList.map(exp => `
         <tr>
-            <td>${exp.document_number}</td>
+            <td>${escapeHtml(exp.document_number)}</td>
             <td>${new Date(exp.cost_date).toLocaleDateString('id-ID')}</td>
             <td>Rp ${exp.total_amount.toLocaleString('id-ID')}</td>
-            <td>${exp.notes || '-'}</td>
-            <td>${exp.profiles?.name || '-'}</td>
+            <td>${escapeHtml(exp.notes || '-')}</td>
+            <td>${escapeHtml(exp.profiles?.name || '-')}</td>
             <td>
                 ${canEdit ? `<button class="btn btn-icon btn-secondary" onclick="window.editExpense('${exp.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>` : ''}
                 ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="window.deleteExpense('${exp.id}')" title="Hapus"><i class="ph ph-trash"></i></button>` : ''}
             </td>
         </tr>
     `).join('');
+    
+    const loadMoreBtn = document.getElementById('expenses-load-more-container');
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = hasMoreExpenses ? 'block' : 'none';
+    }
 }
 
 export function renderExpenseMasterTable() {
@@ -80,8 +110,8 @@ export function renderExpenseMasterTable() {
     
     tbody.innerHTML = expenseItemsMaster.map(item => `
         <tr>
-            <td>${item.name}</td>
-            <td>${item.category || '-'}</td>
+            <td>${escapeHtml(item.name)}</td>
+            <td>${escapeHtml(item.category || '-')}</td>
             <td>
                 <button class="btn btn-icon btn-secondary" onclick="window.editExpenseMaster('${item.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
                 <button class="btn btn-icon btn-danger" onclick="window.deleteExpenseMaster('${item.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
@@ -163,7 +193,7 @@ window.renderExpenseItemsTable = function() {
         total += item.subtotal;
         return `
             <tr>
-                <td>${item.category_name}</td>
+                <td>${escapeHtml(item.category_name)}</td>
                 <td>${item.qty}</td>
                 <td style="text-align: right;">Rp ${item.subtotal.toLocaleString('id-ID')}</td>
                 <td style="text-align: center;">

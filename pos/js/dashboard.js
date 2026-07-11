@@ -3,6 +3,16 @@ window.productChartInst = null;
 
 window.loadDashboard = async function() {
     if (!activeOutletId) return;
+
+    if (!window.Chart) {
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
     
     const startDate = document.getElementById('dashboard-date-start');
     const endDate = document.getElementById('dashboard-date-end');
@@ -59,7 +69,7 @@ window.loadDashboard = async function() {
         .sort((a,b) => b[1].total - a[1].total)
         .map(([method, stats]) => `
         <tr>
-            <td><strong>${method}</strong></td>
+            <td><strong>${window.escapeHtml(method)}</strong></td>
             <td style="text-align: right;">${stats.count}</td>
             <td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td>
         </tr>
@@ -71,7 +81,7 @@ window.loadDashboard = async function() {
     } else {
         tbodyProduct.innerHTML = productData.map(p => `
             <tr>
-                <td>${p.name}</td>
+                <td>${window.escapeHtml(p.name)}</td>
                 <td style="text-align: right;">${Number(p.qty)}</td>
                 <td style="text-align: right;">Rp ${Number(p.revenue).toLocaleString('id-ID')}</td>
             </tr>
