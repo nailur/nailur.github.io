@@ -213,7 +213,7 @@ window.openStockPostingModal = function(type) {
         qtyColHeader.textContent = 'Jml Ditambahkan';
     } else {
         title.textContent = 'Posting Pemakaian Stok (COGS)';
-        qtyColHeader.textContent = 'Jml Terpakai';
+        qtyColHeader.textContent = 'Sisa Stok Akhir';
     }
     
     // Auto generate doc number
@@ -233,7 +233,7 @@ window.openStockPostingModal = function(type) {
                 <td>${escapeHtml(item.unit_small || '-')}</td>
                 <td>${item.stock_quantity || 0}</td>
                 <td>
-                    <input type="number" class="input posting-qty-input" data-itemid="${item.id}" placeholder="0" min="0" step="any" style="width: 100px;">
+                    <input type="number" class="input posting-qty-input" data-itemid="${item.id}" data-currentstock="${item.stock_quantity || 0}" placeholder="${type === 'out' ? (item.stock_quantity || 0) : '0'}" min="0" step="any" style="width: 100px;">
                 </td>
             </tr>
         `).join('');
@@ -251,16 +251,31 @@ window.handleSaveStockPosting = async function(e) {
     
     const qtyInputs = document.querySelectorAll('.posting-qty-input');
     const items = [];
+    let hasInvalidCogs = false;
     
     qtyInputs.forEach(input => {
-        const qty = parseFloat(input.value);
-        if (qty > 0) {
-            items.push({
-                item_id: input.dataset.itemid,
-                quantity: qty
-            });
+        if (input.value.trim() !== '') {
+            let inputVal = parseFloat(input.value);
+            let qty = inputVal;
+            
+            if (type === 'out') {
+                const currentStock = parseFloat(input.dataset.currentstock);
+                qty = currentStock - inputVal;
+                if (qty < 0) hasInvalidCogs = true;
+            }
+            
+            if (qty > 0) {
+                items.push({
+                    item_id: input.dataset.itemid,
+                    quantity: qty
+                });
+            }
         }
     });
+    
+    if (hasInvalidCogs) {
+        return showToast('Sisa stok akhir tidak boleh lebih besar dari stok saat ini. Gunakan Penambahan Stok!', 'error');
+    }
     
     if (items.length === 0) {
         return showToast('Isi setidaknya satu jumlah barang yang diposting!', 'error');
