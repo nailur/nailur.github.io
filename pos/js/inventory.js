@@ -335,10 +335,10 @@ window.viewPostingDetails = async function(postingId, type) {
     try {
         const { data, error } = await supabase
             .from('inventory_posting_items')
-            .select(\
+            .select(`
                 quantity,
                 inventory_items (code, name, unit_small)
-            \)
+            `)
             .eq('posting_id', postingId);
             
         if (error) throw error;
@@ -348,16 +348,16 @@ window.viewPostingDetails = async function(postingId, type) {
             return;
         }
         
-        tbody.innerHTML = data.map(item => \
+        tbody.innerHTML = data.map(item => `
             <tr>
-                <td>\</td>
-                <td>\</td>
-                <td>\</td>
-                <td style="text-align: right;"><strong>\</strong></td>
+                <td>${escapeHtml(item.inventory_items?.code || '-')}</td>
+                <td>${escapeHtml(item.inventory_items?.name || '-')}</td>
+                <td>${escapeHtml(item.inventory_items?.unit_small || '-')}</td>
+                <td style="text-align: right;"><strong>${item.quantity}</strong></td>
             </tr>
-        \).join('');
+        `).join('');
         
     } catch (err) {
-        tbody.innerHTML = \<tr><td colspan="4" style="text-align: center; color: red;">Gagal memuat detail: \</td></tr>\;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red;">Gagal memuat detail: ${err.message}</td></tr>`;
     }
 }
