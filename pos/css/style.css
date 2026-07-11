@@ -136,7 +136,8 @@ body {
 .input-group>input,
 .input-group>select,
 .input-group>textarea,
-.password-wrapper>input {
+.password-wrapper>input,
+.input {
     width: 100%;
     padding: 8px 12px;
     border: 1px solid var(--border);
@@ -152,7 +153,8 @@ body {
 .input-group>input:focus,
 .input-group>select:focus,
 .input-group>textarea:focus,
-.password-wrapper>input:focus {
+.password-wrapper>input:focus,
+.input:focus {
     border-color: var(--primary);
     background: #fff;
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
