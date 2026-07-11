@@ -245,4 +245,3 @@ export async function loadAttendanceHistory() {
     }).join('');
 }
 window.loadAttendanceHistory = loadAttendanceHistory;
-}
