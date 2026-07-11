@@ -193,10 +193,17 @@ window.editDeposit = function(id) {
     const previewContainer = document.getElementById('deposit-attachment-preview-container');
     const previewImg = document.getElementById('deposit-attachment-preview');
     if (deposit.attachment_url) {
-        if (deposit.attachment_url.startsWith('http')) {
-            previewImg.src = deposit.attachment_url;
-        } else {
-            supabase.storage.from('attachments').createSignedUrl(deposit.attachment_url, 3600).then(({data}) => {
+        let attachmentUrl = deposit.attachment_url;
+        if (attachmentUrl.startsWith('http')) {
+            if (attachmentUrl.includes('/public/attachments/')) {
+                attachmentUrl = attachmentUrl.split('/public/attachments/').pop();
+            } else {
+                previewImg.src = attachmentUrl;
+            }
+        }
+        
+        if (!attachmentUrl.startsWith('http')) {
+            supabase.storage.from('attachments').createSignedUrl(attachmentUrl, 3600).then(({data}) => {
                 if(data) previewImg.src = data.signedUrl;
             });
         }
@@ -221,11 +228,18 @@ window.openAddDeposit = function() {
 window.viewAttachment = async function(val) {
     if (!val) return;
     
+    // If it's a full URL
     if (val.startsWith('http')) {
-        document.getElementById('image-viewer-img').src = val;
-        document.getElementById('image-viewer-download').href = val;
-        document.getElementById('modal-image-viewer').classList.remove('hidden');
-        return;
+        // If it points to the private attachments bucket, extract the filename and generate signed URL
+        if (val.includes('/public/attachments/')) {
+            val = val.split('/public/attachments/').pop();
+        } else {
+            // It's a public URL for a public bucket (like product-images), use it directly
+            document.getElementById('image-viewer-img').src = val;
+            document.getElementById('image-viewer-download').href = val;
+            document.getElementById('modal-image-viewer').classList.remove('hidden');
+            return;
+        }
     }
     
     document.getElementById('image-viewer-img').src = '';
