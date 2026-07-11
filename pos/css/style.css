@@ -463,7 +463,8 @@ body {
 }
 
 .pos-nav-btn,
-.tab-btn {
+.tab-btn,
+.sub-nav-btn {
     padding: 6px 12px;
     border: none;
     background: transparent;
@@ -477,7 +478,8 @@ body {
 }
 
 .pos-nav-btn.active,
-.tab-btn.active {
+.tab-btn.active,
+.sub-nav-btn.active {
     background: #fff;
     color: var(--primary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
