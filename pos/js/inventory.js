@@ -192,7 +192,6 @@ function renderStockPostings(type) {
             <td>${escapeHtml(item.profiles?.name || 'Sistem')}</td>
             <td>
                 <button class="btn btn-icon btn-secondary" onclick="window.viewPostingDetails('${item.id}', '${type}')" title="Detail"><i class="ph ph-eye"></i></button>
-                <span class="badge badge-${type === 'in' ? 'success' : 'danger'}" style="margin-left: 5px;">Posted</span>
             </td>
         </tr>
     `).join('');
