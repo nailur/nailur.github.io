@@ -75,6 +75,7 @@ export function openInventoryModal(id = null) {
             document.getElementById('inventory-stock').value = item.stock_quantity;
         }
     } else {
+        document.getElementById('inventory-stock').value = '';
         title.textContent = 'Tambah Item';
     }
     
@@ -98,8 +99,7 @@ export async function handleSaveInventory(e) {
         category: document.getElementById('inventory-category').value,
         unit_large: document.getElementById('inventory-purchase-unit').value,
         unit_small: document.getElementById('inventory-base-unit').value,
-        conversion_factor: parseFloat(document.getElementById('inventory-conversion').value) || 1,
-        stock_quantity: parseFloat(document.getElementById('inventory-stock').value) || 0
+        conversion_factor: parseFloat(document.getElementById('inventory-conversion').value) || 1
     };
     
     try {
@@ -145,3 +145,175 @@ export async function deleteInventory(id) {
 // Bind to window for HTML inline event handlers
 window.editInventory = openInventoryModal;
 window.deleteInventory = deleteInventory;
+
+let postingsList = { in: [], out: [] };
+
+export async function loadStockPostings() {
+    if (!getActiveOutletId()) return;
+    
+    const { data, error } = await supabase
+        .from('inventory_postings')
+        .select(`
+            id, document_number, posting_date, type, notes, created_at,
+            users:created_by (name)
+        `)
+        .eq('outlet_id', getActiveOutletId())
+        .order('posting_date', { ascending: false })
+        .order('created_at', { ascending: false });
+        
+    if (error) {
+        console.error('Error loading postings:', error);
+        return;
+    }
+    
+    postingsList.in = data.filter(p => p.type === 'in') || [];
+    postingsList.out = data.filter(p => p.type === 'out') || [];
+    
+    renderStockPostings('in');
+    renderStockPostings('out');
+}
+
+function renderStockPostings(type) {
+    const tbody = document.getElementById(`stock-${type}-table`)?.querySelector('tbody');
+    if (!tbody) return;
+    
+    const list = postingsList[type];
+    
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem;">Belum ada data posting ${type === 'in' ? 'penambahan' : 'pemakaian'}</td></tr>`;
+        return;
+    }
+    
+    tbody.innerHTML = list.map(item => `
+        <tr>
+            <td><strong>${escapeHtml(item.document_number)}</strong></td>
+            <td>${new Date(item.posting_date).toLocaleDateString('id-ID')}</td>
+            <td>${escapeHtml(item.notes || '-')}</td>
+            <td>${escapeHtml(item.users?.name || 'Sistem')}</td>
+            <td>
+                <!-- Can add view details button later -->
+                <span class="badge badge-${type === 'in' ? 'success' : 'danger'}">Posted</span>
+            </td>
+        </tr>
+    `).join('');
+}
+
+window.openStockPostingModal = function(type) {
+    const form = document.getElementById('form-stock-posting');
+    const modal = document.getElementById('modal-stock-posting');
+    const title = document.getElementById('modal-stock-posting-title');
+    const typeInput = document.getElementById('stock-posting-type');
+    const qtyColHeader = document.getElementById('stock-posting-qty-col-header');
+    const itemsTbody = document.getElementById('stock-posting-items-table').querySelector('tbody');
+    
+    form.reset();
+    typeInput.value = type;
+    
+    if (type === 'in') {
+        title.textContent = 'Posting Penambahan Stok';
+        qtyColHeader.textContent = 'Jml Ditambahkan';
+    } else {
+        title.textContent = 'Posting Pemakaian Stok (COGS)';
+        qtyColHeader.textContent = 'Jml Terpakai';
+    }
+    
+    // Auto generate doc number
+    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    document.getElementById('stock-posting-doc').value = `${type.toUpperCase()}-${dateStr}-${Math.floor(Math.random()*1000)}`;
+    document.getElementById('stock-posting-date').value = new Date().toISOString().split('T')[0];
+    
+    if (inventoryList.length === 0) {
+        itemsTbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Belum ada master barang. Tambahkan inventaris terlebih dahulu.</td></tr>';
+        form.querySelector('button[type="submit"]').disabled = true;
+    } else {
+        form.querySelector('button[type="submit"]').disabled = false;
+        itemsTbody.innerHTML = inventoryList.map(item => `
+            <tr>
+                <td>${escapeHtml(item.code || '-')}</td>
+                <td>${escapeHtml(item.name)}</td>
+                <td>${escapeHtml(item.unit_small || '-')}</td>
+                <td>${item.stock_quantity || 0}</td>
+                <td>
+                    <input type="number" class="input posting-qty-input" data-itemid="${item.id}" placeholder="0" min="0" step="any" style="width: 100px;">
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    modal.classList.remove('hidden');
+}
+
+window.handleSaveStockPosting = async function(e) {
+    e.preventDefault();
+    const type = document.getElementById('stock-posting-type').value;
+    const docNumber = document.getElementById('stock-posting-doc').value;
+    const postDate = document.getElementById('stock-posting-date').value;
+    const notes = document.getElementById('stock-posting-notes').value;
+    
+    const qtyInputs = document.querySelectorAll('.posting-qty-input');
+    const items = [];
+    
+    qtyInputs.forEach(input => {
+        const qty = parseFloat(input.value);
+        if (qty > 0) {
+            items.push({
+                item_id: input.dataset.itemid,
+                quantity: qty
+            });
+        }
+    });
+    
+    if (items.length === 0) {
+        return showToast('Isi setidaknya satu jumlah barang yang diposting!', 'error');
+    }
+    
+    const btn = document.getElementById('form-stock-posting').querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = 'Memproses...';
+    
+    try {
+        const profile = window.getCurrentProfile();
+        
+        // 1. Insert Header
+        const { data: postingData, error: headerErr } = await supabase
+            .from('inventory_postings')
+            .insert([{
+                outlet_id: getActiveOutletId(),
+                document_number: docNumber,
+                posting_date: postDate,
+                type: type,
+                notes: notes,
+                created_by: profile?.id
+            }])
+            .select()
+            .single();
+            
+        if (headerErr) throw headerErr;
+        
+        // 2. Insert Details
+        const detailsPayload = items.map(item => ({
+            posting_id: postingData.id,
+            item_id: item.item_id,
+            quantity: item.quantity
+        }));
+        
+        const { error: detailsErr } = await supabase
+            .from('inventory_posting_items')
+            .insert(detailsPayload);
+            
+        if (detailsErr) throw detailsErr;
+        
+        showToast('Posting stok berhasil disimpan!', 'success');
+        document.getElementById('modal-stock-posting').classList.add('hidden');
+        
+        // Reload everything
+        await loadInventory();
+        await loadStockPostings();
+        
+    } catch (err) {
+        showToast('Gagal memproses posting: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Simpan Posting';
+    }
+}

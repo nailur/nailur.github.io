@@ -18,7 +18,7 @@ export function addToCart(id) {
     if (!product) return;
     const existing = cart.find(item => item.product_id === id);
     const currentQty = existing ? existing.quantity : 0;
-    if (currentQty >= product.stock) return showToast('Stok tidak mencukupi!', 'error');
+
     
     if (existing) existing.quantity += 1;
     else cart.push({ product_id: product.id, name: product.name, price: product.price, product: product, quantity: 1 });
@@ -29,7 +29,7 @@ export function updateQty(id, delta) {
     const item = cart.find(i => i.product_id === id);
     if (!item) return;
     const product = products.find(p => p.id === id);
-    if (delta > 0 && item.quantity >= product.stock) return showToast('Stok tidak mencukupi!', 'error');
+
     
     item.quantity += delta;
     if (item.quantity <= 0) cart = cart.filter(i => i.product_id !== id);
@@ -296,7 +296,7 @@ export async function finalizeCheckout() {
     
     for (const item of cart) {
         const p = products.find(x => x.id === item.product_id);
-        if (p) p.stock -= item.quantity;
+
     }
     
     const change = received - totals.total;

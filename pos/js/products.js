@@ -29,7 +29,7 @@ export async function loadProducts() {
 
     if (!navigator.onLine) return;
 
-    const { data, error } = await supabase.from('products').select('id, name, price, price_gofood, price_grabfood, price_shopeefood, stock, image_url, created_at').eq('outlet_id', activeOutletId).order('name');
+    const { data, error } = await supabase.from('products').select('id, name, price, price_gofood, price_grabfood, price_shopeefood, image_url, created_at').eq('outlet_id', activeOutletId).order('name');
     if (error) {
         if (!products.length) showToast('Gagal memuat produk dari server', 'error');
         return;
@@ -58,14 +58,12 @@ export function renderProducts(search = '') {
     const displayProducts = shouldLimit ? filtered.slice(0, PRODUCT_DISPLAY_LIMIT) : filtered;
 
     grid.innerHTML = displayProducts.map(p => {
-        const isOutOfStock = p.stock <= 0;
         return `
-        <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}" ${isOutOfStock ? '' : `onclick="addToCart('${p.id}')"`} style="${isOutOfStock ? 'opacity: 0.5; filter: grayscale(1); cursor: not-allowed;' : ''}">
+        <div class="product-card" onclick="addToCart('${p.id}')">
             ${p.image_url ? `<img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" class="product-image" loading="lazy" decoding="async">` : `<div class="product-image" style="display:flex;align-items:center;justify-content:center;color:#ccc;"><i class="ph-duotone ph-image" style="font-size:2.5rem;"></i></div>`}
             <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-start;">
                 <div class="product-name">${escapeHtml(p.name)}</div>
                 <div class="product-price">Rp ${p.price.toLocaleString('id-ID')}</div>
-                <div class="text-sm ${isOutOfStock ? 'text-danger' : 'text-muted'}">${isOutOfStock ? 'Stok Habis' : 'Stok: ' + p.stock}</div>
             </div>
             ${canEdit ? `
                 <div style="margin-top:10px; display:flex; gap:5px; justify-content:center;" onclick="event.stopPropagation()">
@@ -142,7 +140,7 @@ export async function handleSaveProduct(e) {
     const price_gofood = document.getElementById('product-price-gofood').value;
     const price_grabfood = document.getElementById('product-price-grabfood').value;
     const price_shopeefood = document.getElementById('product-price-shopeefood').value;
-    const stock = document.getElementById('product-stock').value;
+
     const imageInput = document.getElementById('product-image');
     let image_url = null;
 
@@ -170,7 +168,7 @@ export async function handleSaveProduct(e) {
         }
 
         const payload = { 
-            name, price, stock, outlet_id: activeOutletId,
+            name, price, outlet_id: activeOutletId,
             price_gofood: price_gofood ? price_gofood : null,
             price_grabfood: price_grabfood ? price_grabfood : null,
             price_shopeefood: price_shopeefood ? price_shopeefood : null
@@ -206,7 +204,7 @@ export function editProduct(id) {
     document.getElementById('product-price-gofood').value = p.price_gofood || '';
     document.getElementById('product-price-grabfood').value = p.price_grabfood || '';
     document.getElementById('product-price-shopeefood').value = p.price_shopeefood || '';
-    document.getElementById('product-stock').value = p.stock;
+
     document.getElementById('product-image').value = '';
     
     if (p.image_url) {

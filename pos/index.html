@@ -197,8 +197,7 @@
                     <button class="tab-btn" data-target="outlets-tab"><i class="ph ph-storefront"></i> Outlets</button>
                     <button class="tab-btn" data-target="shifts-tab"><i class="ph ph-clock"></i> Shift</button>
                     <button class="tab-btn" data-target="users-tab"><i class="ph ph-users"></i> Users</button>
-                    <button class="tab-btn" data-target="expenses-master-tab"><i class="ph ph-list-dashes"></i> Kategori
-                        Operasional</button>
+
                     <button class="tab-btn" data-target="server-info-tab"><i class="ph ph-server"></i> Info
                         Server</button>
                     <button class="tab-btn" data-target="announcement-tab"><i class="ph ph-megaphone"></i>
@@ -501,29 +500,7 @@
                 <!-- SHIFTS TAB -->
 
 
-                <!-- EXPENSE MASTERS TAB -->
-                <div id="expenses-master-tab" class="tab-pane hidden">
-                    <div class="action-bar">
-                        <h3>Master Kategori Biaya Operasional</h3>
-                        <button class="btn btn-primary" id="btn-add-expense-master">
-                            <i class="ph ph-plus"></i> Tambah Kategori Biaya
-                        </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table" id="expenses-master-table">
-                            <thead>
-                                <tr>
-                                    <th>Nama Kategori Biaya</th>
-                                    <th>Grup / Tipe</th>
-                                    <th class="action-col">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Expense master rows injected here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+
             </main>
         </section>
 
@@ -919,62 +896,150 @@
 
             </div>
             <div id="stock-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
-                <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
-                    <h3>Stok Inventaris</h3>
-                    <div class="filter-group">
-                        <button class="btn btn-primary" id="btn-add-inventory">
-                            <i class="ph ph-plus"></i> Tambah Inventaris
-                        </button>
+                <div class="tabs sub-tabs" style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0;">
+                    <button class="sub-nav-btn active" data-target="subtab-stock-master">Master Stok</button>
+                    <button class="sub-nav-btn" data-target="subtab-stock-in">Penambahan Stok</button>
+                    <button class="sub-nav-btn" data-target="subtab-stock-out">Pengurangan (COGS)</button>
+                </div>
+                
+                <div id="subtab-stock-master" class="subtab-pane active">
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Stok Inventaris</h3>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" id="btn-add-inventory">
+                                <i class="ph ph-plus"></i> Tambah Inventaris
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>Kode Barang</th>
+                                    <th>Nama Barang</th>
+                                    <th>Kategori</th>
+                                    <th>Satuan Beli</th>
+                                    <th>Satuan Pakai</th>
+                                    <th>Konversi</th>
+                                    <th>Sisa Stok (Pakai)</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Inventory rows injected here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="data-table" id="inventory-table">
-                        <thead>
-                            <tr>
-                                <th>Kode Barang</th>
-                                <th>Nama Barang</th>
-                                <th>Kategori</th>
-                                <th>Satuan Beli</th>
-                                <th>Satuan Pakai</th>
-                                <th>Konversi</th>
-                                <th>Sisa Stok (Pakai)</th>
-                                <th class="action-col">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Inventory rows injected here -->
-                        </tbody>
-                    </table>
+
+                <div id="subtab-stock-in" class="subtab-pane hidden">
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Riwayat Penambahan Stok</h3>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" onclick="window.openStockPostingModal('in')">
+                                <i class="ph ph-plus"></i> Posting Penambahan
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="stock-in-table">
+                            <thead>
+                                <tr>
+                                    <th>No. Dokumen</th>
+                                    <th>Tanggal</th>
+                                    <th>Keterangan</th>
+                                    <th>Kasir</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="subtab-stock-out" class="subtab-pane hidden">
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Riwayat Pemakaian Stok (COGS)</h3>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" onclick="window.openStockPostingModal('out')">
+                                <i class="ph ph-plus"></i> Posting Pemakaian
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="stock-out-table">
+                            <thead>
+                                <tr>
+                                    <th>No. Dokumen</th>
+                                    <th>Tanggal</th>
+                                    <th>Keterangan</th>
+                                    <th>Kasir</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div id="expenses-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
-                <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
-                    <h3>Biaya Operasional</h3>
-                    <div class="filter-group">
-                        <button class="btn btn-primary" id="btn-add-expense">
-                            <i class="ph ph-plus"></i> Catat Pengeluaran
-                        </button>
+                <div class="tabs sub-tabs" style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0;">
+                    <button class="sub-nav-btn active" data-target="subtab-expenses-list">Pengeluaran</button>
+                    <button class="sub-nav-btn" data-target="subtab-expenses-master">Kategori Operasional</button>
+                </div>
+                
+                <div id="subtab-expenses-list" class="subtab-pane active">
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Biaya Operasional</h3>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" id="btn-add-expense">
+                                <i class="ph ph-plus"></i> Catat Pengeluaran
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="expenses-table">
+                            <thead>
+                                <tr>
+                                    <th>No. Dokumen</th>
+                                    <th>Tgl Biaya</th>
+                                    <th>Total (Rp)</th>
+                                    <th>Keterangan</th>
+                                    <th>Kasir</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Expenses rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="expenses-load-more-container" style="text-align:center; margin-top:15px; display:none;">
+                        <button class="btn btn-secondary" onclick="window.loadMoreExpenses()">Muat Lebih Banyak</button>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="data-table" id="expenses-table">
-                        <thead>
-                            <tr>
-                                <th>No. Dokumen</th>
-                                <th>Tgl Biaya</th>
-                                <th>Total (Rp)</th>
-                                <th>Keterangan</th>
-                                <th>Kasir</th>
-                                <th class="action-col">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Expenses rows injected here -->
-                        </tbody>
-                    </table>
-                </div>
-                <div id="expenses-load-more-container" style="text-align:center; margin-top:15px; display:none;">
-                    <button class="btn btn-secondary" onclick="window.loadMoreExpenses()">Muat Lebih Banyak</button>
+
+                <div id="subtab-expenses-master" class="subtab-pane hidden">
+                    <div class="action-bar">
+                        <h3>Master Kategori Biaya Operasional</h3>
+                        <button class="btn btn-primary" id="btn-add-expense-master">
+                            <i class="ph ph-plus"></i> Tambah Kategori
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="expenses-master-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama Kategori Biaya</th>
+                                    <th>Grup / Tipe</th>
+                                    <th class="action-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Expense master rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div id="deposits-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
@@ -1180,10 +1245,7 @@
                         <input type="number" id="product-price-shopeefood">
                     </div>
                 </div>
-                <div class="input-group">
-                    <label for="product-stock">Stok Awal</label>
-                    <input type="number" id="product-stock" required="" placeholder="100">
-                </div>
+
                 <div class="input-group">
                     <label for="product-image">Foto Produk</label>
                     <input type="file" id="product-image" accept="image/*" style="padding: 8px;">
@@ -1575,7 +1637,7 @@
                     </div>
                     <div class="input-group">
                         <label>Jumlah Stok Fisik (Dalam Satuan Pakai)</label>
-                        <input type="number" id="inventory-stock" class="input" required="" step="any" placeholder="0">
+                        <input type="number" id="inventory-stock" class="input" readonly step="any" placeholder="Otomatis dari Posting">
                     </div>
                     <div class="modal-actions">
                         <button type="button" class="btn btn-secondary" data-close="modal-inventory">Batal</button>
@@ -1647,6 +1709,60 @@
                     <div class="modal-actions">
                         <button type="button" class="btn btn-secondary" data-close="modal-expense-master">Batal</button>
                         <button type="submit" class="btn btn-primary">Simpan Kategori</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= -->
+    <!-- STOCK POSTING MODAL -->
+    <!-- ======================= -->
+    <div id="modal-stock-posting" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 900px; width: 95%;">
+            <div class="modal-header">
+                <h2 id="modal-stock-posting-title">Posting Stok</h2>
+                <button class="btn btn-icon" data-close="modal-stock-posting"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-stock-posting" onsubmit="window.handleSaveStockPosting(event)">
+                    <input type="hidden" id="stock-posting-type">
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div class="input-group">
+                            <label>No. Dokumen / Referensi</label>
+                            <input type="text" id="stock-posting-doc" class="input" required placeholder="Contoh: IN-2026-07-001">
+                        </div>
+                        <div class="input-group">
+                            <label>Tanggal Posting</label>
+                            <input type="date" id="stock-posting-date" class="input" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Keterangan</label>
+                            <input type="text" id="stock-posting-notes" class="input" placeholder="Opsional">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 50vh; overflow-y: auto;">
+                        <table class="data-table" id="stock-posting-items-table">
+                            <thead style="position: sticky; top: 0; background: var(--surface); z-index: 1;">
+                                <tr>
+                                    <th style="width: 15%">Kode</th>
+                                    <th style="width: 30%">Nama Barang</th>
+                                    <th style="width: 15%">Satuan</th>
+                                    <th style="width: 15%">Sisa Stok Saat Ini</th>
+                                    <th style="width: 25%" id="stock-posting-qty-col-header">Jumlah (Penambahan/Pemakaian)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Items injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="modal-actions" style="margin-top: 20px;">
+                        <button type="button" class="btn btn-secondary" data-close="modal-stock-posting">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan Posting</button>
                     </div>
                 </form>
             </div>

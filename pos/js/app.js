@@ -18,12 +18,12 @@ import {
     setPosOutletsList, setActiveOutletId 
 } from './state.js';
 import { checkActiveShift, handleOpenShift, handleCloseShift } from './shift.js';
-import { loadInventory, handleSaveInventory } from './inventory.js';
+import { loadInventory, handleSaveInventory, loadStockPostings } from './inventory.js';
 import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMaster, openAddExpenseMaster } from './expenses.js';
 import { loadDeposits, handleSaveDeposit } from './deposits.js';
 import { loadShifts, handleSaveShift, openShiftModal } from './shift-master.js';
 
-window.loadInventoryForManagement = loadInventory;
+window.loadInventoryForManagement = function() { loadInventory(); loadStockPostings(); };
 window.loadExpensesForManagement = loadExpenses;
 window.loadDepositsForManagement = loadDeposits;
 window.loadShifts = loadShifts;
@@ -719,6 +719,22 @@ function setupEventListeners() {
     });
 
 
+    // Sub-Tabs (for Stock & Expenses)
+    document.querySelectorAll('.sub-nav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const container = e.currentTarget.closest('.pos-tab-pane') || e.currentTarget.closest('.tab-pane');
+            if (container) {
+                container.querySelectorAll('.sub-nav-btn').forEach(b => b.classList.remove('active'));
+                container.querySelectorAll('.subtab-pane').forEach(p => p.classList.add('hidden'));
+                
+                e.currentTarget.classList.add('active');
+                const targetId = e.currentTarget.getAttribute('data-target');
+                const tabEl = document.getElementById(targetId);
+                if (tabEl) tabEl.classList.remove('hidden');
+            }
+        });
+    });
+
     // Superadmin Actions
     document.getElementById('btn-add-branch').addEventListener('click', () => {
         document.getElementById('modal-branch-title').textContent = 'Tambah Cabang Baru';
@@ -920,6 +936,7 @@ async function initPos() {
         await loadProducts();
         renderCart();
         loadInventory();
+        loadStockPostings();
         loadExpenseMaster();
         loadExpenses();
         loadDeposits();
