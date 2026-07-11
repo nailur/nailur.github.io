@@ -191,8 +191,8 @@ function renderStockPostings(type) {
             <td>${escapeHtml(item.notes || '-')}</td>
             <td>${escapeHtml(item.profiles?.name || 'Sistem')}</td>
             <td>
-                <!-- Can add view details button later -->
-                <span class="badge badge-${type === 'in' ? 'success' : 'danger'}">Posted</span>
+                <button class="btn btn-icon btn-secondary" onclick="window.viewPostingDetails('${item.id}', '${type}')" title="Detail"><i class="ph ph-eye"></i></button>
+                <span class="badge badge-${type === 'in' ? 'success' : 'danger'}" style="margin-left: 5px;">Posted</span>
             </td>
         </tr>
     `).join('');
@@ -315,5 +315,49 @@ window.handleSaveStockPosting = async function(e) {
     } finally {
         btn.disabled = false;
         btn.textContent = 'Simpan Posting';
+    }
+}
+
+window.viewPostingDetails = async function(postingId, type) {
+    const posting = postingsList[type]?.find(p => p.id === postingId);
+    if (!posting) return;
+    
+    document.getElementById('detail-posting-doc').textContent = posting.document_number;
+    document.getElementById('detail-posting-date').textContent = new Date(posting.posting_date).toLocaleDateString('id-ID');
+    document.getElementById('detail-posting-user').textContent = posting.profiles?.name || 'Sistem';
+    document.getElementById('detail-posting-notes').textContent = posting.notes || '-';
+    
+    const tbody = document.getElementById('detail-posting-items-table').querySelector('tbody');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Memuat detail...</td></tr>';
+    
+    document.getElementById('modal-posting-details').classList.remove('hidden');
+    
+    try {
+        const { data, error } = await supabase
+            .from('inventory_posting_items')
+            .select(\
+                quantity,
+                inventory_items (code, name, unit_small)
+            \)
+            .eq('posting_id', postingId);
+            
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Tidak ada item</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.map(item => \
+            <tr>
+                <td>\</td>
+                <td>\</td>
+                <td>\</td>
+                <td style="text-align: right;"><strong>\</strong></td>
+            </tr>
+        \).join('');
+        
+    } catch (err) {
+        tbody.innerHTML = \<tr><td colspan="4" style="text-align: center; color: red;">Gagal memuat detail: \</td></tr>\;
     }
 }
