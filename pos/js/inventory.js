@@ -155,7 +155,7 @@ export async function loadStockPostings() {
         .from('inventory_postings')
         .select(`
             id, document_number, posting_date, type, notes, created_at,
-            users:created_by (name)
+            profiles:created_by (name)
         `)
         .eq('outlet_id', getActiveOutletId())
         .order('posting_date', { ascending: false })
@@ -189,7 +189,7 @@ function renderStockPostings(type) {
             <td><strong>${escapeHtml(item.document_number)}</strong></td>
             <td>${new Date(item.posting_date).toLocaleDateString('id-ID')}</td>
             <td>${escapeHtml(item.notes || '-')}</td>
-            <td>${escapeHtml(item.users?.name || 'Sistem')}</td>
+            <td>${escapeHtml(item.profiles?.name || 'Sistem')}</td>
             <td>
                 <!-- Can add view details button later -->
                 <span class="badge badge-${type === 'in' ? 'success' : 'danger'}">Posted</span>
