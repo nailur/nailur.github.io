@@ -21,14 +21,13 @@ export async function checkActiveShift() {
         const { data, error } = await supabase
             .from('shift_sessions')
             .select('*')
-            .eq('user_id', profile.id)
             .eq('outlet_id', activeOutletId)
             .eq('status', 'open')
             .order('opened_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
+        if (error) throw error;
 
         if (data) {
             currentShiftSession = data;
