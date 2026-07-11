@@ -125,9 +125,8 @@ export async function handleSaveDeposit(e) {
                 
             if (uploadError) throw uploadError;
             
-            // Get public URL
-            const { data: publicData } = supabase.storage.from('attachments').getPublicUrl(fileName);
-            attachment_url = publicData.publicUrl;
+            // Save filename instead of public URL for private buckets
+            attachment_url = fileName;
         }
         
         btn.innerHTML = 'Menyimpan...';
@@ -194,7 +193,13 @@ window.editDeposit = function(id) {
     const previewContainer = document.getElementById('deposit-attachment-preview-container');
     const previewImg = document.getElementById('deposit-attachment-preview');
     if (deposit.attachment_url) {
-        previewImg.src = deposit.attachment_url;
+        if (deposit.attachment_url.startsWith('http')) {
+            previewImg.src = deposit.attachment_url;
+        } else {
+            supabase.storage.from('attachments').createSignedUrl(deposit.attachment_url, 3600).then(({data}) => {
+                if(data) previewImg.src = data.signedUrl;
+            });
+        }
         previewContainer.classList.remove('hidden');
     } else {
         previewImg.src = '';
@@ -213,10 +218,34 @@ window.openAddDeposit = function() {
     document.getElementById('modal-deposit').classList.remove('hidden');
 }
 
-window.viewAttachment = function(url) {
-    document.getElementById('image-viewer-img').src = url;
-    document.getElementById('image-viewer-download').href = url;
+window.viewAttachment = async function(val) {
+    if (!val) return;
+    
+    if (val.startsWith('http')) {
+        document.getElementById('image-viewer-img').src = val;
+        document.getElementById('image-viewer-download').href = val;
+        document.getElementById('modal-image-viewer').classList.remove('hidden');
+        return;
+    }
+    
+    document.getElementById('image-viewer-img').src = '';
+    const btn = document.getElementById('image-viewer-download');
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Memuat...';
     document.getElementById('modal-image-viewer').classList.remove('hidden');
+    
+    const { data, error } = await supabase.storage.from('attachments').createSignedUrl(val, 3600);
+    
+    if (error || !data) {
+        showToast('Gagal memuat gambar', 'error');
+        document.getElementById('modal-image-viewer').classList.add('hidden');
+        btn.innerHTML = oldHtml;
+        return;
+    }
+    
+    document.getElementById('image-viewer-img').src = data.signedUrl;
+    document.getElementById('image-viewer-download').href = data.signedUrl;
+    btn.innerHTML = oldHtml;
 }
 
 // Attach image preview listener
