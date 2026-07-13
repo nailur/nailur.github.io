@@ -208,7 +208,7 @@ export async function viewTransactionDetails(trxId) {
         .single();
         
     const { data: items, error: itemsError } = await supabase.from('transaction_items')
-        .select('transaction_id, product_id, quantity, price, products(name)')
+        .select('transaction_id, product_id, quantity, price, modifiers, products(name)')
         .eq('transaction_id', trxId);
         
     if (trxError || itemsError) return showToast('Gagal memuat detail transaksi', 'error');
@@ -229,14 +229,18 @@ export async function viewTransactionDetails(trxId) {
     document.getElementById('detail-trx-method').textContent = trx.payment_method;
     
     const tbody = document.getElementById('detail-trx-items');
-    tbody.innerHTML = items.map(item => `
+    tbody.innerHTML = items.map(item => {
+        const modText = item.modifiers && item.modifiers.length > 0
+            ? `<div style="font-size:0.75rem; color:var(--text-muted);">${item.modifiers.map(m => m.name).join(', ')}</div>`
+            : '';
+        return `
         <tr>
-            <td>${item.products?.name || 'Produk Terhapus'}</td>
+            <td>${item.products?.name || 'Produk Terhapus'}${modText}</td>
             <td style="text-align: right;">${item.quantity}</td>
             <td style="text-align: right;">${item.price.toLocaleString('id-ID')}</td>
             <td style="text-align: right;">${(item.quantity * item.price).toLocaleString('id-ID')}</td>
         </tr>
-    `).join('');
+    `}).join('');
     
     const tfoot = document.querySelector('#modal-transaction-details tfoot');
     let tfootHTML = '';

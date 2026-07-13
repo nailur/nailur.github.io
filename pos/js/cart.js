@@ -5,10 +5,22 @@ import { products, loadProducts } from './products.js';
 import { saveOfflineTransaction } from './offline.js';
 import { getCurrentProfile } from './auth.js';
 import { printReceiptNative } from './printer.js';
+import { showModifierSelection } from './modifiers.js';
 
 export let cart = [];
 try {
     cart = JSON.parse(localStorage.getItem('pos_cart')) || [];
+    // Migrate old cart items that don't have _cartKey
+    cart = cart.map(item => {
+        if (!item._cartKey) {
+            const modKey = (item.modifiers || []).map(m => m.id).sort().join(',');
+            item._cartKey = `${item.product_id}__${modKey}`;
+            item.modifiers = item.modifiers || [];
+            item.modifier_price = item.modifier_price || 0;
+            item.base_price = item.base_price || item.price;
+        }
+        return item;
+    });
 } catch (e) {
     cart = [];
 }
@@ -16,23 +28,48 @@ try {
 export function addToCart(id) {
     const product = products.find(p => p.id === id);
     if (!product) return;
-    const existing = cart.find(item => item.product_id === id);
-    const currentQty = existing ? existing.quantity : 0;
 
+    // Check if product has modifiers - if so, show selection first
+    showModifierSelection(id, addToCartWithModifiers);
+}
+
+export function addToCartWithModifiers(id, selectedModifiers = []) {
+    const product = products.find(p => p.id === id);
+    if (!product) return;
     
-    if (existing) existing.quantity += 1;
-    else cart.push({ product_id: product.id, name: product.name, price: product.price, product: product, quantity: 1 });
+    const modifierKey = selectedModifiers.map(m => m.id).sort().join(',');
+    const cartKey = `${id}__${modifierKey}`;
+    
+    const existing = cart.find(item => item._cartKey === cartKey);
+
+    const modifierPrice = selectedModifiers.reduce((sum, m) => sum + (m.price || 0), 0);
+    const totalPrice = product.price + modifierPrice;
+    
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        cart.push({
+            _cartKey: cartKey,
+            product_id: product.id,
+            name: product.name,
+            price: totalPrice,
+            base_price: product.price,
+            product: product,
+            quantity: 1,
+            modifiers: selectedModifiers,
+            modifier_price: modifierPrice
+        });
+    }
     renderCart();
 }
 
-export function updateQty(id, delta) {
-    const item = cart.find(i => i.product_id === id);
+export function updateQty(cartKey, delta) {
+    const item = cart.find(i => i._cartKey === cartKey);
     if (!item) return;
-    const product = products.find(p => p.id === id);
 
     
     item.quantity += delta;
-    if (item.quantity <= 0) cart = cart.filter(i => i.product_id !== id);
+    if (item.quantity <= 0) cart = cart.filter(i => i._cartKey !== cartKey);
     renderCart();
 }
 
@@ -65,11 +102,12 @@ export function renderCart(forceRebuild = false) {
     }
 
     cart.forEach(item => {
-        let effectivePrice = item.product.price;
-        if (method === 'Go Food' && item.product.price_gofood) effectivePrice = item.product.price_gofood;
-        else if (method === 'Grab Food' && item.product.price_grabfood) effectivePrice = item.product.price_grabfood;
-        else if (method === 'Shopee Food' && item.product.price_shopeefood) effectivePrice = item.product.price_shopeefood;
-        item.price = effectivePrice;
+        let effectiveBasePrice = item.product.price;
+        if (method === 'Go Food' && item.product.price_gofood) effectiveBasePrice = item.product.price_gofood;
+        else if (method === 'Grab Food' && item.product.price_grabfood) effectiveBasePrice = item.product.price_grabfood;
+        else if (method === 'Shopee Food' && item.product.price_shopeefood) effectiveBasePrice = item.product.price_shopeefood;
+        item.base_price = effectiveBasePrice;
+        item.price = effectiveBasePrice + (item.modifier_price || 0);
     });
 
     if (cart.length === 0) {
@@ -83,32 +121,37 @@ export function renderCart(forceRebuild = false) {
         return;
     }
 
-    const currentIds = cart.map(i => i.product_id);
-    const idsMatch = !forceRebuild && currentIds.length === _prevCartIds.length && currentIds.every((id, idx) => id === _prevCartIds[idx]);
+    const currentKeys = cart.map(i => i._cartKey);
+    const keysMatch = !forceRebuild && currentKeys.length === _prevCartIds.length && currentKeys.every((k, idx) => k === _prevCartIds[idx]);
 
-    if (idsMatch) {
+    if (keysMatch) {
         cart.forEach(item => {
-            const el = container.querySelector(`[data-product-id="${item.product_id}"]`);
+            const el = container.querySelector(`[data-cart-key="${item._cartKey}"]`);
             if (el) {
                 el.querySelector('.qty-display').textContent = item.quantity;
                 el.querySelector('.cart-item-price').textContent = `Rp ${(item.price * item.quantity).toLocaleString('id-ID')}`;
             }
         });
     } else {
-        container.innerHTML = cart.map(item => `
-            <div class="cart-item" data-product-id="${item.product_id}">
+        container.innerHTML = cart.map(item => {
+            const modText = item.modifiers && item.modifiers.length > 0
+                ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">${item.modifiers.map(m => m.name).join(', ')}</div>`
+                : '';
+            return `
+            <div class="cart-item" data-cart-key="${item._cartKey}">
                 <div class="cart-item-info">
                     <div class="cart-item-name">${escapeHtml(item.name)}</div>
+                    ${modText}
                     <div class="cart-item-price">Rp ${(item.price * item.quantity).toLocaleString('id-ID')}</div>
                 </div>
                 <div class="cart-item-controls">
-                    <button class="qty-btn" onclick="updateQty('${item.product_id}', -1)"><i class="ph ph-minus"></i></button>
+                    <button class="qty-btn" onclick="updateQty('${item._cartKey}', -1)"><i class="ph ph-minus"></i></button>
                     <div class="qty-display">${item.quantity}</div>
-                    <button class="qty-btn" onclick="updateQty('${item.product_id}', 1)"><i class="ph ph-plus"></i></button>
+                    <button class="qty-btn" onclick="updateQty('${item._cartKey}', 1)"><i class="ph ph-plus"></i></button>
                 </div>
             </div>
-        `).join('');
-        _prevCartIds = [...currentIds];
+        `}).join('');
+        _prevCartIds = [...currentKeys];
     }
     
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -223,7 +266,8 @@ export async function finalizeCheckout() {
     const itemsPayload = cart.map(item => ({
         product_id: item.product_id,
         quantity: item.quantity,
-        price: item.price
+        price: item.price,
+        modifiers: item.modifiers && item.modifiers.length > 0 ? item.modifiers : null
     }));
 
     function generateUUID() {
@@ -449,14 +493,19 @@ export function printReceipt(trxId, cartItems, total, received, method, trxDate 
         customerEl.style.display = 'none';
     }
 
-    const itemsHtml = cartItems.map(item => `
+    const itemsHtml = cartItems.map(item => {
+        const modLine = item.modifiers && item.modifiers.length > 0
+            ? `<tr><td colspan="3" style="font-size:0.75rem; color:#666; padding-left:10px;">${item.modifiers.map(m => m.name).join(', ')}</td></tr>`
+            : '';
+        return `
         <tr><td colspan="3">${item.name}</td></tr>
+        ${modLine}
         <tr>
             <td>${item.quantity}x</td>
             <td>${item.price.toLocaleString('id-ID')}</td>
             <td class="text-right">${(item.price * item.quantity).toLocaleString('id-ID')}</td>
         </tr>
-    `).join('');
+    `}).join('');
     document.getElementById('receipt-items').innerHTML = itemsHtml;
     
     if (totalsObj) {
@@ -539,6 +588,9 @@ export function printReceiptRawBT(trxId, cartItems, total, received, method, trx
     
     cartItems.forEach(item => {
         text += tLine(`${item.name}`) + `\n`;
+        if (item.modifiers && item.modifiers.length > 0) {
+            text += `  ${item.modifiers.map(m => m.name).join(', ')}\n`;
+        }
         const qtyStr = `${item.quantity}x`;
         const priceStr = item.price.toLocaleString('id-ID');
         const subtotalStr = (item.price * item.quantity).toLocaleString('id-ID');

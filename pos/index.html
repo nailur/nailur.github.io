@@ -1263,6 +1263,47 @@
         </div>
     </div>
 
+    <!-- Modal Modifier Manager -->
+    <div id="modal-modifier-manager" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 700px; width: 95%;">
+            <div class="modal-header">
+                <h3 id="modifier-manager-title">Atur Varian Produk</h3>
+                <button class="btn-close" data-close="modal-modifier-manager"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modifier-product-id">
+                <div id="modifier-groups-container">
+                    <!-- Modifier groups will be rendered here -->
+                </div>
+                <button type="button" class="btn btn-primary" id="btn-add-modifier-group" style="margin-top: 15px;">
+                    <i class="ph ph-plus"></i> Tambah Kelompok Varian
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Modifier Selection (Cashier) -->
+    <div id="modal-modifier-select" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 500px; width: 95%;">
+            <div class="modal-header">
+                <h3 id="modifier-select-title">Pilih Varian</h3>
+                <button class="btn-close" data-close="modal-modifier-select"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modifier-select-product-id">
+                <div id="modifier-select-groups-container">
+                    <!-- Modifier groups for selection -->
+                </div>
+                <div class="modal-actions" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" data-close="modal-modifier-select">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirm-modifiers">
+                        <i class="ph ph-shopping-cart"></i> Tambah ke Keranjang
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Detail Transaksi -->
     <div id="modal-transaction-details" class="modal-overlay hidden">
         <div class="modal-content glass-panel">

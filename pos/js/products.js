@@ -68,6 +68,7 @@ export function renderProducts(search = '') {
             ${canEdit ? `
                 <div style="margin-top:10px; display:flex; gap:5px; justify-content:center;" onclick="event.stopPropagation()">
                     <button class="btn btn-icon btn-secondary" onclick="editProduct('${p.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
+                    <button class="btn btn-icon btn-secondary" onclick="openModifierManager('${p.id}')" title="Atur Varian" style="color: var(--primary);"><i class="ph ph-list-plus"></i></button>
                     <button class="btn btn-icon btn-danger" onclick="deleteProduct('${p.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
                 </div>
             ` : ''}
