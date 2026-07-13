@@ -99,6 +99,22 @@ export function showToast(message, type = 'info') {
     }, 3000);
 }
 
+export function showConfirm(message, onConfirm) {
+    document.getElementById('confirm-message').textContent = message;
+    const modal = document.getElementById('modal-confirm');
+    const btnYes = document.getElementById('btn-confirm-yes');
+    
+    const newBtnYes = btnYes.cloneNode(true);
+    btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+    
+    newBtnYes.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        if (onConfirm) onConfirm();
+    });
+    
+    modal.classList.remove('hidden');
+}
+
 // Debounce Utility
 export function debounce(func, wait) {
     let timeout;

@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { showToast, escapeHtml } from './app.js';
+import { showToast, escapeHtml, showConfirm } from './app.js';
 import { products } from './products.js';
 
 // Cache: productId -> { groups: [...], modifiers: [...] }
@@ -94,16 +94,27 @@ async function renderModifierManager(productId) {
     }).join('');
 }
 
-// Add Group
-document.getElementById('btn-add-modifier-group')?.addEventListener('click', async () => {
+// Add Group Modal Trigger
+document.getElementById('btn-add-modifier-group')?.addEventListener('click', () => {
+    const productId = document.getElementById('modifier-product-id').value;
+    if (!productId) return;
+    document.getElementById('form-add-modifier-group').reset();
+    document.getElementById('modal-add-modifier-group').classList.remove('hidden');
+});
+
+// Handle Save Group
+document.getElementById('form-add-modifier-group')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
     const productId = document.getElementById('modifier-product-id').value;
     if (!productId) return;
 
-    const name = prompt('Nama Kelompok Varian (misal: Bagian Ayam, Level Pedas):');
-    if (!name || !name.trim()) return;
+    const name = document.getElementById('mod-group-name').value;
+    const isRequired = document.getElementById('mod-group-required').checked;
+    const isMultiple = document.getElementById('mod-group-multiple').checked;
 
-    const isRequired = confirm('Apakah pelanggan WAJIB memilih dari kelompok ini?');
-    const isMultiple = confirm('Boleh pilih LEBIH DARI SATU? (Klik Batal jika hanya boleh pilih 1)');
+    const btn = document.getElementById('btn-save-modifier-group');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
 
     const { error } = await supabase.from('product_modifier_groups').insert([{
         product_id: productId,
@@ -112,7 +123,12 @@ document.getElementById('btn-add-modifier-group')?.addEventListener('click', asy
         is_multiple: isMultiple
     }]);
 
+    btn.disabled = false;
+    btn.textContent = 'Simpan Kelompok';
+
     if (error) return showToast('Gagal menambah kelompok: ' + error.message, 'error');
+    
+    document.getElementById('modal-add-modifier-group').classList.add('hidden');
     showToast('Kelompok varian ditambahkan', 'success');
     clearModifierCache(productId);
     await renderModifierManager(productId);
@@ -140,24 +156,26 @@ window.addModifier = async function(groupId, productId) {
 }
 
 // Delete Modifier
-window.deleteModifier = async function(modId, productId) {
-    if (!confirm('Hapus pilihan ini?')) return;
-    const { error } = await supabase.from('product_modifiers').delete().eq('id', modId);
-    if (error) return showToast(error.message, 'error');
-    showToast('Pilihan dihapus', 'success');
-    clearModifierCache(productId);
-    await renderModifierManager(productId);
+window.deleteModifier = function(modId, productId) {
+    showConfirm('Hapus pilihan ini?', async () => {
+        const { error } = await supabase.from('product_modifiers').delete().eq('id', modId);
+        if (error) return showToast(error.message, 'error');
+        showToast('Pilihan dihapus', 'success');
+        clearModifierCache(productId);
+        await renderModifierManager(productId);
+    });
 }
 
 // Delete Modifier Group (cascade deletes modifiers)
-window.deleteModifierGroup = async function(groupId) {
+window.deleteModifierGroup = function(groupId) {
     const productId = document.getElementById('modifier-product-id').value;
-    if (!confirm('Hapus kelompok varian beserta semua pilihannya?')) return;
-    const { error } = await supabase.from('product_modifier_groups').delete().eq('id', groupId);
-    if (error) return showToast(error.message, 'error');
-    showToast('Kelompok varian dihapus', 'success');
-    clearModifierCache(productId);
-    await renderModifierManager(productId);
+    showConfirm('Hapus kelompok varian beserta semua pilihannya?', async () => {
+        const { error } = await supabase.from('product_modifier_groups').delete().eq('id', groupId);
+        if (error) return showToast(error.message, 'error');
+        showToast('Kelompok varian dihapus', 'success');
+        clearModifierCache(productId);
+        await renderModifierManager(productId);
+    });
 }
 
 // =====================
