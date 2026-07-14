@@ -291,37 +291,22 @@ export async function finalizeCheckout() {
     let seqStr = "";
     if (!isOffline) {
         try {
-            // Use local date string in ISO format for today bounds
-            const todayObj = new Date();
-            const yyyy = todayObj.getFullYear();
-            const mm = String(todayObj.getMonth() + 1).padStart(2, '0');
-            const dd = String(todayObj.getDate()).padStart(2, '0');
-            const todayStr = `${yyyy}-${mm}-${dd}`;
-            
-            const { data: latestTrx } = await supabase
+            const { count, error } = await supabase
                 .from('transactions')
-                .select('receipt_no')
-                .eq('outlet_id', getActiveOutletId())
-                .gte('created_at', todayStr + 'T00:00:00.000Z')
-                .lte('created_at', todayStr + 'T23:59:59.999Z')
-                .order('created_at', { ascending: false })
-                .limit(1);
-
+                .select('*', { count: 'exact', head: true })
+                .eq('outlet_id', getActiveOutletId());
+                
             let seq = 1;
-            if (latestTrx && latestTrx.length > 0 && latestTrx[0].receipt_no) {
-                const parts = latestTrx[0].receipt_no.split('-');
-                if (parts.length > 1) {
-                    const lastSeq = parseInt(parts[parts.length - 1], 10);
-                    if (!isNaN(lastSeq)) seq = lastSeq + 1;
-                }
+            if (!error && count !== null) {
+                seq = count + 1;
             }
-            seqStr = seq.toString().padStart(5, '0');
+            seqStr = seq.toString().padStart(6, '0');
         } catch (e) {
-            const randomDigits = Math.floor(10000 + Math.random() * 90000);
+            const randomDigits = Math.floor(100000 + Math.random() * 900000);
             seqStr = `X-${randomDigits}`;
         }
     } else {
-        const randomDigits = Math.floor(10000 + Math.random() * 90000);
+        const randomDigits = Math.floor(100000 + Math.random() * 900000);
         seqStr = `X-${randomDigits}`;
     }
     
