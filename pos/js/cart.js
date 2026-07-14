@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { showToast, escapeHtml, generateOrderId } from './app.js';
-import { activeOutletId, posOutletsList } from './state.js';
+import { activeOutletId, posOutletsList, getActiveOutletId, getPosOutletsList } from './state.js';
 import { products, loadProducts } from './products.js';
 import { saveOfflineTransaction } from './offline.js';
 import { getCurrentProfile } from './auth.js';
@@ -175,7 +175,7 @@ function calculateTotals() {
     
     const afterDiscount = subtotal - discount;
     
-    const activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+    const activeOutlet = getPosOutletsList().find(o => o.id === getActiveOutletId()) || {};
     const taxRate = activeOutlet.tax_rate_percent || 0;
     
     const tax = Math.round(afterDiscount * taxRate / 100);
@@ -231,7 +231,7 @@ export function calculateChange() {
 }
 
 export function openCheckoutModal() {
-    if (cart.length === 0 || !activeOutletId) return;
+    if (cart.length === 0 || !getActiveOutletId()) return;
     
     document.getElementById('modal-payment-method').value = 'Tunai';
     document.getElementById('modal-cash-received').value = '';
@@ -245,7 +245,7 @@ export function openCheckoutModal() {
 }
 
 export async function finalizeCheckout() {
-    if (cart.length === 0 || !activeOutletId) return;
+    if (cart.length === 0 || !getActiveOutletId()) return;
     
     const totals = calculateTotals();
     const method = document.getElementById('modal-payment-method').value;
@@ -282,10 +282,10 @@ export async function finalizeCheckout() {
     let trxData = { 
         id: generateUUID(), 
         created_at: new Date().toISOString(),
-        outlet_id: activeOutletId
+        outlet_id: getActiveOutletId()
     };
     
-    const currOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+    const currOutlet = getPosOutletsList().find(o => o.id === getActiveOutletId()) || {};
     const kodeOutlet = currOutlet.code ? currOutlet.code.toUpperCase() : (currOutlet.name ? currOutlet.name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() : 'DOC');
     const randomDigits = Math.floor(100000 + Math.random() * 900000);
     let receiptNo = `${kodeOutlet}-${randomDigits}`;
@@ -294,7 +294,7 @@ export async function finalizeCheckout() {
         try {
             const { error: trxError } = await supabase.from('transactions').insert({
                 id: trxData.id,
-                outlet_id: activeOutletId,
+                outlet_id: getActiveOutletId(),
                 cashier_id: profile.id,
                 subtotal_amount: totals.subtotal,
                 discount_amount: totals.discount,
@@ -339,7 +339,7 @@ export async function finalizeCheckout() {
     if (isOffline) {
         const offlineTrx = {
             id: trxData.id,
-            outlet_id: activeOutletId,
+            outlet_id: getActiveOutletId(),
             cashier_id: profile.id,
             subtotal_amount: totals.subtotal,
             discount_amount: totals.discount,
@@ -373,7 +373,7 @@ export async function finalizeCheckout() {
     btn.textContent = 'Konfirmasi & Cetak';
     btn.disabled = false;
     
-    const activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+    const activeOutlet = getPosOutletsList().find(o => o.id === getActiveOutletId()) || {};
     const outletName = activeOutlet.name || 'Toko Kami';
     let displayName = profile.name || profile.email;
     
@@ -486,7 +486,7 @@ export function printReceipt(trxId, cartItems, total, received, method, trxDate 
     
     let activeOutlet = outletObj;
     if (!activeOutlet) {
-        activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+        activeOutlet = getPosOutletsList().find(o => o.id === getActiveOutletId()) || {};
     }
     const outletName = activeOutlet.name || 'Toko Kami';
     const outletAddress = activeOutlet.address || '';
@@ -563,7 +563,7 @@ export function printReceiptRawBT(trxId, cartItems, total, received, method, trx
     
     let activeOutlet = outletObj;
     if (!activeOutlet) {
-        activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+        activeOutlet = getPosOutletsList().find(o => o.id === getActiveOutletId()) || {};
     }
     const outletName = activeOutlet.name || 'Toko Kami';
     

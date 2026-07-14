@@ -22,3 +22,15 @@ export function setActiveOutletId(id) {
 export function getActiveOutletId() {
     return activeOutletId;
 }
+
+export function getPosOutletsList() {
+    return posOutletsList;
+}
+
+export function getBranchesList() {
+    return branchesList;
+}
+
+export function getOutletsList() {
+    return outletsList;
+}
