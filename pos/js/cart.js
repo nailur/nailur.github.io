@@ -284,41 +284,59 @@ export async function finalizeCheckout() {
         created_at: new Date().toISOString(),
         outlet_id: activeOutletId
     };
-    let receiptNo = "";
+    
+    const currOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+    const kodeOutlet = currOutlet.code ? currOutlet.code.toUpperCase() : (currOutlet.name ? currOutlet.name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() : 'DOC');
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+    let receiptNo = `${kodeOutlet}-${randomDigits}`;
     
     if (!isOffline) {
         try {
-            const { data, error } = await supabase.rpc('process_checkout', {
-                p_id: trxData.id,
-                p_outlet_id: activeOutletId,
-                p_cashier_id: profile.id,
-                p_subtotal_amount: totals.subtotal,
-                p_discount_amount: totals.discount,
-                p_tax_amount: totals.tax,
-                p_total_amount: totals.total,
-                p_payment_method: method,
-                p_customer_name: customer_name,
-                p_items: itemsPayload,
-                p_cash_received: received,
-                p_change_amount: received - totals.total
+            const { error: trxError } = await supabase.from('transactions').insert({
+                id: trxData.id,
+                outlet_id: activeOutletId,
+                cashier_id: profile.id,
+                subtotal_amount: totals.subtotal,
+                discount_amount: totals.discount,
+                tax_amount: totals.tax,
+                total_amount: totals.total,
+                payment_method: method,
+                customer_name: customer_name,
+                cash_received: received,
+                change_amount: received - totals.total,
+                receipt_no: receiptNo
             });
-            
-            if (error) {
-                console.error("RPC Error:", error);
+
+            if (trxError) {
+                console.error("Insert Transaction Error:", trxError);
                 isOffline = true;
             } else {
-                trxData.id = data;
-                receiptNo = trxData.id.substring(0,8).toUpperCase();
-                // receipt_no tidak perlu disave ke DB karena kita ambil langsung dari ID sekarang
+                const itemsToInsert = itemsPayload.map(item => ({
+                    transaction_id: trxData.id,
+                    product_id: item.product_id,
+                    quantity: item.quantity,
+                    price: item.price,
+                    modifiers: item.modifiers
+                }));
+                const { error: itemsError } = await supabase.from('transaction_items').insert(itemsToInsert);
+                if (itemsError) {
+                    console.error("Insert Items Error (Possibly modifiers column missing):", itemsError);
+                    const itemsFallback = itemsPayload.map(item => ({
+                        transaction_id: trxData.id,
+                        product_id: item.product_id,
+                        quantity: item.quantity,
+                        price: item.price
+                    }));
+                    await supabase.from('transaction_items').insert(itemsFallback);
+                }
             }
         } catch (e) {
-            console.error("RPC Exception:", e);
+            console.error("Insert Exception:", e);
             isOffline = true;
         }
     }
     
     if (isOffline) {
-        receiptNo = trxData.id.substring(0,8).toUpperCase();
         const offlineTrx = {
             id: trxData.id,
             outlet_id: activeOutletId,
@@ -332,7 +350,8 @@ export async function finalizeCheckout() {
             cash_received: received,
             change_amount: received - totals.total,
             items: itemsPayload,
-            created_at: trxData.created_at
+            created_at: trxData.created_at,
+            receipt_no: receiptNo
         };
         await saveOfflineTransaction(offlineTrx);
         showToast('Offline! Transaksi disimpan di perangkat.', 'warning');
@@ -444,7 +463,7 @@ export async function finalizeCheckout() {
     text += `#ChickenRasaNo1\n`;
     text += `\n\n\n`; 
     
-    const logoUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'receipt_logo_print.png';
+    const logoUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'assets/img/receipt_logo_print.png';
     printReceiptNative(text, logoUrl);
     
     const changeAmountEl = document.getElementById('success-change-amount');
@@ -566,7 +585,7 @@ export function printReceiptRawBT(trxId, cartItems, total, received, method, trx
         return lines;
     };
 
-    let text = `[C]<img>https://nailur.github.io/pos/receipt_logo_print.png</img>\n`;
+    let text = `[C]<img>https://nailur.github.io/pos/assets/img/receipt_logo_print.png</img>\n`;
     text += `[C]<b>${tLine(outletName)}</b>\n`;
     
     if (activeOutlet.address) {
