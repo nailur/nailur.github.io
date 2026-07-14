@@ -480,11 +480,14 @@ export async function finalizeCheckout() {
     btn.textContent = 'Bayar & Cetak';
 }
 
-export function printReceipt(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null) {
+export function printReceipt(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null, outletObj = null) {
     const dateStr = trxDate ? new Date(trxDate).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
     const change = received - total;
     
-    const activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+    let activeOutlet = outletObj;
+    if (!activeOutlet) {
+        activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+    }
     const outletName = activeOutlet.name || 'Toko Kami';
     const outletAddress = activeOutlet.address || '';
     const outletPhone = activeOutlet.phone || '';
@@ -514,7 +517,7 @@ export function printReceipt(trxId, cartItems, total, received, method, trxDate 
 
     const itemsHtml = cartItems.map(item => {
         const modLine = item.modifiers && item.modifiers.length > 0
-            ? `<tr><td colspan="3" style="font-size:0.75rem; color:#666; padding-left:10px;">${item.modifiers.map(m => m.name).join(', ')}</td></tr>`
+            ? `<tr><td colspan="3" style="font-size:0.65rem; color:#666; padding-left:10px; line-height:1.2; word-break: break-word; white-space: normal;">${item.modifiers.map(m => m.name).join(', ')}</td></tr>`
             : '';
         return `
         <tr><td colspan="3">${item.name}</td></tr>
@@ -554,11 +557,14 @@ export function printReceipt(trxId, cartItems, total, received, method, trxDate 
     window.print();
 }
 
-export function printReceiptRawBT(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null) {
+export function printReceiptRawBT(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null, outletObj = null) {
     const dateStr = trxDate ? new Date(trxDate).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
     const change = received - total;
     
-    const activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+    let activeOutlet = outletObj;
+    if (!activeOutlet) {
+        activeOutlet = posOutletsList.find(o => o.id === activeOutletId) || {};
+    }
     const outletName = activeOutlet.name || 'Toko Kami';
     
     let displayName = cashierName;
@@ -608,7 +614,10 @@ export function printReceiptRawBT(trxId, cartItems, total, received, method, trx
     cartItems.forEach(item => {
         text += tLine(`${item.name}`) + `\n`;
         if (item.modifiers && item.modifiers.length > 0) {
-            text += `  ${item.modifiers.map(m => m.name).join(', ')}\n`;
+            const modsStr = item.modifiers.map(m => m.name).join(', ');
+            wrapLine(modsStr, 30).forEach(line => {
+                text += `  ${line}\n`;
+            });
         }
         const qtyStr = `${item.quantity}x`;
         const priceStr = item.price.toLocaleString('id-ID');

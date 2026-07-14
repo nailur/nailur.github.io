@@ -203,7 +203,7 @@ export function changeHistoryPage(page) {
 
 export async function viewTransactionDetails(trxId) {
     const { data: trx, error: trxError } = await supabase.from('transactions')
-        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, profiles(email, name)')
+        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, profiles(email, name), outlets(name, address, phone)')
         .eq('id', trxId)
         .single();
         
@@ -319,15 +319,16 @@ export async function reprintReceipt(trx, items) {
         total: trx.total_amount || 0
     };
     const received = trx.cash_received || trx.total_amount;
+    const outletObj = trx.outlets || null;
     
     // Pilihan mencetak menggunakan Bluetooth Printer (opsional) atau Web Print
     if (window.innerWidth < 768) {
         // Asumsi mobile menggunakan RawBT
         if (typeof printReceiptRawBT === 'function') {
-            printReceiptRawBT(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj);
+            printReceiptRawBT(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
             return;
         }
     }
     
-    printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj);
+    printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
 }
