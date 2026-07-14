@@ -203,6 +203,10 @@ async function routeUser(profile) {
     } else if (profile.role === 'kepala_toko' || profile.role === 'kasir') {
         showView('pos');
         setActiveOutletId(profile.outlet_id);
+        if (profile.outlets) {
+            setPosOutletsList([profile.outlets]);
+        }
+
         document.getElementById('pos-outlet-name').textContent = profile.outlets?.name || 'Toko';
         document.getElementById('mobile-pos-outlet-name').textContent = profile.outlets?.name || 'Toko';
         if (profile.role === 'kepala_toko') {
