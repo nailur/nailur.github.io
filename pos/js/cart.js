@@ -288,33 +288,11 @@ export async function finalizeCheckout() {
     const currOutlet = getPosOutletsList().find(o => o.id === getActiveOutletId()) || {};
     const kodeOutlet = currOutlet.code ? currOutlet.code.toUpperCase() : (currOutlet.name ? currOutlet.name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() : 'DOC');
     
-    let seqStr = "";
-    if (!isOffline) {
-        try {
-            const { count, error } = await supabase
-                .from('transactions')
-                .select('*', { count: 'exact', head: true })
-                .eq('outlet_id', getActiveOutletId());
-                
-            let seq = 1;
-            if (!error && count !== null) {
-                seq = count + 1;
-            }
-            seqStr = seq.toString().padStart(6, '0');
-        } catch (e) {
-            const randomDigits = Math.floor(100000 + Math.random() * 900000);
-            seqStr = `X-${randomDigits}`;
-        }
-    } else {
-        const randomDigits = Math.floor(100000 + Math.random() * 900000);
-        seqStr = `X-${randomDigits}`;
-    }
-    
-    let receiptNo = `${kodeOutlet}-${seqStr}`;
+    let receiptNo = null;
     
     if (!isOffline) {
         try {
-            const { error: trxError } = await supabase.from('transactions').insert({
+            const { data: insertedTrx, error: trxError } = await supabase.from('transactions').insert({
                 id: trxData.id,
                 outlet_id: getActiveOutletId(),
                 cashier_id: profile.id,
@@ -325,14 +303,14 @@ export async function finalizeCheckout() {
                 payment_method: method,
                 customer_name: customer_name,
                 cash_received: received,
-                change_amount: received - totals.total,
-                receipt_no: receiptNo
-            });
+                change_amount: received - totals.total
+            }).select('receipt_no').single();
 
             if (trxError) {
                 console.error("Insert Transaction Error:", trxError);
                 isOffline = true;
             } else {
+                receiptNo = insertedTrx.receipt_no;
                 const itemsToInsert = itemsPayload.map(item => ({
                     transaction_id: trxData.id,
                     product_id: item.product_id,
@@ -359,6 +337,9 @@ export async function finalizeCheckout() {
     }
     
     if (isOffline) {
+        const randomDigits = Math.floor(100000 + Math.random() * 900000);
+        receiptNo = `${kodeOutlet}-X-${randomDigits}`;
+
         const offlineTrx = {
             id: trxData.id,
             outlet_id: getActiveOutletId(),
