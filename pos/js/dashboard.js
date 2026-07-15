@@ -55,6 +55,13 @@ window.loadDashboard = async function() {
     const dashTaxEl = document.getElementById('dash-total-tax');
     if (dashTaxEl) dashTaxEl.textContent = `Rp ${totalTax.toLocaleString('id-ID')}`;
 
+    const totalVoidAmt = Number(result.total_void_amount) || 0;
+    const totalVoidTrx = Number(result.total_void_trx) || 0;
+    const dashVoidAmtEl = document.getElementById('dash-total-void-amount');
+    const dashVoidTrxEl = document.getElementById('dash-total-void-trx');
+    if (dashVoidAmtEl) dashVoidAmtEl.textContent = `Rp ${totalVoidAmt.toLocaleString('id-ID')}`;
+    if (dashVoidTrxEl) dashVoidTrxEl.textContent = `${totalVoidTrx} Trx`;
+
     // Build method summary with defaults
     const ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];
     const methodSummary = {};

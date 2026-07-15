@@ -19,15 +19,19 @@ BEGIN
         'total_trx', COALESCE(agg.total_trx, 0),
         'total_discount', COALESCE(agg.total_discount, 0),
         'total_tax', COALESCE(agg.total_tax, 0),
+        'total_void_amount', COALESCE(agg.total_void_amount, 0),
+        'total_void_trx', COALESCE(agg.total_void_trx, 0),
         'method_summary', COALESCE(methods.arr, '[]'::json),
         'product_summary', COALESCE(products.arr, '[]'::json)
     ) INTO result
     FROM (
         SELECT
-            SUM(t.total_amount) AS total_revenue,
-            COUNT(*) AS total_trx,
-            SUM(COALESCE(t.discount_amount, 0)) AS total_discount,
-            SUM(COALESCE(t.tax_amount, 0)) AS total_tax
+            SUM(CASE WHEN t.status != 'voided' OR t.status IS NULL THEN t.total_amount ELSE 0 END) AS total_revenue,
+            SUM(CASE WHEN t.status != 'voided' OR t.status IS NULL THEN 1 ELSE 0 END) AS total_trx,
+            SUM(CASE WHEN t.status != 'voided' OR t.status IS NULL THEN COALESCE(t.discount_amount, 0) ELSE 0 END) AS total_discount,
+            SUM(CASE WHEN t.status != 'voided' OR t.status IS NULL THEN COALESCE(t.tax_amount, 0) ELSE 0 END) AS total_tax,
+            SUM(CASE WHEN t.status = 'voided' THEN t.total_amount ELSE 0 END) AS total_void_amount,
+            SUM(CASE WHEN t.status = 'voided' THEN 1 ELSE 0 END) AS total_void_trx
         FROM transactions t
         WHERE t.outlet_id = p_outlet_id
           AND t.created_at >= p_start_date
@@ -44,6 +48,7 @@ BEGIN
             WHERE t.outlet_id = p_outlet_id
               AND t.created_at >= p_start_date
               AND t.created_at <= p_end_date
+              AND (t.status != 'voided' OR t.status IS NULL)
             GROUP BY t.payment_method
             ORDER BY SUM(t.total_amount) DESC
         ) m
@@ -61,6 +66,7 @@ BEGIN
             WHERE t.outlet_id = p_outlet_id
               AND t.created_at >= p_start_date
               AND t.created_at <= p_end_date
+              AND (t.status != 'voided' OR t.status IS NULL)
             GROUP BY pr.name
             ORDER BY SUM(ti.quantity) DESC
         ) p
@@ -106,6 +112,7 @@ BEGIN
         ) items_agg ON items_agg.transaction_id = t.id
         WHERE (p_outlet_ids IS NULL OR t.outlet_id = ANY(p_outlet_ids))
           AND (p_start_date IS NULL OR t.created_at >= p_start_date)
+          AND (t.status != 'voided' OR t.status IS NULL)
     ) agg,
     LATERAL (
         SELECT json_agg(row_to_json(d) ORDER BY d.date) AS arr
@@ -116,6 +123,7 @@ BEGIN
             FROM transactions t
             WHERE (p_outlet_ids IS NULL OR t.outlet_id = ANY(p_outlet_ids))
               AND (p_start_date IS NULL OR t.created_at >= p_start_date)
+              AND (t.status != 'voided' OR t.status IS NULL)
             GROUP BY (t.created_at AT TIME ZONE 'Asia/Jakarta')::date
         ) d
     ) daily,
@@ -130,6 +138,7 @@ BEGIN
             LEFT JOIN products pr ON pr.id = ti.product_id
             WHERE (p_outlet_ids IS NULL OR t.outlet_id = ANY(p_outlet_ids))
               AND (p_start_date IS NULL OR t.created_at >= p_start_date)
+              AND (t.status != 'voided' OR t.status IS NULL)
             GROUP BY pr.name
             ORDER BY SUM(ti.quantity) DESC
             LIMIT 5

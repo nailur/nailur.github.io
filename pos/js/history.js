@@ -136,7 +136,7 @@ export async function loadHistory(resetPage = true) {
     const to = from + HISTORY_PAGE_SIZE - 1;
     
     let query = supabase.from('transactions')
-        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, profiles(email, name)', { count: 'exact' })
+        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, status, profiles(email, name)', { count: 'exact' })
         .eq('outlet_id', activeOutletId)
         .order('created_at', { ascending: false });
 
@@ -171,10 +171,14 @@ export async function loadHistory(resetPage = true) {
 
     const rowsHTML = data.map(trx => {
         const receiptNo = trx.receipt_no || trx.id.substring(0, 8).toUpperCase();
+        const isVoid = trx.status === 'voided';
         return `
-            <tr>
+            <tr ${isVoid ? 'style="opacity: 0.6;"' : ''}>
                 <td>${new Date(trx.created_at).toLocaleString('id-ID')}</td>
-                <td>${receiptNo}</td>
+                <td>
+                    ${receiptNo}
+                    ${isVoid ? '<span style="background:var(--danger);color:white;padding:2px 6px;border-radius:4px;font-size:0.7rem;margin-left:5px;">VOID</span>' : ''}
+                </td>
                 <td>${trx.profiles?.name || trx.profiles?.email || '-'}</td>
                 <td>Rp ${(trx.discount_amount || 0).toLocaleString('id-ID')}</td>
                 <td>Rp ${(trx.tax_amount || 0).toLocaleString('id-ID')}</td>
@@ -218,7 +222,7 @@ export function changeHistoryPage(page) {
 
 export async function viewTransactionDetails(trxId) {
     const { data: trx, error: trxError } = await supabase.from('transactions')
-        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, profiles(email, name), outlets(name, address, phone)')
+        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, status, profiles(email, name), outlets(name, address, phone)')
         .eq('id', trxId)
         .single();
         
@@ -311,7 +315,33 @@ export async function viewTransactionDetails(trxId) {
     }
     
     tfoot.innerHTML = tfootHTML;
-    document.getElementById('btn-reprint-trx').onclick = () => reprintReceipt(trx, items);
+    
+    let actionButtons = `
+        <button type="button" class="btn btn-secondary" data-close="modal-transaction-details">Tutup</button>
+        <button type="button" class="btn btn-primary" onclick="window.reprintReceiptWrapper()">Cetak Ulang</button>
+    `;
+
+    if (trx.status !== 'voided') {
+        actionButtons = `
+            <button class="btn btn-outline" style="color: var(--danger); border-color: var(--danger); margin-right: auto;" onclick="window.openVoidModal('${trx.id}')" title="Void Transaksi">
+                <i class="ph ph-prohibit"></i> Void
+            </button>
+            ` + actionButtons;
+    } else {
+        actionButtons = `
+            <span style="background:var(--danger);color:white;padding:8px 12px;border-radius:6px;font-weight:bold;margin-right:auto;">VOIDED</span>
+            ` + actionButtons;
+    }
+    
+    const actionsContainer = document.getElementById('detail-trx-actions');
+    if (actionsContainer) {
+        actionsContainer.innerHTML = actionButtons;
+    } else {
+        document.getElementById('btn-reprint-trx').onclick = () => reprintReceipt(trx, items);
+    }
+    
+    window.reprintReceiptWrapper = () => reprintReceipt(trx, items);
+    
     document.getElementById('modal-transaction-details').classList.remove('hidden');
 }
 
@@ -347,3 +377,57 @@ export async function reprintReceipt(trx, items) {
     
     printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
 }
+
+window.openVoidModal = function(trxId) {
+    document.getElementById('void-trx-id').value = trxId;
+    document.getElementById('void-reason').value = '';
+    const modal = document.getElementById('modal-void');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.getElementById('void-reason').focus();
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const formVoid = document.getElementById('form-void');
+    if (formVoid) {
+        formVoid.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const trxId = document.getElementById('void-trx-id').value;
+            const reason = document.getElementById('void-reason').value;
+            
+            const { data: sessionData } = await supabase.auth.getSession();
+            const currentUser = window.getCurrentUser ? window.getCurrentUser() : sessionData.session?.user;
+            if (!currentUser) return showToast('User tidak ditemukan', 'error');
+
+            const submitBtn = formVoid.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Proses...';
+            submitBtn.disabled = true;
+
+            try {
+                const { data, error } = await supabase.rpc('void_transaction', {
+                    p_id: trxId,
+                    p_reason: reason,
+                    p_voided_by: currentUser.id
+                });
+
+                if (error) throw error;
+                
+                if (typeof window.showToast === 'function') window.showToast('Transaksi berhasil di-void', 'success');
+                document.getElementById('modal-void').classList.add('hidden');
+                document.getElementById('modal-transaction-details').classList.add('hidden');
+                
+                // Reload dashboard and history
+                loadHistory(false);
+                if (window.loadDashboard) window.loadDashboard();
+            } catch (err) {
+                console.error('Void error:', err);
+                if (typeof window.showToast === 'function') window.showToast(err.message || 'Gagal melakukan void transaksi', 'error');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    }
+});
