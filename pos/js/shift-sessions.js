@@ -1,6 +1,5 @@
 import { supabase } from './supabase.js';
 import { getActiveOutletId } from './state.js';
-import { formatCurrency } from './app.js';
 
 export async function loadShiftSessions() {
     const tbody = document.querySelector('#shift-sessions-table tbody');
@@ -70,15 +69,17 @@ export async function loadShiftSessions() {
             let diffColor = 'inherit';
             if (session.status === 'closed') {
                 if (difference > 0) {
-                    diffFormatted = `+${formatCurrency(difference)}`;
+                    diffFormatted = `+Rp ${difference.toLocaleString('id-ID')}`;
                     diffColor = 'var(--success)';
                 } else if (difference < 0) {
-                    diffFormatted = `- ${formatCurrency(Math.abs(difference))}`;
+                    diffFormatted = `- Rp ${Math.abs(difference).toLocaleString('id-ID')}`;
                     diffColor = 'var(--danger)';
                 } else {
                     diffFormatted = 'Rp 0';
                 }
             }
+
+            const formatRp = (val) => `Rp ${val.toLocaleString('id-ID')}`;
 
             tr.innerHTML = `
                 <td>${openedDate}</td>
@@ -86,8 +87,8 @@ export async function loadShiftSessions() {
                 <td>${cashierName}</td>
                 <td>${shiftName}</td>
                 <td>${statusBadge}</td>
-                <td style="text-align: right;">${formatCurrency(startingCash)}</td>
-                <td style="text-align: right;">${session.status === 'closed' ? formatCurrency(endingCash) : '-'}</td>
+                <td style="text-align: right;">${formatRp(startingCash)}</td>
+                <td style="text-align: right;">${session.status === 'closed' ? formatRp(endingCash) : '-'}</td>
                 <td style="text-align: right; color: ${diffColor}; font-weight: 600;">${diffFormatted}</td>
             `;
             tbody.appendChild(tr);
