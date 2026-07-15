@@ -76,7 +76,7 @@ window.loadDashboard = async function() {
         .sort((a,b) => b[1].total - a[1].total)
         .map(([method, stats]) => `
         <tr>
-            <td><strong>${window.escapeHtml(method)}</strong></td>
+            <td>${window.escapeHtml(method)}</td>
             <td style="text-align: right;">${stats.count}</td>
             <td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td>
         </tr>
@@ -101,7 +101,6 @@ window.loadDashboard = async function() {
     // Render Charts
     const dailyData = analyticsResult.daily_revenue || [];
     const topProducts = analyticsResult.top_products || [];
-    const paymentMethods = analyticsResult.payment_methods || [];
 
     const revCtx = document.getElementById('revenueChart');
     const prodCtx = document.getElementById('productsChart');
@@ -144,8 +143,8 @@ window.loadDashboard = async function() {
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    const methodLabels = paymentMethods.map(x => x.method);
-    const methodValues = paymentMethods.map(x => x.total);
+    const methodLabels = Object.keys(methodData);
+    const methodValues = Object.values(methodData).map(x => x.total);
     
     if (window.methodsChartInst) window.methodsChartInst.destroy();
     window.methodsChartInst = new Chart(methodCtx.getContext('2d'), {

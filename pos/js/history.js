@@ -328,7 +328,7 @@ export async function viewTransactionDetails(trxId) {
     tfoot.innerHTML = tfootHTML;
     
     let actionButtons = `
-        <button type="button" class="btn btn-secondary" data-close="modal-transaction-details">Tutup</button>
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-transaction-details').classList.add('hidden')">Tutup</button>
         <button type="button" class="btn btn-primary" onclick="window.reprintReceiptWrapper()">Cetak Ulang</button>
     `;
 

@@ -186,7 +186,7 @@ function renderStockPostings(type) {
     
     tbody.innerHTML = list.map(item => `
         <tr>
-            <td><strong>${escapeHtml(item.document_number)}</strong></td>
+            <td>${escapeHtml(item.document_number)}</td>
             <td>${new Date(item.posting_date).toLocaleDateString('id-ID')}</td>
             <td>${escapeHtml(item.notes || '-')}</td>
             <td>${escapeHtml(item.profiles?.name || 'Sistem')}</td>

@@ -1107,10 +1107,34 @@ window.exportAttendanceExcel = async () => {
     btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengekspor...';
 
     try {
-        const { data, error } = await supabase.rpc('get_attendance_report', {
-            p_start_date: startDate,
-            p_end_date: endDate
-        });
+        let sd = new Date(startDate);
+        sd.setHours(0,0,0,0);
+        
+        let ed = new Date(endDate);
+        ed.setHours(23,59,59,999);
+        
+        let query = supabase
+            .from('attendances')
+            .select('*, profiles!inner(name, email, role, branch_id), shifts(name)')
+            .gte('clock_in', sd.toISOString())
+            .lte('clock_in', ed.toISOString())
+            .order('clock_in', { ascending: false });
+
+        if (profile.role === 'kasir') {
+            query = query.eq('user_id', profile.id);
+        } else if (profile.role === 'kepala_toko') {
+            if (window.activeOutletId) {
+                query = query.eq('outlet_id', window.activeOutletId);
+            }
+        } else if (profile.role === 'kepala_cabang') {
+            if (profile.branch_id) {
+                query = query.eq('profiles.branch_id', profile.branch_id);
+            } else {
+                query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+            }
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
         if (!data || data.length === 0) {
@@ -1119,13 +1143,13 @@ window.exportAttendanceExcel = async () => {
         }
 
         const exportRows = data.map(record => ({
-            'Tanggal': new Date(record.record_date).toLocaleDateString('id-ID'),
-            'Nama Pegawai': record.name || record.email || '-',
-            'Role': (record.role || '-').replace('_', ' ').toUpperCase(),
-            'Cabang': record.branch_name || '-',
+            'Tanggal': new Date(record.clock_in).toLocaleDateString('id-ID'),
+            'Nama Pegawai': record.profiles?.name || record.profiles?.email || '-',
+            'Role': (record.profiles?.role || '-').replace('_', ' ').toUpperCase(),
+            'Shift': record.shifts?.name || '-',
             'Jam Masuk': record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
             'Jam Pulang': record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
-            'Status': record.status
+            'Status': record.clock_out ? 'Selesai' : 'Belum Pulang'
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(exportRows);
