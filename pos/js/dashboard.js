@@ -143,8 +143,8 @@ window.loadDashboard = async function() {
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    const methodLabels = Object.keys(methodData);
-    const methodValues = Object.values(methodData).map(x => x.total);
+    const methodLabels = methodData.map(x => x.method || 'Tunai');
+    const methodValues = methodData.map(x => x.total);
     
     if (window.methodsChartInst) window.methodsChartInst.destroy();
     window.methodsChartInst = new Chart(methodCtx.getContext('2d'), {

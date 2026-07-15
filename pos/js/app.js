@@ -1106,6 +1106,24 @@ window.exportAttendanceExcel = async () => {
     btn.disabled = true;
     btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengekspor...';
 
+    if (!window.XLSX) {
+        try {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = './assets/lib/xlsx.full.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        } catch (e) {
+            console.error('Failed to load SheetJS', e);
+            showToast('Gagal memuat library Excel', 'error');
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+            return;
+        }
+    }
+
     try {
         let sd = new Date(startDate);
         sd.setHours(0,0,0,0);
