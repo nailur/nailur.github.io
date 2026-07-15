@@ -2041,23 +2041,23 @@
     </div>
 
     <!-- ======================= -->
-    <!-- MODAL VOID TRANSAKSI    -->
+    <!-- MODAL CANCEL TRANSAKSI    -->
     <!-- ======================= -->
     <div id="modal-void" class="modal-overlay hidden">
-        <div class="modal-content glass-panel" style="max-width: 400px; padding: 20px;">
+        <div class="modal-content glass-panel" style="max-width: 400px; width: 95%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0;">Void Transaksi</h3>
+                <h3 style="margin: 0;">Cancel Transaksi</h3>
                 <button class="btn btn-icon" data-close="modal-void"><i class="ph ph-x"></i></button>
             </div>
             <form id="form-void">
                 <input type="hidden" id="void-trx-id">
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Alasan Void / Batal <span style="color:var(--danger)">*</span></label>
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px;">Alasan Cancel <span style="color:var(--danger)">*</span></label>
                     <textarea id="void-reason" class="input-modern" rows="3" required placeholder="Contoh: Salah input harga, pelanggan batal..."></textarea>
                 </div>
-                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="btn" data-close="modal-void">Tutup</button>
-                    <button type="submit" class="btn btn-primary" style="background: var(--danger);">Konfirmasi Void</button>
+                    <button type="submit" class="btn btn-primary" style="background: var(--danger);">Konfirmasi Cancel</button>
                 </div>
             </form>
         </div>

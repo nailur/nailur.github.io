@@ -95,6 +95,17 @@ export async function exportToExcel() {
         }
 
         const worksheet = XLSX.utils.json_to_sheet(exportRows);
+        
+        // Format columns G, H, I as Currency
+        for (let cell in worksheet) {
+            if (cell[0] === '!') continue;
+            const col = cell.replace(/[0-9]/g, '');
+            const row = parseInt(cell.replace(/\D/g, ''), 10);
+            if (['G', 'H', 'I'].includes(col) && row > 1) {
+                worksheet[cell].z = '"Rp "#,##0';
+            }
+        }
+        
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Transaksi");
         
@@ -177,7 +188,7 @@ export async function loadHistory(resetPage = true) {
                 <td>${new Date(trx.created_at).toLocaleString('id-ID')}</td>
                 <td>
                     ${receiptNo}
-                    ${isVoid ? '<span style="background:var(--danger);color:white;padding:2px 6px;border-radius:4px;font-size:0.7rem;margin-left:5px;">VOID</span>' : ''}
+                    ${isVoid ? '<span style="background:var(--danger);color:white;padding:2px 6px;border-radius:4px;font-size:0.7rem;margin-left:5px;">CANCEL</span>' : ''}
                 </td>
                 <td>${trx.profiles?.name || trx.profiles?.email || '-'}</td>
                 <td>Rp ${(trx.discount_amount || 0).toLocaleString('id-ID')}</td>
@@ -323,13 +334,13 @@ export async function viewTransactionDetails(trxId) {
 
     if (trx.status !== 'voided') {
         actionButtons = `
-            <button class="btn btn-outline" style="color: var(--danger); border-color: var(--danger); margin-right: auto;" onclick="window.openVoidModal('${trx.id}')" title="Void Transaksi">
-                <i class="ph ph-prohibit"></i> Void
+            <button class="btn btn-outline" style="color: var(--danger); border-color: var(--danger); margin-right: auto;" onclick="window.openVoidModal('${trx.id}')" title="Cancel Transaksi">
+                <i class="ph ph-prohibit"></i> Cancel
             </button>
             ` + actionButtons;
     } else {
         actionButtons = `
-            <span style="background:var(--danger);color:white;padding:8px 12px;border-radius:6px;font-weight:bold;margin-right:auto;">VOIDED</span>
+            <span style="background:var(--danger);color:white;padding:8px 12px;border-radius:6px;font-weight:bold;margin-right:auto;">CANCELED</span>
             ` + actionButtons;
     }
     
@@ -414,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (error) throw error;
                 
-                if (typeof window.showToast === 'function') window.showToast('Transaksi berhasil di-void', 'success');
+                if (typeof window.showToast === 'function') window.showToast('Transaksi berhasil di-cancel', 'success');
                 document.getElementById('modal-void').classList.add('hidden');
                 document.getElementById('modal-transaction-details').classList.add('hidden');
                 
@@ -423,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.loadDashboard) window.loadDashboard();
             } catch (err) {
                 console.error('Void error:', err);
-                if (typeof window.showToast === 'function') window.showToast(err.message || 'Gagal melakukan void transaksi', 'error');
+                if (typeof window.showToast === 'function') window.showToast(err.message || 'Gagal membatalkan transaksi', 'error');
             } finally {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
