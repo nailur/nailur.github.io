@@ -411,6 +411,47 @@ body {
     display: none;
 }
 
+/* BRAND THEME OVERRIDES FOR TOP NAV */
+.pos-nav {
+    background: var(--primary) !important;
+    color: var(--secondary) !important;
+}
+
+.pos-nav .nav-brand,
+.pos-nav .nav-brand i {
+    color: var(--secondary) !important;
+}
+
+.pos-nav .pos-tabs-nav {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.pos-nav .pos-nav-btn,
+.pos-nav .tab-btn {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.pos-nav .pos-nav-btn.active,
+.pos-nav .tab-btn.active {
+    background: var(--secondary) !important;
+    color: var(--primary) !important;
+}
+
+.pos-nav .btn-icon {
+    color: var(--secondary) !important;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pos-nav .btn-icon:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.pos-nav .user-badge {
+    color: var(--secondary) !important;
+    background: rgba(255,255,255,0.1) !important;
+    border: none !important;
+}
+
 .tab-pane {
     animation: fadeIn 0.3s ease;
     will-change: opacity, transform;
