@@ -25,7 +25,6 @@ window.loadDashboard = async function() {
         }
         window.Chart.register(window.ChartDataLabels);
     }
-    }
     
     const startDate = document.getElementById('dashboard-date-start');
     const endDate = document.getElementById('dashboard-date-end');
