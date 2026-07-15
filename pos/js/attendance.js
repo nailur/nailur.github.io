@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 import { getCurrentProfile } from './auth.js';
 import { getLocalToday, showToast, escapeHtml } from './app.js';
 import { activeOutletId } from './state.js';
+import { loadShiftSessions } from './shift-sessions.js';
 
 let attendanceTimer;
 export let currentAttendanceRecord = null;
@@ -243,5 +244,8 @@ export async function loadAttendanceHistory() {
             </tr>
         `;
     }).join('');
+
+    // Load shift sessions after attendance is loaded
+    await loadShiftSessions();
 }
 window.loadAttendanceHistory = loadAttendanceHistory;

@@ -543,7 +543,7 @@
                     <button class="pos-nav-btn" data-target="dashboard-tab-content"><i class="ph ph-squares-four"></i>
                         Dashboard</button>
                     <button class="pos-nav-btn" data-target="attendance-tab-content" id="nav-attendance"><i
-                            class="ph ph-calendar-check"></i> Absensi</button>
+                            class="ph ph-calendar-check"></i> Absensi & Shift</button>
                     <button class="pos-nav-btn" data-target="expenses-tab-content"><i class="ph ph-money"></i>
                         Operasional</button>
                     <button class="pos-nav-btn" data-target="stock-tab-content"><i class="ph ph-package"></i>
@@ -797,6 +797,30 @@
                         </thead>
                         <tbody>
                             <!-- Attendance rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- TABEL RIWAYAT SHIFT -->
+                <div class="action-bar" style="flex-wrap: wrap; gap: 10px; margin-top: 40px;">
+                    <h2>Riwayat Sesi Shift (Buka/Tutup)</h2>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="shift-sessions-table">
+                        <thead>
+                            <tr>
+                                <th>Waktu Buka</th>
+                                <th>Waktu Tutup</th>
+                                <th>Kasir</th>
+                                <th>Shift</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Saldo Awal</th>
+                                <th style="text-align: right;">Setoran Akhir</th>
+                                <th style="text-align: right;">Selisih</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Shift session rows injected here -->
                         </tbody>
                     </table>
                 </div>
