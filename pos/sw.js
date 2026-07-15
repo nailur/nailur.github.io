@@ -1,6 +1,6 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'pos-cache-v7';
+const CACHE_NAME = 'pos-cache-v8';
 const urlsToCache = [
   './',
   './index.html',
@@ -12,10 +12,10 @@ const urlsToCache = [
   './manifest.json',
   './assets/img/icon-192.png',
   './assets/img/icon-512.png',
+  './assets/lib/supabase.min.js',
+  './assets/lib/browser-image-compression.js',
   'https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css',
-  'https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-  'https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js'
+  'https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css'
 ];
 
 self.addEventListener('install', event => {

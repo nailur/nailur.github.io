@@ -16,7 +16,7 @@ export async function exportToExcel() {
         try {
             await new Promise((resolve, reject) => {
                 const script = document.createElement('script');
-                script.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+                script.src = './assets/lib/xlsx.full.min.js';
                 script.onload = resolve;
                 script.onerror = reject;
                 document.head.appendChild(script);
