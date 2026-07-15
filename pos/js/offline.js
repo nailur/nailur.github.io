@@ -108,46 +108,27 @@ export async function syncOfflineTransactions() {
     let successCount = 0;
     for (const trx of pending) {
         try {
-            const { error: trxError } = await supabase.from('transactions').insert({
-                id: trx.id,
-                outlet_id: trx.outlet_id,
-                cashier_id: trx.cashier_id,
-                subtotal_amount: trx.subtotal_amount,
-                discount_amount: trx.discount_amount,
-                tax_amount: trx.tax_amount,
-                total_amount: trx.total_amount,
-                payment_method: trx.payment_method,
-                customer_name: trx.customer_name,
-                cash_received: trx.cash_received || 0,
-                change_amount: trx.change_amount || 0,
-                receipt_no: trx.receipt_no
+            const { error: rpcError } = await supabase.rpc('process_checkout', {
+                p_id: trx.id,
+                p_outlet_id: trx.outlet_id,
+                p_cashier_id: trx.cashier_id,
+                p_subtotal_amount: trx.subtotal_amount,
+                p_discount_amount: trx.discount_amount,
+                p_tax_amount: trx.tax_amount,
+                p_total_amount: trx.total_amount,
+                p_payment_method: trx.payment_method,
+                p_customer_name: trx.customer_name,
+                p_items: trx.items,
+                p_cash_received: trx.cash_received || 0,
+                p_change_amount: trx.change_amount || 0
             });
             
-            if (!trxError) {
-                const itemsToInsert = trx.items.map(item => ({
-                    transaction_id: trx.id,
-                    product_id: item.product_id,
-                    quantity: item.quantity,
-                    price: item.price,
-                    modifiers: item.modifiers
-                }));
-                const { error: itemsError } = await supabase.from('transaction_items').insert(itemsToInsert);
-                if (itemsError) {
-                    console.error("Insert Items Offline Sync Error:", itemsError);
-                    const itemsFallback = trx.items.map(item => ({
-                        transaction_id: trx.id,
-                        product_id: item.product_id,
-                        quantity: item.quantity,
-                        price: item.price
-                    }));
-                    await supabase.from('transaction_items').insert(itemsFallback);
-                }
-                
+            if (!rpcError) {
                 await clearOfflineTransaction(trx.id);
                 successCount++;
             } else {
-                console.error('Offline Sync Error:', trxError);
-                trx.sync_error = trxError.message;
+                console.error('Offline Sync RPC Error:', rpcError);
+                trx.sync_error = rpcError.message;
                 await saveOfflineTransaction(trx);
                 failCount++;
             }

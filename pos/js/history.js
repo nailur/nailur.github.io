@@ -11,6 +11,21 @@ export let historyTotalCount = 0;
 export async function exportToExcel() {
     if (!activeOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
     
+    // Lazy load SheetJS jika belum dimuat
+    if (!window.XLSX) {
+        try {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        } catch (e) {
+            return showToast('Gagal memuat library Excel', 'error');
+        }
+    }
+
     const startDate = document.getElementById('history-date-start').value;
     const endDate = document.getElementById('history-date-end').value;
     if (!startDate || !endDate) return showToast('Pilih rentang tanggal terlebih dahulu', 'error');

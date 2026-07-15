@@ -17,13 +17,17 @@ BEGIN
     SELECT json_build_object(
         'total_revenue', COALESCE(agg.total_revenue, 0),
         'total_trx', COALESCE(agg.total_trx, 0),
+        'total_discount', COALESCE(agg.total_discount, 0),
+        'total_tax', COALESCE(agg.total_tax, 0),
         'method_summary', COALESCE(methods.arr, '[]'::json),
         'product_summary', COALESCE(products.arr, '[]'::json)
     ) INTO result
     FROM (
         SELECT
             SUM(t.total_amount) AS total_revenue,
-            COUNT(*) AS total_trx
+            COUNT(*) AS total_trx,
+            SUM(COALESCE(t.discount_amount, 0)) AS total_discount,
+            SUM(COALESCE(t.tax_amount, 0)) AS total_tax
         FROM transactions t
         WHERE t.outlet_id = p_outlet_id
           AND t.created_at >= p_start_date

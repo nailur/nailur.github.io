@@ -1,10 +1,11 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'pos-cache-v6';
+const CACHE_NAME = 'pos-cache-v7';
 const urlsToCache = [
   './',
   './index.html',
   './css/style.css',
+  './css/style-modals.css',
   './js/app.js',
   './js/auth.js',
   './js/printer.js',
@@ -12,7 +13,9 @@ const urlsToCache = [
   './assets/img/icon-192.png',
   './assets/img/icon-512.png',
   'https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css',
-  'https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css'
+  'https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+  'https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js'
 ];
 
 self.addEventListener('install', event => {
@@ -34,7 +37,7 @@ self.addEventListener('fetch', event => {
   const url = event.request.url;
 
   // API requests — jangan di-cache, langsung ke network
-  if (url.includes('supabase.co') || url.includes('api.github.com') || url.includes('cdn.jsdelivr.net')) return;
+  if (url.includes('supabase.co') || url.includes('api.github.com')) return;
 
   if (isAppShell(url)) {
     // NETWORK-FIRST: Selalu ambil versi terbaru, fallback ke cache saat offline
@@ -56,7 +59,7 @@ self.addEventListener('fetch', event => {
         .then(cached => {
           if (cached) return cached;
           return fetch(event.request).then(response => {
-            if (response && response.status === 200 && response.type === 'basic') {
+            if (response && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
               const clone = response.clone();
               caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
             }

@@ -292,46 +292,29 @@ export async function finalizeCheckout() {
     
     if (!isOffline) {
         try {
-            const { data: insertedTrx, error: trxError } = await supabase.from('transactions').insert({
-                id: trxData.id,
-                outlet_id: getActiveOutletId(),
-                cashier_id: profile.id,
-                subtotal_amount: totals.subtotal,
-                discount_amount: totals.discount,
-                tax_amount: totals.tax,
-                total_amount: totals.total,
-                payment_method: method,
-                customer_name: customer_name,
-                cash_received: received,
-                change_amount: received - totals.total
-            }).select('receipt_no').single();
+            const { data: rpcResult, error: rpcError } = await supabase.rpc('process_checkout', {
+                p_id: trxData.id,
+                p_outlet_id: getActiveOutletId(),
+                p_cashier_id: profile.id,
+                p_subtotal_amount: totals.subtotal,
+                p_discount_amount: totals.discount,
+                p_tax_amount: totals.tax,
+                p_total_amount: totals.total,
+                p_payment_method: method,
+                p_customer_name: customer_name,
+                p_items: itemsPayload,
+                p_cash_received: received,
+                p_change_amount: received - totals.total
+            });
 
-            if (trxError) {
-                console.error("Insert Transaction Error:", trxError);
+            if (rpcError) {
+                console.error("Checkout RPC Error:", rpcError);
                 isOffline = true;
             } else {
-                receiptNo = insertedTrx.receipt_no;
-                const itemsToInsert = itemsPayload.map(item => ({
-                    transaction_id: trxData.id,
-                    product_id: item.product_id,
-                    quantity: item.quantity,
-                    price: item.price,
-                    modifiers: item.modifiers
-                }));
-                const { error: itemsError } = await supabase.from('transaction_items').insert(itemsToInsert);
-                if (itemsError) {
-                    console.error("Insert Items Error (Possibly modifiers column missing):", itemsError);
-                    const itemsFallback = itemsPayload.map(item => ({
-                        transaction_id: trxData.id,
-                        product_id: item.product_id,
-                        quantity: item.quantity,
-                        price: item.price
-                    }));
-                    await supabase.from('transaction_items').insert(itemsFallback);
-                }
+                receiptNo = rpcResult.receipt_no;
             }
         } catch (e) {
-            console.error("Insert Exception:", e);
+            console.error("Checkout Exception:", e);
             isOffline = true;
         }
     }
@@ -360,10 +343,6 @@ export async function finalizeCheckout() {
         showToast('Offline! Transaksi disimpan di perangkat.', 'warning');
     }
     
-    for (const item of cart) {
-        const p = products.find(x => x.id === item.product_id);
-
-    }
     
     const change = received - totals.total;
     const cartClone = [...cart];
