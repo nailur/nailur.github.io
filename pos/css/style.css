@@ -923,6 +923,7 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     background: var(--primary) !important;
     color: var(--secondary) !important;
+    border-radius: 0 !important;
 }
 
 .mobile-pos-header .mobile-brand {
