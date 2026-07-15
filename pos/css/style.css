@@ -1,8 +1,8 @@
 :root {
     /* D'One Chicken Brand Palette */
-    --primary: #480b6b; /* Deep Purple */
-    --primary-hover: #32064d;
-    --secondary: #fab914; /* D'One Yellow */
+    --primary: #3B2767; /* Brand Purple */
+    --primary-hover: #2a1b4d; /* Slightly darker purple for hover state */
+    --secondary: #F4AF1C; /* Brand Yellow */
     --bg-color: #f8f6f9; /* Light tinted gray */
     --surface: #FFFFFF;
     --text-main: #111827;
