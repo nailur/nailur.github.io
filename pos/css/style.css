@@ -1,12 +1,9 @@
 :root {
-    /* Premium Color Palette */
-    --primary: #4F46E5;
-    /* Indigo 600 */
-    --primary-hover: #4338CA;
-    --secondary: #10B981;
-    /* Emerald 500 */
-    --bg-color: #F3F4F6;
-    /* Gray 100 */
+    /* D'One Chicken Brand Palette */
+    --primary: #480b6b; /* Deep Purple */
+    --primary-hover: #32064d;
+    --secondary: #fab914; /* D'One Yellow */
+    --bg-color: #f8f6f9; /* Light tinted gray */
     --surface: #FFFFFF;
     --text-main: #111827;
     /* Gray 900 */
