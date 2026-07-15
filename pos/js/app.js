@@ -1170,9 +1170,9 @@ window.exportAttendanceExcel = async () => {
             'Status': record.clock_out ? 'Selesai' : 'Belum Pulang'
         }));
 
-        const worksheet = XLSX.utils.json_to_sheet(exportRows);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Absensi");
+        const worksheet = window.XLSX.utils.json_to_sheet(exportRows);
+        const workbook = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Absensi");
 
         const colWidths = [
             { wch: 15 }, // Tanggal
@@ -1186,7 +1186,7 @@ window.exportAttendanceExcel = async () => {
         worksheet['!cols'] = colWidths;
 
         let filenameDate = startDate === endDate ? startDate : `${startDate}_to_${endDate}`;
-        XLSX.writeFile(workbook, `Laporan_Absensi_${filenameDate}.xlsx`);
+        window.XLSX.writeFile(workbook, `Laporan_Absensi_${filenameDate}.xlsx`);
         showToast('Berhasil mengunduh Excel', 'success');
     } catch (e) {
         console.error(e);

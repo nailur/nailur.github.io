@@ -4,14 +4,27 @@ window.productChartInst = null;
 window.loadDashboard = async function() {
     if (!activeOutletId) return;
 
-    if (!window.Chart) {
-        await new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
+    if (!window.Chart || !window.ChartDataLabels) {
+        if (!window.Chart) {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        if (!window.ChartDataLabels) {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        window.Chart.register(window.ChartDataLabels);
+    }
     }
     
     const startDate = document.getElementById('dashboard-date-start');
@@ -140,7 +153,19 @@ window.loadDashboard = async function() {
                 backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: {
+                datalabels: {
+                    color: '#fff',
+                    font: { weight: 'bold' },
+                    formatter: (value) => {
+                        return value.toLocaleString('id-ID');
+                    }
+                }
+            }
+        }
     });
 
     const methodLabels = methodData.map(x => x.method || 'Tunai');
@@ -157,7 +182,19 @@ window.loadDashboard = async function() {
                 backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6']
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: {
+                datalabels: {
+                    color: '#fff',
+                    font: { weight: 'bold' },
+                    formatter: (value) => {
+                        return value.toLocaleString('id-ID');
+                    }
+                }
+            }
+        }
     });
 
 
