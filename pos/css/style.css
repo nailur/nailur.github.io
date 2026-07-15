@@ -920,7 +920,9 @@ body {
     align-items: center;
     padding: 15px 20px;
     gap: 15px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--primary) !important;
+    color: var(--secondary) !important;
 }
 
 .mobile-pos-header .mobile-brand {
@@ -929,7 +931,16 @@ body {
     gap: 8px;
     font-size: 1.2rem;
     font-weight: 600;
-    color: var(--primary);
+    color: var(--secondary) !important;
+}
+
+.mobile-pos-header .btn-icon {
+    color: var(--secondary) !important;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-pos-header .btn-icon:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .sidebar-overlay {
