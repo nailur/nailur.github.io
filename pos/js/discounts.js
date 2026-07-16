@@ -35,11 +35,13 @@ function renderDiscounts() {
     tbody.innerHTML = discounts.map(discount => {
         const isActive = discount.is_active;
         const statusBadge = isActive ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-secondary">Nonaktif</span>';
+        const startDate = new Date(discount.start_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        const endDate = new Date(discount.end_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
         
         return `
             <tr>
                 <td><strong>${discount.name}</strong></td>
-                <td>${discount.start_date} s/d ${discount.end_date}</td>
+                <td>${startDate} s/d ${endDate}</td>
                 <td>${statusBadge}</td>
                 <td style="text-align: center;">
                     <button class="btn btn-icon" title="Edit" onclick="editDiscount('${discount.id}')" style="color: var(--primary);">
