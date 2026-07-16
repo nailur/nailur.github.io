@@ -300,7 +300,6 @@ async function initPosMultiOutlet(profile) {
             checkActiveShift();
             setupShiftRealtime();
             setupProductsRealtime();
-            setupDiscountForm();
             loadProducts();
             loadHistory();
             if(window.loadDashboard) window.loadDashboard();
@@ -830,6 +829,8 @@ function setupEventListeners() {
     document.getElementById('form-branch').addEventListener('submit', handleAddBranch);
     document.getElementById('form-outlet').addEventListener('submit', handleAddOutlet);
     document.getElementById('form-user').addEventListener('submit', handleAddUser);
+    setupDiscountForm();
+    
     const formCompany = document.getElementById('form-company');
     if (formCompany) formCompany.addEventListener('submit', (e) => { e.preventDefault(); window.saveCompany(); });
 
