@@ -191,11 +191,11 @@ export async function loadHistory(resetPage = true) {
                     ${isVoid ? '<span style="background:var(--danger);color:white;padding:2px 6px;border-radius:4px;font-size:0.7rem;margin-left:5px;">CANCEL</span>' : ''}
                 </td>
                 <td>${trx.profiles?.name || trx.profiles?.email || '-'}</td>
-                <td>Rp ${(trx.discount_amount || 0).toLocaleString('id-ID')}</td>
-                <td>Rp ${(trx.tax_amount || 0).toLocaleString('id-ID')}</td>
-                <td><strong>Rp ${(trx.total_amount || 0).toLocaleString('id-ID')}</strong></td>
-                <td>Rp ${(trx.cash_received || trx.total_amount).toLocaleString('id-ID')}</td>
-                <td>Rp ${(trx.change_amount || 0).toLocaleString('id-ID')}</td>
+                <td style="white-space: nowrap;">Rp ${(trx.discount_amount || 0).toLocaleString('id-ID')}</td>
+                <td style="white-space: nowrap;">Rp ${(trx.tax_amount || 0).toLocaleString('id-ID')}</td>
+                <td style="white-space: nowrap;"><strong>Rp ${(trx.total_amount || 0).toLocaleString('id-ID')}</strong></td>
+                <td style="white-space: nowrap;">Rp ${(trx.cash_received || trx.total_amount).toLocaleString('id-ID')}</td>
+                <td style="white-space: nowrap;">Rp ${(trx.change_amount || 0).toLocaleString('id-ID')}</td>
                 <td>${trx.payment_method}</td>
                 <td>
                     <button class="btn btn-icon" style="color:var(--primary);" onclick="viewTransactionDetails('${trx.id}')" title="Detail"><i class="ph ph-eye"></i></button>
