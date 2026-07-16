@@ -22,7 +22,8 @@ export async function loadShiftSessions() {
                 ending_cash, 
                 opened_at, 
                 closed_at,
-                profiles(name),
+                opener:profiles!shift_sessions_user_id_fkey(name),
+                closer:profiles!shift_sessions_closed_by_fkey(name),
                 shifts(name)
             `)
             .eq('outlet_id', activeOutletId)
@@ -51,7 +52,8 @@ export async function loadShiftSessions() {
             const openedDate = session.opened_at ? new Date(session.opened_at).toLocaleString('id-ID') : '-';
             const closedDate = session.closed_at ? new Date(session.closed_at).toLocaleString('id-ID') : '-';
             
-            const cashierName = session.profiles?.name || 'Unknown';
+            const openerName = session.opener?.name || 'Unknown';
+            const closerName = session.closer?.name || '-';
             const shiftName = session.shifts?.name || '-';
             
             const startingCash = parseFloat(session.starting_cash || 0);
@@ -84,12 +86,13 @@ export async function loadShiftSessions() {
             tr.innerHTML = `
                 <td>${openedDate}</td>
                 <td>${closedDate}</td>
-                <td>${cashierName}</td>
-                <td>${shiftName}</td>
+                <td>${window.escapeHtml(openerName)}</td>
+                <td>${window.escapeHtml(closerName)}</td>
+                <td>${window.escapeHtml(shiftName)}</td>
                 <td>${statusBadge}</td>
                 <td style="text-align: right;">${formatRp(startingCash)}</td>
                 <td style="text-align: right;">${session.status === 'closed' ? formatRp(endingCash) : '-'}</td>
-                <td style="text-align: right; color: ${diffColor}; font-weight: 600;">${diffFormatted}</td>
+                <td style="text-align: right; font-weight: bold; color: ${diffColor}">${diffFormatted}</td>
             `;
             tbody.appendChild(tr);
         });

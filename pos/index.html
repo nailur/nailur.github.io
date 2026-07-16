@@ -769,9 +769,11 @@
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                     <h2>Riwayat Absensi</h2>
                     <div class="filter-group" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <input type="date" id="attendance-start-date" class="input-sm" onchange="window.loadAttendanceHistory()">
+                        <input type="date" id="attendance-start-date" class="input-sm"
+                            onchange="window.loadAttendanceHistory()">
                         <span>-</span>
-                        <input type="date" id="attendance-end-date" class="input-sm" onchange="window.loadAttendanceHistory()">
+                        <input type="date" id="attendance-end-date" class="input-sm"
+                            onchange="window.loadAttendanceHistory()">
                         <button class="btn btn-secondary" id="btn-export-attendance"
                             style="display: flex; align-items: center; gap: 5px;" onclick="exportAttendanceExcel()">
                             <i class="ph ph-file-xls"></i> Export Excel
@@ -806,11 +808,12 @@
                             <tr>
                                 <th>Waktu Buka</th>
                                 <th>Waktu Tutup</th>
-                                <th>Kasir</th>
+                                <th>Buka Oleh</th>
+                                <th>Tutup Oleh</th>
                                 <th>Shift</th>
                                 <th>Status</th>
                                 <th style="text-align: right;">Saldo Awal</th>
-                                <th style="text-align: right;">Setoran Akhir</th>
+                                <th style="text-align: right;">Saldo Akhir</th>
                                 <th style="text-align: right;">Selisih</th>
                             </tr>
                         </thead>

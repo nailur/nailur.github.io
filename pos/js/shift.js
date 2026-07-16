@@ -98,12 +98,15 @@ export async function handleCloseShift(e) {
     const endingCash = parseFloat(document.getElementById('input-ending-cash').value) || 0;
 
     try {
+        const profile = getCurrentProfile();
+        
         const { error } = await supabase
             .from('shift_sessions')
             .update({
                 status: 'closed',
                 ending_cash: endingCash,
-                closed_at: new Date().toISOString()
+                closed_at: new Date().toISOString(),
+                closed_by: profile ? profile.id : null
             })
             .eq('id', currentShiftSession.id);
 

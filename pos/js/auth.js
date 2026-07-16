@@ -52,7 +52,7 @@ export async function checkSession() {
 export async function loadProfile(userId) {
     const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, name, role, branch_id, outlet_id, shift_id, status, created_at, outlets(id, name, address, phone, code, tax_rate_percent)')
+        .select('id, email, name, role, branch_id, outlet_id, shift_id, status, created_at, outlets(id, name, address, phone, code, tax_rate_percent), shifts(name)')
         .eq('id', userId)
         .single();
     

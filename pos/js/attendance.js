@@ -123,6 +123,7 @@ async function handleClockIn() {
             user_id: profile.id,
             outlet_id: activeOutletId,
             shift_id: profile.shift_id || null,
+            shift_name_snapshot: profile.shifts?.name || 'Default Shift',
             clock_in: now
         }])
         .select('id, clock_in, clock_out')
@@ -231,7 +232,8 @@ export async function loadAttendanceHistory() {
         const dateStr = new Date(record.clock_in).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
         const timeIn = new Date(record.clock_in).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         const timeOut = record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-';
-        const roleShift = (record.profiles?.role || '') + (record.shifts ? ` / ${record.shifts.name}` : '');
+        const shiftNameDisplay = record.shift_name_snapshot || record.shifts?.name || '';
+        const roleShift = (record.profiles?.role || '') + (shiftNameDisplay ? ` / ${shiftNameDisplay}` : '');
         
         let statusBadge = '<span class="badge badge-secondary">Belum Pulang</span>';
         if (record.clock_out) statusBadge = '<span class="badge badge-success">Selesai</span>';
