@@ -92,6 +92,11 @@ export function setupDiscountForm() {
             document.getElementById('form-discount').reset();
             document.getElementById('discount-id').value = '';
             document.getElementById('modal-discount-title').textContent = 'Tambah Diskon';
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('discount-start-date').value = today;
+            document.getElementById('discount-end-date').value = today;
+            
             renderPaymentMethodInputs({});
             document.getElementById('modal-discount').classList.remove('hidden');
         });
