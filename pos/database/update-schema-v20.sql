@@ -8,6 +8,7 @@
 -- 4. Supports modifiers in transaction items
 -- 5. Keeps idempotency check from v18
 
+DROP FUNCTION IF EXISTS public.process_checkout(UUID, UUID, NUMERIC, NUMERIC, NUMERIC, NUMERIC, TEXT, TEXT, JSONB);
 DROP FUNCTION IF EXISTS public.process_checkout(UUID, UUID, NUMERIC, NUMERIC, NUMERIC, NUMERIC, TEXT, TEXT, JSONB, UUID);
 
 CREATE OR REPLACE FUNCTION public.process_checkout(
