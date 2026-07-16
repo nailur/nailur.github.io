@@ -261,7 +261,7 @@ export async function viewTransactionDetails(trxId) {
     const tbody = document.getElementById('detail-trx-items');
     tbody.innerHTML = items.map(item => {
         const modText = item.modifiers && item.modifiers.length > 0
-            ? `<div style="font-size:0.75rem; color:var(--text-muted);">${item.modifiers.map(m => m.name).join(', ')}</div>`
+            ? item.modifiers.map(m => `<div style="font-size:0.75rem; color:var(--text-muted);">${m.name}</div>`).join('')
             : '';
         return `
         <tr>
