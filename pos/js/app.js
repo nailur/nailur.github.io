@@ -4,7 +4,7 @@ import { checkSession, login, logout, getCurrentUser, getCurrentProfile } from '
 import { connectPrinter } from './printer.js';
 import { startAttendanceClock, checkAttendanceStatus } from './attendance.js';
 import { syncOfflineTransactions, initDB } from './offline.js';
-import { products, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts } from './products.js';
+import { products, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts, setupProductsRealtime } from './products.js';
 import { cart, addToCart, addToCartWithModifiers, updateQty, emptyCart, renderCart, calculateChange, openCheckoutModal, finalizeCheckout, printReceipt, printReceiptRawBT } from './cart.js';
 import './modifiers.js';
 import { loadHistory, exportToExcel, changeHistoryPage, viewTransactionDetails } from './history.js';
@@ -298,6 +298,7 @@ async function initPosMultiOutlet(profile) {
             checkAttendanceStatus();
             checkActiveShift();
             setupShiftRealtime();
+            setupProductsRealtime();
             loadProducts();
             loadHistory();
             if(window.loadDashboard) window.loadDashboard();
@@ -946,6 +947,7 @@ async function initPos() {
     checkAttendanceStatus();
     await checkActiveShift();
     setupShiftRealtime();
+    setupProductsRealtime();
 
     const today = getLocalToday();
     const initIds = ['history-date-start', 'history-date-end', 'dashboard-date-start', 'dashboard-date-end', 'attendance-date-start', 'attendance-date-end'];

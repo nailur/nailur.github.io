@@ -42,6 +42,39 @@ export async function loadProducts() {
     await saveOfflineProducts(activeOutletId, data);
 }
 
+let productsChannel = null;
+
+export function setupProductsRealtime() {
+    if (productsChannel) {
+        supabase.removeChannel(productsChannel);
+    }
+    
+    if (!activeOutletId) return;
+
+    productsChannel = supabase.channel(`public:products:${activeOutletId}`);
+    
+    productsChannel
+        .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'products', filter: `outlet_id=eq.${activeOutletId}` },
+            (payload) => {
+                console.log('Product change detected:', payload);
+                loadProducts();
+            }
+        )
+        .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'product_modifiers' },
+            (payload) => {
+                console.log('Modifier change detected:', payload);
+                // When modifiers change, we just need to ensure products stay synced, but currently modifiers are fetched on demand.
+                // It's still good to call loadProducts in case there is any caching or we want to reflect UI updates.
+                loadProducts(); 
+            }
+        )
+        .subscribe();
+}
+
 export function renderProducts(search = '') {
     const grid = document.getElementById('product-grid');
     const profile = getCurrentProfile();
