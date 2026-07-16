@@ -1395,7 +1395,7 @@
 
     <!-- Modal Detail Transaksi -->
     <div id="modal-transaction-details" class="modal-overlay hidden">
-        <div class="modal-content glass-panel">
+        <div class="modal-content glass-panel" style="max-width: 600px; width: 90%;">
             <div class="modal-header">
                 <h3>Detail Transaksi</h3>
                 <button class="btn-close" data-close="modal-transaction-details"><i class="ph ph-x"></i></button>
@@ -1408,7 +1408,13 @@
                         id="detail-trx-customer"></span></div>
                 <div><strong>Metode:</strong> <span id="detail-trx-method"></span></div>
             </div>
-            <table class="data-table" style="margin-bottom: 15px;">
+            <table class="data-table" style="margin-bottom: 15px; font-size: 0.9rem;">
+                <style>
+                    #modal-transaction-details .data-table td, #modal-transaction-details .data-table th {
+                        padding: 8px 10px;
+                        line-height: 1.2;
+                    }
+                </style>
                 <thead>
                     <tr>
                         <th>Item</th>
