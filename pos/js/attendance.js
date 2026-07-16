@@ -117,13 +117,25 @@ async function handleClockIn() {
 
     const now = new Date().toISOString();
 
+    let shiftName = 'Default Shift';
+    if (profile.shift_id) {
+        const { data: shiftData } = await supabase
+            .from('shifts')
+            .select('name')
+            .eq('id', profile.shift_id)
+            .single();
+        if (shiftData) {
+            shiftName = shiftData.name;
+        }
+    }
+
     const { data, error } = await supabase
         .from('attendances')
         .insert([{
             user_id: profile.id,
             outlet_id: activeOutletId,
             shift_id: profile.shift_id || null,
-            shift_name_snapshot: profile.shifts?.name || 'Default Shift',
+            shift_name_snapshot: shiftName,
             clock_in: now
         }])
         .select('id, clock_in, clock_out')
