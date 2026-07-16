@@ -945,6 +945,7 @@ async function initPos() {
     startAttendanceClock();
     checkAttendanceStatus();
     await checkActiveShift();
+    setupShiftRealtime();
 
     const today = getLocalToday();
     const initIds = ['history-date-start', 'history-date-end', 'dashboard-date-start', 'dashboard-date-end', 'attendance-date-start', 'attendance-date-end'];

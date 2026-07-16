@@ -44,21 +44,27 @@ export async function checkActiveShift() {
     }
 }
 
+let shiftChannel = null;
+
 export function setupShiftRealtime() {
-    supabase
-        .channel('public:shift_sessions')
-        .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'shift_sessions', filter: `outlet_id=eq.${activeOutletId}` },
-            (payload) => {
-                console.log('Shift change detected:', payload);
-                checkActiveShift();
-                if (window.loadShiftSessions) {
-                    window.loadShiftSessions();
-                }
+    if (shiftChannel) {
+        supabase.removeChannel(shiftChannel);
+    }
+    
+    if (!activeOutletId) return;
+
+    shiftChannel = supabase.channel(`public:shift_sessions:${activeOutletId}`);
+    shiftChannel.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'shift_sessions', filter: `outlet_id=eq.${activeOutletId}` },
+        (payload) => {
+            console.log('Shift change detected:', payload);
+            checkActiveShift();
+            if (window.loadShiftSessions) {
+                window.loadShiftSessions();
             }
-        )
-        .subscribe();
+        }
+    ).subscribe();
 }
 
 export function lockPOS() {
