@@ -245,8 +245,14 @@ export async function loadAttendanceHistory() {
         const dateStr = new Date(record.clock_in).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
         const timeIn = new Date(record.clock_in).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         const timeOut = record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-';
-        const shiftNameDisplay = record.shift_name_snapshot || record.shifts?.name || '';
-        const roleShift = (record.profiles?.role || '') + (shiftNameDisplay ? ` / ${shiftNameDisplay}` : '');
+        const shiftNameDisplay = record.shift_name_snapshot || record.shifts?.name || '-';
+        
+        const formatTitleCase = (str) => {
+            if (!str) return '-';
+            return str.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        };
+        const roleName = formatTitleCase(record.profiles?.role);
+        const shiftName = formatTitleCase(shiftNameDisplay);
         
         let statusBadge = '<span class="badge badge-secondary">Belum Pulang</span>';
         if (record.clock_out) statusBadge = '<span class="badge badge-success">Selesai</span>';
@@ -255,7 +261,8 @@ export async function loadAttendanceHistory() {
             <tr>
                 <td>${dateStr}</td>
                 <td>${escapeHtml(record.profiles?.name || 'Kasir')}</td>
-                <td>${escapeHtml(roleShift.replace('_', ' ').toUpperCase())}</td>
+                <td>${escapeHtml(roleName)}</td>
+                <td>${escapeHtml(shiftName)}</td>
                 <td>${timeIn}</td>
                 <td>${timeOut}</td>
                 <td>${statusBadge}</td>

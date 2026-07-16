@@ -1164,11 +1164,16 @@ window.exportAttendanceExcel = async () => {
             return;
         }
 
+        const formatTitleCase = (str) => {
+            if (!str) return '-';
+            return str.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        };
+
         const exportRows = data.map(record => ({
             'Tanggal': new Date(record.clock_in).toLocaleDateString('id-ID'),
             'Nama Pegawai': record.profiles?.name || record.profiles?.email || '-',
-            'Role': (record.profiles?.role || '-').replace('_', ' ').toUpperCase(),
-            'Shift': record.shift_name_snapshot || record.shifts?.name || '-',
+            'Role': formatTitleCase(record.profiles?.role),
+            'Shift': formatTitleCase(record.shift_name_snapshot || record.shifts?.name),
             'Jam Masuk': record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
             'Jam Pulang': record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
             'Status': record.clock_out ? 'Selesai' : 'Belum Pulang'
