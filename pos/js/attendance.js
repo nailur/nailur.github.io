@@ -148,6 +148,7 @@ async function handleClockIn() {
         currentAttendanceRecord = data;
         showToast('Berhasil Clock In!', 'success');
         renderAttendanceButton();
+        loadAttendanceHistory();
     }
 }
 
