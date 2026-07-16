@@ -179,7 +179,10 @@ export async function loadAttendanceHistory() {
     const endInput = document.getElementById('attendance-end-date');
     
     if (startInput && !startInput.value) {
-        startInput.value = getLocalToday();
+        const d = new Date();
+        d.setDate(d.getDate() - 7);
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        startInput.value = d.toISOString().split('T')[0];
     }
     if (endInput && !endInput.value) {
         endInput.value = getLocalToday();
