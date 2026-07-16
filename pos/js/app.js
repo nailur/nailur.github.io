@@ -18,7 +18,7 @@ import {
     branchesList, outletsList, posOutletsList, activeOutletId, 
     setPosOutletsList, setActiveOutletId 
 } from './state.js';
-import { checkActiveShift, handleOpenShift, handleCloseShift } from './shift.js';
+import { checkActiveShift, handleOpenShift, handleCloseShift, setupShiftRealtime } from './shift.js';
 import { loadInventory, handleSaveInventory, loadStockPostings } from './inventory.js';
 import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMaster, openAddExpenseMaster } from './expenses.js';
 import { loadDeposits, handleSaveDeposit } from './deposits.js';
@@ -297,6 +297,7 @@ async function initPosMultiOutlet(profile) {
             generateOrderId();
             checkAttendanceStatus();
             checkActiveShift();
+            setupShiftRealtime();
             loadProducts();
             loadHistory();
             if(window.loadDashboard) window.loadDashboard();
