@@ -194,7 +194,7 @@
                     <button class="tab-btn" data-target="outlets-tab"><i class="ph ph-storefront"></i> Outlets</button>
                     <button class="tab-btn" data-target="shifts-tab"><i class="ph ph-clock"></i> Shift</button>
                     <button class="tab-btn" data-target="users-tab"><i class="ph ph-users"></i> Users</button>
-
+                    <button class="tab-btn" data-target="discounts-tab"><i class="ph ph-percent"></i> Diskon</button>
                     <button class="tab-btn" data-target="server-info-tab"><i class="ph ph-server"></i> Info
                         Server</button>
                     <button class="tab-btn" data-target="announcement-tab"><i class="ph ph-megaphone"></i>
@@ -344,6 +344,32 @@
 
 
                     <!-- removed analytics-tab -->
+                    
+                    <!-- X. DISKON TAB -->
+                    <div id="discounts-tab" class="tab-pane hidden">
+                        <div class="action-bar">
+                            <h3>Daftar Diskon</h3>
+                            <button class="btn btn-primary" id="btn-add-discount">
+                                <i class="ph ph-plus"></i> Tambah Diskon
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="discounts-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Diskon</th>
+                                        <th>Periode</th>
+                                        <th>Status</th>
+                                        <th style="text-align: center; width: 100px;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- 4. INFO SERVER TAB -->
                     <div id="server-info-tab" class="tab-pane hidden">
                         <div class="action-bar"
@@ -1167,6 +1193,51 @@
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" data-close="modal-outlet">Batal</button>
                     <button type="submit" class="btn btn-primary" id="btn-save-outlet">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Diskon Global -->
+    <div id="modal-discount" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="modal-discount-title">Tambah Diskon</h3>
+                <button class="btn-close" data-close="modal-discount"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-discount">
+                <input type="hidden" id="discount-id">
+                <div class="input-group">
+                    <label>Nama Diskon</label>
+                    <input type="text" id="discount-name" required placeholder="Contoh: Promo Merdeka">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="input-group">
+                        <label>Tanggal Mulai</label>
+                        <input type="date" id="discount-start-date" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Tanggal Selesai</label>
+                        <input type="date" id="discount-end-date" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label style="margin-bottom: 10px; display: block;">Besaran Diskon per Metode Pembayaran</label>
+                    <div style="display: grid; gap: 10px;" id="discount-payment-methods-container">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <div class="input-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="discount-is-active" style="width: auto;">
+                    <label for="discount-is-active" style="margin-bottom: 0;">Aktifkan Diskon Ini</label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="modal-discount">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-discount">Simpan</button>
                 </div>
             </form>
         </div>

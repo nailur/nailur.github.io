@@ -23,11 +23,12 @@ import { loadInventory, handleSaveInventory, loadStockPostings } from './invento
 import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMaster, openAddExpenseMaster } from './expenses.js';
 import { loadDeposits, handleSaveDeposit } from './deposits.js';
 import { loadShifts, handleSaveShift, openShiftModal } from './shift-master.js';
+import { loadDiscounts, setupDiscountForm } from './discounts.js';
 
 window.loadInventoryForManagement = function() { loadInventory(); loadStockPostings(); };
 window.loadExpensesForManagement = loadExpenses;
 window.loadDepositsForManagement = loadDeposits;
-window.loadShifts = loadShifts;
+window.loadShifts = function() { loadShifts(); loadDiscounts(); };
 
 window.getCurrentProfile = getCurrentProfile;
 window.getCurrentUser = getCurrentUser;
@@ -299,6 +300,7 @@ async function initPosMultiOutlet(profile) {
             checkActiveShift();
             setupShiftRealtime();
             setupProductsRealtime();
+            setupDiscountForm();
             loadProducts();
             loadHistory();
             if(window.loadDashboard) window.loadDashboard();
@@ -864,9 +866,7 @@ function setupEventListeners() {
     document.getElementById('form-product').addEventListener('submit', handleSaveProduct);
     document.getElementById('product-search').addEventListener('input', debounce((e) => renderProducts(e.target.value), 300));
     
-    document.getElementById('modal-payment-method').addEventListener('change', () => {
-        renderCart();
-    });
+    // modal-payment-method listener is in cart.js
     document.getElementById('modal-cash-received').addEventListener('input', calculateChange);
     document.getElementById('modal-discount-percent').addEventListener('input', calculateChange);
     document.getElementById('modal-discount-nominal').addEventListener('input', calculateChange);

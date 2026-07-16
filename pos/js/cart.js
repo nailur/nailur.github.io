@@ -6,6 +6,7 @@ import { saveOfflineTransaction } from './offline.js';
 import { getCurrentProfile } from './auth.js';
 import { printReceiptNative } from './printer.js';
 import { showModifierSelection } from './modifiers.js';
+import { getActiveDiscount } from './discounts.js';
 
 export let cart = [];
 try {
@@ -236,13 +237,44 @@ export function openCheckoutModal() {
     document.getElementById('modal-payment-method').value = 'Tunai';
     document.getElementById('modal-cash-received').value = '';
     document.getElementById('modal-customer-name').value = '';
-    document.getElementById('modal-discount-percent').value = '';
-    document.getElementById('modal-discount-nominal').value = '';
+    
+    applyActiveDiscount('Tunai');
     
     renderCart();
     calculateChange();
     document.getElementById('modal-checkout').classList.remove('hidden');
 }
+
+function applyActiveDiscount(methodName) {
+    const activeDiscount = getActiveDiscount();
+    const pctInput = document.getElementById('modal-discount-percent');
+    const nomInput = document.getElementById('modal-discount-nominal');
+    
+    if (activeDiscount && activeDiscount.payment_discounts && activeDiscount.payment_discounts[methodName]) {
+        const discountConfig = activeDiscount.payment_discounts[methodName];
+        pctInput.value = discountConfig.percent || 0;
+        nomInput.value = discountConfig.nominal || 0;
+    } else {
+        pctInput.value = '';
+        nomInput.value = '';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const methodSelect = document.getElementById('modal-payment-method');
+    if (methodSelect) {
+        methodSelect.addEventListener('change', (e) => {
+            applyActiveDiscount(e.target.value);
+            renderCart();
+            calculateChange();
+        });
+    }
+    
+    const pctInput = document.getElementById('modal-discount-percent');
+    const nomInput = document.getElementById('modal-discount-nominal');
+    if (pctInput) pctInput.addEventListener('input', () => { renderCart(); calculateChange(); });
+    if (nomInput) nomInput.addEventListener('input', () => { renderCart(); calculateChange(); });
+});
 
 export async function finalizeCheckout() {
     if (cart.length === 0 || !getActiveOutletId()) return;
