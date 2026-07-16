@@ -115,82 +115,61 @@ window.loadDashboard = async function() {
     const topProducts = analyticsResult.top_products || [];
 
     const revCtx = document.getElementById('revenueChart');
-    const prodCtx = document.getElementById('productsChart');
-    const methodCtx = document.getElementById('methodsChart');
-    if(!revCtx || !prodCtx || !methodCtx) return;
+    if(!revCtx) return;
 
-    const revLabels = dailyData.map(d => d.date);
-    const revData = dailyData.map(d => d.revenue);
+    const { data: costsData } = await supabase
+        .from('operational_costs')
+        .select('cost_date, total_amount')
+        .eq('outlet_id', activeOutletId)
+        .gte('cost_date', startDate.value)
+        .lte('cost_date', endDate.value);
+        
+    const expensesByDate = {};
+    const allDatesSet = new Set(dailyData.map(d => d.date));
     
+    if (costsData) {
+        costsData.forEach(c => {
+            allDatesSet.add(c.cost_date);
+            expensesByDate[c.cost_date] = (expensesByDate[c.cost_date] || 0) + Number(c.total_amount);
+        });
+    }
+    
+    const allDates = Array.from(allDatesSet).sort();
+    const chartLabels = allDates.map(d => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month:'short'}));
+    
+    const revData = allDates.map(d => {
+        const found = dailyData.find(x => x.date === d);
+        return found ? found.revenue : 0;
+    });
+    
+    const expData = allDates.map(d => expensesByDate[d] || 0);
+
     if (window.revenueChartInst) window.revenueChartInst.destroy();
     window.revenueChartInst = new Chart(revCtx.getContext('2d'), {
-        type: 'line',
+        type: 'bar',
         data: {
-            labels: revLabels.map(d => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month:'short'})),
-            datasets: [{
-                label: 'Pendapatan (Rp)',
-                data: revData,
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                tension: 0.3,
-                fill: true
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-
-    const prodLabels = topProducts.map(x => x.name);
-    const prodData = topProducts.map(x => x.qty);
-
-    if (window.productChartInst) window.productChartInst.destroy();
-    window.productChartInst = new Chart(prodCtx.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: prodLabels,
-            datasets: [{
-                data: prodData,
-                backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
-            }]
-        },
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false,
-            plugins: {
-                datalabels: {
-                    color: '#fff',
-                    font: { weight: 'bold' },
-                    formatter: (value) => {
-                        return value.toLocaleString('id-ID');
-                    }
+            labels: chartLabels,
+            datasets: [
+                {
+                    label: 'Pendapatan (Rp)',
+                    data: revData,
+                    backgroundColor: '#6366f1',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Pengeluaran (Rp)',
+                    data: expData,
+                    backgroundColor: '#ef4444',
+                    borderRadius: 4
                 }
-            }
-        }
-    });
-
-    const methodLabels = methodData.map(x => x.method || 'Tunai');
-    const methodValues = methodData.map(x => x.total);
-    
-    if (window.methodsChartInst) window.methodsChartInst.destroy();
-    window.methodsChartInst = new Chart(methodCtx.getContext('2d'), {
-        type: 'pie',
-        data: {
-            labels: methodLabels,
-            datasets: [{
-                label: 'Omzet per Metode (Rp)',
-                data: methodValues,
-                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6']
-            }]
+            ]
         },
         options: { 
             responsive: true, 
             maintainAspectRatio: false,
-            plugins: {
-                datalabels: {
-                    color: '#fff',
-                    font: { weight: 'bold' },
-                    formatter: (value) => {
-                        return value.toLocaleString('id-ID');
-                    }
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
         }
