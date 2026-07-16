@@ -311,7 +311,29 @@ export async function finalizeCheckout() {
                 console.error("Checkout RPC Error:", rpcError);
                 isOffline = true;
             } else {
-                receiptNo = rpcResult.receipt_no;
+                if (rpcResult && typeof rpcResult === 'object' && rpcResult.receipt_no) {
+                    receiptNo = rpcResult.receipt_no;
+                } else {
+                    // Fallback: If RPC returned void, null, or UUID string, fetch the receipt_no manually
+                    try {
+                        const { data: fetchTrx } = await supabase
+                            .from('transactions')
+                            .select('receipt_no')
+                            .eq('id', trxData.id)
+                            .single();
+                        if (fetchTrx && fetchTrx.receipt_no) {
+                            receiptNo = fetchTrx.receipt_no;
+                        } else {
+                            // If still not found, generate a random one to avoid crash
+                            const randomDigits = Math.floor(100000 + Math.random() * 900000);
+                            receiptNo = `${kodeOutlet}-X-${randomDigits}`;
+                        }
+                    } catch (err) {
+                        console.error("Failed to fetch receipt_no after RPC:", err);
+                        const randomDigits = Math.floor(100000 + Math.random() * 900000);
+                        receiptNo = `${kodeOutlet}-X-${randomDigits}`;
+                    }
+                }
             }
         } catch (e) {
             console.error("Checkout Exception:", e);
