@@ -521,7 +521,7 @@ export function printReceipt(trxId, cartItems, total, received, method, trxDate 
 
     const itemsHtml = cartItems.map(item => {
         const modLine = item.modifiers && item.modifiers.length > 0
-            ? `<tr><td colspan="3" style="font-size:0.65rem; color:#666; padding-left:10px; line-height:1.2; word-break: break-word; white-space: normal;">${item.modifiers.map(m => m.name).join(', ')}</td></tr>`
+            ? item.modifiers.map(m => `<tr><td colspan="3" style="font-size:0.65rem; color:#666; padding-left:10px; line-height:1.2; word-break: break-word; white-space: normal;">- ${m.name}</td></tr>`).join('')
             : '';
         return `
         <tr><td colspan="3">${item.name}</td></tr>
@@ -618,9 +618,10 @@ export function printReceiptRawBT(trxId, cartItems, total, received, method, trx
     cartItems.forEach(item => {
         text += tLine(`${item.name}`) + `\n`;
         if (item.modifiers && item.modifiers.length > 0) {
-            const modsStr = item.modifiers.map(m => m.name).join(', ');
-            wrapLine(modsStr, 30).forEach(line => {
-                text += `  ${line}\n`;
+            item.modifiers.forEach(m => {
+                wrapLine(`- ${m.name}`, 30).forEach(line => {
+                    text += `  ${line}\n`;
+                });
             });
         }
         const qtyStr = `${item.quantity}x`;
