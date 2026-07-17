@@ -9,16 +9,20 @@ export async function checkSession() {
     if (session) {
         currentUser = session.user;
         
-        let needsRefresh = true;
-        const cachedStr = localStorage.getItem('pos_profile');
-        if (cachedStr) {
-            try {
-                const cached = JSON.parse(decodeURIComponent(atob(cachedStr)));
-                if (cached._timestamp && (Date.now() - cached._timestamp < 15 * 60 * 1000)) {
+        let needsRefresh = navigator.onLine; // Always refresh if online to prevent spoofing
+
+        if (!needsRefresh) {
+            const cachedStr = localStorage.getItem('pos_profile');
+            if (cachedStr) {
+                try {
+                    const cached = JSON.parse(decodeURIComponent(atob(cachedStr)));
                     currentProfile = cached;
-                    needsRefresh = false;
+                } catch(e) { 
+                    needsRefresh = true; 
                 }
-            } catch(e) { /* ignore JSON parse error */ }
+            } else {
+                needsRefresh = true;
+            }
         }
         
         if (needsRefresh) {
