@@ -107,13 +107,15 @@ export function renderAttendanceButton() {
     }
 }
 
-async function handleClockIn() {
+export async function handleClockIn() {
     const profile = getCurrentProfile();
     if (!profile || !activeOutletId) return;
 
     const btn = document.getElementById('btn-clock-in');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Menyimpan...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Menyimpan...';
+    }
 
     const now = new Date().toISOString();
 
@@ -141,7 +143,7 @@ async function handleClockIn() {
         .select('id, clock_in, clock_out')
         .single();
 
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
     if (error) {
         showToast('Gagal Clock In: ' + error.message, 'error');
     } else {
@@ -152,16 +154,18 @@ async function handleClockIn() {
     }
 }
 
-async function handleClockOut() {
+export async function handleClockOut(force = false) {
     if (!currentAttendanceRecord) return;
     
-    if (currentAttendanceRecord.clock_out) {
+    if (currentAttendanceRecord.clock_out && !force) {
         if (!confirm('Anda sudah Clock Out sebelumnya. Ganti jam pulang dengan waktu sekarang?')) return;
     }
 
     const btn = document.getElementById('btn-clock-out');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Menyimpan...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Menyimpan...';
+    }
 
     const now = new Date().toISOString();
 
@@ -172,10 +176,10 @@ async function handleClockOut() {
         .select('id, clock_in, clock_out')
         .single();
 
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
     if (error) {
         showToast('Gagal Clock Out: ' + error.message, 'error');
-        btn.innerHTML = '<i class="ph-bold ph-sign-out"></i> Clock Out';
+        if (btn) btn.innerHTML = '<i class="ph-bold ph-sign-out"></i> Clock Out';
     } else {
         currentAttendanceRecord = data;
         showToast('Berhasil Clock Out!', 'success');

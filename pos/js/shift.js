@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 import { activeOutletId } from './state.js';
 import { showToast } from './app.js';
 import { getCurrentProfile } from './auth.js';
+import { handleClockIn, handleClockOut, currentAttendanceRecord } from './attendance.js';
 
 let currentShiftSession = null;
 
@@ -78,6 +79,12 @@ export async function handleOpenShift(e) {
         if (error) throw error;
 
         currentShiftSession = data;
+        
+        // Auto clock in if not already clocked in
+        if (!currentAttendanceRecord) {
+            await handleClockIn();
+        }
+
         showToast('Shift berhasil dimulai', 'success');
         document.getElementById('modal-open-shift').classList.add('hidden');
         document.getElementById('form-open-shift').reset();
@@ -94,6 +101,11 @@ export async function handleCloseShift(e) {
     if (!currentShiftSession) {
         document.getElementById('modal-close-shift').classList.add('hidden');
         return showToast('Anda tidak memiliki sesi shift aktif (atau login sebagai superadmin)', 'info');
+    }
+    
+    if (!currentAttendanceRecord) {
+        document.getElementById('modal-close-shift').classList.add('hidden');
+        return showToast('Anda belum melakukan absen masuk. Tidak bisa menutup shift.', 'error');
     }
 
     const endingCash = parseFloat(document.getElementById('input-ending-cash').value) || 0;
@@ -112,6 +124,11 @@ export async function handleCloseShift(e) {
             .eq('id', currentShiftSession.id);
 
         if (error) throw error;
+
+        // Auto clock out
+        if (currentAttendanceRecord && !currentAttendanceRecord.clock_out) {
+            await handleClockOut(true);
+        }
 
         showToast('Shift berhasil ditutup', 'success');
         document.getElementById('modal-close-shift').classList.add('hidden');
