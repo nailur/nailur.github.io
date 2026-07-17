@@ -40,7 +40,7 @@ function renderDiscounts() {
         
         return `
             <tr>
-                <td><strong>${discount.name}</strong></td>
+                <td><strong>${escapeHtml(discount.name)}</strong></td>
                 <td>${startDate} s/d ${endDate}</td>
                 <td>${statusBadge}</td>
                 <td style="text-align: center;">

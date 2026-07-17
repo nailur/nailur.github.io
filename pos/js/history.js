@@ -190,7 +190,7 @@ export async function loadHistory(resetPage = true) {
                     ${receiptNo}
                     ${isVoid ? '<span style="background:var(--danger);color:white;padding:2px 6px;border-radius:4px;font-size:0.7rem;margin-left:5px;">CANCEL</span>' : ''}
                 </td>
-                <td>${trx.profiles?.name || trx.profiles?.email || '-'}</td>
+                <td>${escapeHtml(trx.profiles?.name || trx.profiles?.email || '-')}</td>
                 <td style="white-space: nowrap;">Rp ${(trx.discount_amount || 0).toLocaleString('id-ID')}</td>
                 <td style="white-space: nowrap;">Rp ${(trx.tax_amount || 0).toLocaleString('id-ID')}</td>
                 <td style="white-space: nowrap;"><strong>Rp ${(trx.total_amount || 0).toLocaleString('id-ID')}</strong></td>
@@ -261,11 +261,11 @@ export async function viewTransactionDetails(trxId) {
     const tbody = document.getElementById('detail-trx-items');
     tbody.innerHTML = items.map(item => {
         const modText = item.modifiers && item.modifiers.length > 0
-            ? item.modifiers.map(m => `<div style="font-size:0.75rem; color:var(--text-muted);">${m.name}</div>`).join('')
+            ? item.modifiers.map(m => `<div style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(m.name)}</div>`).join('')
             : '';
         return `
         <tr>
-            <td>${item.products?.name || 'Produk Terhapus'}${modText}</td>
+            <td>${escapeHtml(item.products?.name || 'Produk Terhapus')}${modText}</td>
             <td style="text-align: right;">${item.quantity}</td>
             <td style="text-align: right;">${item.price.toLocaleString('id-ID')}</td>
             <td style="text-align: right;">${(item.quantity * item.price).toLocaleString('id-ID')}</td>

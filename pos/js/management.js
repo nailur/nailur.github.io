@@ -283,7 +283,7 @@ export function editOutlet(id) {
     document.getElementById('outlet-id').value = o.id;
     document.getElementById('outlet-name').value = o.name;
     document.getElementById('outlet-code').value = o.code || '';
-    document.getElementById('outlet-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id === o.branch_id ? 'selected' : ''}>${b.name}</option>`).join('');
+    document.getElementById('outlet-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id === o.branch_id ? 'selected' : ''}>${escapeHtml(b.name)}</option>`).join('');
     document.getElementById('outlet-address').value = o.address || '';
     document.getElementById('outlet-phone').value = o.phone || '';
     document.getElementById('outlet-tax').value = o.tax_rate_percent || 0;
@@ -396,11 +396,11 @@ export async function editUser(id) {
     }
     const initialBranch = dataBranchId || (branchesList.length > 0 ? branchesList[0].id : null);
 
-    document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id === initialBranch ? 'selected' : ''}>${b.name}</option>`).join('');
+    document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}" ${b.id === initialBranch ? 'selected' : ''}>${escapeHtml(b.name)}</option>`).join('');
 
     const filteredOutlets = outletsList.filter(o => o.branch_id === initialBranch);
     if (filteredOutlets.length > 0) {
-        document.getElementById('user-outlet').innerHTML = '<option value="">-- Pilih Outlet --</option>' + filteredOutlets.map(o => `<option value="${o.id}" ${o.id === data.outlet_id ? 'selected' : ''}>${o.name}</option>`).join('');
+        document.getElementById('user-outlet').innerHTML = '<option value="">-- Pilih Outlet --</option>' + filteredOutlets.map(o => `<option value="${o.id}" ${o.id === data.outlet_id ? 'selected' : ''}>${escapeHtml(o.name)}</option>`).join('');
     } else {
         document.getElementById('user-outlet').innerHTML = '<option value="">-- Pilih Outlet --</option>';
     }
@@ -429,7 +429,7 @@ export async function populateShiftOptions(selectedShiftId = null) {
             const isSel = (s.id === selectedShiftId) ? 'selected' : '';
             const tStart = s.start_time ? s.start_time.slice(0, 5) : '';
             const tEnd = s.end_time ? s.end_time.slice(0, 5) : '';
-            opts += '<option value="' + s.id + '" ' + isSel + '>' + s.name + ' (' + tStart + ' - ' + tEnd + ')</option>';
+            opts += '<option value="' + s.id + '" ' + isSel + '>' + escapeHtml(s.name) + ' (' + tStart + ' - ' + tEnd + ')</option>';
         });
         shiftSelect.innerHTML = opts;
         shiftGroup.classList.remove('hidden');

@@ -136,7 +136,7 @@ export function renderCart(forceRebuild = false) {
     } else {
         container.innerHTML = cart.map(item => {
             const modText = item.modifiers && item.modifiers.length > 0
-                ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">${item.modifiers.map(m => m.name).join(', ')}</div>`
+                ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">${item.modifiers.map(m => escapeHtml(m.name)).join(', ')}</div>`
                 : '';
             return `
             <div class="cart-item" data-cart-key="${item._cartKey}">
@@ -553,10 +553,10 @@ export function printReceipt(trxId, cartItems, total, received, method, trxDate 
 
     const itemsHtml = cartItems.map(item => {
         const modLine = item.modifiers && item.modifiers.length > 0
-            ? item.modifiers.map(m => `<tr><td colspan="3" style="font-size:0.65rem; color:#666; padding-left:10px; line-height:1.2; word-break: break-word; white-space: normal;">${m.name}</td></tr>`).join('')
+            ? item.modifiers.map(m => `<tr><td colspan="3" style="font-size:0.65rem; color:#666; padding-left:10px; line-height:1.2; word-break: break-word; white-space: normal;">${escapeHtml(m.name)}</td></tr>`).join('')
             : '';
         return `
-        <tr><td colspan="3">${item.name}</td></tr>
+        <tr><td colspan="3">${escapeHtml(item.name)}</td></tr>
         ${modLine}
         <tr>
             <td>${item.quantity}x</td>
