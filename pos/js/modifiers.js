@@ -8,6 +8,10 @@ let modifierCache = {};
 export async function loadModifiersForProduct(productId) {
     if (modifierCache[productId]) return modifierCache[productId];
     
+    if (!navigator.onLine) {
+        return { groups: [], modifiers: [] };
+    }
+    
     const { data: groups, error: gErr } = await supabase
         .from('product_modifier_groups')
         .select('id, name, is_required, is_multiple')
