@@ -276,7 +276,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (nomInput) nomInput.addEventListener('input', () => { renderCart(); calculateChange(); });
 });
 
+let isProcessingCheckout = false;
+
 export async function finalizeCheckout() {
+    if (isProcessingCheckout) return;
+    isProcessingCheckout = true;
+    try {
+        await _finalizeCheckout();
+    } finally {
+        isProcessingCheckout = false;
+    }
+}
+
+async function _finalizeCheckout() {
     if (cart.length === 0 || !getActiveOutletId()) return;
     
     const totals = calculateTotals();
