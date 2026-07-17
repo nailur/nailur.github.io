@@ -5,7 +5,7 @@ let _dbInstance = null;
 export async function initDB() {
     if (_dbInstance) return _dbInstance;
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open('POSDatabase', 2);
+        const request = indexedDB.open('POSDatabase', 3);
         request.onupgradeneeded = (e) => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains('offline_transactions')) {
