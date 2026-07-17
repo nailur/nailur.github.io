@@ -238,6 +238,7 @@ export async function loadAttendanceHistory() {
     
     if (error || !data || data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Belum ada riwayat presensi</td></tr>';
+        await loadShiftSessions();
         return;
     }
     
