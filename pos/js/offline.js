@@ -31,19 +31,19 @@ export async function getOfflineProducts(outletId) {
             const tx = db.transaction('offline_products', 'readonly');
             const store = tx.objectStore('offline_products');
             const req = store.get(outletId);
-            req.onsuccess = () => resolve(req.result ? req.result.products : null);
+            req.onsuccess = () => resolve(req.result || null);
             req.onerror = () => reject(req.error);
         });
     } catch(e) { return null; }
 }
 
-export async function saveOfflineProducts(outletId, productsData) {
+export async function saveOfflineProducts(outletId, productsData, modifiersData = null) {
     try {
         const db = await initDB();
         return new Promise((resolve, reject) => {
             const tx = db.transaction('offline_products', 'readwrite');
             const store = tx.objectStore('offline_products');
-            store.put({ outlet_id: outletId, products: productsData, updated_at: new Date().toISOString() });
+            store.put({ outlet_id: outletId, products: productsData, modifiers: modifiersData, updated_at: new Date().toISOString() });
             tx.oncomplete = () => resolve();
             tx.onerror = () => reject(tx.error);
         });

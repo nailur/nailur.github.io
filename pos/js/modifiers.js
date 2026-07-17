@@ -5,6 +5,12 @@ import { products } from './products.js';
 // Cache: productId -> { groups: [...], modifiers: [...] }
 let modifierCache = {};
 
+export function preloadModifierCache(data) {
+    if (data) {
+        Object.assign(modifierCache, data);
+    }
+}
+
 export async function loadModifiersForProduct(productId) {
     if (modifierCache[productId]) return modifierCache[productId];
     

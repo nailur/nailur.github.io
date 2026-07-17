@@ -3,6 +3,7 @@ import { showToast, escapeHtml } from './app.js';
 import { activeOutletId } from './state.js';
 import { getOfflineProducts, saveOfflineProducts } from './offline.js';
 import { getCurrentProfile } from './auth.js';
+import { preloadModifierCache } from './modifiers.js';
 
 export let products = [];
 export let productShowAll = false;
@@ -17,9 +18,16 @@ export async function loadProducts() {
     }
 
     try {
-        const cachedProducts = await getOfflineProducts(activeOutletId);
-        if (cachedProducts && cachedProducts.length > 0) {
-            products = cachedProducts;
+        const cachedData = await getOfflineProducts(activeOutletId);
+        if (cachedData && cachedData.products && cachedData.products.length > 0) {
+            products = cachedData.products;
+            if (cachedData.modifiers) {
+                preloadModifierCache(cachedData.modifiers);
+            }
+            productShowAll = false;
+            renderProducts();
+        } else if (cachedData && cachedData.length > 0) { // Fallback for old cache format
+            products = cachedData;
             productShowAll = false;
             renderProducts();
         }
@@ -39,7 +47,32 @@ export async function loadProducts() {
     productShowAll = false;
     renderProducts();
     
-    await saveOfflineProducts(activeOutletId, data);
+    // Fetch all modifiers for this outlet's products
+    let modifiersData = {};
+    try {
+        const productIds = data.map(p => p.id);
+        if (productIds.length > 0) {
+            const { data: groups } = await supabase.from('product_modifier_groups').select('*').in('product_id', productIds);
+            if (groups && groups.length > 0) {
+                const groupIds = groups.map(g => g.id);
+                const { data: mods } = await supabase.from('product_modifiers').select('*').in('group_id', groupIds);
+                
+                productIds.forEach(pid => {
+                    const pGroups = groups.filter(g => g.product_id === pid);
+                    if (pGroups.length > 0) {
+                        const pGroupIds = pGroups.map(g => g.id);
+                        const pMods = (mods || []).filter(m => pGroupIds.includes(m.group_id));
+                        modifiersData[pid] = { groups: pGroups, modifiers: pMods };
+                    } else {
+                        modifiersData[pid] = { groups: [], modifiers: [] };
+                    }
+                });
+                preloadModifierCache(modifiersData);
+            }
+        }
+    } catch(e) { console.error('Failed to pre-fetch modifiers', e); }
+    
+    await saveOfflineProducts(activeOutletId, data, modifiersData);
 }
 
 export function renderProducts(search = '') {
