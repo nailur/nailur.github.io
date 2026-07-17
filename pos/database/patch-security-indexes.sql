@@ -45,12 +45,12 @@ DROP POLICY IF EXISTS "Employees UPDATE attendance" ON public.attendance;
 
 CREATE POLICY "Staff INSERT attendance" ON public.attendance 
 FOR INSERT TO authenticated WITH CHECK (
-    user_id = auth.uid()
+    profile_id = auth.uid()
 );
 
 CREATE POLICY "Staff UPDATE attendance" ON public.attendance 
 FOR UPDATE TO authenticated USING (
-    user_id = auth.uid()
+    profile_id = auth.uid()
 );
 
 -- 5. Create Indexes for Performance (Poin 3A - Bonus eksekusi sekalian di file SQL yang sama)
