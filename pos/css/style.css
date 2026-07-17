@@ -622,6 +622,21 @@ body {
     gap: 4px;
 }
 
+.product-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    min-width: 0;
+}
+
+.product-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+}
+
 .product-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
@@ -1027,6 +1042,14 @@ body {
         height: auto;
         min-height: 56px;
         padding: 6px 8px;
+        flex-wrap: wrap;
+    }
+
+    .catalog-grid.list-view .product-actions {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 4px;
+        margin-left: 0;
     }
 
     .catalog-grid.list-view .product-image {
