@@ -1039,10 +1039,11 @@ body {
     }
 
     .catalog-grid.list-view .product-card {
-        height: auto;
+        height: auto !important;
         min-height: 56px;
         padding: 6px 8px;
         flex-wrap: wrap;
+        align-items: flex-start;
     }
 
     .catalog-grid.list-view .product-actions {
@@ -1056,6 +1057,7 @@ body {
         width: 44px;
         height: 44px;
         margin: 0 8px 0 0;
+        flex-shrink: 0;
     }
 
     .catalog-grid.list-view .product-name {
