@@ -28,7 +28,8 @@ import { loadDiscounts, setupDiscountForm } from './discounts.js';
 window.loadInventoryForManagement = function() { loadInventory(); loadStockPostings(); };
 window.loadExpensesForManagement = loadExpenses;
 window.loadDepositsForManagement = loadDeposits;
-window.loadShifts = function() { loadShifts(); loadDiscounts(); };
+window.loadShifts = loadShifts;
+window.loadDiscounts = loadDiscounts;
 
 window.getCurrentProfile = getCurrentProfile;
 window.getCurrentUser = getCurrentUser;
@@ -139,7 +140,7 @@ const debouncedCheckShift = debounce(() => {
     checkActiveShift();
     if (window.loadShiftSessions) window.loadShiftSessions();
 }, 500);
-const debouncedLoadDiscounts = debounce(() => { if (window.loadShifts) window.loadShifts(); }, 500);
+const debouncedLoadDiscounts = debounce(() => { if (window.loadDiscounts) window.loadDiscounts(); }, 500);
 const debouncedLoadInventory = debounce(() => { if (window.loadInventoryForManagement) window.loadInventoryForManagement(); }, 500);
 const debouncedLoadExpenses = debounce(() => { if (window.loadExpensesForManagement) window.loadExpensesForManagement(); }, 500);
 const debouncedLoadDeposits = debounce(() => { if (window.loadDepositsForManagement) window.loadDepositsForManagement(); }, 500);
@@ -399,6 +400,7 @@ async function initPosMultiOutlet(profile) {
             checkActiveShift();
             setupGlobalRealtimeSync();
             loadProducts();
+            if (window.loadDiscounts) window.loadDiscounts();
             loadHistory();
             if(window.loadDashboard) window.loadDashboard();
             
@@ -1057,6 +1059,7 @@ async function initPos() {
     generateOrderId(false);
     if (activeOutletId) {
         await loadProducts();
+        if (window.loadDiscounts) window.loadDiscounts();
         renderCart();
         loadInventory();
         loadStockPostings();
