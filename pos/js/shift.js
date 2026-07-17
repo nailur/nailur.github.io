@@ -80,8 +80,8 @@ export async function handleOpenShift(e) {
 
         currentShiftSession = data;
         
-        // Auto clock in if not already clocked in, or if already clocked out previously today
-        if (!currentAttendanceRecord || currentAttendanceRecord.clock_out) {
+        // Auto clock in only if they haven't clocked in at all today
+        if (!currentAttendanceRecord) {
             await handleClockIn();
         }
 
@@ -102,8 +102,7 @@ export async function handleCloseShift(e) {
         document.getElementById('modal-close-shift').classList.add('hidden');
         return showToast('Anda tidak memiliki sesi shift aktif (atau login sebagai superadmin)', 'info');
     }
-    
-    if (!currentAttendanceRecord || currentAttendanceRecord.clock_out) {
+    if (!currentAttendanceRecord) {
         document.getElementById('modal-close-shift').classList.add('hidden');
         return showToast('Anda belum melakukan absen masuk. Tidak bisa menutup shift.', 'error');
     }
@@ -125,8 +124,8 @@ export async function handleCloseShift(e) {
 
         if (error) throw error;
 
-        // Auto clock out
-        if (currentAttendanceRecord && !currentAttendanceRecord.clock_out) {
+        // Auto clock out (will replace existing clock_out if already clocked out)
+        if (currentAttendanceRecord) {
             await handleClockOut(true);
         }
 
