@@ -29,9 +29,13 @@ export async function loadShiftSessions() {
             .order('opened_at', { ascending: false });
 
         if (startDate && endDate) {
-            // Karena opened_at berupa timestamptz, kita filter mulai 00:00:00 hingga 23:59:59
-            query = query.gte('opened_at', `${startDate}T00:00:00.000Z`)
-                         .lte('opened_at', `${endDate}T23:59:59.999Z`);
+            const startObj = new Date(startDate);
+            startObj.setHours(0, 0, 0, 0);
+            const endObj = new Date(endDate);
+            endObj.setHours(23, 59, 59, 999);
+
+            query = query.gte('opened_at', startObj.toISOString())
+                         .lte('opened_at', endObj.toISOString());
         }
 
         const { data, error } = await query;
