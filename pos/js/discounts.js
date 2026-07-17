@@ -4,7 +4,7 @@ import { activeOutletId } from './state.js';
 import { getOfflineDiscounts, saveOfflineDiscounts } from './offline.js';
 
 let discounts = [];
-const paymentMethodsList = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];
+const paymentMethodsList = ['Tunai', 'QRIS', 'Bank Transfer', 'Go Food', 'Grab Food', 'Shopee Food'];
 
 export async function loadDiscounts() {
     if (!activeOutletId) return;

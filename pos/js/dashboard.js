@@ -75,7 +75,7 @@ window.loadDashboard = async function() {
     if (dashVoidTrxEl) dashVoidTrxEl.textContent = `${totalVoidTrx} Trx`;
 
     // Build method summary with defaults
-    const ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];
+    const ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Bank Transfer', 'Go Food', 'Grab Food', 'Shopee Food'];
     const methodSummary = {};
     ALL_PAYMENT_METHODS.forEach(m => methodSummary[m] = { count: 0, total: 0 });
     methodData.forEach(m => {
