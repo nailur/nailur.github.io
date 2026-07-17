@@ -4,7 +4,7 @@ import { checkSession, login, logout, getCurrentUser, getCurrentProfile } from '
 import { connectPrinter } from './printer.js';
 import { startAttendanceClock, checkAttendanceStatus } from './attendance.js';
 import { syncOfflineTransactions, initDB } from './offline.js';
-import { products, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts, setupProductsRealtime } from './products.js';
+import { products, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts } from './products.js';
 import { cart, addToCart, addToCartWithModifiers, updateQty, emptyCart, renderCart, calculateChange, openCheckoutModal, finalizeCheckout, printReceipt, printReceiptRawBT } from './cart.js';
 import './modifiers.js';
 import { loadHistory, exportToExcel, changeHistoryPage, viewTransactionDetails } from './history.js';
@@ -18,7 +18,7 @@ import {
     branchesList, outletsList, posOutletsList, activeOutletId, 
     setPosOutletsList, setActiveOutletId 
 } from './state.js';
-import { checkActiveShift, handleOpenShift, handleCloseShift, setupShiftRealtime } from './shift.js';
+import { checkActiveShift, handleOpenShift, handleCloseShift } from './shift.js';
 import { loadInventory, handleSaveInventory, loadStockPostings } from './inventory.js';
 import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMaster, openAddExpenseMaster } from './expenses.js';
 import { loadDeposits, handleSaveDeposit } from './deposits.js';
@@ -127,6 +127,105 @@ export function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+// ------------------------------
+// GLOBAL REALTIME SYNC
+// ------------------------------
+let globalSyncChannel = null;
+
+const debouncedLoadProducts = debounce(() => { loadProducts(); }, 500);
+const debouncedCheckShift = debounce(() => {
+    checkActiveShift();
+    if (window.loadShiftSessions) window.loadShiftSessions();
+}, 500);
+const debouncedLoadDiscounts = debounce(() => { if (window.loadShifts) window.loadShifts(); }, 500);
+const debouncedLoadInventory = debounce(() => { if (window.loadInventoryForManagement) window.loadInventoryForManagement(); }, 500);
+const debouncedLoadExpenses = debounce(() => { if (window.loadExpensesForManagement) window.loadExpensesForManagement(); }, 500);
+const debouncedLoadDeposits = debounce(() => { if (window.loadDepositsForManagement) window.loadDepositsForManagement(); }, 500);
+const debouncedLoadHistory = debounce(() => { loadHistory(); }, 500);
+
+export function setupGlobalRealtimeSync() {
+    // Remove previous channel if exists
+    if (globalSyncChannel) {
+        supabase.removeChannel(globalSyncChannel);
+        globalSyncChannel = null;
+    }
+    
+    if (!activeOutletId) return;
+    
+    console.log('[GlobalSync] Setting up realtime for outlet:', activeOutletId);
+    
+    globalSyncChannel = supabase.channel(`global-sync:${activeOutletId}`);
+    
+    globalSyncChannel
+        // Products
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'products', filter: `outlet_id=eq.${activeOutletId}` },
+            (payload) => {
+                console.log('[GlobalSync] Product change:', payload.eventType);
+                debouncedLoadProducts();
+            }
+        )
+        // Product Modifiers
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'product_modifiers' },
+            (payload) => {
+                console.log('[GlobalSync] Modifier change:', payload.eventType);
+                debouncedLoadProducts();
+            }
+        )
+        // Shift Sessions
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'shift_sessions', filter: `outlet_id=eq.${activeOutletId}` },
+            (payload) => {
+                console.log('[GlobalSync] Shift session change:', payload.eventType);
+                debouncedCheckShift();
+            }
+        )
+        // Global Discounts
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'global_discounts', filter: `outlet_id=eq.${activeOutletId}` },
+            (payload) => {
+                console.log('[GlobalSync] Discount change:', payload.eventType);
+                debouncedLoadDiscounts();
+            }
+        )
+        // Inventory Items
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'inventory_items', filter: `outlet_id=eq.${activeOutletId}` },
+            (payload) => {
+                console.log('[GlobalSync] Inventory change:', payload.eventType);
+                debouncedLoadInventory();
+            }
+        )
+        // Operational Costs (Expenses)
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'operational_costs', filter: `outlet_id=eq.${activeOutletId}` },
+            (payload) => {
+                console.log('[GlobalSync] Expense change:', payload.eventType);
+                debouncedLoadExpenses();
+            }
+        )
+        // Sales Deposits
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'sales_deposits', filter: `outlet_id=eq.${activeOutletId}` },
+            (payload) => {
+                console.log('[GlobalSync] Deposit change:', payload.eventType);
+                debouncedLoadDeposits();
+            }
+        )
+        // Transactions (for history tab)
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'transactions', filter: `outlet_id=eq.${activeOutletId}` },
+            (payload) => {
+                console.log('[GlobalSync] Transaction change:', payload.eventType);
+                debouncedLoadHistory();
+            }
+        )
+        .subscribe((status) => {
+            console.log('[GlobalSync] Channel status:', status);
+        });
 }
 
 // HTML Escape (XSS Protection)
@@ -298,8 +397,7 @@ async function initPosMultiOutlet(profile) {
             generateOrderId();
             checkAttendanceStatus();
             checkActiveShift();
-            setupShiftRealtime();
-            setupProductsRealtime();
+            setupGlobalRealtimeSync();
             loadProducts();
             loadHistory();
             if(window.loadDashboard) window.loadDashboard();
@@ -947,8 +1045,7 @@ async function initPos() {
     startAttendanceClock();
     checkAttendanceStatus();
     await checkActiveShift();
-    setupShiftRealtime();
-    setupProductsRealtime();
+    setupGlobalRealtimeSync();
 
     const today = getLocalToday();
     const initIds = ['history-date-start', 'history-date-end', 'dashboard-date-start', 'dashboard-date-end', 'attendance-date-start', 'attendance-date-end'];
