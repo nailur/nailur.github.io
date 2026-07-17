@@ -94,12 +94,12 @@ export function renderProducts(search = '') {
         return `
         <div class="product-card" onclick="addToCart('${p.id}')">
             ${p.image_url ? `<img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" class="product-image" loading="lazy" decoding="async">` : `<div class="product-image" style="display:flex;align-items:center;justify-content:center;color:#ccc;"><i class="ph-duotone ph-image" style="font-size:2.5rem;"></i></div>`}
-            <div class="product-info">
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-start;">
                 <div class="product-name">${escapeHtml(p.name)}</div>
                 <div class="product-price">Rp ${p.price.toLocaleString('id-ID')}</div>
             </div>
             ${canEdit ? `
-                <div class="product-actions" onclick="event.stopPropagation()">
+                <div style="margin-top:10px; display:flex; gap:5px; justify-content:center;" onclick="event.stopPropagation()">
                     <button class="btn btn-icon btn-secondary" onclick="editProduct('${p.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
                     <button class="btn btn-icon btn-secondary" onclick="openModifierManager('${p.id}')" title="Atur Varian" style="color: var(--primary);"><i class="ph ph-list-plus"></i></button>
                     <button class="btn btn-icon btn-danger" onclick="deleteProduct('${p.id}')" title="Hapus"><i class="ph ph-trash"></i></button>
