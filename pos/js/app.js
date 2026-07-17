@@ -5,7 +5,7 @@ import { connectPrinter } from './printer.js';
 import { startAttendanceClock, checkAttendanceStatus } from './attendance.js';
 import { syncOfflineTransactions, initDB } from './offline.js';
 import { products, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts } from './products.js';
-import { cart, addToCart, addToCartWithModifiers, updateQty, emptyCart, renderCart, calculateChange, openCheckoutModal, finalizeCheckout, printReceipt, printReceiptRawBT } from './cart.js';
+import { cart, addToCart, addToCartWithModifiers, updateQty, emptyCart, renderCart, calculateChange, openCheckoutModal, finalizeCheckout, printReceipt, printReceiptBluetooth } from './cart.js';
 import './modifiers.js';
 import { loadHistory, exportToExcel, changeHistoryPage, viewTransactionDetails } from './history.js';
 import { 
@@ -44,7 +44,7 @@ window.emptyCart = emptyCart;
 window.openCheckoutModal = openCheckoutModal;
 window.finalizeCheckout = finalizeCheckout;
 window.printReceipt = printReceipt;
-window.printReceiptRawBT = printReceiptRawBT;
+window.printReceiptBluetooth = printReceiptBluetooth;
 window.calculateChange = calculateChange;
 window.loadHistory = loadHistory;
 window.exportToExcel = exportToExcel;

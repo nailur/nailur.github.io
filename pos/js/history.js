@@ -2,7 +2,7 @@
 import { supabase } from './supabase.js';
 import { showToast } from './app.js';
 import { activeOutletId } from './state.js';
-import { printReceipt, printReceiptRawBT } from './cart.js';
+import { printReceipt, printReceiptBluetooth } from './cart.js';
 
 export const HISTORY_PAGE_SIZE = 25;
 export let historyPage = 0;
@@ -380,8 +380,8 @@ export async function reprintReceipt(trx, items) {
     // Pilihan mencetak menggunakan Bluetooth Printer (opsional) atau Web Print
     if (window.innerWidth < 768) {
         // Asumsi mobile menggunakan RawBT
-        if (typeof printReceiptRawBT === 'function') {
-            printReceiptRawBT(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
+        if (typeof printReceiptBluetooth === 'function') {
+            printReceiptBluetooth(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
             return;
         }
     }

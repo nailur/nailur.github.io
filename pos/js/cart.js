@@ -449,70 +449,7 @@ async function _finalizeCheckout() {
         return lines;
     };
 
-    let text = ESC_INIT;
-    text += ALIGN_CENTER + BOLD_ON + tLine(outletName) + "\n" + BOLD_OFF;
-    
-    if (activeOutlet.address) {
-        wrapLine(activeOutlet.address).forEach(line => {
-            text += line + "\n";
-        });
-    }
-    
-    if(activeOutlet.phone) text += tLine(activeOutlet.phone) + "\n";
-    text += ALIGN_LEFT;
-    text += `--------------------------------\n`;
-    text += tLine(`No      : ${receiptNo}`) + `\n`;
-    text += tLine(`Tanggal : ${new Date(trxData.created_at).toLocaleString('id-ID')}`) + `\n`;
-    text += tLine(`Kasir   : ${displayName}`) + `\n`;
-    if (customer_name) {
-        text += tLine(`Customer: ${customer_name}`) + `\n`;
-    }
-    text += tLine(`Metode  : ${method}`) + `\n`;
-    text += `--------------------------------\n`;
-    
-    cartClone.forEach(item => {
-        text += tLine(`${item.name}`) + `\n`;
-        const qtyStr = `${item.quantity}x`;
-        const priceStr = item.price.toLocaleString('id-ID');
-        const subtotalStr = (item.price * item.quantity).toLocaleString('id-ID');
-        
-        let line = ` ${qtyStr}   ${priceStr}`;
-        let spaces = 32 - line.length - subtotalStr.length;
-        if(spaces < 1) spaces = 1;
-        line += " ".repeat(spaces) + subtotalStr;
-        text += `${line}\n`;
-    });
-    
-    text += `--------------------------------\n`;
-    
-    const subtotalStr = finalTotals.subtotal.toLocaleString('id-ID');
-    text += `Subtotal: ${" ".repeat(32 - 10 - subtotalStr.length)}${subtotalStr}\n`;
-    
-    if (finalTotals.discount > 0) {
-        const discountStr = "-" + finalTotals.discount.toLocaleString('id-ID');
-        text += `Diskon  : ${" ".repeat(32 - 10 - discountStr.length)}${discountStr}\n`;
-    }
-    
-    if (finalTotals.tax > 0) {
-        const taxStr = finalTotals.tax.toLocaleString('id-ID');
-        text += `Pajak   : ${" ".repeat(32 - 10 - taxStr.length)}${taxStr}\n`;
-    }
-
-    const totalStr = finalTotals.total.toLocaleString('id-ID');
-    text += `Total   : ${" ".repeat(32 - 10 - totalStr.length)}${totalStr}\n`;
-    const receivedStr = received.toLocaleString('id-ID');
-    text += `Tunai   : ${" ".repeat(32 - 10 - receivedStr.length)}${receivedStr}\n`;
-    const changeStr = change.toLocaleString('id-ID');
-    text += `Kembali : ${" ".repeat(32 - 10 - changeStr.length)}${changeStr}\n`;
-    text += `--------------------------------\n`;
-    text += ALIGN_CENTER;
-    text += `Terima Kasih\n`;
-    text += `Follow Us On @D.OneChicken\n`;
-    text += `#ChickenRasaNo1\n`;
-    text += `\n\n\n`; 
-    
-    const logoUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'assets/img/receipt_logo_print.png';
-    printReceiptNative(text, logoUrl);
+    printReceiptBluetooth(receiptNo, cartClone, finalTotals.total, received, method, trxData.created_at, displayName, customer_name, finalTotals, activeOutlet);
     
     const changeAmountEl = document.getElementById('success-change-amount');
     if (changeAmountEl) changeAmountEl.textContent = 'Rp ' + change.toLocaleString('id-ID');
@@ -605,7 +542,7 @@ export function printReceipt(trxId, cartItems, total, received, method, trxDate 
     window.print();
 }
 
-export function printReceiptRawBT(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null, outletObj = null) {
+export function printReceiptBluetooth(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null, outletObj = null) {
     const dateStr = trxDate ? new Date(trxDate).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
     const change = received - total;
     
@@ -639,16 +576,23 @@ export function printReceiptRawBT(trxId, cartItems, total, received, method, trx
         return lines;
     };
 
-    let text = `[C]<img>https://nailur.github.io/pos/assets/img/receipt_logo_print.png</img>\n`;
-    text += `[C]<b>${tLine(outletName)}</b>\n`;
+    const ESC_INIT = "\x1B\x40";
+    const ALIGN_CENTER = "\x1B\x61\x01";
+    const ALIGN_LEFT = "\x1B\x61\x00";
+    const BOLD_ON = "\x1B\x45\x01";
+    const BOLD_OFF = "\x1B\x45\x00";
+
+    let text = ESC_INIT;
+    text += ALIGN_CENTER + BOLD_ON + tLine(outletName) + "\n" + BOLD_OFF;
     
     if (activeOutlet.address) {
         wrapLine(activeOutlet.address).forEach(line => {
-            text += `[C]${line}\n`;
+            text += line + "\n";
         });
     }
     
-    if (activeOutlet.phone) text += `[C]${tLine(activeOutlet.phone)}\n`;
+    if (activeOutlet.phone) text += tLine(activeOutlet.phone) + "\n";
+    text += ALIGN_LEFT;
     text += `--------------------------------\n`;
     text += tLine(`No      : ${trxId}`) + `\n`;
     text += tLine(`Tanggal : ${dateStr}`) + `\n`;
@@ -706,11 +650,12 @@ export function printReceiptRawBT(trxId, cartItems, total, received, method, trx
     text += `Kembali : ${" ".repeat(32 - 10 - changeStr.length)}${changeStr}\n`;
     
     text += `--------------------------------\n`;
-    text += `[C]Terima Kasih\n`;
-    text += `[C]Follow Us On @D.OneChicken\n`;
-    text += `[C]#ChickenRasaNo1\n`;
-    text += `\n\n`; 
+    text += ALIGN_CENTER;
+    text += `Terima Kasih\n`;
+    text += `Follow Us On @D.OneChicken\n`;
+    text += `#ChickenRasaNo1\n`;
+    text += `\n\n\n`; 
 
-    const rawbt_url = "intent:" + encodeURI(text) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
-    window.location.href = rawbt_url;
+    const logoUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'assets/img/receipt_logo_print.png';
+    printReceiptNative(text, logoUrl);
 }
