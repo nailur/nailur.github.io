@@ -14,6 +14,9 @@ export async function initDB() {
             if (!db.objectStoreNames.contains('offline_products')) {
                 db.createObjectStore('offline_products', { keyPath: 'outlet_id' });
             }
+            if (!db.objectStoreNames.contains('offline_discounts')) {
+                db.createObjectStore('offline_discounts', { keyPath: 'outlet_id' });
+            }
         };
         request.onsuccess = () => {
             _dbInstance = request.result;
@@ -48,6 +51,32 @@ export async function saveOfflineProducts(outletId, productsData, modifiersData 
             tx.onerror = () => reject(tx.error);
         });
     } catch(e) { console.error('Failed saving offline products', e); }
+}
+
+export async function getOfflineDiscounts(outletId) {
+    try {
+        const db = await initDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('offline_discounts', 'readonly');
+            const store = tx.objectStore('offline_discounts');
+            const req = store.get(outletId);
+            req.onsuccess = () => resolve(req.result ? req.result.discounts : null);
+            req.onerror = () => reject(req.error);
+        });
+    } catch(e) { return null; }
+}
+
+export async function saveOfflineDiscounts(outletId, discountsData) {
+    try {
+        const db = await initDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('offline_discounts', 'readwrite');
+            const store = tx.objectStore('offline_discounts');
+            store.put({ outlet_id: outletId, discounts: discountsData, updated_at: new Date().toISOString() });
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch(e) { console.error('Failed saving offline discounts', e); }
 }
 
 export async function saveOfflineTransaction(trx) {

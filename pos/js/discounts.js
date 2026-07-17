@@ -1,12 +1,25 @@
 import { supabase } from './supabase.js';
 import { showToast } from './app.js';
 import { activeOutletId } from './state.js';
+import { getOfflineDiscounts, saveOfflineDiscounts } from './offline.js';
 
 let discounts = [];
 const paymentMethodsList = ['Tunai', 'QRIS', 'Go Food', 'Grab Food', 'Shopee Food'];
 
 export async function loadDiscounts() {
     if (!activeOutletId) return;
+    
+    try {
+        const cachedDiscounts = await getOfflineDiscounts(activeOutletId);
+        if (cachedDiscounts && cachedDiscounts.length > 0) {
+            discounts = cachedDiscounts;
+            renderDiscounts();
+        }
+    } catch (err) {
+        console.error('Failed to load discounts from cache', err);
+    }
+    
+    if (!navigator.onLine) return;
     
     const { data, error } = await supabase
         .from('global_discounts')
@@ -21,6 +34,8 @@ export async function loadDiscounts() {
     
     discounts = data;
     renderDiscounts();
+    
+    await saveOfflineDiscounts(activeOutletId, data);
 }
 
 function renderDiscounts() {
