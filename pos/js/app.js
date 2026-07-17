@@ -1625,7 +1625,11 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (!refreshing) {
                 refreshing = true;
-                window.location.reload();
+                // DO NOT auto-reload to prevent infinite loops if imported SW scripts change dynamically
+                console.log('New ServiceWorker activated. Prompting user to refresh manually.');
+                if (typeof showToast === 'function') {
+                    showToast('Pembaruan terpasang! Silakan Refresh halaman untuk menggunakan versi terbaru.', 'info');
+                }
             }
         });
 
