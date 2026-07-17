@@ -1040,17 +1040,24 @@ body {
 
     .catalog-grid.list-view .product-card {
         height: auto !important;
-        min-height: 56px;
+        min-height: 80px;
         padding: 6px 8px;
-        flex-wrap: wrap;
-        align-items: flex-start;
+        flex-wrap: nowrap;
+        align-items: center;
     }
 
     .catalog-grid.list-view .product-actions {
-        width: 100%;
-        justify-content: flex-end;
-        margin-top: 4px;
-        margin-left: 0;
+        width: auto;
+        flex-direction: column;
+        justify-content: center;
+        margin-top: 0;
+        margin-left: 4px;
+        gap: 4px;
+    }
+
+    .catalog-grid.list-view .product-actions .btn-icon {
+        padding: 4px;
+        font-size: 1rem;
     }
 
     .catalog-grid.list-view .product-image {
