@@ -84,8 +84,22 @@ export async function clearOfflineTransaction(id) {
 }
 
 window.addEventListener('online', async () => {
+    const indicator = document.getElementById('offline-indicator');
+    if (indicator) indicator.classList.add('hidden');
     console.log('Online! Menyinkronkan data...');
     await syncOfflineTransactions();
+});
+
+window.addEventListener('offline', () => {
+    const indicator = document.getElementById('offline-indicator');
+    if (indicator) indicator.classList.remove('hidden');
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!navigator.onLine) {
+        const indicator = document.getElementById('offline-indicator');
+        if (indicator) indicator.classList.remove('hidden');
+    }
 });
 
 let isSyncing = false;
