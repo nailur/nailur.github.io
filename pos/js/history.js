@@ -377,16 +377,11 @@ export async function reprintReceipt(trx, items) {
     const received = trx.cash_received || trx.total_amount;
     const outletObj = trx.outlets || null;
     
-    // Pilihan mencetak menggunakan Bluetooth Printer (opsional) atau Web Print
-    if (window.innerWidth < 768) {
-        // Asumsi mobile menggunakan RawBT
-        if (typeof printReceiptBluetooth === 'function') {
-            printReceiptBluetooth(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
-            return;
-        }
+    if (typeof printReceiptBluetooth === 'function') {
+        printReceiptBluetooth(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
+    } else {
+        printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
     }
-    
-    printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
 }
 
 window.openVoidModal = function(trxId) {
