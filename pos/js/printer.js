@@ -190,17 +190,24 @@ export async function printReceiptNative(text, logoUrl = null) {
         const textData = (!logoUrl ? "\x1B\x40" : "") + text + "\x0A\x0A\x0A"; 
         const textBuffer = encoder.encode(textData);
         
-        // 3. Cash Drawer Kick Command (ESC p 0/1 25 250)
+        // 3. Cash Drawer Kick Command (EPPOS compatible variants)
         const drawerBuffer = new Uint8Array([
-            0x1B, 0x70, 0x00, 0x19, 0xFA, // Pin 2
-            0x1B, 0x70, 0x01, 0x19, 0xFA  // Pin 5
+            // Standard ESC p (pin 2 & 5) with 250ms pulse
+            0x1B, 0x70, 0x00, 0xFA, 0xFA,
+            0x1B, 0x70, 0x01, 0xFA, 0xFA,
+            // Standard ESC p (pin 2 & 5) with 50ms pulse
+            0x1B, 0x70, 0x00, 0x19, 0xFA,
+            0x1B, 0x70, 0x01, 0x19, 0xFA,
+            // Real-time pulse (DLE DC4 1 m t)
+            0x10, 0x14, 0x01, 0x00, 0x05,
+            0x10, 0x14, 0x01, 0x01, 0x05
         ]);
 
-        // 4. Combine buffers
-        const sendBuffer = new Uint8Array(finalBuffer.length + textBuffer.length + drawerBuffer.length);
-        sendBuffer.set(finalBuffer, 0);
-        sendBuffer.set(textBuffer, finalBuffer.length);
-        sendBuffer.set(drawerBuffer, finalBuffer.length + textBuffer.length);
+        // 4. Combine buffers (Prepend Drawer Kick first, then Logo, then Text)
+        const sendBuffer = new Uint8Array(drawerBuffer.length + finalBuffer.length + textBuffer.length);
+        sendBuffer.set(drawerBuffer, 0);
+        sendBuffer.set(finalBuffer, drawerBuffer.length);
+        sendBuffer.set(textBuffer, drawerBuffer.length + finalBuffer.length);
         
         // 4. Send in chunks
         const CHUNK_SIZE = 100;
