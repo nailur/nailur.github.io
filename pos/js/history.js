@@ -80,10 +80,13 @@ export async function exportToExcel() {
                     'Kuantitas': 0,
                     'Harga Satuan': 0,
                     'Subtotal Produk': 0,
+                    'Diskon': trx.discount_amount || 0,
+                    'Pajak': trx.tax_amount || 0,
                     'Total Transaksi': trx.total_amount
                 });
             } else {
-                for (const item of trxItems) {
+                trxItems.forEach((item, index) => {
+                    const isFirst = index === 0;
                     exportRows.push({
                         'ID Transaksi': trx.receipt_no || trx.id.substring(0, 8).toUpperCase(),
                         'Tanggal': new Date(trx.created_at).toLocaleString('id-ID'),
@@ -95,20 +98,22 @@ export async function exportToExcel() {
                         'Kuantitas': item.quantity,
                         'Harga Satuan': item.price,
                         'Subtotal Produk': item.quantity * item.price,
-                        'Total Transaksi': trx.total_amount 
+                        'Diskon': isFirst ? (trx.discount_amount || 0) : null,
+                        'Pajak': isFirst ? (trx.tax_amount || 0) : null,
+                        'Total Transaksi': isFirst ? trx.total_amount : null
                     });
-                }
+                });
             }
         }
 
         const worksheet = XLSX.utils.json_to_sheet(exportRows);
         
-        // Format currency columns (I=Harga Satuan, J=Subtotal Produk, K=Total Transaksi)
+        // Format currency columns (I=Harga Satuan, J=Subtotal Produk, K=Diskon, L=Pajak, M=Total Transaksi)
         for (let cell in worksheet) {
             if (cell[0] === '!') continue;
             const col = cell.replace(/[0-9]/g, '');
             const row = parseInt(cell.replace(/\D/g, ''), 10);
-            if (['I', 'J', 'K'].includes(col) && row > 1) {
+            if (['I', 'J', 'K', 'L', 'M'].includes(col) && row > 1) {
                 worksheet[cell].z = '"Rp "#,##0';
             }
         }
@@ -127,6 +132,8 @@ export async function exportToExcel() {
             { wch: 10 },  // Kuantitas
             { wch: 15 },  // Harga Satuan
             { wch: 15 },  // Subtotal Produk
+            { wch: 15 },  // Diskon
+            { wch: 15 },  // Pajak
             { wch: 15 }   // Total Transaksi
         ];
         worksheet['!cols'] = colWidths;
