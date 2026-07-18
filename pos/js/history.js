@@ -3,6 +3,7 @@ import { supabase } from './supabase.js';
 import { showToast } from './app.js';
 import { activeOutletId } from './state.js';
 import { printReceipt, printReceiptBluetooth } from './cart.js';
+import { isPrinterConnected } from './printer.js';
 
 export const HISTORY_PAGE_SIZE = 25;
 export let historyPage = 0;
@@ -377,16 +378,13 @@ export async function reprintReceipt(trx, items) {
     const received = trx.cash_received || trx.total_amount;
     const outletObj = trx.outlets || null;
     
-    // Pilihan mencetak menggunakan Bluetooth Printer (opsional) atau Web Print
-    if (window.innerWidth < 768) {
-        // Asumsi mobile menggunakan RawBT
-        if (typeof printReceiptBluetooth === 'function') {
-            printReceiptBluetooth(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
-            return;
-        }
+    // Jika printer Bluetooth terhubung, langsung cetak ke printer Bluetooth
+    if (isPrinterConnected()) {
+        printReceiptBluetooth(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
+    } else {
+        // Fallback ke Web Print (browser print dialog)
+        printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
     }
-    
-    printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
 }
 
 window.openVoidModal = function(trxId) {

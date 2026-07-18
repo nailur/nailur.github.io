@@ -20,6 +20,10 @@ function updatePrinterStatusUI(connected, deviceName = '') {
     }
 }
 
+export function isPrinterConnected() {
+    return isConnected && printCharacteristic !== null;
+}
+
 export async function connectPrinter() {
     if (isConnected && bluetoothDevice) {
         // Disconnect
