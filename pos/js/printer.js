@@ -161,7 +161,6 @@ export async function printReceiptNative(text, logoUrl = null) {
                         }
                         
                         const header = new Uint8Array([
-                            0x1B, 0x40, // Init
                             0x1B, 0x61, 0x01, // Center align
                             0x1D, 0x76, 0x30, 0x00, // Print raster image
                             widthBytes & 0xFF, (widthBytes >> 8) & 0xFF,
@@ -185,31 +184,33 @@ export async function printReceiptNative(text, logoUrl = null) {
             }
         }
 
-        // 2. Decode text
+        // 2. Decode text (No ESC @ here)
         const encoder = new TextEncoder();
-        const textData = (!logoUrl ? "\x1B\x40" : "") + text + "\x0A\x0A\x0A\x0A"; 
+        const textData = text + "\x0A\x0A\x0A\x0A"; 
         const textBuffer = encoder.encode(textData);
         
-        // 3. Post Commands: Cut paper & Cash Drawer Kick Command
-        const postBuffer = new Uint8Array([
-            // Full cut (GS V 0)
-            0x1D, 0x56, 0x00,
-            // Standard ESC p (pin 2 & 5) with 250ms pulse
+        // 3. Command Buffers
+        const initBuffer = new Uint8Array([0x1B, 0x40]); // Init Printer
+        
+        const drawerBuffer = new Uint8Array([ // Drawer Kick commands
             0x1B, 0x70, 0x00, 0xFA, 0xFA,
             0x1B, 0x70, 0x01, 0xFA, 0xFA,
-            // Standard ESC p (pin 2 & 5) with 50ms pulse
             0x1B, 0x70, 0x00, 0x19, 0xFA,
             0x1B, 0x70, 0x01, 0x19, 0xFA,
-            // Real-time pulse (DLE DC4 1 m t)
             0x10, 0x14, 0x01, 0x00, 0x05,
             0x10, 0x14, 0x01, 0x01, 0x05
         ]);
 
-        // 4. Combine buffers (Logo -> Text -> Post/Cut/Drawer)
-        const sendBuffer = new Uint8Array(finalBuffer.length + textBuffer.length + postBuffer.length);
-        sendBuffer.set(finalBuffer, 0);
-        sendBuffer.set(textBuffer, finalBuffer.length);
-        sendBuffer.set(postBuffer, finalBuffer.length + textBuffer.length);
+        const cutBuffer = new Uint8Array([0x1D, 0x56, 0x00]); // Full Cut
+
+        // 4. Combine buffers: Init -> Drawer Kick -> Logo -> Text -> Cut
+        const sendBuffer = new Uint8Array(initBuffer.length + drawerBuffer.length + finalBuffer.length + textBuffer.length + cutBuffer.length);
+        let offset = 0;
+        sendBuffer.set(initBuffer, offset); offset += initBuffer.length;
+        sendBuffer.set(drawerBuffer, offset); offset += drawerBuffer.length;
+        sendBuffer.set(finalBuffer, offset); offset += finalBuffer.length;
+        sendBuffer.set(textBuffer, offset); offset += textBuffer.length;
+        sendBuffer.set(cutBuffer, offset);
         
         // 4. Send in chunks
         const CHUNK_SIZE = 100;
