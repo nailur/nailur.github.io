@@ -190,10 +190,17 @@ export async function printReceiptNative(text, logoUrl = null) {
         const textData = (!logoUrl ? "\x1B\x40" : "") + text + "\x0A\x0A\x0A"; 
         const textBuffer = encoder.encode(textData);
         
-        // 3. Combine buffers
-        const sendBuffer = new Uint8Array(finalBuffer.length + textBuffer.length);
+        // 3. Cash Drawer Kick Command (ESC p 0/1 25 250)
+        const drawerBuffer = new Uint8Array([
+            0x1B, 0x70, 0x00, 0x19, 0xFA, // Pin 2
+            0x1B, 0x70, 0x01, 0x19, 0xFA  // Pin 5
+        ]);
+
+        // 4. Combine buffers
+        const sendBuffer = new Uint8Array(finalBuffer.length + textBuffer.length + drawerBuffer.length);
         sendBuffer.set(finalBuffer, 0);
         sendBuffer.set(textBuffer, finalBuffer.length);
+        sendBuffer.set(drawerBuffer, finalBuffer.length + textBuffer.length);
         
         // 4. Send in chunks
         const CHUNK_SIZE = 100;
