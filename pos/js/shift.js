@@ -102,9 +102,7 @@ export async function handleCloseShift(e) {
         document.getElementById('modal-close-shift').classList.add('hidden');
         return showToast('Anda tidak memiliki sesi shift aktif (atau login sebagai superadmin)', 'info');
     }
-    const isCrossDay = new Date(currentShiftSession.created_at).toDateString() !== new Date().toDateString();
-    
-    if (!currentAttendanceRecord && !isCrossDay) {
+    if (!currentAttendanceRecord) {
         document.getElementById('modal-close-shift').classList.add('hidden');
         return showToast('Anda belum melakukan absen masuk. Tidak bisa menutup shift.', 'error');
     }
@@ -127,8 +125,7 @@ export async function handleCloseShift(e) {
         if (error) throw error;
 
         // Auto clock out (will replace existing clock_out if already clocked out)
-        // Skip auto clock out if we are closing a cross-day shift (so we don't mess up today's attendance)
-        if (currentAttendanceRecord && !isCrossDay) {
+        if (currentAttendanceRecord) {
             await handleClockOut(true);
         }
 

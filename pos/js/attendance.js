@@ -28,16 +28,16 @@ export async function checkAttendanceStatus() {
     const profile = getCurrentProfile();
     if (!profile || !activeOutletId) return;
 
-    // We check attendance by looking for the latest clock_in for today
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    // We check attendance by looking for the latest clock_in within the last 24 hours (supports night shifts)
+    const yesterday = new Date();
+    yesterday.setHours(yesterday.getHours() - 24);
 
     const { data } = await supabase
         .from('attendances')
         .select('*, shifts(name, start_time, end_time)')
         .eq('user_id', profile.id)
         .eq('outlet_id', activeOutletId)
-        .gte('clock_in', startOfDay.toISOString())
+        .gte('clock_in', yesterday.toISOString())
         .order('clock_in', { ascending: false })
         .limit(1)
         .maybeSingle();
