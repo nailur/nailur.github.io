@@ -89,9 +89,6 @@ export function renderCart(forceRebuild = false) {
     const subtotalEl = document.getElementById('cart-subtotal');
     const totalEl = document.getElementById('cart-total');
     
-    const methodEl = document.getElementById('modal-payment-method');
-    const method = methodEl ? methodEl.value : 'Tunai';
-    
     if (products.length > 0) {
         cart = cart.filter(item => {
             const freshProduct = products.find(p => p.id === item.product_id);
@@ -102,13 +99,10 @@ export function renderCart(forceRebuild = false) {
         });
     }
 
+    // Always use regular price in cart (not method-specific price)
     cart.forEach(item => {
-        let effectiveBasePrice = item.product.price;
-        if (method === 'Go Food' && item.product.price_gofood) effectiveBasePrice = item.product.price_gofood;
-        else if (method === 'Grab Food' && item.product.price_grabfood) effectiveBasePrice = item.product.price_grabfood;
-        else if (method === 'Shopee Food' && item.product.price_shopeefood) effectiveBasePrice = item.product.price_shopeefood;
-        item.base_price = effectiveBasePrice;
-        item.price = effectiveBasePrice + (item.modifier_price || 0);
+        item.base_price = item.product.price;
+        item.price = item.product.price + (item.modifier_price || 0);
     });
 
     if (cart.length === 0) {
@@ -164,7 +158,18 @@ export function renderCart(forceRebuild = false) {
 }
 
 function calculateTotals() {
-    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const methodEl = document.getElementById('modal-payment-method');
+    const method = methodEl ? methodEl.value : 'Tunai';
+    
+    // Calculate subtotal using method-specific prices (without mutating cart items)
+    const subtotal = cart.reduce((sum, item) => {
+        let effectiveBasePrice = item.product.price;
+        if (method === 'Go Food' && item.product.price_gofood) effectiveBasePrice = item.product.price_gofood;
+        else if (method === 'Grab Food' && item.product.price_grabfood) effectiveBasePrice = item.product.price_grabfood;
+        else if (method === 'Shopee Food' && item.product.price_shopeefood) effectiveBasePrice = item.product.price_shopeefood;
+        const effectivePrice = effectiveBasePrice + (item.modifier_price || 0);
+        return sum + (effectivePrice * item.quantity);
+    }, 0);
     
     const dp = document.getElementById('modal-discount-percent');
     const dn = document.getElementById('modal-discount-nominal');
@@ -182,7 +187,7 @@ function calculateTotals() {
     const tax = Math.round(afterDiscount * taxRate / 100);
     const total = afterDiscount + tax;
     
-    return { subtotal, discount, tax, taxRate, total };
+    return { subtotal, discount, tax, taxRate, total, method };
 }
 
 export function calculateChange() {
@@ -307,12 +312,18 @@ async function _finalizeCheckout() {
     const profile = getCurrentProfile();
     const customer_name = document.getElementById('modal-customer-name').value || null;
 
-    const itemsPayload = cart.map(item => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.price,
-        modifiers: item.modifiers && item.modifiers.length > 0 ? item.modifiers : null
-    }));
+    const itemsPayload = cart.map(item => {
+        let effectiveBasePrice = item.product.price;
+        if (totals.method === 'Go Food' && item.product.price_gofood) effectiveBasePrice = item.product.price_gofood;
+        else if (totals.method === 'Grab Food' && item.product.price_grabfood) effectiveBasePrice = item.product.price_grabfood;
+        else if (totals.method === 'Shopee Food' && item.product.price_shopeefood) effectiveBasePrice = item.product.price_shopeefood;
+        return {
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: effectiveBasePrice + (item.modifier_price || 0),
+            modifiers: item.modifiers && item.modifiers.length > 0 ? item.modifiers : null
+        };
+    });
 
     function generateUUID() {
         if (crypto.randomUUID) return crypto.randomUUID();
@@ -411,7 +422,14 @@ async function _finalizeCheckout() {
     
     
     const change = received - totals.total;
-    const cartClone = [...cart];
+    // Create cart clone with method-specific prices for receipt
+    const cartClone = cart.map(item => {
+        let effectiveBasePrice = item.product.price;
+        if (totals.method === 'Go Food' && item.product.price_gofood) effectiveBasePrice = item.product.price_gofood;
+        else if (totals.method === 'Grab Food' && item.product.price_grabfood) effectiveBasePrice = item.product.price_grabfood;
+        else if (totals.method === 'Shopee Food' && item.product.price_shopeefood) effectiveBasePrice = item.product.price_shopeefood;
+        return { ...item, price: effectiveBasePrice + (item.modifier_price || 0), base_price: effectiveBasePrice };
+    });
     const finalTotals = { ...totals };
     
     document.getElementById('modal-checkout').classList.add('hidden');
