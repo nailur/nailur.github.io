@@ -117,21 +117,38 @@ function onDisconnected() {
     if (window.showToast) window.showToast('Printer Bluetooth terputus', 'error');
 }
 
-export async function printReceiptNative(text, logoUrl = null) {
+// Kick cash drawer open immediately via Bluetooth
+export async function kickDrawer() {
+    if (!isConnected || !printCharacteristic) return false;
+    try {
+        const kickBuffer = new Uint8Array([
+            0x1B, 0x70, 0x00, 0x40, 0x50, // Drawer Kick Pin 2
+            0x1B, 0x70, 0x01, 0x40, 0x50  // Drawer Kick Pin 5
+        ]);
+        await printCharacteristic.writeValue(kickBuffer);
+        return true;
+    } catch (e) {
+        console.error('Drawer kick error:', e);
+        return false;
+    }
+}
+
+export async function printReceiptNative(text, logoUrl = null, openDrawer = false) {
     if (!isConnected || !printCharacteristic) {
         if (window.showToast) window.showToast('Printer belum terhubung!', 'error');
         return false;
     }
 
     try {
-        // 1. Send Init and Drawer Kick IMMEDIATELY
-        const instantBuffer = new Uint8Array([
-            0x1B, 0x40, // Init
-            0x1B, 0x70, 0x00, 0x40, 0x50, // Drawer Kick Pin 2
-            0x1B, 0x70, 0x01, 0x40, 0x50  // Drawer Kick Pin 5
-        ]);
-        await printCharacteristic.writeValue(instantBuffer);
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // 1. If openDrawer, send drawer kick IMMEDIATELY as separate BLE write
+        if (openDrawer) {
+            await kickDrawer();
+        }
+
+        // 2. Init printer
+        const initBuffer = new Uint8Array([0x1B, 0x40]);
+        await printCharacteristic.writeValue(initBuffer);
+        await new Promise(resolve => setTimeout(resolve, 30));
 
         let finalBuffer = new Uint8Array(0);
 

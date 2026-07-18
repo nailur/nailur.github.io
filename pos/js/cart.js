@@ -657,5 +657,6 @@ export function printReceiptBluetooth(trxId, cartItems, total, received, method,
     text += `\n\n\n`; 
 
     const logoUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'assets/img/receipt_logo_print.png';
-    printReceiptNative(text, logoUrl);
+    const openDrawer = method.toLowerCase() === 'tunai';
+    printReceiptNative(text, logoUrl, openDrawer);
 }
