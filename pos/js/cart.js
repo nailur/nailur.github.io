@@ -242,6 +242,7 @@ export function openCheckoutModal() {
     document.getElementById('modal-payment-method').value = 'Tunai';
     document.getElementById('modal-cash-received').value = '';
     document.getElementById('modal-customer-name').value = '';
+    document.getElementById('modal-transaction-notes').value = '';
     
     applyActiveDiscount('Tunai');
     
@@ -311,6 +312,7 @@ async function _finalizeCheckout() {
 
     const profile = getCurrentProfile();
     const customer_name = document.getElementById('modal-customer-name').value || null;
+    const transaction_notes = document.getElementById('modal-transaction-notes').value || null;
 
     const itemsPayload = cart.map(item => {
         let effectiveBasePrice = item.product.price;
@@ -390,6 +392,16 @@ async function _finalizeCheckout() {
                     }
                 }
             }
+
+            // Save notes if provided
+            if (receiptNo && transaction_notes) {
+                supabase.from('transactions')
+                    .update({ notes: transaction_notes })
+                    .eq('id', trxData.id)
+                    .then(({ error }) => {
+                        if (error) console.error('Failed to save notes:', error);
+                    });
+            }
         } catch (e) {
             console.error("Checkout Exception:", e);
             isOffline = true;
@@ -410,6 +422,7 @@ async function _finalizeCheckout() {
             total_amount: totals.total,
             payment_method: method,
             customer_name: customer_name,
+            notes: transaction_notes,
             cash_received: received,
             change_amount: received - totals.total,
             items: itemsPayload,

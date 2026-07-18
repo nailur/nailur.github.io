@@ -142,7 +142,7 @@ export async function loadHistory(resetPage = true) {
     if (resetPage) historyPage = 0;
 
     const tbody = document.querySelector('#history-table tbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted);"><i class="ph ph-spinner ph-spin"></i> Memuat riwayat...</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);"><i class="ph ph-spinner ph-spin"></i> Memuat riwayat...</td></tr>';
 
     const from = historyPage * HISTORY_PAGE_SIZE;
     const to = from + HISTORY_PAGE_SIZE - 1;
@@ -176,7 +176,7 @@ export async function loadHistory(resetPage = true) {
     const paginationEl = document.getElementById('history-pagination');
 
     if (!data || data.length === 0) {
-        if(tbody) tbody.innerHTML = '<tr><td colspan="10" class="text-center">Belum ada transaksi</td></tr>';
+        if(tbody) tbody.innerHTML = '<tr><td colspan="11" class="text-center">Belum ada transaksi</td></tr>';
         if (paginationEl) paginationEl.innerHTML = '';
         return;
     }
@@ -191,6 +191,7 @@ export async function loadHistory(resetPage = true) {
                     ${receiptNo}
                     ${isVoid ? '<span style="background:var(--danger);color:white;padding:2px 6px;border-radius:4px;font-size:0.7rem;margin-left:5px;">CANCEL</span>' : ''}
                 </td>
+                <td>${escapeHtml(trx.customer_name || '-')}</td>
                 <td>${escapeHtml(trx.profiles?.name || trx.profiles?.email || '-')}</td>
                 <td style="white-space: nowrap;">Rp ${(trx.discount_amount || 0).toLocaleString('id-ID')}</td>
                 <td style="white-space: nowrap;">Rp ${(trx.tax_amount || 0).toLocaleString('id-ID')}</td>
