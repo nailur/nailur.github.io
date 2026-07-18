@@ -41,7 +41,7 @@ export async function exportToExcel() {
 
     try {
         const { data: trxData, error: trxError } = await supabase.from('transactions')
-            .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, profiles:profiles!transactions_cashier_id_fkey(email, name)')
+            .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, status, profiles:profiles!transactions_cashier_id_fkey(email, name)')
             .eq('outlet_id', activeOutletId)
             .gte('created_at', startOfDay)
             .lte('created_at', endOfDay)
@@ -65,12 +65,16 @@ export async function exportToExcel() {
         for (const trx of trxData) {
             const cashierName = trx.profiles?.name || trx.profiles?.email || '-';
             const trxItems = itemsData.filter(i => i.transaction_id === trx.id);
+            const statusLabel = trx.status === 'voided' ? 'CANCEL' : 'Berhasil';
+            const customerName = trx.customer_name || '-';
             
             if (trxItems.length === 0) {
                 exportRows.push({
                     'ID Transaksi': trx.receipt_no || trx.id.substring(0, 8).toUpperCase(),
                     'Tanggal': new Date(trx.created_at).toLocaleString('id-ID'),
+                    'Customer': customerName,
                     'Kasir': cashierName,
+                    'Status': statusLabel,
                     'Metode Pembayaran': trx.payment_method,
                     'Produk': '-',
                     'Kuantitas': 0,
@@ -83,7 +87,9 @@ export async function exportToExcel() {
                     exportRows.push({
                         'ID Transaksi': trx.receipt_no || trx.id.substring(0, 8).toUpperCase(),
                         'Tanggal': new Date(trx.created_at).toLocaleString('id-ID'),
+                        'Customer': customerName,
                         'Kasir': cashierName,
+                        'Status': statusLabel,
                         'Metode Pembayaran': trx.payment_method,
                         'Produk': item.products?.name || 'Produk Terhapus',
                         'Kuantitas': item.quantity,
@@ -97,12 +103,12 @@ export async function exportToExcel() {
 
         const worksheet = XLSX.utils.json_to_sheet(exportRows);
         
-        // Format columns G, H, I as Currency
+        // Format currency columns (I=Harga Satuan, J=Subtotal Produk, K=Total Transaksi)
         for (let cell in worksheet) {
             if (cell[0] === '!') continue;
             const col = cell.replace(/[0-9]/g, '');
             const row = parseInt(cell.replace(/\D/g, ''), 10);
-            if (['G', 'H', 'I'].includes(col) && row > 1) {
+            if (['I', 'J', 'K'].includes(col) && row > 1) {
                 worksheet[cell].z = '"Rp "#,##0';
             }
         }
@@ -111,15 +117,17 @@ export async function exportToExcel() {
         XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Transaksi");
         
         const colWidths = [
-            { wch: 15 }, 
-            { wch: 20 }, 
-            { wch: 25 }, 
-            { wch: 15 }, 
-            { wch: 25 }, 
-            { wch: 10 }, 
-            { wch: 15 }, 
-            { wch: 15 }, 
-            { wch: 15 }  
+            { wch: 15 },  // ID Transaksi
+            { wch: 20 },  // Tanggal
+            { wch: 20 },  // Customer
+            { wch: 20 },  // Kasir
+            { wch: 10 },  // Status
+            { wch: 15 },  // Metode Pembayaran
+            { wch: 25 },  // Produk
+            { wch: 10 },  // Kuantitas
+            { wch: 15 },  // Harga Satuan
+            { wch: 15 },  // Subtotal Produk
+            { wch: 15 }   // Total Transaksi
         ];
         worksheet['!cols'] = colWidths;
 
