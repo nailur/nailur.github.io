@@ -187,11 +187,13 @@ export async function printReceiptNative(text, logoUrl = null) {
 
         // 2. Decode text
         const encoder = new TextEncoder();
-        const textData = (!logoUrl ? "\x1B\x40" : "") + text + "\x0A\x0A\x0A"; 
+        const textData = (!logoUrl ? "\x1B\x40" : "") + text + "\x0A\x0A\x0A\x0A"; 
         const textBuffer = encoder.encode(textData);
         
-        // 3. Cash Drawer Kick Command (EPPOS compatible variants)
-        const drawerBuffer = new Uint8Array([
+        // 3. Post Commands: Cut paper & Cash Drawer Kick Command
+        const postBuffer = new Uint8Array([
+            // Full cut (GS V 0)
+            0x1D, 0x56, 0x00,
             // Standard ESC p (pin 2 & 5) with 250ms pulse
             0x1B, 0x70, 0x00, 0xFA, 0xFA,
             0x1B, 0x70, 0x01, 0xFA, 0xFA,
@@ -203,11 +205,11 @@ export async function printReceiptNative(text, logoUrl = null) {
             0x10, 0x14, 0x01, 0x01, 0x05
         ]);
 
-        // 4. Combine buffers (Prepend Drawer Kick first, then Logo, then Text)
-        const sendBuffer = new Uint8Array(drawerBuffer.length + finalBuffer.length + textBuffer.length);
-        sendBuffer.set(drawerBuffer, 0);
-        sendBuffer.set(finalBuffer, drawerBuffer.length);
-        sendBuffer.set(textBuffer, drawerBuffer.length + finalBuffer.length);
+        // 4. Combine buffers (Logo -> Text -> Post/Cut/Drawer)
+        const sendBuffer = new Uint8Array(finalBuffer.length + textBuffer.length + postBuffer.length);
+        sendBuffer.set(finalBuffer, 0);
+        sendBuffer.set(textBuffer, finalBuffer.length);
+        sendBuffer.set(postBuffer, finalBuffer.length + textBuffer.length);
         
         // 4. Send in chunks
         const CHUNK_SIZE = 100;
