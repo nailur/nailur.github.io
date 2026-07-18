@@ -124,16 +124,25 @@ export async function printReceiptNative(text, logoUrl = null) {
     }
 
     try {
+        // 1. Send Init and Drawer Kick IMMEDIATELY
+        const instantBuffer = new Uint8Array([
+            0x1B, 0x40, // Init
+            0x1B, 0x70, 0x00, 0x40, 0x50, // Drawer Kick Pin 2
+            0x1B, 0x70, 0x01, 0x40, 0x50  // Drawer Kick Pin 5
+        ]);
+        await printCharacteristic.writeValue(instantBuffer);
+        await new Promise(resolve => setTimeout(resolve, 50));
+
         let finalBuffer = new Uint8Array(0);
 
-        // 1. Decode logo if provided
+        // 2. Decode logo if provided
         if (logoUrl) {
             try {
                 const logoBuffer = await new Promise((resolve, reject) => {
                     const img = new Image();
                     img.crossOrigin = "Anonymous";
                     img.onload = () => {
-                        const targetWidth = 384; // 58mm printer width
+                        const targetWidth = 384; 
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
                         
@@ -170,7 +179,7 @@ export async function printReceiptNative(text, logoUrl = null) {
                         const combined = new Uint8Array(header.length + imageBuffer.length + 1);
                         combined.set(header, 0);
                         combined.set(imageBuffer, header.length);
-                        combined[combined.length - 1] = 0x0A; // Line feed after image
+                        combined[combined.length - 1] = 0x0A; 
                         resolve(combined);
                     };
                     img.onerror = () => resolve(new Uint8Array(0));
@@ -184,35 +193,22 @@ export async function printReceiptNative(text, logoUrl = null) {
             }
         }
 
-        // 2. Decode text (No ESC @ here)
+        // 3. Decode text
         const encoder = new TextEncoder();
         const textData = text + "\x0A\x0A\x0A\x0A"; 
         const textBuffer = encoder.encode(textData);
         
-        // 3. Command Buffers
-        const initBuffer = new Uint8Array([0x1B, 0x40]); // Init Printer
-        
-        const drawerBuffer = new Uint8Array([ // Drawer Kick commands
-            0x1B, 0x70, 0x00, 0xFA, 0xFA,
-            0x1B, 0x70, 0x01, 0xFA, 0xFA,
-            0x1B, 0x70, 0x00, 0x19, 0xFA,
-            0x1B, 0x70, 0x01, 0x19, 0xFA,
-            0x10, 0x14, 0x01, 0x00, 0x05,
-            0x10, 0x14, 0x01, 0x01, 0x05
-        ]);
+        // 4. Cut Command
+        const cutBuffer = new Uint8Array([0x1D, 0x56, 0x00]);
 
-        const cutBuffer = new Uint8Array([0x1D, 0x56, 0x00]); // Full Cut
-
-        // 4. Combine buffers: Init -> Drawer Kick -> Logo -> Text -> Cut
-        const sendBuffer = new Uint8Array(initBuffer.length + drawerBuffer.length + finalBuffer.length + textBuffer.length + cutBuffer.length);
+        // 5. Combine Logo -> Text -> Cut
+        const sendBuffer = new Uint8Array(finalBuffer.length + textBuffer.length + cutBuffer.length);
         let offset = 0;
-        sendBuffer.set(initBuffer, offset); offset += initBuffer.length;
-        sendBuffer.set(drawerBuffer, offset); offset += drawerBuffer.length;
         sendBuffer.set(finalBuffer, offset); offset += finalBuffer.length;
         sendBuffer.set(textBuffer, offset); offset += textBuffer.length;
         sendBuffer.set(cutBuffer, offset);
         
-        // 4. Send in chunks
+        // 6. Send in chunks
         const CHUNK_SIZE = 100;
         for (let i = 0; i < sendBuffer.length; i += CHUNK_SIZE) {
             const chunk = sendBuffer.slice(i, i + CHUNK_SIZE);
