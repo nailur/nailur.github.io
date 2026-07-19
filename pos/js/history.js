@@ -157,7 +157,7 @@ export async function loadHistory(resetPage = true) {
     if (resetPage) historyPage = 0;
 
     const tbody = document.querySelector('#history-table tbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);"><i class="ph ph-spinner ph-spin"></i> Memuat riwayat...</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text-muted);"><i class="ph ph-spinner ph-spin"></i> Memuat riwayat...</td></tr>';
 
     const from = historyPage * HISTORY_PAGE_SIZE;
     const to = from + HISTORY_PAGE_SIZE - 1;
@@ -191,7 +191,7 @@ export async function loadHistory(resetPage = true) {
     const paginationEl = document.getElementById('history-pagination');
 
     if (!data || data.length === 0) {
-        if(tbody) tbody.innerHTML = '<tr><td colspan="11" class="text-center">Belum ada transaksi</td></tr>';
+        if(tbody) tbody.innerHTML = '<tr><td colspan="12" class="text-center">Belum ada transaksi</td></tr>';
         if (paginationEl) paginationEl.innerHTML = '';
         return;
     }
@@ -208,6 +208,7 @@ export async function loadHistory(resetPage = true) {
                 </td>
                 <td>${escapeHtml(trx.customer_name || '-')}</td>
                 <td>${escapeHtml(trx.profiles?.name || trx.profiles?.email || '-')}</td>
+                <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(trx.notes || '')}">${escapeHtml(trx.notes || '-')}</td>
                 <td style="white-space: nowrap;">Rp ${(trx.discount_amount || 0).toLocaleString('id-ID')}</td>
                 <td style="white-space: nowrap;">Rp ${(trx.tax_amount || 0).toLocaleString('id-ID')}</td>
                 <td style="white-space: nowrap;"><strong>Rp ${(trx.total_amount || 0).toLocaleString('id-ID')}</strong></td>
