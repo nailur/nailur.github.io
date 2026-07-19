@@ -280,6 +280,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const nomInput = document.getElementById('modal-discount-nominal');
     if (pctInput) pctInput.addEventListener('input', () => { renderCart(); calculateChange(); });
     if (nomInput) nomInput.addEventListener('input', () => { renderCart(); calculateChange(); });
+    
+    const quickCashButtons = document.querySelectorAll('.btn-quick-cash');
+    const cashReceivedInput = document.getElementById('modal-cash-received');
+    if (quickCashButtons && cashReceivedInput) {
+        quickCashButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const amount = e.target.getAttribute('data-amount');
+                if (amount === 'clear') {
+                    cashReceivedInput.value = '';
+                } else if (amount === 'exact') {
+                    const totals = calculateTotals();
+                    cashReceivedInput.value = totals.total;
+                } else {
+                    const currentVal = parseInt(cashReceivedInput.value) || 0;
+                    const addVal = parseInt(amount) || 0;
+                    cashReceivedInput.value = currentVal + addVal;
+                }
+                calculateChange();
+            });
+        });
+    }
 });
 
 let isProcessingCheckout = false;

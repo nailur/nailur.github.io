@@ -1436,3 +1436,22 @@ table.data-table th:last-child::after {
     top: -50px;
     pointer-events: none;
 }
+
+.btn-quick-cash {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-quick-cash:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
