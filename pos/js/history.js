@@ -163,7 +163,7 @@ export async function loadHistory(resetPage = true) {
     const to = from + HISTORY_PAGE_SIZE - 1;
     
     let query = supabase.from('transactions')
-        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, status, profiles:profiles!transactions_cashier_id_fkey(email, name)', { count: 'exact' })
+        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, transaction_notes, cash_received, change_amount, status, profiles:profiles!transactions_cashier_id_fkey(email, name)', { count: 'exact' })
         .eq('outlet_id', activeOutletId)
         .order('created_at', { ascending: false });
 
