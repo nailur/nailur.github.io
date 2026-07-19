@@ -163,7 +163,7 @@ export async function loadHistory(resetPage = true) {
     const to = from + HISTORY_PAGE_SIZE - 1;
     
     let query = supabase.from('transactions')
-        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, transaction_notes, cash_received, change_amount, status, profiles:profiles!transactions_cashier_id_fkey(email, name)', { count: 'exact' })
+        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, notes, cash_received, change_amount, status, profiles:profiles!transactions_cashier_id_fkey(email, name)', { count: 'exact' })
         .eq('outlet_id', activeOutletId)
         .order('created_at', { ascending: false });
 
@@ -274,8 +274,8 @@ export async function viewTransactionDetails(trxId) {
     }
     
     const notesWrapper = document.getElementById('detail-trx-notes-wrapper');
-    if (trx.transaction_notes) {
-        document.getElementById('detail-trx-notes').textContent = trx.transaction_notes;
+    if (trx.notes) {
+        document.getElementById('detail-trx-notes').textContent = trx.notes;
         if (notesWrapper) notesWrapper.style.display = 'block';
     } else {
         if (notesWrapper) notesWrapper.style.display = 'none';
@@ -404,10 +404,10 @@ export async function reprintReceipt(trx, items) {
     
     // Jika printer Bluetooth terhubung, langsung cetak ke printer Bluetooth
     if (isPrinterConnected()) {
-        printReceiptBluetooth(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj, trx.transaction_notes);
+        printReceiptBluetooth(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj, trx.notes);
     } else {
         // Fallback ke Web Print (browser print dialog)
-        printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj, trx.transaction_notes);
+        printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj, trx.notes);
     }
 }
 
