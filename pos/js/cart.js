@@ -501,7 +501,7 @@ async function _finalizeCheckout() {
         return lines;
     };
 
-    printReceiptBluetooth(receiptNo, cartClone, finalTotals.total, received, method, trxData.created_at, displayName, customer_name, finalTotals, activeOutlet);
+    printReceiptBluetooth(receiptNo, cartClone, finalTotals.total, received, method, trxData.created_at, displayName, customer_name, finalTotals, activeOutlet, transaction_notes);
     
     const changeAmountEl = document.getElementById('success-change-amount');
     if (changeAmountEl) changeAmountEl.textContent = 'Rp ' + change.toLocaleString('id-ID');
@@ -517,7 +517,7 @@ async function _finalizeCheckout() {
     btn.textContent = 'Bayar & Cetak';
 }
 
-export function printReceipt(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null, outletObj = null) {
+export function printReceipt(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null, outletObj = null, notes = null) {
     const dateStr = trxDate ? new Date(trxDate).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
     const change = received - total;
     
@@ -544,12 +544,20 @@ export function printReceipt(trxId, cartItems, total, received, method, trxDate 
     document.getElementById('receipt-cashier').textContent = displayName;
     document.getElementById('receipt-method').textContent = method;
     
-    const customerEl = document.getElementById('receipt-customer-row');
+    const customerRow = document.getElementById('receipt-customer-row');
     if (customerName) {
         document.getElementById('receipt-customer-name').textContent = customerName;
-        customerEl.style.display = 'block';
+        customerRow.style.display = 'block';
     } else {
-        customerEl.style.display = 'none';
+        customerRow.style.display = 'none';
+    }
+
+    const notesRow = document.getElementById('receipt-notes-row');
+    if (notes) {
+        document.getElementById('receipt-notes').textContent = notes;
+        notesRow.style.display = 'block';
+    } else {
+        notesRow.style.display = 'none';
     }
 
     const itemsHtml = cartItems.map(item => {
@@ -594,7 +602,7 @@ export function printReceipt(trxId, cartItems, total, received, method, trxDate 
     window.print();
 }
 
-export function printReceiptBluetooth(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null, outletObj = null) {
+export function printReceiptBluetooth(trxId, cartItems, total, received, method, trxDate = null, cashierName = null, customerName = null, totalsObj = null, outletObj = null, notes = null) {
     const dateStr = trxDate ? new Date(trxDate).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
     const change = received - total;
     
@@ -603,6 +611,7 @@ export function printReceiptBluetooth(trxId, cartItems, total, received, method,
         activeOutlet = getPosOutletsList().find(o => o.id === getActiveOutletId()) || {};
     }
     const outletName = activeOutlet.name || 'Toko Kami';
+    const outletPhone = activeOutlet.phone || '';
     
     let displayName = cashierName;
     if (!displayName) {
@@ -643,17 +652,25 @@ export function printReceiptBluetooth(trxId, cartItems, total, received, method,
         });
     }
     
-    if (activeOutlet.phone) text += tLine(activeOutlet.phone) + "\n";
-    text += ALIGN_LEFT;
-    text += `--------------------------------\n`;
-    text += tLine(`No      : ${trxId}`) + `\n`;
-    text += tLine(`Tanggal : ${dateStr}`) + `\n`;
-    text += tLine(`Kasir   : ${displayName}`) + `\n`;
-    if (customerName) {
-        text += tLine(`Customer: ${customerName}`) + `\n`;
+    if (outletPhone) {
+        text += ALIGN_CENTER + tLine(outletPhone) + "\n";
     }
-    text += tLine(`Metode  : ${method}`) + `\n`;
-    text += `--------------------------------\n`;
+    
+    text += "\n";
+    text += ALIGN_LEFT + "No  : " + tLine(trxId) + "\n";
+    text += "Tgl : " + tLine(dateStr) + "\n";
+    text += "Ksr : " + tLine(displayName) + "\n";
+    if (customerName) {
+        text += "Cust: " + tLine(customerName) + "\n";
+    }
+    if (notes) {
+        text += "Catatan:\n";
+        wrapLine(notes, 32).forEach(line => {
+            text += line + "\n";
+        });
+    }
+    text += "Pemb: " + tLine(method) + "\n";
+    text += "-".repeat(32) + "\n";
     
     cartItems.forEach(item => {
         text += tLine(`${item.name}`) + `\n`;

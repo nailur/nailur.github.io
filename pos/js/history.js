@@ -396,10 +396,10 @@ export async function reprintReceipt(trx, items) {
     
     // Jika printer Bluetooth terhubung, langsung cetak ke printer Bluetooth
     if (isPrinterConnected()) {
-        printReceiptBluetooth(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
+        printReceiptBluetooth(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj, trx.transaction_notes);
     } else {
         // Fallback ke Web Print (browser print dialog)
-        printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj);
+        printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj, trx.transaction_notes);
     }
 }
 
