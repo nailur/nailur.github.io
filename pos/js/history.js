@@ -251,7 +251,7 @@ export function changeHistoryPage(page) {
 
 export async function viewTransactionDetails(trxId) {
     const { data: trx, error: trxError } = await supabase.from('transactions')
-        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, status, profiles:profiles!transactions_cashier_id_fkey(email, name), outlets(name, address, phone)')
+        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, notes, cash_received, change_amount, status, profiles:profiles!transactions_cashier_id_fkey(email, name), outlets(name, address, phone)')
         .eq('id', trxId)
         .single();
         
