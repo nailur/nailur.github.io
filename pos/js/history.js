@@ -273,6 +273,14 @@ export async function viewTransactionDetails(trxId) {
         if (customerWrapper) customerWrapper.style.display = 'none';
     }
     
+    const notesWrapper = document.getElementById('detail-trx-notes-wrapper');
+    if (trx.transaction_notes) {
+        document.getElementById('detail-trx-notes').textContent = trx.transaction_notes;
+        if (notesWrapper) notesWrapper.style.display = 'block';
+    } else {
+        if (notesWrapper) notesWrapper.style.display = 'none';
+    }
+    
     document.getElementById('detail-trx-method').textContent = trx.payment_method;
     
     const tbody = document.getElementById('detail-trx-items');
