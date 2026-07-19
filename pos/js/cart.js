@@ -382,8 +382,7 @@ async function _finalizeCheckout() {
                 p_customer_name: customer_name,
                 p_items: itemsPayload,
                 p_cash_received: received,
-                p_change_amount: received - totals.total,
-                p_notes: transaction_notes
+                p_change_amount: received - totals.total
             });
 
             if (rpcError) {
@@ -415,7 +414,15 @@ async function _finalizeCheckout() {
                 }
             }
 
-            // p_notes is now passed to process_checkout, no need for manual update
+            // Save notes if provided
+            if (receiptNo && transaction_notes) {
+                supabase.from('transactions')
+                    .update({ notes: transaction_notes })
+                    .eq('id', trxData.id)
+                    .then(({ error }) => {
+                        if (error) console.error('Failed to save notes:', error);
+                    });
+            }
         } catch (e) {
             console.error("Checkout Exception:", e);
             isOffline = true;
