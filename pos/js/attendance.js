@@ -247,9 +247,10 @@ export async function loadAttendanceHistory() {
     }
     
     tbody.innerHTML = data.map(record => {
-        const dateStr = new Date(record.clock_in).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-        const timeIn = new Date(record.clock_in).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-        const timeOut = record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-';
+        const tz = { timeZone: 'Asia/Jakarta' };
+        const dateStr = new Date(record.clock_in).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', ...tz });
+        const timeIn = new Date(record.clock_in).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', ...tz });
+        const timeOut = record.clock_out ? new Date(record.clock_out).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', ...tz }) : '-';
         const shiftNameDisplay = record.shift_name_snapshot || record.shifts?.name || '-';
         
         const formatTitleCase = (str) => {
