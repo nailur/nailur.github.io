@@ -221,7 +221,7 @@ window.loadDashboard = async function() {
         .eq('outlet_id', activeOutletId)
         .gte('created_at', startOfDay)
         .lte('created_at', endOfDay)
-        .neq('status', 'cancelled');
+        .eq('status', 'completed');
 
     const salesByDate = {};
     if (salesData) {
