@@ -1,7 +1,7 @@
 /* global XLSX */
 import { supabase } from './supabase.js';
 import { checkSession, login, logout, getCurrentUser, getCurrentProfile } from './auth.js';
-import { connectPrinter } from './printer.js';
+import { connectPrinter, openPrinterModal, initPrinterModal, autoConnectPrinter } from './printer.js';
 import { startAttendanceClock, checkAttendanceStatus } from './attendance.js';
 import { syncOfflineTransactions, initDB } from './offline.js';
 import { products, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts } from './products.js';
@@ -1072,11 +1072,15 @@ async function initPos() {
     const btn = document.querySelector(`.pos-nav-btn[data-target="${savedTab}"]`);
     if(btn) btn.click();
     
-    // Bind printer connect button
+    // Bind printer connect button → opens modal instead of direct connect
     const btnConnectPrinter = document.getElementById('btn-connect-printer');
     if (btnConnectPrinter) {
-        btnConnectPrinter.onclick = connectPrinter;
+        btnConnectPrinter.onclick = openPrinterModal;
     }
+
+    // Initialize printer modal event listeners & attempt auto-connect
+    initPrinterModal();
+    autoConnectPrinter();
 
     // Bind hard refresh button
     const btnHardRefresh = document.getElementById('btn-hard-refresh');

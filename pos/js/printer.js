@@ -4,26 +4,116 @@ let bluetoothDevice = null;
 let printCharacteristic = null;
 let isConnected = false;
 
-// Optional: you can update the UI directly from here or use callbacks
+const OPTIONAL_SERVICES = [
+    '000018f0-0000-1000-8000-00805f9b34fb', // Standard/Generic BLE Printer
+    'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // Another common one
+    '49535343-fe7d-4ae5-8fa9-9fafd205e455', // ISSC
+    '0000fee7-0000-1000-8000-00805f9b34fb'  // WeiHeng
+];
+
+// ── UI Updates ──────────────────────────────────────────────────
+
 function updatePrinterStatusUI(connected, deviceName = '') {
+    // Navbar icon (existing behavior preserved)
     const iconEl = document.getElementById('printer-status-icon');
     const btnEl = document.getElementById('btn-connect-printer');
     
     if (iconEl) {
         if (connected) {
             iconEl.style.color = 'var(--success)';
-            if (btnEl) btnEl.title = `Printer Terhubung: ${deviceName} (Klik untuk memutus)`;
+            if (btnEl) btnEl.title = `Printer Terhubung: ${deviceName} (Klik untuk pengaturan)`;
         } else {
             iconEl.style.color = 'var(--danger)';
             if (btnEl) btnEl.title = 'Koneksikan Printer Bluetooth (Terputus)';
         }
     }
+
+    // Modal elements
+    const statusDot = document.getElementById('printer-modal-status-dot');
+    const statusText = document.getElementById('printer-modal-status-text');
+    const deviceLabel = document.getElementById('printer-modal-device-name');
+    const btnConnect = document.getElementById('btn-printer-connect');
+    const btnDisconnect = document.getElementById('btn-printer-disconnect');
+
+    if (statusDot) statusDot.style.color = connected ? 'var(--success)' : 'var(--danger)';
+    if (statusText) statusText.textContent = connected ? 'Terhubung' : 'Tidak Terhubung';
+    if (deviceLabel) deviceLabel.textContent = connected ? deviceName : '-';
+    if (btnConnect) {
+        if (connected) {
+            btnConnect.classList.add('hidden');
+        } else {
+            btnConnect.classList.remove('hidden');
+        }
+    }
+    if (btnDisconnect) {
+        if (connected) {
+            btnDisconnect.classList.remove('hidden');
+        } else {
+            btnDisconnect.classList.add('hidden');
+        }
+    }
 }
+
+// ── Core Connection Logic ───────────────────────────────────────
 
 export function isPrinterConnected() {
     return isConnected && printCharacteristic !== null;
 }
 
+/**
+ * Internal helper: given a BluetoothDevice, connects to GATT, discovers
+ * a writable characteristic, and updates UI.  Returns true on success.
+ */
+async function connectToDevice(device) {
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+
+    console.log('Connecting to GATT Server...');
+    const server = await device.gatt.connect();
+
+    console.log('Getting Services...');
+    const services = await server.getPrimaryServices();
+    
+    let validService = null;
+    for (const service of services) {
+        if (OPTIONAL_SERVICES.includes(service.uuid)) {
+            validService = service;
+            break;
+        }
+    }
+
+    if (!validService) {
+        // Fallback: just try to get any service and characteristic if they have it
+        if (services.length > 0) {
+            validService = services[0];
+        } else {
+            throw new Error('Tidak ada service Bluetooth yang didukung ditemukan pada perangkat ini.');
+        }
+    }
+
+    console.log('Getting Characteristics...');
+    const characteristics = await validService.getCharacteristics();
+    
+    // Find a characteristic that supports 'write' or 'writeWithoutResponse'
+    for (const c of characteristics) {
+        if (c.properties.write || c.properties.writeWithoutResponse) {
+            printCharacteristic = c;
+            break;
+        }
+    }
+
+    if (!printCharacteristic) {
+        throw new Error('Tidak menemukan karakteristik tulis (Write) pada printer ini.');
+    }
+
+    bluetoothDevice = device;
+    isConnected = true;
+    updatePrinterStatusUI(true, device.name || 'Printer');
+    return true;
+}
+
+/**
+ * Prompt the user for a new Bluetooth device (shows the browser pairing dialog).
+ */
 export async function connectPrinter() {
     if (isConnected && bluetoothDevice) {
         // Disconnect
@@ -33,64 +123,18 @@ export async function connectPrinter() {
 
     try {
         console.log('Requesting Bluetooth Device...');
-        // We accept all devices because ESC/POS BLE UUIDs vary wildly between manufacturers
-        // However, we must specify optionalServices we might want to communicate with.
-        const optionalServices = [
-            '000018f0-0000-1000-8000-00805f9b34fb', // Standard/Generic BLE Printer
-            'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // Another common one
-            '49535343-fe7d-4ae5-8fa9-9fafd205e455', // ISSC
-            '0000fee7-0000-1000-8000-00805f9b34fb'  // WeiHeng
-        ];
-
-        bluetoothDevice = await navigator.bluetooth.requestDevice({
+        const device = await navigator.bluetooth.requestDevice({
             acceptAllDevices: true,
-            optionalServices: optionalServices
+            optionalServices: OPTIONAL_SERVICES
         });
 
-        bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+        await connectToDevice(device);
 
-        console.log('Connecting to GATT Server...');
-        const server = await bluetoothDevice.gatt.connect();
-
-        console.log('Getting Services...');
-        const services = await server.getPrimaryServices();
-        
-        let validService = null;
-        for (const service of services) {
-            if (optionalServices.includes(service.uuid)) {
-                validService = service;
-                break;
-            }
+        // Save device name for auto-reconnect
+        if (device.name) {
+            localStorage.setItem('pos_printer_device_name', device.name);
         }
 
-        if (!validService) {
-            // Fallback: just try to get any service and characteristic if they have it
-            if (services.length > 0) {
-                validService = services[0];
-            } else {
-                throw new Error('Tidak ada service Bluetooth yang didukung ditemukan pada perangkat ini.');
-            }
-        }
-
-        console.log('Getting Characteristics...');
-        const characteristics = await validService.getCharacteristics();
-        
-        // Find a characteristic that supports 'write' or 'writeWithoutResponse'
-        for (const c of characteristics) {
-            if (c.properties.write || c.properties.writeWithoutResponse) {
-                printCharacteristic = c;
-                break;
-            }
-        }
-
-        if (!printCharacteristic) {
-            throw new Error('Tidak menemukan karakteristik tulis (Write) pada printer ini.');
-        }
-
-        isConnected = true;
-        updatePrinterStatusUI(true, bluetoothDevice.name || 'Printer');
-        
-        // window.showToast if available
         if (window.showToast) window.showToast('Printer Bluetooth berhasil terhubung!', 'success');
 
     } catch (error) {
@@ -108,6 +152,15 @@ export async function connectPrinter() {
     }
 }
 
+/**
+ * Disconnect the currently connected printer.
+ */
+export function disconnectPrinter() {
+    if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+        bluetoothDevice.gatt.disconnect();
+    }
+}
+
 function onDisconnected() {
     console.log('Device disconnected');
     isConnected = false;
@@ -115,6 +168,122 @@ function onDisconnected() {
     bluetoothDevice = null;
     updatePrinterStatusUI(false);
     if (window.showToast) window.showToast('Printer Bluetooth terputus', 'error');
+}
+
+// ── Auto-Connect ────────────────────────────────────────────────
+
+/**
+ * Attempt to silently reconnect to a previously-paired printer using
+ * the Web Bluetooth `getDevices()` API (Chrome 85+).
+ * This runs at app startup and requires NO user gesture.
+ */
+export async function autoConnectPrinter() {
+    // Guard: user must have opted-in
+    if (localStorage.getItem('pos_auto_connect_printer') !== 'true') return;
+
+    // Guard: browser support
+    if (!navigator.bluetooth || !navigator.bluetooth.getDevices) {
+        console.log('[AutoConnect] Browser does not support getDevices().');
+        return;
+    }
+
+    const savedName = localStorage.getItem('pos_printer_device_name');
+    if (!savedName) {
+        console.log('[AutoConnect] No saved printer name found.');
+        return;
+    }
+
+    try {
+        console.log(`[AutoConnect] Looking for "${savedName}" …`);
+        const devices = await navigator.bluetooth.getDevices();
+        const target = devices.find(d => d.name === savedName);
+
+        if (!target) {
+            console.log('[AutoConnect] Saved device not found among permitted devices.');
+            return;
+        }
+
+        // watchAdvertisements + connect on first advertisement
+        const abortController = new AbortController();
+
+        target.addEventListener('advertisementreceived', async () => {
+            abortController.abort(); // stop watching
+            console.log(`[AutoConnect] Found "${savedName}", connecting…`);
+            try {
+                await connectToDevice(target);
+                console.log('[AutoConnect] Printer connected successfully!');
+                if (window.showToast) window.showToast(`Printer "${savedName}" terhubung otomatis!`, 'success');
+            } catch (err) {
+                console.error('[AutoConnect] Connection failed:', err);
+            }
+        }, { once: true });
+
+        await target.watchAdvertisements({ signal: abortController.signal });
+
+        // Timeout: stop watching after 8 seconds to avoid hanging
+        setTimeout(() => {
+            if (!isConnected) {
+                abortController.abort();
+                console.log('[AutoConnect] Timeout – printer not found in range.');
+            }
+        }, 8000);
+
+    } catch (error) {
+        console.error('[AutoConnect] Error:', error);
+    }
+}
+
+// ── Modal Initialization ────────────────────────────────────────
+
+/**
+ * Bind all event listeners inside the Printer Settings modal.
+ * Called once at app startup.
+ */
+export function initPrinterModal() {
+    const modal = document.getElementById('modal-printer');
+    const btnConnect = document.getElementById('btn-printer-connect');
+    const btnDisconnect = document.getElementById('btn-printer-disconnect');
+    const chkAutoConnect = document.getElementById('chk-auto-connect-printer');
+
+    // Restore checkbox state
+    if (chkAutoConnect) {
+        chkAutoConnect.checked = localStorage.getItem('pos_auto_connect_printer') === 'true';
+        chkAutoConnect.addEventListener('change', () => {
+            localStorage.setItem('pos_auto_connect_printer', chkAutoConnect.checked ? 'true' : 'false');
+            // If turning off, also clear saved device name
+            if (!chkAutoConnect.checked) {
+                localStorage.removeItem('pos_printer_device_name');
+            }
+        });
+    }
+
+    if (btnConnect) {
+        btnConnect.addEventListener('click', async () => {
+            await connectPrinter();
+            // If user connected and auto-connect is ON, ensure device name is saved
+            if (isConnected && chkAutoConnect && chkAutoConnect.checked && bluetoothDevice?.name) {
+                localStorage.setItem('pos_printer_device_name', bluetoothDevice.name);
+            }
+        });
+    }
+
+    if (btnDisconnect) {
+        btnDisconnect.addEventListener('click', () => {
+            disconnectPrinter();
+        });
+    }
+}
+
+/**
+ * Open the printer settings modal.
+ */
+export function openPrinterModal() {
+    const modal = document.getElementById('modal-printer');
+    if (modal) {
+        // Sync UI state before showing
+        updatePrinterStatusUI(isConnected, bluetoothDevice?.name || '');
+        modal.classList.remove('hidden');
+    }
 }
 
 // Kick cash drawer open immediately via Bluetooth
