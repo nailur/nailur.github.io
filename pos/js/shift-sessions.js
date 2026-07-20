@@ -51,9 +51,9 @@ export async function loadShiftSessions() {
 
         data.forEach(session => {
             const tr = document.createElement('tr');
-            
-            const openedDate = session.opened_at ? new Date(session.opened_at).toLocaleString('id-ID') : '-';
-            const closedDate = session.closed_at ? new Date(session.closed_at).toLocaleString('id-ID') : '-';
+            const dateOptions = { timeZone: 'Asia/Jakarta' };
+            const openedDate = session.opened_at ? new Date(session.opened_at).toLocaleString('id-ID', dateOptions) : '-';
+            const closedDate = session.closed_at ? new Date(session.closed_at).toLocaleString('id-ID', dateOptions) : '-';
             
             const openerName = session.opener?.name || 'Unknown';
             const closerName = session.closer?.name || '-';
