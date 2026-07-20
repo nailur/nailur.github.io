@@ -214,26 +214,59 @@ window.loadDashboard = async function() {
         });
     }
 
-    // Merge deposit dates into allDates for a unified x-axis
+    // Fetch raw sales for Cash vs Total revenue calculation
+    const { data: salesData } = await supabase
+        .from('sales')
+        .select('created_at, total_amount, payment_method, status')
+        .eq('outlet_id', activeOutletId)
+        .gte('created_at', startOfDay)
+        .lte('created_at', endOfDay)
+        .neq('status', 'cancelled');
+
+    const salesByDate = {};
+    if (salesData) {
+        salesData.forEach(s => {
+            const dateStr = new Date(s.created_at);
+            dateStr.setMinutes(dateStr.getMinutes() - dateStr.getTimezoneOffset());
+            const localDate = dateStr.toISOString().split('T')[0];
+            
+            if (!salesByDate[localDate]) {
+                salesByDate[localDate] = { total: 0, cash: 0 };
+            }
+            const amt = Number(s.total_amount);
+            salesByDate[localDate].total += amt;
+            if (s.payment_method === 'Tunai') {
+                salesByDate[localDate].cash += amt;
+            }
+        });
+    }
+
+    // Merge dates for a unified x-axis
     const compDatesSet = new Set(allDates);
     Object.keys(depositsByDate).forEach(d => compDatesSet.add(d));
+    Object.keys(salesByDate).forEach(d => compDatesSet.add(d));
     const compDates = Array.from(compDatesSet).sort();
     const compLabels = compDates.map(d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
 
-    // Net Revenue = Revenue - Expenses (per day)
-    const netRevenueData = compDates.map(d => {
-        const rev = dailyData.find(x => x.date === d);
-        const revenue = rev ? Number(rev.revenue) : 0;
+    // Net Revenue Total = Total Revenue - Expenses (per day)
+    const netTotalRevenueData = compDates.map(d => {
+        const rev = salesByDate[d] ? salesByDate[d].total : 0;
         const expense = expensesByDate[d] || 0;
-        return revenue - expense;
+        return rev - expense;
+    });
+
+    // Net Revenue Cash = Cash Revenue - Expenses (per day)
+    const netCashRevenueData = compDates.map(d => {
+        const cash = salesByDate[d] ? salesByDate[d].cash : 0;
+        const expense = expensesByDate[d] || 0;
+        return cash - expense;
     });
 
     const depositData = compDates.map(d => depositsByDate[d] || 0);
 
-    // Calculate difference (selisih) per day: Setoran - Omset Bersih
-    // Jika Setoran < Omset -> Negatif (Kurang Setor, akan berwarna merah)
-    // Jika Setoran > Omset -> Positif (Kelebihan Setor, akan berwarna kuning)
-    const selisihData = compDates.map((d, i) => depositData[i] - netRevenueData[i]);
+    // Calculate difference (selisih) per day: Setoran - Omset Bersih Cash
+    // Jika Setoran < Omset Cash -> Negatif (Kurang Setor, akan berwarna merah)
+    const selisihData = compDates.map((d, i) => depositData[i] - netCashRevenueData[i]);
 
     if (window.depositCompChartInst) window.depositCompChartInst.destroy();
     window.depositCompChartInst = new Chart(depCtx.getContext('2d'), {
@@ -242,9 +275,16 @@ window.loadDashboard = async function() {
             labels: compLabels,
             datasets: [
                 {
-                    label: 'Omset Bersih (Rp)',
-                    data: netRevenueData,
+                    label: 'Omset Bersih Seluruh (Rp)',
+                    data: netTotalRevenueData,
                     backgroundColor: '#10b981',
+                    borderRadius: 4,
+                    datalabels: { ...whiteLabelOpts }
+                },
+                {
+                    label: 'Omset Bersih Cash (Rp)',
+                    data: netCashRevenueData,
+                    backgroundColor: '#3b82f6',
                     borderRadius: 4,
                     datalabels: { ...whiteLabelOpts }
                 },
@@ -290,7 +330,7 @@ window.loadDashboard = async function() {
     if (!profitCtx) return;
 
     // Total Omset Bersih for the selected period
-    const totalNetRevenue = netRevenueData.reduce((sum, val) => sum + val, 0);
+    const totalNetRevenue = netTotalRevenueData.reduce((sum, val) => sum + val, 0);
     const THRESHOLD = 3500000;
 
     let ownerShare = 0;
