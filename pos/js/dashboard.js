@@ -1,6 +1,7 @@
 window.revenueChartInst = null;
 window.productChartInst = null;
 window.depositCompChartInst = null;
+window.profitSharingChartInst = null;
 
 window.loadDashboard = async function() {
     if (!activeOutletId) return;
@@ -278,6 +279,75 @@ window.loadDashboard = async function() {
             scales: {
                 y: {
                     beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // ── Chart 3: Estimasi Bagi Hasil ────────────────────────
+
+    const profitCtx = document.getElementById('profitSharingChart');
+    if (!profitCtx) return;
+
+    // Total Omset Bersih for the selected period
+    const totalNetRevenue = netRevenueData.reduce((sum, val) => sum + val, 0);
+    const THRESHOLD = 3500000;
+
+    let ownerShare = 0;
+    let investorShare = 0;
+
+    if (totalNetRevenue > THRESHOLD) {
+        // Tahap 1: Up to Threshold
+        ownerShare += THRESHOLD * 0.8;
+        investorShare += THRESHOLD * 0.2;
+        
+        // Tahap 2: Above Threshold
+        const remaining = totalNetRevenue - THRESHOLD;
+        ownerShare += remaining * 0.75;
+        investorShare += remaining * 0.25;
+    } else {
+        // Tahap 1 only
+        ownerShare += totalNetRevenue * 0.8;
+        investorShare += totalNetRevenue * 0.2;
+    }
+
+    if (window.profitSharingChartInst) window.profitSharingChartInst.destroy();
+    window.profitSharingChartInst = new Chart(profitCtx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Bisnis Owner', 'Investor'],
+            datasets: [{
+                data: [Math.round(ownerShare), Math.round(investorShare)],
+                backgroundColor: ['#3b82f6', '#f59e0b'],
+                borderWidth: 0,
+                datalabels: {
+                    color: '#ffffff',
+                    font: { weight: 'bold', size: 12 },
+                    formatter: (val, ctx) => {
+                        const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                        if (total === 0) return '';
+                        const percentage = Math.round((val / total) * 100) + '%';
+                        return `Rp ${val.toLocaleString('id-ID')}\n(${percentage})`;
+                    },
+                    align: 'center'
+                }
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: 'var(--text-main)' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.label}: Rp ${context.raw.toLocaleString('id-ID')}`;
+                        }
+                    }
                 }
             }
         }

@@ -778,6 +778,7 @@ function setupEventListeners() {
                 if (window.revenueChartInst) { window.revenueChartInst.destroy(); window.revenueChartInst = null; }
                 if (window.productChartInst) { window.productChartInst.destroy(); window.productChartInst = null; }
                 if (window.depositCompChartInst) { window.depositCompChartInst.destroy(); window.depositCompChartInst = null; }
+                if (window.profitSharingChartInst) { window.profitSharingChartInst.destroy(); window.profitSharingChartInst = null; }
             }
 
             const viewContainer = document.getElementById(viewId);
@@ -811,6 +812,7 @@ function setupEventListeners() {
                 if (window.revenueChartInst) { window.revenueChartInst.destroy(); window.revenueChartInst = null; }
                 if (window.productChartInst) { window.productChartInst.destroy(); window.productChartInst = null; }
                 if (window.depositCompChartInst) { window.depositCompChartInst.destroy(); window.depositCompChartInst = null; }
+                if (window.profitSharingChartInst) { window.profitSharingChartInst.destroy(); window.profitSharingChartInst = null; }
             }
 
             document.querySelectorAll('.pos-nav-btn').forEach(b => b.classList.remove('active'));
