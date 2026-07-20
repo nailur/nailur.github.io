@@ -80,8 +80,8 @@ export async function handleOpenShift(e) {
 
         currentShiftSession = data;
         
-        // Auto clock in only if they haven't clocked in at all today
-        if (!currentAttendanceRecord) {
+        // Auto clock in if no attendance record exists, or if the previous one is already completed (clock_out filled)
+        if (!currentAttendanceRecord || currentAttendanceRecord.clock_out) {
             await handleClockIn();
         }
 
