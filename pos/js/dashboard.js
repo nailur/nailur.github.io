@@ -1,5 +1,6 @@
 window.revenueChartInst = null;
 window.productChartInst = null;
+window.depositCompChartInst = null;
 
 window.loadDashboard = async function() {
     if (!activeOutletId) return;
@@ -144,6 +145,15 @@ window.loadDashboard = async function() {
     
     const expData = allDates.map(d => expensesByDate[d] || 0);
 
+    // Shared datalabel options (white text for readability)
+    const whiteLabelOpts = {
+        color: '#ffffff',
+        font: { weight: 'bold', size: 11 },
+        anchor: 'center',
+        align: 'center',
+        formatter: (val) => val > 0 ? val.toLocaleString('id-ID') : ''
+    };
+
     if (window.revenueChartInst) window.revenueChartInst.destroy();
     window.revenueChartInst = new Chart(revCtx.getContext('2d'), {
         type: 'bar',
@@ -154,13 +164,15 @@ window.loadDashboard = async function() {
                     label: 'Pendapatan (Rp)',
                     data: revData,
                     backgroundColor: '#6366f1',
-                    borderRadius: 4
+                    borderRadius: 4,
+                    datalabels: whiteLabelOpts
                 },
                 {
                     label: 'Pengeluaran (Rp)',
                     data: expData,
                     backgroundColor: '#ef4444',
-                    borderRadius: 4
+                    borderRadius: 4,
+                    datalabels: whiteLabelOpts
                 }
             ]
         },
@@ -175,5 +187,92 @@ window.loadDashboard = async function() {
         }
     });
 
+    // ── Chart 2: Omset Bersih vs Setoran ────────────────────────
+
+    const depCtx = document.getElementById('depositComparisonChart');
+    if (!depCtx) return;
+
+    // Fetch deposits within date range
+    const { data: depositsData } = await supabase
+        .from('sales_deposits')
+        .select('deposit_date, amount')
+        .eq('outlet_id', activeOutletId)
+        .gte('deposit_date', startDate.value)
+        .lte('deposit_date', endDate.value);
+
+    const depositsByDate = {};
+    if (depositsData) {
+        depositsData.forEach(d => {
+            depositsByDate[d.deposit_date] = (depositsByDate[d.deposit_date] || 0) + Number(d.amount);
+        });
+    }
+
+    // Merge deposit dates into allDates for a unified x-axis
+    const compDatesSet = new Set(allDates);
+    Object.keys(depositsByDate).forEach(d => compDatesSet.add(d));
+    const compDates = Array.from(compDatesSet).sort();
+    const compLabels = compDates.map(d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
+
+    // Net Revenue = Revenue - Expenses (per day)
+    const netRevenueData = compDates.map(d => {
+        const rev = dailyData.find(x => x.date === d);
+        const revenue = rev ? Number(rev.revenue) : 0;
+        const expense = expensesByDate[d] || 0;
+        return revenue - expense;
+    });
+
+    const depositData = compDates.map(d => depositsByDate[d] || 0);
+
+    // Calculate difference (selisih) per day
+    const selisihData = compDates.map((d, i) => netRevenueData[i] - depositData[i]);
+
+    if (window.depositCompChartInst) window.depositCompChartInst.destroy();
+    window.depositCompChartInst = new Chart(depCtx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: compLabels,
+            datasets: [
+                {
+                    label: 'Omset Bersih (Rp)',
+                    data: netRevenueData,
+                    backgroundColor: '#10b981',
+                    borderRadius: 4,
+                    datalabels: { ...whiteLabelOpts }
+                },
+                {
+                    label: 'Setoran (Rp)',
+                    data: depositData,
+                    backgroundColor: '#8b5cf6',
+                    borderRadius: 4,
+                    datalabels: { ...whiteLabelOpts }
+                },
+                {
+                    label: 'Selisih (Rp)',
+                    data: selisihData,
+                    backgroundColor: selisihData.map(v => v === 0 ? '#6b7280' : v > 0 ? '#f59e0b' : '#ef4444'),
+                    borderRadius: 4,
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { weight: 'bold', size: 11 },
+                        anchor: 'center',
+                        align: 'center',
+                        formatter: (val) => {
+                            if (val === 0) return '✓';
+                            return (val > 0 ? '+' : '') + val.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 
 };

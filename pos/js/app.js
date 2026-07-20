@@ -777,6 +777,7 @@ function setupEventListeners() {
             if (prevTab === 'analytics-tab' && e.currentTarget.getAttribute('data-target') !== 'analytics-tab') {
                 if (window.revenueChartInst) { window.revenueChartInst.destroy(); window.revenueChartInst = null; }
                 if (window.productChartInst) { window.productChartInst.destroy(); window.productChartInst = null; }
+                if (window.depositCompChartInst) { window.depositCompChartInst.destroy(); window.depositCompChartInst = null; }
             }
 
             const viewContainer = document.getElementById(viewId);
@@ -809,6 +810,7 @@ function setupEventListeners() {
             if (prevTab === 'dashboard-tab-content' && e.currentTarget.getAttribute('data-target') !== 'dashboard-tab-content') {
                 if (window.revenueChartInst) { window.revenueChartInst.destroy(); window.revenueChartInst = null; }
                 if (window.productChartInst) { window.productChartInst.destroy(); window.productChartInst = null; }
+                if (window.depositCompChartInst) { window.depositCompChartInst.destroy(); window.depositCompChartInst = null; }
             }
 
             document.querySelectorAll('.pos-nav-btn').forEach(b => b.classList.remove('active'));
