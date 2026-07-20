@@ -216,7 +216,7 @@ window.loadDashboard = async function() {
 
     // Fetch raw sales for Cash vs Total revenue calculation
     const { data: salesData } = await supabase
-        .from('sales')
+        .from('transactions')
         .select('created_at, total_amount, payment_method, status')
         .eq('outlet_id', activeOutletId)
         .gte('created_at', startOfDay)
