@@ -130,7 +130,10 @@ export async function connectPrinter() {
 
         await connectToDevice(device);
 
-        // Save device name for auto-reconnect
+        // Save device ID and name for auto-reconnect
+        if (device.id) {
+            localStorage.setItem('pos_printer_device_id', device.id);
+        }
         if (device.name) {
             localStorage.setItem('pos_printer_device_name', device.name);
         }
@@ -187,46 +190,36 @@ export async function autoConnectPrinter() {
         return;
     }
 
+    const savedId = localStorage.getItem('pos_printer_device_id');
     const savedName = localStorage.getItem('pos_printer_device_name');
-    if (!savedName) {
-        console.log('[AutoConnect] No saved printer name found.');
+    
+    if (!savedId && !savedName) {
+        console.log('[AutoConnect] No saved printer ID or name found.');
         return;
     }
 
     try {
-        console.log(`[AutoConnect] Looking for "${savedName}" …`);
+        console.log(`[AutoConnect] Looking for saved device...`);
         const devices = await navigator.bluetooth.getDevices();
-        const target = devices.find(d => d.name === savedName);
+        
+        let target = null;
+        if (savedId) target = devices.find(d => d.id === savedId);
+        if (!target && savedName) target = devices.find(d => d.name === savedName);
 
         if (!target) {
             console.log('[AutoConnect] Saved device not found among permitted devices.');
             return;
         }
 
-        // watchAdvertisements + connect on first advertisement
-        const abortController = new AbortController();
-
-        target.addEventListener('advertisementreceived', async () => {
-            abortController.abort(); // stop watching
-            console.log(`[AutoConnect] Found "${savedName}", connecting…`);
-            try {
-                await connectToDevice(target);
-                console.log('[AutoConnect] Printer connected successfully!');
-                if (window.showToast) window.showToast(`Printer "${savedName}" terhubung otomatis!`, 'success');
-            } catch (err) {
-                console.error('[AutoConnect] Connection failed:', err);
-            }
-        }, { once: true });
-
-        await target.watchAdvertisements({ signal: abortController.signal });
-
-        // Timeout: stop watching after 8 seconds to avoid hanging
-        setTimeout(() => {
-            if (!isConnected) {
-                abortController.abort();
-                console.log('[AutoConnect] Timeout – printer not found in range.');
-            }
-        }, 8000);
+        console.log(`[AutoConnect] Found "${target.name || 'Printer'}", connecting directly...`);
+        try {
+            await connectToDevice(target);
+            console.log('[AutoConnect] Printer connected successfully!');
+            if (window.showToast) window.showToast(`Printer "${target.name || 'Bluetooth'}" terhubung otomatis!`, 'success');
+        } catch (err) {
+            console.error('[AutoConnect] Direct connection failed:', err);
+            // Some printers need to be woken up or we might need to wait, but usually a direct connect works best.
+        }
 
     } catch (error) {
         console.error('[AutoConnect] Error:', error);
@@ -250,9 +243,10 @@ export function initPrinterModal() {
         chkAutoConnect.checked = localStorage.getItem('pos_auto_connect_printer') === 'true';
         chkAutoConnect.addEventListener('change', () => {
             localStorage.setItem('pos_auto_connect_printer', chkAutoConnect.checked ? 'true' : 'false');
-            // If turning off, also clear saved device name
+            // If turning off, also clear saved device data
             if (!chkAutoConnect.checked) {
                 localStorage.removeItem('pos_printer_device_name');
+                localStorage.removeItem('pos_printer_device_id');
             }
         });
     }
@@ -260,9 +254,10 @@ export function initPrinterModal() {
     if (btnConnect) {
         btnConnect.addEventListener('click', async () => {
             await connectPrinter();
-            // If user connected and auto-connect is ON, ensure device name is saved
-            if (isConnected && chkAutoConnect && chkAutoConnect.checked && bluetoothDevice?.name) {
-                localStorage.setItem('pos_printer_device_name', bluetoothDevice.name);
+            // If user connected and auto-connect is ON, ensure device data is saved
+            if (isConnected && chkAutoConnect && chkAutoConnect.checked && bluetoothDevice) {
+                if (bluetoothDevice.id) localStorage.setItem('pos_printer_device_id', bluetoothDevice.id);
+                if (bluetoothDevice.name) localStorage.setItem('pos_printer_device_name', bluetoothDevice.name);
             }
         });
     }
