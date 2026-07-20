@@ -112,8 +112,14 @@ window.loadDashboard = async function() {
     if (window.enableTableSort) window.enableTableSort('dashboard-product-table');
 
     // Render Charts
-    const dailyData = analyticsResult.daily_revenue || [];
+    let dailyData = analyticsResult.daily_revenue || [];
     const topProducts = analyticsResult.top_products || [];
+
+    // Filter out dates that are past the selected endDate
+    // (Because get_analytics_summary only accepts p_start_date and returns all data onwards)
+    if (endDate && endDate.value) {
+        dailyData = dailyData.filter(d => d.date <= endDate.value);
+    }
 
     const revCtx = document.getElementById('revenueChart');
     if(!revCtx) return;
