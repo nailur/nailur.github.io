@@ -223,8 +223,10 @@ window.loadDashboard = async function() {
 
     const depositData = compDates.map(d => depositsByDate[d] || 0);
 
-    // Calculate difference (selisih) per day
-    const selisihData = compDates.map((d, i) => netRevenueData[i] - depositData[i]);
+    // Calculate difference (selisih) per day: Setoran - Omset Bersih
+    // Jika Setoran < Omset -> Negatif (Kurang Setor, akan berwarna merah)
+    // Jika Setoran > Omset -> Positif (Kelebihan Setor, akan berwarna kuning)
+    const selisihData = compDates.map((d, i) => depositData[i] - netRevenueData[i]);
 
     if (window.depositCompChartInst) window.depositCompChartInst.destroy();
     window.depositCompChartInst = new Chart(depCtx.getContext('2d'), {
