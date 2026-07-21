@@ -453,15 +453,13 @@ if (btnOpenMdr) {
         mdrContainer.innerHTML = paymentMethods.map(method => {
             const fee = currentFees[method] || { type: 'percent', value: 0 };
             return `
-                <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; background: var(--bg-secondary); padding: 10px; border-radius: 8px;">
-                    <label style="font-weight: bold; margin: 0;">${method}</label>
-                    <div style="display: flex; gap: 10px;">
-                        <select class="input mdr-type" data-method="${method}" style="flex: 1;">
-                            <option value="percent" ${fee.type === 'percent' ? 'selected' : ''}>Persentase (%)</option>
-                            <option value="fixed" ${fee.type === 'fixed' ? 'selected' : ''}>Nominal (Rp)</option>
-                        </select>
-                        <input type="number" class="input mdr-value" data-method="${method}" value="${fee.value}" step="any" min="0" style="flex: 2;" placeholder="0">
-                    </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                    <label style="font-weight: 600; width: 110px; flex-shrink: 0; margin: 0; font-size: 0.9rem;">${method}</label>
+                    <select class="input mdr-type" data-method="${method}" style="flex: 1; padding: 6px; font-size: 0.85rem;">
+                        <option value="percent" ${fee.type === 'percent' ? 'selected' : ''}>%</option>
+                        <option value="fixed" ${fee.type === 'fixed' ? 'selected' : ''}>Rp</option>
+                    </select>
+                    <input type="number" class="input mdr-value" data-method="${method}" value="${fee.value}" step="any" min="0" style="flex: 2; padding: 6px; font-size: 0.9rem;" placeholder="0">
                 </div>
             `;
         }).join('');
