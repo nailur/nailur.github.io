@@ -231,12 +231,23 @@ window.loadDashboard = async function() {
             const localDate = dateStr.toISOString().split('T')[0];
             
             if (!salesByDate[localDate]) {
-                salesByDate[localDate] = { total: 0, cash: 0 };
+                salesByDate[localDate] = { total: 0, cash: 0, fees: 0 };
             }
             const amt = Number(s.total_amount);
             salesByDate[localDate].total += amt;
             if (s.payment_method === 'Tunai') {
                 salesByDate[localDate].cash += amt;
+            } else {
+                // Hitung potongan MDR
+                const activeOutletObj = window.posOutletsList?.find(o => o.id === activeOutletId);
+                if (activeOutletObj && activeOutletObj.mdr_fees && activeOutletObj.mdr_fees[s.payment_method]) {
+                    const feeCfg = activeOutletObj.mdr_fees[s.payment_method];
+                    if (feeCfg.type === 'percent') {
+                        salesByDate[localDate].fees += (amt * (Number(feeCfg.value) / 100));
+                    } else if (feeCfg.type === 'fixed') {
+                        salesByDate[localDate].fees += Number(feeCfg.value);
+                    }
+                }
             }
         });
     }
@@ -248,11 +259,12 @@ window.loadDashboard = async function() {
     const compDates = Array.from(compDatesSet).sort();
     const compLabels = compDates.map(d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
 
-    // Net Revenue Total = Total Revenue - Expenses (per day)
+    // Net Revenue Total = Total Revenue - Total Fees - Expenses (per day)
     const netTotalRevenueData = compDates.map(d => {
         const rev = salesByDate[d] ? salesByDate[d].total : 0;
+        const fees = salesByDate[d] ? salesByDate[d].fees : 0;
         const expense = expensesByDate[d] || 0;
-        return rev - expense;
+        return rev - fees - expense;
     });
 
     // Net Revenue Cash = Cash Revenue - Expenses (per day)
@@ -394,3 +406,78 @@ window.loadDashboard = async function() {
     });
 
 };
+
+// ── MDR Settings Modal Logic ────────────────────────────────────────
+
+const btnOpenMdr = document.getElementById('btn-open-mdr-settings');
+const modalMdr = document.getElementById('modal-mdr');
+const formMdr = document.getElementById('form-mdr-settings');
+const mdrContainer = document.getElementById('mdr-fields-container');
+
+if (btnOpenMdr) {
+    btnOpenMdr.addEventListener('click', () => {
+        const activeOutletObj = window.posOutletsList?.find(o => o.id === window.activeOutletId);
+        if (!activeOutletObj) return window.showToast('Pilih outlet terlebih dahulu', 'error');
+
+        const currentFees = activeOutletObj.mdr_fees || {};
+        
+        // Exclude Tunai
+        const paymentMethods = window.ALL_PAYMENT_METHODS?.filter(m => m !== 'Tunai') || ['QRIS', 'Bank Transfer', 'Go Food', 'Grab Food', 'Shopee Food'];
+        
+        mdrContainer.innerHTML = paymentMethods.map(method => {
+            const fee = currentFees[method] || { type: 'percent', value: 0 };
+            return `
+                <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; background: var(--bg-secondary); padding: 10px; border-radius: 8px;">
+                    <label style="font-weight: bold; margin: 0;">${method}</label>
+                    <div style="display: flex; gap: 10px;">
+                        <select class="input-modern mdr-type" data-method="${method}" style="flex: 1;">
+                            <option value="percent" ${fee.type === 'percent' ? 'selected' : ''}>Persentase (%)</option>
+                            <option value="fixed" ${fee.type === 'fixed' ? 'selected' : ''}>Nominal (Rp)</option>
+                        </select>
+                        <input type="number" class="input-modern mdr-value" data-method="${method}" value="${fee.value}" step="any" min="0" style="flex: 2;" placeholder="0">
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        modalMdr.classList.remove('hidden');
+    });
+}
+
+if (formMdr) {
+    formMdr.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const newFees = {};
+        const types = formMdr.querySelectorAll('.mdr-type');
+        const values = formMdr.querySelectorAll('.mdr-value');
+        
+        for (let i = 0; i < types.length; i++) {
+            const method = types[i].dataset.method;
+            const type = types[i].value;
+            const value = Number(values[i].value) || 0;
+            
+            if (value > 0) {
+                newFees[method] = { type, value };
+            }
+        }
+
+        try {
+            const { error } = await supabase.from('outlets').update({ mdr_fees: newFees }).eq('id', window.activeOutletId);
+            if (error) throw error;
+            
+            window.showToast('Pengaturan potongan MDR berhasil disimpan', 'success');
+            modalMdr.classList.add('hidden');
+            
+            // Update local object
+            const activeOutletObj = window.posOutletsList?.find(o => o.id === window.activeOutletId);
+            if (activeOutletObj) activeOutletObj.mdr_fees = newFees;
+            
+            // Reload dashboard to apply
+            window.loadDashboard();
+        } catch (err) {
+            console.error(err);
+            window.showToast('Gagal menyimpan: ' + err.message, 'error');
+        }
+    });
+}

@@ -866,6 +866,7 @@
                         <input type="date" id="dashboard-date-start" class="input-sm">
                         <span>-</span>
                         <input type="date" id="dashboard-date-end" class="input-sm">
+                        <button class="btn btn-secondary" id="btn-open-mdr-settings" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-gear"></i> Potongan MDR</button>
                     </div>
                 </div>
 
@@ -2233,6 +2234,28 @@
             </form>
         </div>
     </div>
+    <!-- ======================= -->
+    <!-- MODAL MDR SETTINGS      -->
+    <!-- ======================= -->
+    <div id="modal-mdr" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 500px; width: 95%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;"><i class="ph ph-gear"></i> Pengaturan Potongan (MDR)</h3>
+                <button class="btn btn-icon" data-close="modal-mdr"><i class="ph ph-x"></i></button>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">Atur biaya potongan (Merchant Discount Rate) untuk setiap metode pembayaran agar Omset Bersih lebih akurat.</p>
+            <form id="form-mdr-settings">
+                <div id="mdr-fields-container" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                    <!-- Injected dynamically by dashboard.js -->
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn" data-close="modal-mdr">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Main App Script (Load as module) -->
     <script type="module" src="./js/app.js"></script>
 </body>
