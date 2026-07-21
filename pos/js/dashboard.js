@@ -430,11 +430,11 @@ if (btnOpenMdr) {
                 <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; background: var(--bg-secondary); padding: 10px; border-radius: 8px;">
                     <label style="font-weight: bold; margin: 0;">${method}</label>
                     <div style="display: flex; gap: 10px;">
-                        <select class="input-modern mdr-type" data-method="${method}" style="flex: 1;">
+                        <select class="input mdr-type" data-method="${method}" style="flex: 1;">
                             <option value="percent" ${fee.type === 'percent' ? 'selected' : ''}>Persentase (%)</option>
                             <option value="fixed" ${fee.type === 'fixed' ? 'selected' : ''}>Nominal (Rp)</option>
                         </select>
-                        <input type="number" class="input-modern mdr-value" data-method="${method}" value="${fee.value}" step="any" min="0" style="flex: 2;" placeholder="0">
+                        <input type="number" class="input mdr-value" data-method="${method}" value="${fee.value}" step="any" min="0" style="flex: 2;" placeholder="0">
                     </div>
                 </div>
             `;
