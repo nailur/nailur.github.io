@@ -231,24 +231,34 @@ window.loadDashboard = async function() {
             const localDate = dateStr.toISOString().split('T')[0];
             
             if (!salesByDate[localDate]) {
-                salesByDate[localDate] = { total: 0, cash: 0, fees: 0 };
+                salesByDate[localDate] = { total: 0, cash: 0, fees: 0, methodNet: {} };
             }
             const amt = Number(s.total_amount);
             salesByDate[localDate].total += amt;
             if (s.payment_method === 'Tunai') {
                 salesByDate[localDate].cash += amt;
-            } else {
+            }
+            
+            let methodFee = 0;
+            if (s.payment_method !== 'Tunai') {
                 // Hitung potongan MDR
                 const activeOutletObj = window.posOutletsList?.find(o => o.id === activeOutletId);
                 if (activeOutletObj && activeOutletObj.mdr_fees && activeOutletObj.mdr_fees[s.payment_method]) {
                     const feeCfg = activeOutletObj.mdr_fees[s.payment_method];
                     if (feeCfg.type === 'percent') {
-                        salesByDate[localDate].fees += (amt * (Number(feeCfg.value) / 100));
+                        methodFee = (amt * (Number(feeCfg.value) / 100));
                     } else if (feeCfg.type === 'fixed') {
-                        salesByDate[localDate].fees += Number(feeCfg.value);
+                        methodFee = Number(feeCfg.value);
                     }
                 }
             }
+            salesByDate[localDate].fees += methodFee;
+            
+            const netForThisTx = amt - methodFee;
+            if (!salesByDate[localDate].methodNet[s.payment_method]) {
+                salesByDate[localDate].methodNet[s.payment_method] = 0;
+            }
+            salesByDate[localDate].methodNet[s.payment_method] += netForThisTx;
         });
     }
 
@@ -280,50 +290,66 @@ window.loadDashboard = async function() {
     // Jika Setoran < Omset Cash -> Negatif (Kurang Setor, akan berwarna merah)
     const selisihData = compDates.map((d, i) => depositData[i] - netCashRevenueData[i]);
 
+    const baseDatasets = [
+        {
+            label: 'Omset Bersih Seluruh (Rp)',
+            data: netTotalRevenueData,
+            backgroundColor: '#10b981',
+            borderRadius: 4,
+            datalabels: { ...whiteLabelOpts }
+        },
+        {
+            label: 'Omset Bersih Cash (Rp)',
+            data: netCashRevenueData,
+            backgroundColor: '#3b82f6',
+            borderRadius: 4,
+            datalabels: { ...whiteLabelOpts }
+        }
+    ];
+
+    const extraMethods = ['Go Food', 'Grab Food', 'Shopee Food', 'QRIS', 'Bank Transfer'];
+    const extraColors = ['#e11d48', '#16a34a', '#ea580c', '#0284c7', '#7c3aed']; // Vibrant identifiable colors
+    
+    extraMethods.forEach((method, i) => {
+        const methodData = compDates.map(d => {
+            return salesByDate[d] && salesByDate[d].methodNet[method] ? salesByDate[d].methodNet[method] : 0;
+        });
+        
+        // Only include dataset if there is actually data in the selected period to avoid extreme clutter
+        if (methodData.some(val => val > 0)) {
+            baseDatasets.push({
+                label: `Omset Bersih ${method} (Rp)`,
+                data: methodData,
+                backgroundColor: extraColors[i % extraColors.length],
+                borderRadius: 4,
+                datalabels: { ...whiteLabelOpts }
+            });
+        }
+    });
+
+    baseDatasets.push(
+        {
+            label: 'Setoran (Rp)',
+            data: depositData,
+            backgroundColor: '#8b5cf6',
+            borderRadius: 4,
+            datalabels: { ...whiteLabelOpts }
+        },
+        {
+            label: 'Selisih (Rp)',
+            data: selisihData,
+            backgroundColor: selisihData.map(v => v < 0 ? '#ef4444' : '#f59e0b'),
+            borderRadius: 4,
+            datalabels: { ...whiteLabelOpts }
+        }
+    );
+
     if (window.depositCompChartInst) window.depositCompChartInst.destroy();
     window.depositCompChartInst = new Chart(depCtx.getContext('2d'), {
         type: 'bar',
         data: {
             labels: compLabels,
-            datasets: [
-                {
-                    label: 'Omset Bersih Seluruh (Rp)',
-                    data: netTotalRevenueData,
-                    backgroundColor: '#10b981',
-                    borderRadius: 4,
-                    datalabels: { ...whiteLabelOpts }
-                },
-                {
-                    label: 'Omset Bersih Cash (Rp)',
-                    data: netCashRevenueData,
-                    backgroundColor: '#3b82f6',
-                    borderRadius: 4,
-                    datalabels: { ...whiteLabelOpts }
-                },
-                {
-                    label: 'Setoran (Rp)',
-                    data: depositData,
-                    backgroundColor: '#8b5cf6',
-                    borderRadius: 4,
-                    datalabels: { ...whiteLabelOpts }
-                },
-                {
-                    label: 'Selisih (Rp)',
-                    data: selisihData,
-                    backgroundColor: selisihData.map(v => v === 0 ? '#6b7280' : v > 0 ? '#f59e0b' : '#ef4444'),
-                    borderRadius: 4,
-                    datalabels: {
-                        color: '#ffffff',
-                        font: { weight: 'bold', size: 11 },
-                        anchor: 'center',
-                        align: 'center',
-                        formatter: (val) => {
-                            if (val === 0) return '✓';
-                            return (val > 0 ? '+' : '') + val.toLocaleString('id-ID');
-                        }
-                    }
-                }
-            ]
+            datasets: baseDatasets
         },
         options: {
             responsive: true,
