@@ -246,9 +246,9 @@ window.loadDashboard = async function() {
                 if (activeOutletObj && activeOutletObj.mdr_fees && activeOutletObj.mdr_fees[s.payment_method]) {
                     const feeCfg = activeOutletObj.mdr_fees[s.payment_method];
                     if (feeCfg.type === 'percent') {
-                        methodFee = (amt * (Number(feeCfg.value) / 100));
+                        methodFee = Math.round(amt * (Number(feeCfg.value) / 100));
                     } else if (feeCfg.type === 'fixed') {
-                        methodFee = Number(feeCfg.value);
+                        methodFee = Math.round(Number(feeCfg.value));
                     }
                 }
             }

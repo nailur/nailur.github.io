@@ -176,7 +176,19 @@ function calculateTotals() {
     let discountPercent = dp ? (parseFloat(dp.value) || 0) : 0;
     let discountNominal = dn ? (parseFloat(dn.value) || 0) : 0;
     
-    let discount = (subtotal * discountPercent / 100) + discountNominal;
+    // Validasi minimal belanja (berdasarkan diskon global yang aktif)
+    const activeDiscount = getActiveDiscount();
+    if (activeDiscount && activeDiscount.payment_discounts && activeDiscount.payment_discounts.min_purchase) {
+        if (subtotal < activeDiscount.payment_discounts.min_purchase) {
+            discountPercent = 0;
+            discountNominal = 0;
+            // Opsional: bisa mereset nilai input jika dirasa perlu
+            // if (dp) dp.value = '';
+            // if (dn) dn.value = '';
+        }
+    }
+    
+    let discount = Math.round((subtotal * discountPercent / 100) + discountNominal);
     if (discount > subtotal) discount = subtotal;
     
     const afterDiscount = subtotal - discount;

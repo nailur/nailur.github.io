@@ -81,6 +81,12 @@ window.editDiscount = (id) => {
     document.getElementById('discount-end-date').value = discount.end_date;
     document.getElementById('discount-is-active').checked = discount.is_active;
     
+    if (discount.payment_discounts && discount.payment_discounts.min_purchase) {
+        document.getElementById('discount-min-purchase').value = discount.payment_discounts.min_purchase;
+    } else {
+        document.getElementById('discount-min-purchase').value = '';
+    }
+    
     renderPaymentMethodInputs(discount.payment_discounts);
     
     document.getElementById('modal-discount-title').textContent = 'Edit Diskon';
@@ -108,6 +114,7 @@ export function setupDiscountForm() {
         btnAdd.addEventListener('click', () => {
             document.getElementById('form-discount').reset();
             document.getElementById('discount-id').value = '';
+            document.getElementById('discount-min-purchase').value = '';
             document.getElementById('modal-discount-title').textContent = 'Tambah Diskon';
             
             const today = new Date().toISOString().split('T')[0];
@@ -138,6 +145,12 @@ export function setupDiscountForm() {
             
             // Gather payment method discounts
             const payment_discounts = {};
+            
+            const minPurchase = parseFloat(document.getElementById('discount-min-purchase').value);
+            if (!isNaN(minPurchase) && minPurchase > 0) {
+                payment_discounts.min_purchase = minPurchase;
+            }
+            
             paymentMethodsList.forEach(pm => {
                 const checked = document.getElementById(`pm-check-${pm.replace(/\s+/g, '-')}`).checked;
                 if (checked) {
