@@ -180,8 +180,15 @@ function calculateTotals() {
     if (activeDiscount && activeDiscount.payment_discounts && activeDiscount.payment_discounts[method]) {
         const methodDiscount = activeDiscount.payment_discounts[method];
         if (methodDiscount.min_purchase && subtotal < methodDiscount.min_purchase) {
+            if ((discountPercent > 0 || discountNominal > 0) && (dp && dp.value != '0' || dn && dn.value != '0')) {
+                import('./app.js').then(module => {
+                    module.showToast(`Minimal belanja Rp ${methodDiscount.min_purchase.toLocaleString('id-ID')} untuk diskon ${method} belum tercapai.`, 'warning');
+                });
+            }
             discountPercent = 0;
             discountNominal = 0;
+            if (dp) dp.value = '';
+            if (dn) dn.value = '';
         }
     }
     
