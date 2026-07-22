@@ -6,7 +6,6 @@ import { saveOfflineTransaction } from './offline.js';
 import { getCurrentProfile } from './auth.js';
 import { printReceiptNative } from './printer.js';
 import { showModifierSelection } from './modifiers.js';
-import { getActiveDiscount } from './discounts.js';
 
 export let cart = [];
 try {
@@ -177,6 +176,7 @@ function calculateTotals() {
     let discountNominal = dn ? (parseFloat(dn.value) || 0) : 0;
     
     // Validasi minimal belanja per payment method
+    const { getActiveDiscount } = await import('./discounts.js');
     const activeDiscount = getActiveDiscount();
     if (activeDiscount && activeDiscount.payment_discounts && activeDiscount.payment_discounts[method]) {
         const methodDiscount = activeDiscount.payment_discounts[method];

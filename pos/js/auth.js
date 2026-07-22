@@ -1,8 +1,8 @@
 import { supabase } from './supabase.js';
 import { showToast } from './app.js';
 
-let currentUser = null;
-let currentProfile = null;
+var currentUser = null;
+var currentProfile = null;
 
 export async function checkSession() {
     const { data: { session } } = await supabase.auth.getSession();
