@@ -176,8 +176,7 @@ function calculateTotals() {
     let discountNominal = dn ? (parseFloat(dn.value) || 0) : 0;
     
     // Validasi minimal belanja per payment method
-    const { getActiveDiscount } = await import('./discounts.js');
-    const activeDiscount = getActiveDiscount();
+    const activeDiscount = window.getActiveDiscount ? window.getActiveDiscount() : null;
     if (activeDiscount && activeDiscount.payment_discounts && activeDiscount.payment_discounts[method]) {
         const methodDiscount = activeDiscount.payment_discounts[method];
         if (methodDiscount.min_purchase && subtotal < methodDiscount.min_purchase) {

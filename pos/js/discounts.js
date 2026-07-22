@@ -248,3 +248,4 @@ export function getActiveDiscount() {
     const active = discounts.find(d => d.is_active && d.start_date <= today && d.end_date >= today);
     return active;
 }
+window.getActiveDiscount = getActiveDiscount;
