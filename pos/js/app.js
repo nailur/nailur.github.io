@@ -23,7 +23,7 @@ import { loadInventory, handleSaveInventory, loadStockPostings } from './invento
 import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMaster, openAddExpenseMaster } from './expenses.js';
 import { loadDeposits, handleSaveDeposit } from './deposits.js';
 import { loadShifts, handleSaveShift, openShiftModal } from './shift-master.js';
-import { loadDiscounts, setupDiscountForm } from './discounts.js';
+import { loadDiscounts, setupDiscountForm } from './discounts.js?v=20260722_3';
 
 window.loadInventoryForManagement = function() { loadInventory(); loadStockPostings(); };
 window.loadExpensesForManagement = loadExpenses;
