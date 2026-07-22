@@ -81,12 +81,6 @@ window.editDiscount = (id) => {
     document.getElementById('discount-end-date').value = discount.end_date;
     document.getElementById('discount-is-active').checked = discount.is_active;
     
-    if (discount.payment_discounts && discount.payment_discounts.min_purchase) {
-        document.getElementById('discount-min-purchase').value = discount.payment_discounts.min_purchase;
-    } else {
-        document.getElementById('discount-min-purchase').value = '';
-    }
-    
     renderPaymentMethodInputs(discount.payment_discounts);
     
     document.getElementById('modal-discount-title').textContent = 'Edit Diskon';
@@ -114,7 +108,6 @@ export function setupDiscountForm() {
         btnAdd.addEventListener('click', () => {
             document.getElementById('form-discount').reset();
             document.getElementById('discount-id').value = '';
-            document.getElementById('discount-min-purchase').value = '';
             document.getElementById('modal-discount-title').textContent = 'Tambah Diskon';
             
             const today = new Date().toISOString().split('T')[0];
@@ -146,17 +139,13 @@ export function setupDiscountForm() {
             // Gather payment method discounts
             const payment_discounts = {};
             
-            const minPurchase = parseFloat(document.getElementById('discount-min-purchase').value);
-            if (!isNaN(minPurchase) && minPurchase > 0) {
-                payment_discounts.min_purchase = minPurchase;
-            }
-            
             paymentMethodsList.forEach(pm => {
                 const checked = document.getElementById(`pm-check-${pm.replace(/\s+/g, '-')}`).checked;
                 if (checked) {
                     const pct = parseFloat(document.getElementById(`pm-pct-${pm.replace(/\s+/g, '-')}`).value) || 0;
                     const nom = parseFloat(document.getElementById(`pm-nom-${pm.replace(/\s+/g, '-')}`).value) || 0;
-                    payment_discounts[pm] = { percent: pct, nominal: nom };
+                    const minp = parseFloat(document.getElementById(`pm-min-${pm.replace(/\s+/g, '-')}`).value) || 0;
+                    payment_discounts[pm] = { percent: pct, nominal: nom, min_purchase: minp };
                 }
             });
             
@@ -212,6 +201,7 @@ function renderPaymentMethodInputs(existingData = {}) {
         const isChecked = !!data;
         const pct = data ? data.percent : 0;
         const nom = data ? data.nominal : 0;
+        const minp = data ? (data.min_purchase || 0) : 0;
         
         return `
             <div style="border: 1px solid var(--border); padding: 10px; border-radius: 8px;">
@@ -219,7 +209,11 @@ function renderPaymentMethodInputs(existingData = {}) {
                     <input type="checkbox" id="pm-check-${idSafe}" ${isChecked ? 'checked' : ''} onchange="toggleDiscountInputs('${idSafe}')">
                     <label for="pm-check-${idSafe}" style="margin: 0; font-weight: 600;">${pm}</label>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; ${isChecked ? '' : 'opacity: 0.5; pointer-events: none;'}" id="pm-inputs-${idSafe}">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; ${isChecked ? '' : 'opacity: 0.5; pointer-events: none;'}" id="pm-inputs-${idSafe}">
+                    <div>
+                        <label style="font-size: 0.8rem;">Min. Belanja</label>
+                        <input type="number" id="pm-min-${idSafe}" value="${minp}" min="0" style="width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px;" placeholder="0">
+                    </div>
                     <div>
                         <label style="font-size: 0.8rem;">Diskon (%)</label>
                         <input type="number" id="pm-pct-${idSafe}" value="${pct}" min="0" max="100" style="width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px;">
@@ -243,6 +237,7 @@ window.toggleDiscountInputs = (idSafe) => {
     } else {
         inputsDiv.style.opacity = '0.5';
         inputsDiv.style.pointerEvents = 'none';
+        document.getElementById(`pm-min-${idSafe}`).value = 0;
         document.getElementById(`pm-pct-${idSafe}`).value = 0;
         document.getElementById(`pm-nom-${idSafe}`).value = 0;
     }

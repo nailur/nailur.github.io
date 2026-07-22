@@ -176,15 +176,13 @@ function calculateTotals() {
     let discountPercent = dp ? (parseFloat(dp.value) || 0) : 0;
     let discountNominal = dn ? (parseFloat(dn.value) || 0) : 0;
     
-    // Validasi minimal belanja (berdasarkan diskon global yang aktif)
+    // Validasi minimal belanja per payment method
     const activeDiscount = getActiveDiscount();
-    if (activeDiscount && activeDiscount.payment_discounts && activeDiscount.payment_discounts.min_purchase) {
-        if (subtotal < activeDiscount.payment_discounts.min_purchase) {
+    if (activeDiscount && activeDiscount.payment_discounts && activeDiscount.payment_discounts[method]) {
+        const methodDiscount = activeDiscount.payment_discounts[method];
+        if (methodDiscount.min_purchase && subtotal < methodDiscount.min_purchase) {
             discountPercent = 0;
             discountNominal = 0;
-            // Opsional: bisa mereset nilai input jika dirasa perlu
-            // if (dp) dp.value = '';
-            // if (dn) dn.value = '';
         }
     }
     
