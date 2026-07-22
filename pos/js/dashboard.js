@@ -246,9 +246,9 @@ window.loadDashboard = async function() {
                 if (activeOutletObj && activeOutletObj.mdr_fees && activeOutletObj.mdr_fees[s.payment_method]) {
                     const feeCfg = activeOutletObj.mdr_fees[s.payment_method];
                     if (feeCfg.type === 'percent') {
-                        methodFee = Math.ceil(amt * (Number(feeCfg.value) / 100));
+                        methodFee = amt * (Number(feeCfg.value) / 100);
                     } else if (feeCfg.type === 'fixed') {
-                        methodFee = Math.ceil(Number(feeCfg.value));
+                        methodFee = Number(feeCfg.value);
                     }
                 }
             }
@@ -274,21 +274,21 @@ window.loadDashboard = async function() {
         const rev = salesByDate[d] ? salesByDate[d].total : 0;
         const fees = salesByDate[d] ? salesByDate[d].fees : 0;
         const expense = expensesByDate[d] || 0;
-        return rev - fees - expense;
+        return Math.round(rev - fees - expense);
     });
 
     // Net Revenue Cash = Cash Revenue - Expenses (per day)
     const netCashRevenueData = compDates.map(d => {
         const cash = salesByDate[d] ? salesByDate[d].cash : 0;
         const expense = expensesByDate[d] || 0;
-        return cash - expense;
+        return Math.round(cash - expense);
     });
 
     const depositData = compDates.map(d => depositsByDate[d] || 0);
 
     // Calculate difference (selisih) per day: Setoran - Omset Bersih Cash
     // Jika Setoran < Omset Cash -> Negatif (Kurang Setor, akan berwarna merah)
-    const selisihData = compDates.map((d, i) => depositData[i] - netCashRevenueData[i]);
+    const selisihData = compDates.map((d, i) => Math.round(depositData[i] - netCashRevenueData[i]));
 
     const baseDatasets = [
         {
@@ -312,7 +312,7 @@ window.loadDashboard = async function() {
     
     extraMethods.forEach((method, i) => {
         const methodData = compDates.map(d => {
-            return salesByDate[d] && salesByDate[d].methodNet[method] ? salesByDate[d].methodNet[method] : 0;
+            return Math.round(salesByDate[d] && salesByDate[d].methodNet[method] ? salesByDate[d].methodNet[method] : 0);
         });
         
         // Only include dataset if there is actually data in the selected period to avoid extreme clutter
