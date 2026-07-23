@@ -12,3 +12,8 @@ These rules apply to any AI Agent working in this repository.
 
 ## 2. Directory Structure Awareness
 Do not blindly search for files. Rely on the Directory Structure Map located in the respective `TechStack.md` (`goldapp/docs/TechStack.md` or `pos/docs/TechStack.md`) to quickly locate UI components, logic scripts, and serverless functions.
+
+## 3. PWA Cache Versioning
+**CRITICAL**: Both NTGold and NTPOS are Progressive Web Apps (PWA) with offline support. Every time you make changes to HTML, CSS, or JS files, you MUST update the `CACHE_NAME` version in the respective Service Worker file to ensure users receive the latest changes without stale cache issues.
+- For NTGold App: Update `goldapp/sw.js` (e.g., `goldapp-v5` -> `goldapp-v6`).
+- For NTPOS App: Update `pos/sw.js` (e.g., `pos-cache-v39` -> `pos-cache-v40`).
