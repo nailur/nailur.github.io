@@ -1335,8 +1335,10 @@ window.exportAttendanceExcel = async () => {
         }
 
         const { data: sessionData } = await sessionQuery;
+        
+        let shiftExportRows = [];
         if (sessionData && sessionData.length > 0) {
-            const shiftExportRows = sessionData.map(session => {
+            shiftExportRows = sessionData.map(session => {
                 const dateOptions = { timeZone: 'Asia/Jakarta' };
                 const openedDate = session.opened_at ? new Date(session.opened_at).toLocaleString('id-ID', dateOptions) : '-';
                 const closedDate = session.closed_at ? new Date(session.closed_at).toLocaleString('id-ID', dateOptions) : '-';
@@ -1367,19 +1369,31 @@ window.exportAttendanceExcel = async () => {
                     'Selisih': diffFormatted
                 };
             });
-            const sessionWorksheet = window.XLSX.utils.json_to_sheet(shiftExportRows);
-            sessionWorksheet['!cols'] = [
-                { wch: 25 }, // Waktu Buka
-                { wch: 25 }, // Waktu Tutup
-                { wch: 20 }, // Buka Oleh
-                { wch: 20 }, // Tutup Oleh
-                { wch: 10 }, // Status
-                { wch: 15 }, // Saldo Awal
-                { wch: 15 }, // Saldo Akhir
-                { wch: 15 }  // Selisih
-            ];
-            window.XLSX.utils.book_append_sheet(workbook, sessionWorksheet, "Riwayat Shift");
         }
+        
+        // Always append the sheet even if empty, so headers show up
+        const sessionWorksheet = window.XLSX.utils.json_to_sheet(shiftExportRows.length > 0 ? shiftExportRows : [{
+            'Waktu Buka': '-',
+            'Waktu Tutup': '-',
+            'Buka Oleh': '-',
+            'Tutup Oleh': '-',
+            'Status': '-',
+            'Saldo Awal': '-',
+            'Saldo Akhir': '-',
+            'Selisih': '-'
+        }]);
+        
+        sessionWorksheet['!cols'] = [
+            { wch: 25 }, // Waktu Buka
+            { wch: 25 }, // Waktu Tutup
+            { wch: 20 }, // Buka Oleh
+            { wch: 20 }, // Tutup Oleh
+            { wch: 10 }, // Status
+            { wch: 15 }, // Saldo Awal
+            { wch: 15 }, // Saldo Akhir
+            { wch: 15 }  // Selisih
+        ];
+        window.XLSX.utils.book_append_sheet(workbook, sessionWorksheet, "Riwayat Shift");
 
         let filenameDate = startDate === endDate ? startDate : `${startDate}_to_${endDate}`;
         window.XLSX.writeFile(workbook, `Laporan_Absensi_${filenameDate}.xlsx`);
