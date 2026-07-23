@@ -1246,7 +1246,7 @@ window.exportAttendanceExcel = async () => {
         
         let query = supabase
             .from('attendances')
-            .select('*, profiles!inner(name, email, role, branch_id), shifts(name)')
+            .select('*, profiles!inner(name, email, role, branch_id), shifts(name, start_time, end_time)')
             .gte('clock_in', sd.toISOString())
             .lte('clock_in', ed.toISOString())
             .order('clock_in', { ascending: false });
@@ -1278,15 +1278,24 @@ window.exportAttendanceExcel = async () => {
             return str.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
         };
 
-        const exportRows = data.map(record => ({
-            'Tanggal': new Date(record.clock_in).toLocaleDateString('id-ID'),
-            'Nama Pegawai': record.profiles?.name || record.profiles?.email || '-',
-            'Role': formatTitleCase(record.profiles?.role),
-            'Shift': formatTitleCase(record.shift_name_snapshot || record.shifts?.name),
-            'Jam Masuk': record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
-            'Jam Pulang': record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
-            'Status': record.clock_out ? 'Selesai' : 'Belum Pulang'
-        }));
+        const exportRows = data.map(record => {
+            let shiftTimeDisplay = record.shift_time_snapshot;
+            if (!shiftTimeDisplay && record.shifts) {
+                shiftTimeDisplay = `${record.shifts.start_time?.slice(0,5) || ''} - ${record.shifts.end_time?.slice(0,5) || ''}`;
+            }
+            if (!shiftTimeDisplay || shiftTimeDisplay === ' - ') shiftTimeDisplay = '-';
+
+            return {
+                'Tanggal': new Date(record.clock_in).toLocaleDateString('id-ID'),
+                'Nama Pegawai': record.profiles?.name || record.profiles?.email || '-',
+                'Role': formatTitleCase(record.profiles?.role),
+                'Shift': formatTitleCase(record.shift_name_snapshot || record.shifts?.name),
+                'Jam Shift': shiftTimeDisplay,
+                'Jam Masuk': record.clock_in ? new Date(record.clock_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
+                'Jam Pulang': record.clock_out ? new Date(record.clock_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : '-',
+                'Status': record.clock_out ? 'Selesai' : 'Belum Pulang'
+            };
+        });
 
         const worksheet = window.XLSX.utils.json_to_sheet(exportRows);
         const workbook = window.XLSX.utils.book_new();
@@ -1296,12 +1305,81 @@ window.exportAttendanceExcel = async () => {
             { wch: 15 }, // Tanggal
             { wch: 25 }, // Nama
             { wch: 15 }, // Role
-            { wch: 20 }, // Cabang
+            { wch: 20 }, // Shift
+            { wch: 15 }, // Jam Shift
             { wch: 15 }, // In
             { wch: 15 }, // Out
             { wch: 10 }  // Status
         ];
         worksheet['!cols'] = colWidths;
+
+        // Fetch shift sessions
+        let sessionQuery = supabase
+            .from('shift_sessions')
+            .select(`
+                id, 
+                status, 
+                starting_cash, 
+                ending_cash, 
+                opened_at, 
+                closed_at,
+                opener:profiles!shift_sessions_user_id_fkey(name),
+                closer:profiles!shift_sessions_closed_by_fkey(name)
+            `)
+            .gte('opened_at', sd.toISOString())
+            .lte('opened_at', ed.toISOString())
+            .order('opened_at', { ascending: false });
+
+        if (window.activeOutletId) {
+            sessionQuery = sessionQuery.eq('outlet_id', window.activeOutletId);
+        }
+
+        const { data: sessionData } = await sessionQuery;
+        if (sessionData && sessionData.length > 0) {
+            const shiftExportRows = sessionData.map(session => {
+                const dateOptions = { timeZone: 'Asia/Jakarta' };
+                const openedDate = session.opened_at ? new Date(session.opened_at).toLocaleString('id-ID', dateOptions) : '-';
+                const closedDate = session.closed_at ? new Date(session.closed_at).toLocaleString('id-ID', dateOptions) : '-';
+                
+                const openerName = session.opener?.name || 'Unknown';
+                const closerName = session.closer?.name || '-';
+                
+                const startingCash = parseFloat(session.starting_cash || 0);
+                const endingCash = session.ending_cash !== null ? parseFloat(session.ending_cash) : 0;
+                const difference = endingCash - startingCash;
+
+                let statusStr = session.status === 'open' ? 'Open' : 'Closed';
+                let diffFormatted = '-';
+                if (session.status === 'closed') {
+                    if (difference > 0) diffFormatted = `+Rp ${difference.toLocaleString('id-ID')}`;
+                    else if (difference < 0) diffFormatted = `- Rp ${Math.abs(difference).toLocaleString('id-ID')}`;
+                    else diffFormatted = 'Rp 0';
+                }
+
+                return {
+                    'Waktu Buka': openedDate,
+                    'Waktu Tutup': closedDate,
+                    'Buka Oleh': openerName,
+                    'Tutup Oleh': closerName,
+                    'Status': statusStr,
+                    'Saldo Awal': startingCash,
+                    'Saldo Akhir': session.status === 'closed' ? endingCash : '-',
+                    'Selisih': diffFormatted
+                };
+            });
+            const sessionWorksheet = window.XLSX.utils.json_to_sheet(shiftExportRows);
+            sessionWorksheet['!cols'] = [
+                { wch: 25 }, // Waktu Buka
+                { wch: 25 }, // Waktu Tutup
+                { wch: 20 }, // Buka Oleh
+                { wch: 20 }, // Tutup Oleh
+                { wch: 10 }, // Status
+                { wch: 15 }, // Saldo Awal
+                { wch: 15 }, // Saldo Akhir
+                { wch: 15 }  // Selisih
+            ];
+            window.XLSX.utils.book_append_sheet(workbook, sessionWorksheet, "Riwayat Shift");
+        }
 
         let filenameDate = startDate === endDate ? startDate : `${startDate}_to_${endDate}`;
         window.XLSX.writeFile(workbook, `Laporan_Absensi_${filenameDate}.xlsx`);

@@ -120,14 +120,16 @@ export async function handleClockIn() {
     const now = new Date().toISOString();
 
     let shiftName = 'Default Shift';
+    let shiftTime = '-';
     if (profile.shift_id) {
         const { data: shiftData } = await supabase
             .from('shifts')
-            .select('name')
+            .select('name, start_time, end_time')
             .eq('id', profile.shift_id)
             .single();
         if (shiftData) {
             shiftName = shiftData.name;
+            shiftTime = `${shiftData.start_time.slice(0,5)} - ${shiftData.end_time.slice(0,5)}`;
         }
     }
 
@@ -138,6 +140,7 @@ export async function handleClockIn() {
             outlet_id: activeOutletId,
             shift_id: profile.shift_id || null,
             shift_name_snapshot: shiftName,
+            shift_time_snapshot: shiftTime,
             clock_in: now
         }])
         .select('id, clock_in, clock_out')
@@ -214,7 +217,7 @@ export async function loadAttendanceHistory() {
     
     let query = supabase
         .from('attendances')
-        .select('*, profiles!inner(name, role, branch_id), shifts(name)')
+        .select('*, profiles!inner(name, role, branch_id), shifts(name, start_time, end_time)')
         .gte('clock_in', startDate.toISOString())
         .lte('clock_in', endDate.toISOString())
         .order('clock_in', { ascending: false });
@@ -252,6 +255,11 @@ export async function loadAttendanceHistory() {
         const timeIn = new Date(record.clock_in).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', ...tz });
         const timeOut = record.clock_out ? new Date(record.clock_out).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', ...tz }) : '-';
         const shiftNameDisplay = record.shift_name_snapshot || record.shifts?.name || '-';
+        let shiftTimeDisplay = record.shift_time_snapshot;
+        if (!shiftTimeDisplay && record.shifts) {
+            shiftTimeDisplay = `${record.shifts.start_time?.slice(0,5) || ''} - ${record.shifts.end_time?.slice(0,5) || ''}`;
+        }
+        if (!shiftTimeDisplay || shiftTimeDisplay === ' - ') shiftTimeDisplay = '-';
         
         const formatTitleCase = (str) => {
             if (!str) return '-';
@@ -269,6 +277,7 @@ export async function loadAttendanceHistory() {
                 <td>${escapeHtml(record.profiles?.name || 'Kasir')}</td>
                 <td>${escapeHtml(roleName)}</td>
                 <td>${escapeHtml(shiftName)}</td>
+                <td>${escapeHtml(shiftTimeDisplay)}</td>
                 <td>${timeIn}</td>
                 <td>${timeOut}</td>
                 <td>${statusBadge}</td>

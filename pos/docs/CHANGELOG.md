@@ -12,3 +12,6 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
   - Memberikan skrip `UPDATE` sementara untuk memulihkan data shift historis yang waktunya terpotong/lompat di antarmuka.
 - **Documentation**: Memperbarui skema `pos/docs/Database_ERD.md` untuk memasukkan tabel `shift_sessions` secara rinci dan menegaskan penggunaan tipe data `timestamptz` yang bersifat kritikal untuk kolom `opened_at` dan `closed_at`.
 - **Documentation**: Membuat file `CHANGELOG.md` ini untuk menyimpan riwayat teknis khusus untuk modul aplikasi POS.
+- **Feature (Attendance)**: Menambahkan snapshot jam shift (`shift_time_snapshot`) pada tabel presensi antarmuka.
+- **Feature (Attendance)**: Menampilkan kolom Jam Shift pada antarmuka tabel Riwayat Absensi.
+- **Feature (Export)**: Memperbarui fungsi ekspor ke Excel untuk menyertakan data Jam Shift pada absensi, serta menambahkan sheet baru untuk data Riwayat Sesi Shift.

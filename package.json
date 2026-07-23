@@ -10,7 +10,7 @@
     "parse5": "7.1.2"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.93.3",
+    "@supabase/supabase-js": "^2.110.8",
     "bcryptjs": "^2.4.3",
     "cheerio": "^1.2.0",
     "jimp": "^0.22.10",
