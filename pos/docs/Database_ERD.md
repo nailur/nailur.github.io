@@ -129,17 +129,19 @@ erDiagram
 | `notes` | `text` |  Nullable |
 | `created_at` | `timestamptz` |  |
 
-### Table `cash_drawer_sessions`
+### Table `shift_sessions` (formerly `cash_drawer_sessions`)
 | Name | Type | Constraints |
 |------|------|-------------|
 | `id` | `uuid` | Primary |
 | `outlet_id` | `uuid` |  Nullable |
-| `profile_id` | `uuid` |  Nullable |
+| `user_id` | `uuid` |  Nullable |
 | `shift_id` | `uuid` |  Nullable |
 | `starting_cash` | `numeric` |  |
-| `start_time` | `timestamptz` |  |
-| `end_time` | `timestamptz` |  Nullable |
+| `ending_cash` | `numeric` |  Nullable |
+| `opened_at` | `timestamptz` |  CRITICAL: Must use `timestamptz` |
+| `closed_at` | `timestamptz` |  CRITICAL: Must use `timestamptz` |
 | `status` | `text` |  |
+| `closed_by` | `uuid` |  Nullable |
 | `created_at` | `timestamptz` |  |
 
 ### Table `inventory_items` & `inventory_categories`
