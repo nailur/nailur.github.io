@@ -63,6 +63,25 @@ export async function handleOpenShift(e) {
     const profile = getCurrentProfile();
 
     try {
+        // Cek apakah user sudah punya sesi shift yang masih open
+        const { data: existingSession, error: checkError } = await supabase
+            .from('shift_sessions')
+            .select('id, opened_at')
+            .eq('outlet_id', activeOutletId)
+            .eq('user_id', profile.id)
+            .eq('status', 'open')
+            .maybeSingle();
+
+        if (checkError) throw checkError;
+
+        if (existingSession) {
+            const openedTime = new Date(existingSession.opened_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+            showToast(`Anda masih memiliki sesi shift yang aktif (dibuka sejak ${openedTime}). Tutup sesi tersebut terlebih dahulu.`, 'error');
+            document.getElementById('modal-open-shift').classList.add('hidden');
+            document.getElementById('form-open-shift').reset();
+            return;
+        }
+
         // Create new session
         const { data, error } = await supabase
             .from('shift_sessions')

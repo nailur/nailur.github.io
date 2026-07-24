@@ -5,6 +5,11 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 ## [Unreleased]
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
+### 2026-07-24
+- **Bugfix (`shift.js`)**: Menambahkan validasi di `handleOpenShift()` — sebelum membuat sesi baru, sistem kini mengecek apakah user sudah memiliki sesi `open` di outlet yang sama. Jika ada, proses dibatalkan dan ditampilkan pesan error dengan waktu sesi yang masih aktif. Ini mencegah terbentuknya sesi "orphan" yang tidak bisa ditutup.
+- **Bugfix (`shift-sessions.js`)**: Memperbaiki filter tanggal pada `loadShiftSessions()`. String `YYYY-MM-DD` dari input date sebelumnya diinterpretasikan sebagai UTC midnight oleh browser, menyebabkan filter bergeser 7 jam (WIB offset). Perbaikan: menggunakan `new Date(date + 'T00:00:00')` agar diinterpretasikan sebagai local time (WIB).
+- **PWA**: Update `CACHE_NAME` dari `pos-cache-v40` ke `pos-cache-v41`.
+
 ### 2026-07-23
 - **Database (Bugfix)**: Mengidentifikasi dan memandu perbaikan anomali pada tabel `shift_sessions` di Supabase terkait zona waktu.
   - Menemukan bahwa kolom `opened_at` dan `closed_at` secara tidak sengaja terkonfigurasi sebagai `timestamp` tanpa timezone, menyebabkan bentrok ketika dikombinasikan dengan server Supabase yang menggunakan zona waktu UTC. Hal ini menyebabkan selisih perhitungan yang tampak melompat 7-14 jam di *frontend*.

@@ -29,9 +29,9 @@ export async function loadShiftSessions() {
             .order('opened_at', { ascending: false });
 
         if (startDate && endDate) {
-            const startObj = new Date(startDate);
+            const startObj = new Date(startDate + 'T00:00:00');
             startObj.setHours(0, 0, 0, 0);
-            const endObj = new Date(endDate);
+            const endObj = new Date(endDate + 'T00:00:00');
             endObj.setHours(23, 59, 59, 999);
 
             query = query.gte('opened_at', startObj.toISOString())
