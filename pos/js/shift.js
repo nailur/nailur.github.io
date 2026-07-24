@@ -83,6 +83,9 @@ export async function handleOpenShift(e) {
         }
 
         // Create new session
+        // IMPORTANT: opened_at must be set explicitly from the client (UTC ISO string)
+        // to avoid timezone mismatch with Supabase server default now() which may use +07 offset.
+        const openedAt = new Date().toISOString();
         const { data, error } = await supabase
             .from('shift_sessions')
             .insert([{
@@ -90,7 +93,8 @@ export async function handleOpenShift(e) {
                 user_id: profile.id,
                 shift_id: profile.shift_id,
                 status: 'open',
-                starting_cash: startingCash
+                starting_cash: startingCash,
+                opened_at: openedAt
             }])
             .select()
             .single();
