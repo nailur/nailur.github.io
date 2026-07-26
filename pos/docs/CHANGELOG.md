@@ -9,12 +9,15 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 - **Feature (`dashboard.js`, `index.html`)**: Menambahkan tombol "Export Excel" pada Action Bar Dashboard untuk mengunduh laporan keuangan harian/periode dalam format `.xlsx` dengan tepat 2 Sheet menggunakan library SheetJS:
   - `Sheet 1: Pendapatan & Pengeluaran`: Menampilkan rincian harian Pendapatan Kotor (Omzet), Pengeluaran Operasional, Net (Pendapatan - Pengeluaran), dan baris TOTAL.
   - `Sheet 2: Omset Bersih Payment Method`: Menampilkan rincian harian Omset Bersih per Metode Pembayaran (Tunai, QRIS, Bank Transfer, Go Food, Grab Food, Shopee Food) serta Total Hari Ini dan baris TOTAL.
+- **Feature (`dashboard.js`, `index.html`)**:
+  - Menambahkan grafik khusus **Omset Bersih per Metode Pembayaran (`methodNetChart`)** untuk menampilkan grafik tren harian pendapatan setelah dikurangi potongan MDR per metode pembayaran (Tunai, QRIS, Go Food, Grab Food, Shopee Food, Bank Transfer).
+  - Menambahkan kolom **Omset Bersih (Net MDR)** pada Tabel Metode Pembayaran di atas dasbor agar pengguna dapat melihat langsung perbandingan Omzet Bruto vs Net setelah potongan MDR untuk setiap metode pembayaran.
 - **UI/UX Enhancement (`dashboard.js`, `index.html`)**:
   - Menyederhanakan grafik **Omset Bersih vs Setoran (`depositComparisonChart`)** menjadi 4 batang utama per hari (`Omset Bersih Seluruh`, `Omset Bersih Cash`, `Setoran`, dan `Selisih`) agar tidak bertumpuk dan mudah dibaca.
   - Menambahkan grafik **Jam Sibuk Transaksi (`peakHoursChart`)** untuk menampilkan distribusi jumlah transaksi dan omzet berdasarkan jam (`00:00 - 23:00`).
   - Menambahkan panel ringkasan **Estimasi Laba Bersih (`#net-profit-card`)** yang diposisikan berdampingan (*side-by-side*) dalam grid 2 kolom dengan grafik *Estimasi Bagi Hasil*.
   - Menambahkan batas tinggi scroll (`max-height: 350px; overflow-y: auto;`) pada tabel *Metode Pembayaran* dan *Produk Terjual*.
-- **PWA (`sw.js`)**: Update `CACHE_NAME` dari `pos-cache-v42` ke `pos-cache-v43`.
+- **PWA (`sw.js`)**: Update `CACHE_NAME` ke `pos-cache-v44`.
 
 ### 2026-07-25
 - **Bugfix (`shift.js`)**: Memperbaiki anomali perbedaan waktu antara `opened_at` (Waktu Buka Shift) dan `clock_in` (Waktu Absen). Sebelumnya `opened_at` tidak di-set secara eksplisit dari *client*, sehingga menggunakan nilai *default* `now()` dari *server* Supabase yang memicu ketidakcocokan zona waktu. Perbaikan: `opened_at` kini diatur secara eksplisit dari browser menggunakan `new Date().toISOString()` (UTC) sehingga akan selalu sinkron dengan waktu absen (`clock_in`).

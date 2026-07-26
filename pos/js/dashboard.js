@@ -1,6 +1,7 @@
 window.revenueChartInst = null;
 window.productChartInst = null;
 window.depositCompChartInst = null;
+window.methodNetChartInst = null;
 window.profitSharingChartInst = null;
 window.peakHoursChartInst = null;
 
@@ -86,16 +87,30 @@ window.loadDashboard = async function() {
         methodSummary[key] = { count: Number(m.count), total: Number(m.total) };
     });
 
+    const activeOutletObj = window.posOutletsList?.find(o => o.id === activeOutletId);
     const tbodyMethod = document.querySelector('#dashboard-method-table tbody');
     tbodyMethod.innerHTML = Object.entries(methodSummary)
         .sort((a,b) => b[1].total - a[1].total)
-        .map(([method, stats]) => `
-        <tr>
-            <td>${window.escapeHtml(method)}</td>
-            <td style="text-align: right;">${stats.count}</td>
-            <td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td>
-        </tr>
-    `).join('');
+        .map(([method, stats]) => {
+            let methodFee = 0;
+            if (method !== 'Tunai' && activeOutletObj && activeOutletObj.mdr_fees && activeOutletObj.mdr_fees[method]) {
+                const feeCfg = activeOutletObj.mdr_fees[method];
+                if (feeCfg.type === 'percent') {
+                    methodFee = stats.total * (Number(feeCfg.value) / 100);
+                } else if (feeCfg.type === 'fixed') {
+                    methodFee = stats.count * Number(feeCfg.value);
+                }
+            }
+            const netAmount = Math.round(stats.total - methodFee);
+            return `
+            <tr>
+                <td>${window.escapeHtml(method)}</td>
+                <td style="text-align: right;">${stats.count}</td>
+                <td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td>
+                <td style="text-align: right; color: #10b981; font-weight: 600;">Rp ${netAmount.toLocaleString('id-ID')}</td>
+            </tr>
+            `;
+        }).join('');
 
     const tbodyProduct = document.querySelector('#dashboard-product-table tbody');
     if (productData.length === 0) {
@@ -342,6 +357,52 @@ window.loadDashboard = async function() {
             }
         }
     });
+
+    // ── Chart: Omset Bersih Payment Method (Setelah Potongan MDR) ─────
+    const methodNetCtx = document.getElementById('methodNetChart');
+    if (methodNetCtx) {
+        const methodNetDatasets = [];
+        const methodColors = {
+            'Tunai': '#3b82f6',
+            'QRIS': '#0284c7',
+            'Bank Transfer': '#7c3aed',
+            'Go Food': '#e11d48',
+            'Grab Food': '#16a34a',
+            'Shopee Food': '#ea580c'
+        };
+        ALL_PAYMENT_METHODS.forEach(method => {
+            const methodData = compDates.map(d => {
+                return Math.round(salesByDate[d] && salesByDate[d].methodNet[method] ? salesByDate[d].methodNet[method] : 0);
+            });
+            if (methodData.some(val => val > 0)) {
+                methodNetDatasets.push({
+                    label: `Omset Bersih ${method} (Rp)`,
+                    data: methodData,
+                    backgroundColor: methodColors[method] || '#64748b',
+                    borderRadius: 4,
+                    datalabels: { ...whiteLabelOpts }
+                });
+            }
+        });
+
+        if (window.methodNetChartInst) window.methodNetChartInst.destroy();
+        window.methodNetChartInst = new Chart(methodNetCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: compLabels,
+                datasets: methodNetDatasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
 
     // ── Chart: Jam Sibuk Transaksi (Peak Hours 00:00 - 23:00) ────────
     const peakCtx = document.getElementById('peakHoursChart');
