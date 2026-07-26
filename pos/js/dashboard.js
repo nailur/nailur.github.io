@@ -2,6 +2,7 @@ window.revenueChartInst = null;
 window.productChartInst = null;
 window.depositCompChartInst = null;
 window.profitSharingChartInst = null;
+window.peakHoursChartInst = null;
 
 window.loadDashboard = async function() {
     if (!activeOutletId) return;
@@ -307,26 +308,6 @@ window.loadDashboard = async function() {
         }
     ];
 
-    const extraMethods = ['Go Food', 'Grab Food', 'Shopee Food', 'QRIS', 'Bank Transfer'];
-    const extraColors = ['#e11d48', '#16a34a', '#ea580c', '#0284c7', '#7c3aed']; // Vibrant identifiable colors
-    
-    extraMethods.forEach((method, i) => {
-        const methodData = compDates.map(d => {
-            return Math.round(salesByDate[d] && salesByDate[d].methodNet[method] ? salesByDate[d].methodNet[method] : 0);
-        });
-        
-        // Only include dataset if there is actually data in the selected period to avoid extreme clutter
-        if (methodData.some(val => val > 0)) {
-            baseDatasets.push({
-                label: `Omset Bersih ${method} (Rp)`,
-                data: methodData,
-                backgroundColor: extraColors[i % extraColors.length],
-                borderRadius: 4,
-                datalabels: { ...whiteLabelOpts }
-            });
-        }
-    });
-
     baseDatasets.push(
         {
             label: 'Setoran (Rp)',
@@ -362,7 +343,66 @@ window.loadDashboard = async function() {
         }
     });
 
-    // ── Chart 3: Estimasi Bagi Hasil ────────────────────────
+    // ── Chart: Jam Sibuk Transaksi (Peak Hours 00:00 - 23:00) ────────
+    const peakCtx = document.getElementById('peakHoursChart');
+    if (peakCtx) {
+        const hourlyCounts = new Array(24).fill(0);
+        const hourlyRevenues = new Array(24).fill(0);
+        if (salesData) {
+            salesData.forEach(s => {
+                const dt = new Date(s.created_at);
+                const hour = dt.getHours();
+                hourlyCounts[hour] += 1;
+                hourlyRevenues[hour] += (Number(s.total_amount) || 0);
+            });
+        }
+        const hourLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+
+        if (window.peakHoursChartInst) window.peakHoursChartInst.destroy();
+        window.peakHoursChartInst = new Chart(peakCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: hourLabels,
+                datasets: [{
+                    label: 'Jumlah Transaksi (Trx)',
+                    data: hourlyCounts,
+                    backgroundColor: '#6366f1',
+                    borderRadius: 4,
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { weight: 'bold', size: 10 },
+                        formatter: (val) => val > 0 ? val : ''
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: { maxRotation: 45, minRotation: 0 }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const hr = context.dataIndex;
+                                const rev = hourlyRevenues[hr] || 0;
+                                return `Omzet: Rp ${rev.toLocaleString('id-ID')}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // ── Chart 3: Estimasi Bagi Hasil & Estimasi Laba Bersih ────────
 
     const profitCtx = document.getElementById('profitSharingChart');
     if (!profitCtx) return;
@@ -431,6 +471,58 @@ window.loadDashboard = async function() {
         }
     });
 
+    // Render Estimasi Laba Bersih Card
+    const netProfitCard = document.getElementById('net-profit-card');
+    if (netProfitCard) {
+        const totalGrossRevenue = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+        const totalFeesMDR = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.fees) || 0), 0);
+        const totalOperationalExpenses = Object.values(expensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
+        const totalNetProfit = Math.round(totalGrossRevenue - totalFeesMDR - totalOperationalExpenses);
+
+        netProfitCard.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 12px; height: 100%; justify-content: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Total Pendapatan Kotor</span>
+                    <span style="font-weight: 600; color: var(--text-main);">Rp ${totalGrossRevenue.toLocaleString('id-ID')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Potongan MDR / Fee</span>
+                    <span style="font-weight: 600; color: var(--danger);">- Rp ${totalFeesMDR.toLocaleString('id-ID')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Operasional</span>
+                    <span style="font-weight: 600; color: var(--danger);">- Rp ${totalOperationalExpenses.toLocaleString('id-ID')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 10px 12px; border-radius: 6px; margin-top: 4px;">
+                    <div>
+                        <div style="font-weight: 700; color: #10b981; font-size: 1.05rem;">ESTIMASI LABA BERSIH</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Omset Bersih sebelum Bagi Hasil</div>
+                    </div>
+                    <div style="font-size: 1.35rem; font-weight: 800; color: #10b981;">Rp ${totalNetProfit.toLocaleString('id-ID')}</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
+                    <div style="background: rgba(59, 130, 246, 0.1); padding: 8px 10px; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Bisnis Owner</div>
+                        <div style="font-weight: 700; color: #3b82f6; font-size: 0.95rem;">Rp ${Math.round(ownerShare).toLocaleString('id-ID')}</div>
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.1); padding: 8px 10px; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Investor</div>
+                        <div style="font-weight: 700; color: #f59e0b; font-size: 0.95rem;">Rp ${Math.round(investorShare).toLocaleString('id-ID')}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    window._lastDashboardData = {
+        startDate: startDate.value,
+        endDate: endDate.value,
+        compDates: compDates,
+        salesByDate: salesByDate,
+        expensesByDate: expensesByDate,
+        netTotalRevenueData: netTotalRevenueData,
+        ALL_PAYMENT_METHODS: ALL_PAYMENT_METHODS
+    };
 };
 
 // ── MDR Settings Modal Logic ────────────────────────────────────────
@@ -505,3 +597,109 @@ if (formMdr) {
         }
     });
 }
+
+// ── Export Dashboard Excel (2 Sheet) ──────────────────────────────────
+
+window.exportDashboardExcel = async function() {
+    if (!window._lastDashboardData) {
+        return window.showToast('Silakan muat data dashboard terlebih dahulu', 'error');
+    }
+    const {
+        startDate,
+        endDate,
+        compDates,
+        salesByDate,
+        expensesByDate,
+        ALL_PAYMENT_METHODS
+    } = window._lastDashboardData;
+
+    if (!window.XLSX) {
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = './assets/lib/xlsx.full.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+    if (!window.XLSX) {
+        return window.showToast('Library XLSX gagal dimuat', 'error');
+    }
+
+    // Sheet 1: Data Pendapatan Kotor dan Pengeluaran
+    const sheet1Rows = [];
+    let totalGross = 0;
+    let totalExp = 0;
+    let totalNet = 0;
+
+    compDates.forEach(d => {
+        const gross = salesByDate[d] ? Number(salesByDate[d].total || 0) : 0;
+        const exp = Number(expensesByDate[d] || 0);
+        const net = gross - exp;
+
+        totalGross += gross;
+        totalExp += exp;
+        totalNet += net;
+
+        sheet1Rows.push({
+            "Tanggal": d,
+            "Pendapatan Kotor (Rp)": gross,
+            "Pengeluaran Operasional (Rp)": exp,
+            "Net (Pendapatan - Pengeluaran) (Rp)": net
+        });
+    });
+
+    sheet1Rows.push({
+        "Tanggal": "TOTAL",
+        "Pendapatan Kotor (Rp)": totalGross,
+        "Pengeluaran Operasional (Rp)": totalExp,
+        "Net (Pendapatan - Pengeluaran) (Rp)": totalNet
+    });
+
+    // Sheet 2: Data Omset Bersih dari Masing-Masing Payment Method
+    const sheet2Rows = [];
+    const methodTotals = {};
+    ALL_PAYMENT_METHODS.forEach(m => methodTotals[m] = 0);
+    let totalAllMethodsSum = 0;
+
+    compDates.forEach(d => {
+        const row = { "Tanggal": d };
+        let daySum = 0;
+        ALL_PAYMENT_METHODS.forEach(m => {
+            const val = salesByDate[d] && salesByDate[d].methodNet[m] ? Math.round(salesByDate[d].methodNet[m]) : 0;
+            row[`Omset Bersih ${m} (Rp)`] = val;
+            methodTotals[m] += val;
+            daySum += val;
+        });
+        row["Total Omset Bersih Hari Ini (Rp)"] = daySum;
+        totalAllMethodsSum += daySum;
+        sheet2Rows.push(row);
+    });
+
+    const totalRow2 = { "Tanggal": "TOTAL" };
+    ALL_PAYMENT_METHODS.forEach(m => {
+        totalRow2[`Omset Bersih ${m} (Rp)`] = methodTotals[m];
+    });
+    totalRow2["Total Omset Bersih Hari Ini (Rp)"] = totalAllMethodsSum;
+    sheet2Rows.push(totalRow2);
+
+    // Create workbook and append sheets
+    const ws1 = window.XLSX.utils.json_to_sheet(sheet1Rows);
+    const ws2 = window.XLSX.utils.json_to_sheet(sheet2Rows);
+
+    const wb = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb, ws1, "Pendapatan & Pengeluaran");
+    window.XLSX.utils.book_append_sheet(wb, ws2, "Omset Bersih Payment Method");
+
+    const filenameDate = startDate === endDate ? startDate : `${startDate}_sd_${endDate}`;
+    window.XLSX.writeFile(wb, `Laporan_Dashboard_${filenameDate}.xlsx`);
+    if (typeof window.showToast === 'function') window.showToast('Laporan Excel berhasil diunduh', 'success');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnExportExcel = document.getElementById('btn-export-dashboard-excel');
+    if (btnExportExcel) {
+        btnExportExcel.addEventListener('click', window.exportDashboardExcel);
+    }
+});
+
