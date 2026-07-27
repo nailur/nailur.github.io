@@ -1422,7 +1422,6 @@ window.loadServerInfo = async () => {
         const sbText = document.getElementById('supabase-usage-text');
         const sbFree = document.getElementById('supabase-free-text');
         const sbBar = document.getElementById('supabase-usage-bar');
-        const sbBadge = document.getElementById('supabase-status-badge');
         
         if (dbSizeData !== null && dbSizeData !== undefined) {
             const dbSizeInMb = Number((dbSizeData / (1024 * 1024)).toFixed(2));
@@ -1434,15 +1433,6 @@ window.loadServerInfo = async () => {
             if (sbBar) {
                 sbBar.style.width = `${Math.max(2, percentage)}%`;
                 sbBar.style.background = percentage > 85 ? 'var(--danger)' : (percentage > 70 ? 'var(--warning)' : '#3ECF8E');
-            }
-            if (sbBadge) {
-                if (percentage > 85) {
-                    sbBadge.innerHTML = '<span class="badge badge-danger" style="background: rgba(239,68,68,0.15); color: #EF4444; padding: 4px 8px; border-radius: 6px; font-weight: 600;">🚨 KRITIS — Segera Upgrade / Arsip Data</span>';
-                } else if (percentage > 70) {
-                    sbBadge.innerHTML = '<span class="badge badge-warning" style="background: rgba(245,158,11,0.15); color: #F59E0B; padding: 4px 8px; border-radius: 6px; font-weight: 600;">⚠️ PERHATIAN — Mendekati Limit 500 MB</span>';
-                } else {
-                    sbBadge.innerHTML = '<span class="badge badge-success" style="background: rgba(62,207,142,0.15); color: #3ECF8E; padding: 4px 8px; border-radius: 6px; font-weight: 600;">✅ AMAN — Cukup untuk >5-10 tahun</span>';
-                }
             }
         } else {
             if (sbText) sbText.textContent = "Gagal mengambil data";
@@ -1460,16 +1450,12 @@ window.loadServerInfo = async () => {
             const stText = document.getElementById('supabase-storage-text');
             const stFree = document.getElementById('supabase-storage-free');
             const stBar = document.getElementById('supabase-storage-bar');
-            const stBadge = document.getElementById('supabase-storage-badge');
 
             if (stText) stText.textContent = `${estimatedMb} MB / 1.024 MB (${pctStorage.toFixed(2)}%)`;
             if (stFree) stFree.textContent = `Sisa Kapasitas: ${freeStorageMb} MB Tersedia (${totalPhotos} foto ter-upload)`;
             if (stBar) {
                 stBar.style.width = `${Math.max(1, pctStorage)}%`;
                 stBar.style.background = '#3B82F6';
-            }
-            if (stBadge) {
-                stBadge.innerHTML = '<span class="badge badge-success" style="background: rgba(59,130,246,0.15); color: #3B82F6; padding: 4px 8px; border-radius: 6px; font-weight: 600;">✅ AMAN — Sangat Ringan (<1% limit)</span>';
             }
         } catch(e) {
             console.error("Error storage estimation:", e);
@@ -1485,16 +1471,12 @@ window.loadServerInfo = async () => {
             const mauText = document.getElementById('supabase-mau-text');
             const mauFree = document.getElementById('supabase-mau-free');
             const mauBar = document.getElementById('supabase-mau-bar');
-            const mauBadge = document.getElementById('supabase-mau-badge');
 
             if (mauText) mauText.textContent = `${totalUsers} / 50.000 User (${pctMau.toFixed(3)}%)`;
             if (mauFree) mauFree.textContent = `Sisa Kuota: ${freeMau} Akun Tersedia`;
             if (mauBar) {
                 mauBar.style.width = `${Math.max(1, pctMau)}%`;
                 mauBar.style.background = '#A855F7';
-            }
-            if (mauBadge) {
-                mauBadge.innerHTML = '<span class="badge badge-success" style="background: rgba(168,85,247,0.15); color: #A855F7; padding: 4px 8px; border-radius: 6px; font-weight: 600;">✅ AMAN — Jauh di bawah limit</span>';
             }
         } catch(e) {
             console.error("Error MAU check:", e);
@@ -1504,7 +1486,6 @@ window.loadServerInfo = async () => {
         const ghText = document.getElementById('github-usage-text');
         const ghFree = document.getElementById('github-free-text');
         const ghBar = document.getElementById('github-usage-bar');
-        const ghBadge = document.getElementById('github-status-badge');
 
         try {
             const ghRes = await fetch('https://api.github.com/repos/nailur/nailur.github.io');
@@ -1520,9 +1501,6 @@ window.loadServerInfo = async () => {
                 if (ghBar) {
                     ghBar.style.width = `${Math.max(2, percentage)}%`;
                     ghBar.style.background = percentage > 85 ? 'var(--danger)' : '#181717';
-                }
-                if (ghBadge) {
-                    ghBadge.innerHTML = '<span class="badge badge-success" style="background: rgba(24,23,23,0.15); color: #181717; padding: 4px 8px; border-radius: 6px; font-weight: 600;">✅ AMAN — Aplikasi Sangat Ringan</span>';
                 }
             } else {
                 if (ghText) ghText.textContent = "Gagal mengambil data";
