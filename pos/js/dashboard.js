@@ -128,6 +128,128 @@ window.loadDashboard = async function() {
     if (window.enableTableSort) window.enableTableSort('dashboard-method-table');
     if (window.enableTableSort) window.enableTableSort('dashboard-product-table');
 
+    // Perhitungan Kantong Ayam (1 Kantong = 9 potong: 3 Dada, 2 Paha Atas, 2 Paha Bawah, 2 Sayap)
+    let countDada = 0;
+    let countPahaAtas = 0;
+    let countPahaBawah = 0;
+    let countSayap = 0;
+    let countLainnya = 0;
+
+    productData.forEach(p => {
+        const name = (p.name || '').toLowerCase();
+        const qty = Number(p.qty) || 0;
+        let matched = false;
+
+        if (name.includes('dada')) {
+            countDada += qty;
+            matched = true;
+        }
+        if (name.includes('paha atas')) {
+            countPahaAtas += qty;
+            matched = true;
+        }
+        if (name.includes('paha bawah') || (name.includes('paha') && !name.includes('paha atas'))) {
+            countPahaBawah += qty;
+            matched = true;
+        }
+        if (name.includes('sayap') || name.includes('wing')) {
+            countSayap += qty;
+            matched = true;
+        }
+        if (!matched && (name.includes('ayam') || name.includes('chicken'))) {
+            countLainnya += qty;
+        }
+    });
+
+    const reqDada = Math.ceil(countDada / 3);
+    const reqPahaAtas = Math.ceil(countPahaAtas / 2);
+    const reqPahaBawah = Math.ceil(countPahaBawah / 2);
+    const reqSayap = Math.ceil(countSayap / 2);
+    const totalBagsOpened = Math.max(reqDada, reqPahaAtas, reqPahaBawah, reqSayap);
+
+    const sisaDada = Math.max(0, (totalBagsOpened * 3) - countDada);
+    const sisaPahaAtas = Math.max(0, (totalBagsOpened * 2) - countPahaAtas);
+    const sisaPahaBawah = Math.max(0, (totalBagsOpened * 2) - countPahaBawah);
+    const sisaSayap = Math.max(0, (totalBagsOpened * 2) - countSayap);
+
+    const totalPieces = countDada + countPahaAtas + countPahaBawah + countSayap + countLainnya;
+    const equivBags = (totalPieces / 9).toFixed(1);
+
+    const chickenCardEl = document.getElementById('chicken-bag-card');
+    if (chickenCardEl) {
+        chickenCardEl.innerHTML = `
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                <div>
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: var(--primary);">
+                        <i class="ph ph-bag" style="font-size: 1.4rem;"></i> Estimasi Kantong Ayam Dibuka
+                    </h3>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">1 Kantong = 9 potong (3 Dada, 2 Paha Atas, 2 Paha Bawah, 2 Sayap)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Potong Terjual</div>
+                        <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">${totalPieces} pcs <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">(${equivBags} ktg ekivalen)</span></div>
+                    </div>
+                    <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); padding: 8px 16px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #10b981; font-weight: 600; text-transform: uppercase;">Kantong Dibuka</div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #10b981;">${totalBagsOpened} <span style="font-size: 0.9rem; font-weight: 600;">Kantong</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px;">
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: 700; font-size: 0.95rem;">Dada</span>
+                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">3 pcs / ktg</span>
+                    </div>
+                    <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countDada} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqDada} ktg</strong></span>
+                        <span>Sisa Kantong: <strong style="color: ${sisaDada > 0 ? '#10b981' : 'var(--text-main)'};">${sisaDada} pcs</strong></span>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: 700; font-size: 0.95rem;">Paha Atas</span>
+                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / ktg</span>
+                    </div>
+                    <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countPahaAtas} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaAtas} ktg</strong></span>
+                        <span>Sisa Kantong: <strong style="color: ${sisaPahaAtas > 0 ? '#10b981' : 'var(--text-main)'};">${sisaPahaAtas} pcs</strong></span>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: 700; font-size: 0.95rem;">Paha Bawah</span>
+                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / ktg</span>
+                    </div>
+                    <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countPahaBawah} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaBawah} ktg</strong></span>
+                        <span>Sisa Kantong: <strong style="color: ${sisaPahaBawah > 0 ? '#10b981' : 'var(--text-main)'};">${sisaPahaBawah} pcs</strong></span>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: 700; font-size: 0.95rem;">Sayap</span>
+                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / ktg</span>
+                    </div>
+                    <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countSayap} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqSayap} ktg</strong></span>
+                        <span>Sisa Kantong: <strong style="color: ${sisaSayap > 0 ? '#10b981' : 'var(--text-main)'};">${sisaSayap} pcs</strong></span>
+                    </div>
+                </div>
+            </div>
+            ${countLainnya > 0 ? `<div style="font-size: 0.8rem; color: var(--warning);"><i class="ph ph-info"></i> Terdapat ${countLainnya} potong menu olahan ayam lainnya tanpa spesifikasi bagian (Dada/Paha/Sayap).</div>` : ''}
+        `;
+    }
+
     // Render Charts
     let dailyData = analyticsResult.daily_revenue || [];
     const topProducts = analyticsResult.top_products || [];

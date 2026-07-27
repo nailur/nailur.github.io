@@ -6,11 +6,15 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
 ### 2026-07-27
+- **Feature (`dashboard.js`, `index.html`)**:
+  - Menambahkan panel/kartu analisis **Estimasi Kantong Ayam Dibuka (`#chicken-bag-card`)** di bawah tabel *Produk Terjual* pada dasbor.
+  - Menghitung otomatis estimasi jumlah kantong ayam yang dibuka berdasarkan rasio standar 1 Kantong = 9 Potong Ayam (3 Dada, 2 Paha Atas, 2 Paha Bawah, 2 Sayap).
+  - Menampilkan ringkasan **Total Potong Terjual**, **Total Kantong Dibuka (kebutuhan tertinggi per bagian)**, serta rincian penjualan, kebutuhan kantong, dan sisa stok kantong untuk masing-masing bagian (Dada, Paha Atas, Paha Bawah, Sayap).
 - **UI/UX Enhancement (`dashboard.js`, `index.html`)**:
   - Menambahkan kartu ringkasan baru **"Total Pengeluaran"** (`#dash-total-expense`) di sebelah kanan kartu *Total Batal* pada bagian atas dasbor untuk menampilkan total pengeluaran operasional outlet pada rentang tanggal yang dipilih.
   - Menghapus data/dataset **"Omset Bersih Seluruh"** dari grafik **"Omset Bersih Tunai vs Setoran"** agar grafik fokus membandingkan kas tunai bersih terhadap setoran dan selisihnya.
   - Menghapus data/dataset **"Omset Bersih Tunai"** dari grafik **"Omset Bersih Non-Tunai"** (`methodNetChart`) sehingga grafik khusus menampilkan rincian metode pembayaran selain tunai yang sudah dikurangi potongan MDR.
-- **PWA (`sw.js`)**: Update `CACHE_NAME` ke `pos-cache-v45`.
+- **PWA (`sw.js`)**: Update `CACHE_NAME` ke `pos-cache-v46`.
 
 ### 2026-07-26
 - **Feature (`dashboard.js`, `index.html`)**: Menambahkan tombol "Export Excel" pada Action Bar Dashboard untuk mengunduh laporan keuangan harian/periode dalam format `.xlsx` dengan tepat 2 Sheet menggunakan library SheetJS:
