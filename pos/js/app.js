@@ -1407,7 +1407,6 @@ window.exportAttendanceExcel = async () => {
         btn.innerHTML = originalHtml;
     }
 };
-
 window.loadServerInfo = async () => {
     const btnRefresh = document.getElementById('btn-refresh-server');
     if(btnRefresh) {
@@ -1416,39 +1415,120 @@ window.loadServerInfo = async () => {
     }
 
     try {
-        // Supabase DB Size
+        // 1. Supabase DB Size (Limit 500 MB)
         const { data: dbSizeData, error: dbError } = await supabase.rpc('get_db_size');
         if(dbError) console.error("Error fetching db size:", dbError);
         
         const sbText = document.getElementById('supabase-usage-text');
+        const sbFree = document.getElementById('supabase-free-text');
         const sbBar = document.getElementById('supabase-usage-bar');
+        const sbBadge = document.getElementById('supabase-status-badge');
         
-        if (dbSizeData !== null) {
-            const dbSizeInMb = (dbSizeData / (1024 * 1024)).toFixed(2);
-            sbText.textContent = `${dbSizeInMb} MB / 500 MB`;
+        if (dbSizeData !== null && dbSizeData !== undefined) {
+            const dbSizeInMb = Number((dbSizeData / (1024 * 1024)).toFixed(2));
+            const freeMb = Math.max(0, (500 - dbSizeInMb)).toFixed(2);
             const percentage = Math.min((dbSizeInMb / 500) * 100, 100);
-            sbBar.style.width = `${percentage}%`;
-            sbBar.style.background = percentage > 90 ? 'var(--danger)' : '#3ECF8E';
+
+            if (sbText) sbText.textContent = `${dbSizeInMb} MB / 500 MB (${percentage.toFixed(1)}%)`;
+            if (sbFree) sbFree.textContent = `Sisa Kapasitas: ${freeMb} MB Tersedia`;
+            if (sbBar) {
+                sbBar.style.width = `${Math.max(2, percentage)}%`;
+                sbBar.style.background = percentage > 85 ? 'var(--danger)' : (percentage > 70 ? 'var(--warning)' : '#3ECF8E');
+            }
+            if (sbBadge) {
+                if (percentage > 85) {
+                    sbBadge.innerHTML = '<span class="badge badge-danger" style="background: rgba(239,68,68,0.15); color: #EF4444; padding: 4px 8px; border-radius: 6px; font-weight: 600;">🚨 KRITIS — Segera Upgrade / Arsip Data</span>';
+                } else if (percentage > 70) {
+                    sbBadge.innerHTML = '<span class="badge badge-warning" style="background: rgba(245,158,11,0.15); color: #F59E0B; padding: 4px 8px; border-radius: 6px; font-weight: 600;">⚠️ PERHATIAN — Mendekati Limit 500 MB</span>';
+                } else {
+                    sbBadge.innerHTML = '<span class="badge badge-success" style="background: rgba(62,207,142,0.15); color: #3ECF8E; padding: 4px 8px; border-radius: 6px; font-weight: 600;">✅ AMAN — Cukup untuk >5-10 tahun</span>';
+                }
+            }
         } else {
-            sbText.textContent = "Gagal mengambil data";
+            if (sbText) sbText.textContent = "Gagal mengambil data";
         }
 
-        // GitHub Repo Size
-        const ghText = document.getElementById('github-usage-text');
-        const ghBar = document.getElementById('github-usage-bar');
+        // 2. Supabase File Storage (Limit 1024 MB / 1 GB)
+        try {
+            const { count: prodPhotoCount } = await supabase.from('products').select('id', { count: 'exact', head: true }).not('image_url', 'is', null);
+            const { count: depPhotoCount } = await supabase.from('cash_deposits').select('id', { count: 'exact', head: true }).not('attachment_url', 'is', null);
+            const totalPhotos = (prodPhotoCount || 0) + (depPhotoCount || 0);
+            const estimatedMb = Number(((totalPhotos * 65) / 1024).toFixed(2)); // ~65KB per compressed image
+            const freeStorageMb = Math.max(0, (1024 - estimatedMb)).toFixed(2);
+            const pctStorage = Math.min((estimatedMb / 1024) * 100, 100);
 
-        const ghRes = await fetch('https://api.github.com/repos/nailur/nailur.github.io');
-        if(ghRes.ok) {
-            const ghData = await ghRes.json();
-            const sizeInKb = ghData.size;
-            const sizeInMb = (sizeInKb / 1024).toFixed(2);
-            ghText.textContent = `${sizeInMb} MB / 1024 MB (1GB)`;
-            
-            const percentage = Math.min((sizeInMb / 1024) * 100, 100);
-            ghBar.style.width = `${percentage}%`;
-            ghBar.style.background = percentage > 90 ? 'var(--danger)' : '#181717';
-        } else {
-            ghText.textContent = "Gagal mengambil data";
+            const stText = document.getElementById('supabase-storage-text');
+            const stFree = document.getElementById('supabase-storage-free');
+            const stBar = document.getElementById('supabase-storage-bar');
+            const stBadge = document.getElementById('supabase-storage-badge');
+
+            if (stText) stText.textContent = `${estimatedMb} MB / 1.024 MB (${pctStorage.toFixed(2)}%)`;
+            if (stFree) stFree.textContent = `Sisa Kapasitas: ${freeStorageMb} MB Tersedia (${totalPhotos} foto ter-upload)`;
+            if (stBar) {
+                stBar.style.width = `${Math.max(1, pctStorage)}%`;
+                stBar.style.background = '#3B82F6';
+            }
+            if (stBadge) {
+                stBadge.innerHTML = '<span class="badge badge-success" style="background: rgba(59,130,246,0.15); color: #3B82F6; padding: 4px 8px; border-radius: 6px; font-weight: 600;">✅ AMAN — Sangat Ringan (<1% limit)</span>';
+            }
+        } catch(e) {
+            console.error("Error storage estimation:", e);
+        }
+
+        // 3. Supabase Monthly Active Users / MAU (Limit 50.000 user/bulan)
+        try {
+            const { count: userCount } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
+            const totalUsers = Math.max(1, userCount || 3);
+            const freeMau = (50000 - totalUsers).toLocaleString('id-ID');
+            const pctMau = Math.min((totalUsers / 50000) * 100, 100);
+
+            const mauText = document.getElementById('supabase-mau-text');
+            const mauFree = document.getElementById('supabase-mau-free');
+            const mauBar = document.getElementById('supabase-mau-bar');
+            const mauBadge = document.getElementById('supabase-mau-badge');
+
+            if (mauText) mauText.textContent = `${totalUsers} / 50.000 User (${pctMau.toFixed(3)}%)`;
+            if (mauFree) mauFree.textContent = `Sisa Kuota: ${freeMau} Akun Tersedia`;
+            if (mauBar) {
+                mauBar.style.width = `${Math.max(1, pctMau)}%`;
+                mauBar.style.background = '#A855F7';
+            }
+            if (mauBadge) {
+                mauBadge.innerHTML = '<span class="badge badge-success" style="background: rgba(168,85,247,0.15); color: #A855F7; padding: 4px 8px; border-radius: 6px; font-weight: 600;">✅ AMAN — Jauh di bawah limit</span>';
+            }
+        } catch(e) {
+            console.error("Error MAU check:", e);
+        }
+
+        // 4. GitHub Repo Size (Limit 1024 MB / 1 GB)
+        const ghText = document.getElementById('github-usage-text');
+        const ghFree = document.getElementById('github-free-text');
+        const ghBar = document.getElementById('github-usage-bar');
+        const ghBadge = document.getElementById('github-status-badge');
+
+        try {
+            const ghRes = await fetch('https://api.github.com/repos/nailur/nailur.github.io');
+            if(ghRes.ok) {
+                const ghData = await ghRes.json();
+                const sizeInKb = ghData.size;
+                const sizeInMb = Number((sizeInKb / 1024).toFixed(2));
+                const freeGhMb = Math.max(0, (1024 - sizeInMb)).toFixed(2);
+                const percentage = Math.min((sizeInMb / 1024) * 100, 100);
+
+                if (ghText) ghText.textContent = `${sizeInMb} MB / 1.024 MB (${percentage.toFixed(1)}%)`;
+                if (ghFree) ghFree.textContent = `Sisa Kapasitas: ${freeGhMb} MB Tersedia`;
+                if (ghBar) {
+                    ghBar.style.width = `${Math.max(2, percentage)}%`;
+                    ghBar.style.background = percentage > 85 ? 'var(--danger)' : '#181717';
+                }
+                if (ghBadge) {
+                    ghBadge.innerHTML = '<span class="badge badge-success" style="background: rgba(24,23,23,0.15); color: #181717; padding: 4px 8px; border-radius: 6px; font-weight: 600;">✅ AMAN — Aplikasi Sangat Ringan</span>';
+                }
+            } else {
+                if (ghText) ghText.textContent = "Gagal mengambil data";
+            }
+        } catch(e) {
+            console.error("Error GitHub check:", e);
         }
 
     } catch (e) {

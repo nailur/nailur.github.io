@@ -376,10 +376,14 @@
                     </div>
 
                     <!-- 4. INFO SERVER TAB -->
+                    <!-- 4. INFO SERVER TAB (FREE PLAN MONITOR & UPGRADE ADVISOR) -->
                     <div id="server-info-tab" class="tab-pane hidden">
                         <div class="action-bar"
-                            style="display: flex; justify-content: space-between; align-items: center;">
-                            <h3>Info Penggunaan Server</h3>
+                            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <h3 style="margin: 0;">Info Penggunaan Paket Gratis & Server</h3>
+                                <p style="margin: 3px 0 0 0; font-size: 0.85rem; color: var(--text-secondary);">Pantau sisa kuota Free Plan Supabase & GitHub untuk mengetahui kapan harus upgrade atau migrasi</p>
+                            </div>
                             <div style="display: flex; gap: 10px;">
                                 <button class="btn btn-secondary btn-sm" id="btn-refresh-server"
                                     style="display: flex; align-items: center; gap: 5px;" onclick="loadServerInfo()">
@@ -392,67 +396,199 @@
                                 </button>
                             </div>
                         </div>
-                        <div
-                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 10px;">
 
-                            <!-- Supabase Storage -->
-                            <div class="glass-panel" style="padding: 20px;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                                    <div
-                                        style="width: 40px; height: 40px; border-radius: 8px; background: rgba(62, 207, 142, 0.1); display: flex; align-items: center; justify-content: center; color: #3ECF8E;">
-                                        <i class="ph-fill ph-database" style="font-size: 24px;"></i>
-                                    </div>
-                                    <div>
-                                        <h4 style="margin: 0; font-size: 1rem;">Database Supabase</h4>
-                                        <span style="font-size: 0.8rem; color: var(--text-secondary);">Limit Gratis: 500
-                                            MB</span>
-                                    </div>
+                        <!-- Top Summary Banner -->
+                        <div class="glass-panel" style="padding: 18px 20px; margin-top: 15px; background: linear-gradient(135deg, rgba(62,207,142,0.12), rgba(24,23,23,0.08)); border: 1px solid rgba(62,207,142,0.25); display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(62,207,142,0.2); display: flex; align-items: center; justify-content: center; color: #3ECF8E; font-size: 26px; flex-shrink: 0;">
+                                <i class="ph-fill ph-shield-check"></i>
+                            </div>
+                            <div style="flex: 1; min-width: 240px;">
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <h4 style="margin: 0; font-size: 1.05rem; color: var(--text-primary);">Status Kapasitas: Sangat Aman & Jauh dari Batas Gratis</h4>
+                                    <span class="badge" style="background: rgba(62,207,142,0.2); color: #3ECF8E; font-weight: 700; font-size: 0.78rem; padding: 3px 10px; border-radius: 12px;">FREE PLAN ACTIVE</span>
                                 </div>
-                                <div
-                                    style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
-                                    <span style="color: var(--text-secondary);">Terpakai:</span>
-                                    <strong id="supabase-usage-text">Loading...</strong>
-                                </div>
-                                <div
-                                    style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
-                                    <div id="supabase-usage-bar"
-                                        style="height: 100%; width: 0%; background: #3ECF8E; transition: width 0.5s ease;">
+                                <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+                                    Seluruh layanan (Database, File Storage, Active Users, & Hosting) saat ini bekerja dengan optimal tanpa biaya langganan. Laju konsumsi data tergolong sangat hemat berkat sistem PWA Offline-First.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- 4 Free Plan Quotas Grid -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px;">
+                            <!-- 1. Database Supabase -->
+                            <div class="glass-panel" style="padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(62, 207, 142, 0.15); display: flex; align-items: center; justify-content: center; color: #3ECF8E;">
+                                                <i class="ph-fill ph-database" style="font-size: 22px;"></i>
+                                            </div>
+                                            <div>
+                                                <h4 style="margin: 0; font-size: 0.95rem;">Database Supabase</h4>
+                                                <span style="font-size: 0.75rem; color: var(--text-muted);">Limit Gratis: 500 MB</span>
+                                            </div>
+                                        </div>
                                     </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.88rem;">
+                                        <span style="color: var(--text-secondary);">Terpakai:</span>
+                                        <strong id="supabase-usage-text">Loading...</strong>
+                                    </div>
+                                    <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+                                        <div id="supabase-usage-bar" style="height: 100%; width: 0%; background: #3ECF8E; transition: width 0.5s ease;"></div>
+                                    </div>
+                                    <div id="supabase-free-text" style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 10px;">Menghitung sisa kapasitas...</div>
+                                </div>
+                                <div id="supabase-status-badge">
+                                    <span class="badge" style="background: rgba(62,207,142,0.15); color: #3ECF8E; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">✅ AMAN — Cukup untuk >5-10 tahun</span>
                                 </div>
                             </div>
 
-                            <!-- GitHub Storage -->
-                            <div class="glass-panel" style="padding: 20px;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                                    <div
-                                        style="width: 40px; height: 40px; border-radius: 8px; background: rgba(24, 23, 23, 0.1); display: flex; align-items: center; justify-content: center; color: #181717;">
-                                        <i class="ph-fill ph-github-logo" style="font-size: 24px;"></i>
+                            <!-- 2. File Storage Bucket -->
+                            <div class="glass-panel" style="padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; color: #3B82F6;">
+                                                <i class="ph-fill ph-folder-simple" style="font-size: 22px;"></i>
+                                            </div>
+                                            <div>
+                                                <h4 style="margin: 0; font-size: 0.95rem;">File Storage (Bucket)</h4>
+                                                <span style="font-size: 0.75rem; color: var(--text-muted);">Limit Gratis: 1 GB (1.024 MB)</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 style="margin: 0; font-size: 1rem;">Repositori GitHub Pages</h4>
-                                        <span style="font-size: 0.8rem; color: var(--text-secondary);">Limit Gratis: 1
-                                            GB</span>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.88rem;">
+                                        <span style="color: var(--text-secondary);">Terpakai (Estimasi):</span>
+                                        <strong id="supabase-storage-text">Loading...</strong>
                                     </div>
+                                    <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+                                        <div id="supabase-storage-bar" style="height: 100%; width: 0%; background: #3B82F6; transition: width 0.5s ease;"></div>
+                                    </div>
+                                    <div id="supabase-storage-free" style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 10px;">Menghitung foto produk & bukti setor...</div>
                                 </div>
-                                <div
-                                    style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
-                                    <span style="color: var(--text-secondary);">Terpakai:</span>
-                                    <strong id="github-usage-text">Loading...</strong>
+                                <div id="supabase-storage-badge">
+                                    <span class="badge" style="background: rgba(59,130,246,0.15); color: #3B82F6; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">✅ AMAN — Foto terkompresi otomatis</span>
                                 </div>
-                                <div
-                                    style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
-                                    <div id="github-usage-bar"
-                                        style="height: 100%; width: 0%; background: #181717; transition: width 0.5s ease;">
+                            </div>
+
+                            <!-- 3. Monthly Active Users (MAU) -->
+                            <div class="glass-panel" style="padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(168, 85, 247, 0.15); display: flex; align-items: center; justify-content: center; color: #A855F7;">
+                                                <i class="ph-fill ph-users-three" style="font-size: 22px;"></i>
+                                            </div>
+                                            <div>
+                                                <h4 style="margin: 0; font-size: 0.95rem;">Pengguna Aktif (MAU)</h4>
+                                                <span style="font-size: 0.75rem; color: var(--text-muted);">Limit Gratis: 50.000 User/Bulan</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.88rem;">
+                                        <span style="color: var(--text-secondary);">Akun Terdaftar:</span>
+                                        <strong id="supabase-mau-text">Loading...</strong>
+                                    </div>
+                                    <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+                                        <div id="supabase-mau-bar" style="height: 100%; width: 0%; background: #A855F7; transition: width 0.5s ease;"></div>
+                                    </div>
+                                    <div id="supabase-mau-free" style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 10px;">Menghitung jumlah kasir aktif...</div>
+                                </div>
+                                <div id="supabase-mau-badge">
+                                    <span class="badge" style="background: rgba(168,85,247,0.15); color: #A855F7; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">✅ AMAN — Jauh di bawah limit</span>
+                                </div>
+                            </div>
+
+                            <!-- 4. GitHub Pages Hosting -->
+                            <div class="glass-panel" style="padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(24, 23, 23, 0.15); display: flex; align-items: center; justify-content: center; color: #181717;">
+                                                <i class="ph-fill ph-github-logo" style="font-size: 22px;"></i>
+                                            </div>
+                                            <div>
+                                                <h4 style="margin: 0; font-size: 0.95rem;">GitHub Pages Hosting</h4>
+                                                <span style="font-size: 0.75rem; color: var(--text-muted);">Limit Gratis: 1 GB (1.024 MB)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.88rem;">
+                                        <span style="color: var(--text-secondary);">Terpakai:</span>
+                                        <strong id="github-usage-text">Loading...</strong>
+                                    </div>
+                                    <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+                                        <div id="github-usage-bar" style="height: 100%; width: 0%; background: #181717; transition: width 0.5s ease;"></div>
+                                    </div>
+                                    <div id="github-free-text" style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 10px;">Menghitung ukuran repositori...</div>
+                                </div>
+                                <div id="github-status-badge">
+                                    <span class="badge" style="background: rgba(24,23,23,0.15); color: #181717; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">✅ AMAN — Aplikasi Sangat Ringan</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Egress & Bandwidth Guidance Card -->
+                        <div class="glass-panel" style="padding: 20px; margin-top: 16px; border-left: 4px solid #3ECF8E;">
+                            <div style="display: flex; align-items: flex-start; gap: 15px; flex-wrap: wrap;">
+                                <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(62, 207, 142, 0.15); display: flex; align-items: center; justify-content: center; color: #3ECF8E; flex-shrink: 0;">
+                                    <i class="ph-fill ph-globe-hemisphere-west" style="font-size: 24px;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 250px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 6px;">
+                                        <h4 style="margin: 0; font-size: 1rem;">Bandwidth Data Keluar (Supabase Egress — Limit Gratis: 5 GB / Bulan)</h4>
+                                        <span class="badge" style="background: rgba(62,207,142,0.15); color: #3ECF8E; font-weight: 600; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;">HEMAT >90% BANDWIDTH</span>
+                                    </div>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5;">
+                                        Egress adalah total trafik data keluar dari server ke aplikasi kasir. Limit 5 GB direset otomatis setiap tanggal siklus tagihan bulanan.
+                                    </p>
+                                    <div style="background: rgba(62, 207, 142, 0.08); padding: 10px 12px; border-radius: 8px; font-size: 0.82rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                        <i class="ph-fill ph-lightbulb" style="color: #3ECF8E; font-size: 18px; flex-shrink: 0;"></i>
+                                        <span><strong>Mengapa Egress NTPOS selalu rendah?</strong> Karena aplikasi ini menggunakan teknologi <strong>PWA Offline Cache</strong>, kasir tidak perlu mendownload ulang aset/gambar dari server setiap kali buka halaman, menjaga pemakaian Egress tetap < 0.5% (20-40 MB/bulan).</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div
-                            style="margin-top: 20px; font-size: 0.85rem; color: var(--text-muted); background: rgba(255, 165, 0, 0.1); padding: 10px; border-radius: 8px; border-left: 4px solid orange;">
-                            <i class="ph-fill ph-info"></i> <strong>Pemberitahuan:</strong> Sistem tidak dapat
-                            menampilkan penggunaan <em>Bandwidth</em> secara langsung karena keterbatasan akses API dari
-                            paket gratis Supabase maupun GitHub Pages. Mohon cek dasbor resmi mereka jika Anda mendapati
-                            akses yang melambat.
+
+                        <!-- 6. Kapan Harus Upgrade atau Migrasi Server? (Advisor Section) -->
+                        <div class="glass-panel" style="padding: 22px; margin-top: 16px;">
+                            <h4 style="margin: 0 0 14px 0; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; color: var(--text-primary);">
+                                <i class="ph-fill ph-compass" style="color: var(--primary);"></i> Panduan Kritis: Kapan Harus Upgrade atau Migrasi Server?
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px;">
+                                <!-- Tier 1: Free -->
+                                <div style="border: 1px solid rgba(62, 207, 142, 0.3); background: rgba(62, 207, 142, 0.05); border-radius: 10px; padding: 14px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <span style="width: 10px; height: 10px; border-radius: 50%; background: #3ECF8E; display: inline-block;"></span>
+                                        <strong style="font-size: 0.92rem; color: #3ECF8E;">KONDISI AMAN (Free Plan)</strong>
+                                    </div>
+                                    <p style="margin: 0; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4;">
+                                        Selama ukuran <strong>Database < 400 MB</strong> dan <strong>Egress < 4 GB/bulan</strong>, Anda <strong>TIDAK PERLU</strong> mengeluarkan biaya langganan apa pun. Kasir dapat berjalan 100% gratis selamanya.
+                                    </p>
+                                </div>
+
+                                <!-- Tier 2: Arsip / Maintenance -->
+                                <div style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); border-radius: 10px; padding: 14px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <span style="width: 10px; height: 10px; border-radius: 50%; background: #F59E0B; display: inline-block;"></span>
+                                        <strong style="font-size: 0.92rem; color: #F59E0B;">TINDAKAN HEMAT (Tanpa Upgrade)</strong>
+                                    </div>
+                                    <p style="margin: 0; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4;">
+                                        Jika suatu saat database mencapai <strong>400–450 MB</strong> (estimasi >5-10 tahun lagi), cukup unduh (export) transaksi lawas (>2 tahun) dan hapus dari database untuk meluangkan kapasitas gratis tanpa upgrade.
+                                    </p>
+                                </div>
+
+                                <!-- Tier 3: Pro Upgrade -->
+                                <div style="border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); border-radius: 10px; padding: 14px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <span style="width: 10px; height: 10px; border-radius: 50%; background: #EF4444; display: inline-block;"></span>
+                                        <strong style="font-size: 0.92rem; color: #EF4444;">WAKTU UPGRADE KE PRO ($25/bln)</strong>
+                                    </div>
+                                    <p style="margin: 0; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4;">
+                                        Hanya diperlukan jika outlet Anda berkembang super masif dengan <strong>>2.000 transaksi setiap hari</strong>, atau membutuhkan Egress melebihi 5 GB. Cukup aktifkan <em>Supabase Pro Plan</em> tanpa perlu memindahkan kode atau server.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

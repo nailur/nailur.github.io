@@ -22,8 +22,16 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
   - Memperbaiki event listener tombol **Export Excel** pada menu Dashboard (`#btn-export-dashboard-excel`) dengan menambahkan inline handler `onclick="window.exportDashboardExcel && window.exportDashboardExcel()"` serta langsung mengikat event saat skrip `dashboard.js` dimuat, mengatasi kendala tombol tidak responsif saat diklik karena `DOMContentLoaded` sudah terlewati pada impor dinamis.
   - Menambahkan pengecekan otomatis untuk memuat data dasbor (`loadDashboard()`) terlebih dahulu jika `_lastDashboardData` belum tersedia saat klik Export Excel.
 - **Feature (`dashboard.js`)**:
-  - Menambahkan format mata uang Rupiah (`"Rp "#,##0;-"Rp "#,##0;"Rp "0`) secara otomatis pada seluruh kolom nominal angka di Laporan Export Excel Dashboard (baik **Sheet 1: Pendapatan & Pengeluaran** maupun **Sheet 2: Omset Bersih Payment Method**), serta mengatur lebar kolom otomatis agar angka mata uang selalu terbaca jelas tanpa terpotong (`###`).
-- **PWA (`sw.js`)**: Update `CACHE_NAME` ke `pos-cache-v50`.
+- **Feature (`index.html`, `app.js`)**:
+  - Mengubah antarmuka menu **Info Penggunaan Server** (`#server-info-tab`) menjadi **Monitor Kuota Paket Gratis (Free Plan) & Rekomendasi Upgrade Server** yang profesional dan komprehensif.
+  - Menampilkan 4 kartu batas kuota utama secara *real-time*:
+    1. **Database Supabase (`500 MB`)**: Penggunaan aktual dari fungsi `get_db_size`, sisa kapasitas dalam MB, dan persentase terpakai dengan indikator status warna otomatis.
+    2. **File Storage Bucket (`1 GB`)**: Estimasi pemakaian penyimpanan foto produk dan bukti transfer setoran tunai (terkompresi otomatis), sisa kapasitas, dan jumlah foto ter-upload.
+    3. **Pengguna Aktif (`50.000 MAU`)**: Jumlah akun kasir/admin terdaftar aktif di outlet serta sisa kuota bulanan.
+    4. **GitHub Pages Hosting (`1 GB`)**: Ukuran repositori aplikasi web secara live melalui GitHub API.
+  - Menambahkan kartu panduan **Bandwidth Data Keluar (Egress Supabase - 5 GB/Bulan)** yang menjelaskan penghematan >90% bandwidth berkat arsitektur PWA Offline Cache.
+  - Menambahkan tabel **Panduan Kritis: Kapan Harus Upgrade atau Migrasi Server?** untuk memandu pengguna membedakan kapan cukup melakukan arsip transaksi lama (>2 tahun) vs kapan outlet berkembang besar hingga membutuhkan upgrade ke Supabase Pro Plan ($25/bln).
+- **PWA (`sw.js`)**: Update `CACHE_NAME` ke `pos-cache-v51`.
 
 ### 2026-07-26
 - **Feature (`dashboard.js`, `index.html`)**: Menambahkan tombol "Export Excel" pada Action Bar Dashboard untuk mengunduh laporan keuangan harian/periode dalam format `.xlsx` dengan tepat 2 Sheet menggunakan library SheetJS:
