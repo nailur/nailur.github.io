@@ -7,7 +7,7 @@ import { syncOfflineTransactions, initDB } from './offline.js';
 import { products, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts } from './products.js';
 import { cart, addToCart, addToCartWithModifiers, updateQty, emptyCart, renderCart, calculateChange, openCheckoutModal, finalizeCheckout, printReceipt, printReceiptBluetooth } from './cart.js';
 import './modifiers.js';
-import { loadHistory, exportToExcel, changeHistoryPage, viewTransactionDetails } from './history.js';
+import { loadHistory, exportToExcel, changeHistoryPage, viewTransactionDetails, reprintTransactionById } from './history.js';
 import { 
     initManagement, loadBranches, loadOutlets, loadUsers, 
     handleAddBranch, editBranch, deleteBranch, 
@@ -50,6 +50,7 @@ window.loadHistory = loadHistory;
 window.exportToExcel = exportToExcel;
 window.changeHistoryPage = changeHistoryPage;
 window.viewTransactionDetails = viewTransactionDetails;
+window.reprintTransactionById = reprintTransactionById;
 window.initManagement = initManagement;
 window.loadBranches = loadBranches;
 window.loadOutlets = loadOutlets;

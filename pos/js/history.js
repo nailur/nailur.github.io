@@ -215,8 +215,9 @@ export async function loadHistory(resetPage = true) {
                 <td style="white-space: nowrap;">Rp ${(trx.cash_received || trx.total_amount).toLocaleString('id-ID')}</td>
                 <td style="white-space: nowrap;">Rp ${(trx.change_amount || 0).toLocaleString('id-ID')}</td>
                 <td>${trx.payment_method}</td>
-                <td>
-                    <button class="btn btn-icon" style="color:var(--primary);" onclick="viewTransactionDetails('${trx.id}')" title="Detail"><i class="ph ph-eye"></i></button>
+                <td style="white-space: nowrap;">
+                    <button class="btn btn-icon" style="color:var(--primary); margin-right: 4px;" onclick="viewTransactionDetails('${trx.id}')" title="Detail Transaksi"><i class="ph ph-eye"></i></button>
+                    <button class="btn btn-icon" style="color:var(--primary);" onclick="reprintTransactionById('${trx.id}')" title="Cetak Ulang Struk"><i class="ph ph-printer"></i></button>
                 </td>
             </tr>
         `;
@@ -411,6 +412,28 @@ export async function reprintReceipt(trx, items) {
         printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj, trx.notes);
     }
 }
+
+export async function reprintTransactionById(trxId) {
+    if (typeof window.showToast === 'function') window.showToast('Menyiapkan cetak ulang struk...', 'info');
+    
+    const { data: trx, error: trxError } = await supabase.from('transactions')
+        .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, notes, cash_received, change_amount, status, profiles:profiles!transactions_cashier_id_fkey(email, name), outlets(name, address, phone)')
+        .eq('id', trxId)
+        .single();
+        
+    const { data: items, error: itemsError } = await supabase.from('transaction_items')
+        .select('transaction_id, product_id, quantity, price, modifiers, products(name)')
+        .eq('transaction_id', trxId);
+        
+    if (trxError || itemsError) {
+        if (typeof window.showToast === 'function') window.showToast('Gagal memuat data struk transaksi', 'error');
+        return;
+    }
+
+    await reprintReceipt(trx, items);
+}
+
+window.reprintTransactionById = reprintTransactionById;
 
 window.openVoidModal = function(trxId) {
     document.getElementById('void-trx-id').value = trxId;
