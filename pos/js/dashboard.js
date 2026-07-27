@@ -181,14 +181,14 @@ window.loadDashboard = async function() {
             <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
                 <div>
                     <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: var(--primary);">
-                        <i class="ph ph-bag" style="font-size: 1.4rem;"></i> Estimasi Kantong Ayam Dibuka
+                        Estimasi Kantong Ayam Dibuka
                     </h3>
                     <span style="font-size: 0.8rem; color: var(--text-muted);">1 Kantong = 9 potong (3 Dada, 2 Paha Atas, 2 Paha Bawah, 2 Sayap)</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                     <div style="text-align: right;">
                         <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Potong Terjual</div>
-                        <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">${totalPieces} pcs <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">(${equivBags} ktg ekivalen)</span></div>
+                        <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">${totalPieces} pcs <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">(${equivBags} kantong)</span></div>
                     </div>
                     <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); padding: 8px 16px; border-radius: 10px; text-align: center;">
                         <div style="font-size: 0.75rem; color: #10b981; font-weight: 600; text-transform: uppercase;">Kantong Dibuka</div>
@@ -201,11 +201,11 @@ window.loadDashboard = async function() {
                 <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <span style="font-weight: 700; font-size: 0.95rem;">Dada</span>
-                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">3 pcs / ktg</span>
+                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">3 pcs / kantong</span>
                     </div>
                     <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countDada} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqDada} ktg</strong></span>
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqDada} kantong</strong></span>
                         <span>Sisa Kantong: <strong style="color: ${sisaDada > 0 ? '#10b981' : 'var(--text-main)'};">${sisaDada} pcs</strong></span>
                     </div>
                 </div>
@@ -213,11 +213,11 @@ window.loadDashboard = async function() {
                 <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <span style="font-weight: 700; font-size: 0.95rem;">Paha Atas</span>
-                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / ktg</span>
+                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / kantong</span>
                     </div>
                     <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countPahaAtas} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaAtas} ktg</strong></span>
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaAtas} kantong</strong></span>
                         <span>Sisa Kantong: <strong style="color: ${sisaPahaAtas > 0 ? '#10b981' : 'var(--text-main)'};">${sisaPahaAtas} pcs</strong></span>
                     </div>
                 </div>
@@ -225,11 +225,11 @@ window.loadDashboard = async function() {
                 <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <span style="font-weight: 700; font-size: 0.95rem;">Paha Bawah</span>
-                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / ktg</span>
+                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / kantong</span>
                     </div>
                     <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countPahaBawah} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaBawah} ktg</strong></span>
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaBawah} kantong</strong></span>
                         <span>Sisa Kantong: <strong style="color: ${sisaPahaBawah > 0 ? '#10b981' : 'var(--text-main)'};">${sisaPahaBawah} pcs</strong></span>
                     </div>
                 </div>
@@ -237,11 +237,11 @@ window.loadDashboard = async function() {
                 <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <span style="font-weight: 700; font-size: 0.95rem;">Sayap</span>
-                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / ktg</span>
+                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / kantong</span>
                     </div>
                     <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countSayap} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqSayap} ktg</strong></span>
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqSayap} kantong</strong></span>
                         <span>Sisa Kantong: <strong style="color: ${sisaSayap > 0 ? '#10b981' : 'var(--text-main)'};">${sisaSayap} pcs</strong></span>
                     </div>
                 </div>
