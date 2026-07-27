@@ -150,13 +150,19 @@ window.loadDashboard = async function() {
         
     const expensesByDate = {};
     const allDatesSet = new Set(dailyData.map(d => d.date));
+    let totalExpenseAmt = 0;
     
     if (costsData) {
         costsData.forEach(c => {
             allDatesSet.add(c.cost_date);
-            expensesByDate[c.cost_date] = (expensesByDate[c.cost_date] || 0) + Number(c.total_amount);
+            const amt = Number(c.total_amount) || 0;
+            expensesByDate[c.cost_date] = (expensesByDate[c.cost_date] || 0) + amt;
+            totalExpenseAmt += amt;
         });
     }
+
+    const dashExpenseEl = document.getElementById('dash-total-expense');
+    if (dashExpenseEl) dashExpenseEl.textContent = `Rp ${totalExpenseAmt.toLocaleString('id-ID')}`;
     
     const allDates = Array.from(allDatesSet).sort();
     const chartLabels = allDates.map(d => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month:'short'}));
@@ -308,13 +314,6 @@ window.loadDashboard = async function() {
 
     const baseDatasets = [
         {
-            label: 'Omset Bersih Seluruh (Rp)',
-            data: netTotalRevenueData,
-            backgroundColor: '#10b981',
-            borderRadius: 4,
-            datalabels: { ...whiteLabelOpts }
-        },
-        {
             label: 'Omset Bersih Cash (Rp)',
             data: netCashRevenueData,
             backgroundColor: '#3b82f6',
@@ -370,7 +369,7 @@ window.loadDashboard = async function() {
             'Grab Food': '#16a34a',
             'Shopee Food': '#ea580c'
         };
-        ALL_PAYMENT_METHODS.forEach(method => {
+        ALL_PAYMENT_METHODS.filter(m => m !== 'Tunai').forEach(method => {
             const methodData = compDates.map(d => {
                 return Math.round(salesByDate[d] && salesByDate[d].methodNet[method] ? salesByDate[d].methodNet[method] : 0);
             });
@@ -425,7 +424,7 @@ window.loadDashboard = async function() {
             data: {
                 labels: hourLabels,
                 datasets: [{
-                    label: 'Jumlah Transaksi (Trx)',
+                    label: 'Jumlah Transaksi',
                     data: hourlyCounts,
                     backgroundColor: '#6366f1',
                     borderRadius: 4,

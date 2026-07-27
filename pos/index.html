@@ -905,7 +905,14 @@
                         </div>
                         <div id="dash-total-void-trx"
                             style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">
-                            0 Trx
+                            0 Transaksi
+                        </div>
+                    </div>
+                    <div class="glass-panel"
+                        style="padding: 15px; text-align: center;">
+                        <h4 style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Total Pengeluaran</h4>
+                        <div id="dash-total-expense"
+                            style="font-size: 1.5rem; font-weight: 700; color: var(--danger); margin-top: 5px;">Rp 0
                         </div>
                     </div>
                 </div>
@@ -920,8 +927,8 @@
                                     <tr>
                                         <th>Metode Pembayaran</th>
                                         <th style="text-align: right;">Trx</th>
-                                        <th style="text-align: right;">Omzet Bruto</th>
-                                        <th style="text-align: right;">Omset Bersih (Net MDR)</th>
+                                        <th style="text-align: right;">Omzet Kotor</th>
+                                        <th style="text-align: right;">Omzet Bersih</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -956,28 +963,28 @@
                     </div>
                     <div class="glass-panel"
                         style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px; grid-column: 1 / -1;">
-                        <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);"><i class="ph ph-scales"></i> Omset Bersih vs Setoran</h4>
-                        <canvas id="depositComparisonChart"></canvas>
-                    </div>
-                    <div class="glass-panel"
-                        style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px; grid-column: 1 / -1;">
-                        <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);"><i class="ph ph-credit-card"></i> Omset Bersih Payment Method (Setelah Potongan MDR)</h4>
+                        <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);">Omset Bersih Non-Tunai</h4>
                         <canvas id="methodNetChart"></canvas>
                     </div>
                     <div class="glass-panel"
                         style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px; grid-column: 1 / -1;">
-                        <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);"><i class="ph ph-clock"></i> Jam Sibuk Transaksi (Peak Hours)</h4>
+                        <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);">Omset Bersih Tunai vs Setoran</h4>
+                        <canvas id="depositComparisonChart"></canvas>
+                    </div>
+                    <div class="glass-panel"
+                        style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px; grid-column: 1 / -1;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);">Jam Sibuk (Peak Hours)</h4>
                         <canvas id="peakHoursChart"></canvas>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; grid-column: 1 / -1;">
-                        <div class="glass-panel"
-                            style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 340px;">
-                            <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);"><i class="ph ph-handshake"></i> Estimasi Bagi Hasil</h4>
-                            <canvas id="profitSharingChart"></canvas>
-                        </div>
                         <div class="glass-panel" id="net-profit-card"
                             style="position: relative; width: 100%; min-width: 0; padding: 20px; display: flex; flex-direction: column; justify-content: center;">
                             <!-- Injected dynamically in dashboard.js -->
+                        </div>
+                        <div class="glass-panel"
+                            style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 340px;">
+                            <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);">Estimasi Bagi Hasil</h4>
+                            <canvas id="profitSharingChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -2235,13 +2242,13 @@
     <div id="modal-void" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 400px; width: 95%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0;">Cancel Transaksi</h3>
+                <h3 style="margin: 0;">Batal Transaksi</h3>
                 <button class="btn btn-icon" data-close="modal-void"><i class="ph ph-x"></i></button>
             </div>
             <form id="form-void">
                 <input type="hidden" id="void-trx-id">
                 <div class="input-group" style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 5px;">Alasan Cancel <span
+                    <label style="display: block; margin-bottom: 5px;">Alasan Batal <span
                             style="color:var(--danger)">*</span></label>
                     <textarea id="void-reason" class="input-modern" rows="3" required
                         placeholder="Contoh: Salah input harga, pelanggan batal..."></textarea>
@@ -2249,7 +2256,7 @@
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="btn" data-close="modal-void">Tutup</button>
                     <button type="submit" class="btn btn-primary" style="background: var(--danger);">Konfirmasi
-                        Cancel</button>
+                        Batal</button>
                 </div>
             </form>
         </div>
