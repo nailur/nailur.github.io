@@ -18,8 +18,10 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
   - Memperkecil dan mengoptimalkan tata letak grid kartu ringkasan KPI di bagian atas dasbor (`minmax(115px, 1fr)`, padding ringkas, `min-width: 0`, teks ellipsis) agar seluruh 6 kartu (Pendapatan, Transaksi, Diskon, Pajak, Batal, Pengeluaran) muat berdampingan dalam 1 baris horizontal pada layar tablet/laptop tanpa ada kartu yang terlempar ke baris bawah.
 - **Feature (`history.js`, `app.js`)**:
   - Menambahkan tombol shortcut **Cetak Ulang Struk** (`<i class="ph ph-printer"></i>`) di kolom **AKSI** pada tabel halaman **Riwayat Transaksi**, berdampingan dengan tombol Detail (`<i class="ph ph-eye"></i>`).
-  - Kasir kini dapat langsung mencetak ulang struk transaksi (baik ke printer Bluetooth maupun dialog cetak web) dari halaman listing tanpa harus membuka modal detail transaksi terlebih dahulu.
-- **PWA (`sw.js`)**: Update `CACHE_NAME` ke `pos-cache-v48`.
+- **Bugfix (`index.html`, `dashboard.js`)**:
+  - Memperbaiki event listener tombol **Export Excel** pada menu Dashboard (`#btn-export-dashboard-excel`) dengan menambahkan inline handler `onclick="window.exportDashboardExcel && window.exportDashboardExcel()"` serta langsung mengikat event saat skrip `dashboard.js` dimuat, mengatasi kendala tombol tidak responsif saat diklik karena `DOMContentLoaded` sudah terlewati pada impor dinamis.
+  - Menambahkan pengecekan otomatis untuk memuat data dasbor (`loadDashboard()`) terlebih dahulu jika `_lastDashboardData` belum tersedia saat klik Export Excel.
+- **PWA (`sw.js`)**: Update `CACHE_NAME` ke `pos-cache-v49`.
 
 ### 2026-07-26
 - **Feature (`dashboard.js`, `index.html`)**: Menambahkan tombol "Export Excel" pada Action Bar Dashboard untuk mengunduh laporan keuangan harian/periode dalam format `.xlsx` dengan tepat 2 Sheet menggunakan library SheetJS:

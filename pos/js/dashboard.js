@@ -783,6 +783,9 @@ if (formMdr) {
 // ── Export Dashboard Excel (2 Sheet) ──────────────────────────────────
 
 window.exportDashboardExcel = async function() {
+    if (!window._lastDashboardData && typeof window.loadDashboard === 'function') {
+        await window.loadDashboard();
+    }
     if (!window._lastDashboardData) {
         return window.showToast('Silakan muat data dashboard terlebih dahulu', 'error');
     }
@@ -878,10 +881,20 @@ window.exportDashboardExcel = async function() {
     if (typeof window.showToast === 'function') window.showToast('Laporan Excel berhasil diunduh', 'success');
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+function bindDashboardButtons() {
     const btnExportExcel = document.getElementById('btn-export-dashboard-excel');
     if (btnExportExcel) {
-        btnExportExcel.addEventListener('click', window.exportDashboardExcel);
+        btnExportExcel.onclick = () => {
+            if (typeof window.exportDashboardExcel === 'function') {
+                window.exportDashboardExcel();
+            }
+        };
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindDashboardButtons);
+} else {
+    bindDashboardButtons();
+}
 
