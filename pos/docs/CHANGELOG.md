@@ -21,7 +21,9 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 - **Bugfix (`index.html`, `dashboard.js`)**:
   - Memperbaiki event listener tombol **Export Excel** pada menu Dashboard (`#btn-export-dashboard-excel`) dengan menambahkan inline handler `onclick="window.exportDashboardExcel && window.exportDashboardExcel()"` serta langsung mengikat event saat skrip `dashboard.js` dimuat, mengatasi kendala tombol tidak responsif saat diklik karena `DOMContentLoaded` sudah terlewati pada impor dinamis.
   - Menambahkan pengecekan otomatis untuk memuat data dasbor (`loadDashboard()`) terlebih dahulu jika `_lastDashboardData` belum tersedia saat klik Export Excel.
-- **PWA (`sw.js`)**: Update `CACHE_NAME` ke `pos-cache-v49`.
+- **Feature (`dashboard.js`)**:
+  - Menambahkan format mata uang Rupiah (`"Rp "#,##0;-"Rp "#,##0;"Rp "0`) secara otomatis pada seluruh kolom nominal angka di Laporan Export Excel Dashboard (baik **Sheet 1: Pendapatan & Pengeluaran** maupun **Sheet 2: Omset Bersih Payment Method**), serta mengatur lebar kolom otomatis agar angka mata uang selalu terbaca jelas tanpa terpotong (`###`).
+- **PWA (`sw.js`)**: Update `CACHE_NAME` ke `pos-cache-v50`.
 
 ### 2026-07-26
 - **Feature (`dashboard.js`, `index.html`)**: Menambahkan tombol "Export Excel" pada Action Bar Dashboard untuk mengunduh laporan keuangan harian/periode dalam format `.xlsx` dengan tepat 2 Sheet menggunakan library SheetJS:

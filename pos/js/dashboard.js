@@ -872,6 +872,32 @@ window.exportDashboardExcel = async function() {
     const ws1 = window.XLSX.utils.json_to_sheet(sheet1Rows);
     const ws2 = window.XLSX.utils.json_to_sheet(sheet2Rows);
 
+    // Format nominal currency columns (Rp currency) for Sheet 1
+    for (let cell in ws1) {
+        if (cell[0] === '!') continue;
+        const col = cell.replace(/[0-9]/g, '');
+        const row = parseInt(cell.replace(/\D/g, ''), 10);
+        if (['B', 'C', 'D'].includes(col) && row > 1) {
+            ws1[cell].z = '"Rp "#,##0;-"Rp "#,##0;"Rp "0';
+        }
+    }
+    ws1['!cols'] = [{ wch: 15 }, { wch: 26 }, { wch: 30 }, { wch: 38 }];
+
+    // Format nominal currency columns (Rp currency) for Sheet 2
+    for (let cell in ws2) {
+        if (cell[0] === '!') continue;
+        const col = cell.replace(/[0-9]/g, '');
+        const row = parseInt(cell.replace(/\D/g, ''), 10);
+        if (col !== 'A' && row > 1) {
+            ws2[cell].z = '"Rp "#,##0;-"Rp "#,##0;"Rp "0';
+        }
+    }
+    const ws2Cols = [{ wch: 15 }];
+    for (let i = 0; i <= ALL_PAYMENT_METHODS.length; i++) {
+        ws2Cols.push({ wch: 30 });
+    }
+    ws2['!cols'] = ws2Cols;
+
     const wb = window.XLSX.utils.book_new();
     window.XLSX.utils.book_append_sheet(wb, ws1, "Pendapatan & Pengeluaran");
     window.XLSX.utils.book_append_sheet(wb, ws2, "Omset Bersih Payment Method");
