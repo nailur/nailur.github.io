@@ -14,7 +14,10 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
   - Menambahkan kartu ringkasan baru **"Total Pengeluaran"** (`#dash-total-expense`) di sebelah kanan kartu *Total Batal* pada bagian atas dasbor untuk menampilkan total pengeluaran operasional outlet pada rentang tanggal yang dipilih.
   - Menghapus data/dataset **"Omset Bersih Seluruh"** dari grafik **"Omset Bersih Tunai vs Setoran"** agar grafik fokus membandingkan kas tunai bersih terhadap setoran dan selisihnya.
   - Menghapus data/dataset **"Omset Bersih Tunai"** dari grafik **"Omset Bersih Non-Tunai"** (`methodNetChart`) sehingga grafik khusus menampilkan rincian metode pembayaran selain tunai yang sudah dikurangi potongan MDR.
-- **PWA (`sw.js`)**: Update `CACHE_NAME` ke `pos-cache-v46`.
+- **UI/UX Enhancement (`index.html`, `dashboard.js`)**:
+  - Memperkecil dan mengoptimalkan tata letak grid kartu ringkasan KPI di bagian atas dasbor (`minmax(115px, 1fr)`, padding ringkas, `min-width: 0`, teks ellipsis) agar seluruh 6 kartu (Pendapatan, Transaksi, Diskon, Pajak, Batal, Pengeluaran) muat berdampingan dalam 1 baris horizontal pada layar tablet/laptop tanpa ada kartu yang terlempar ke baris bawah.
+  - Memperkecil batas minimum grid mini-card pada bagian **Estimasi Kantong Ayam Dibuka** (`minmax(140px, 1fr)`) agar ke-4 rincian bagian ayam juga muat 1 baris horizontal pada layar tablet.
+- **PWA (`sw.js`)**: Update `CACHE_NAME` ke `pos-cache-v47`.
 
 ### 2026-07-26
 - **Feature (`dashboard.js`, `index.html`)**: Menambahkan tombol "Export Excel" pada Action Bar Dashboard untuk mengunduh laporan keuangan harian/periode dalam format `.xlsx` dengan tepat 2 Sheet menggunakan library SheetJS:
