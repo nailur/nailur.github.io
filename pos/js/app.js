@@ -1780,16 +1780,15 @@ setupGlobalRefreshListener();
 // ------------------------------
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        let refreshing = false;
-        // Audit Fix #6: Simpan apakah halaman sudah dikontrol SW sebelumnya.
-        // Toast hanya ditampilkan saat SW LAMA diganti oleh SW BARU (genuine update),
-        // bukan saat initial claim/install pertama kali PWA dibuka.
-        let hadController = Boolean(navigator.serviceWorker.controller);
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (hadController && !refreshing) {
-                refreshing = true;
-                // DO NOT auto-reload to prevent infinite loops if imported SW scripts change dynamically
-                console.log('New ServiceWorker activated. Prompting user to refresh manually.');
+        // Audit Fix #6 (Refined): Dengarkan pesan APP_UPDATED dari sw.js yang hanya dikirim
+        // ketika versi CACHE_NAME berubah dan cache lama benar-benar dihapus.
+        // Ini menghindari toast palsu ("Pembaruan terpasang") akibat perubahan skrip CDN OneSignal
+        // atau klaim ulang ServiceWorker saat PWA dibuka kembali.
+        let updateNotified = false;
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'APP_UPDATED' && !updateNotified) {
+                updateNotified = true;
+                console.log('App version updated to:', event.data.version);
                 if (typeof showToast === 'function') {
                     showToast('Pembaruan terpasang! Silakan Refresh halaman untuk menggunakan versi terbaru.', 'info');
                 }

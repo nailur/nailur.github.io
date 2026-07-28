@@ -1,6 +1,6 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'pos-cache-v52';
+const CACHE_NAME = 'pos-cache-v53';
 const urlsToCache = [
   './',
   './index.html',
@@ -92,18 +92,25 @@ self.addEventListener('fetch', event => {
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    Promise.all([
-      caches.keys().then(cacheNames => {
-        return Promise.all(
-          cacheNames.map(cacheName => {
-            if (cacheWhitelist.indexOf(cacheName) === -1) {
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      }),
-      clients.claim()
-    ])
+    caches.keys().then(cacheNames => {
+      let hasOldCache = false;
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1 && cacheName.startsWith('pos-cache-')) {
+            hasOldCache = true;
+            return caches.delete(cacheName);
+          }
+        })
+      ).then(() => {
+        if (hasOldCache) {
+          self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+              client.postMessage({ type: 'APP_UPDATED', version: CACHE_NAME });
+            });
+          });
+        }
+      });
+    }).then(() => clients.claim())
   );
 });
 
