@@ -43,6 +43,7 @@ export function renderInventory() {
             <td>${escapeHtml(item.unit_large || '-')}</td>
             <td>${escapeHtml(item.unit_small || '-')}</td>
             <td>${item.conversion_factor || 1}</td>
+            <td>${item.price > 0 ? 'Rp ' + parseFloat(item.price).toLocaleString('id-ID') : '-'}</td>
             <td>${item.stock_quantity || 0}</td>
             <td>
                 <div class="action-buttons">
@@ -72,10 +73,12 @@ export function openInventoryModal(id = null) {
             document.getElementById('inventory-purchase-unit').value = item.unit_large || '';
             document.getElementById('inventory-base-unit').value = item.unit_small || '';
             document.getElementById('inventory-conversion').value = item.conversion_factor || 1;
+            document.getElementById('inventory-price').value = item.price || '';
             document.getElementById('inventory-stock').value = item.stock_quantity;
         }
     } else {
         document.getElementById('inventory-stock').value = '';
+        document.getElementById('inventory-price').value = '';
         title.textContent = 'Tambah Item';
     }
     
@@ -99,18 +102,29 @@ export async function handleSaveInventory(e) {
         category: document.getElementById('inventory-category').value,
         unit_large: document.getElementById('inventory-purchase-unit').value,
         unit_small: document.getElementById('inventory-base-unit').value,
-        conversion_factor: parseFloat(document.getElementById('inventory-conversion').value) || 1
+        conversion_factor: parseFloat(document.getElementById('inventory-conversion').value) || 1,
+        price: parseFloat(document.getElementById('inventory-price').value) || 0
     };
     
     try {
         if (id) {
-            const { error } = await supabase.from('inventory_items').update(payload).eq('id', id);
-            if (error) throw error;
+            let res = await supabase.from('inventory_items').update(payload).eq('id', id);
+            if (res.error && res.error.message && res.error.message.includes('price')) {
+                delete payload.price;
+                res = await supabase.from('inventory_items').update(payload).eq('id', id);
+                console.warn('Kolom price belum tersedia pada tabel inventory_items.');
+            }
+            if (res.error) throw res.error;
             showToast('Item berhasil diperbarui', 'success');
         } else {
             payload.code = document.getElementById('inventory-name').value.substring(0,3).toUpperCase() + '-' + Math.floor(Math.random() * 10000);
-            const { error } = await supabase.from('inventory_items').insert([payload]);
-            if (error) throw error;
+            let res = await supabase.from('inventory_items').insert([payload]);
+            if (res.error && res.error.message && res.error.message.includes('price')) {
+                delete payload.price;
+                res = await supabase.from('inventory_items').insert([payload]);
+                console.warn('Kolom price belum tersedia pada tabel inventory_items.');
+            }
+            if (res.error) throw res.error;
             showToast('Item berhasil ditambahkan', 'success');
         }
         
@@ -203,6 +217,8 @@ window.openStockPostingModal = function(type) {
     const title = document.getElementById('modal-stock-posting-title');
     const typeInput = document.getElementById('stock-posting-type');
     const qtyColHeader = document.getElementById('stock-posting-qty-col-header');
+    const priceColHeader = document.getElementById('stock-posting-price-col-header');
+    const tfoot = document.getElementById('stock-posting-tfoot');
     const itemsTbody = document.getElementById('stock-posting-items-table').querySelector('tbody');
     
     form.reset();
@@ -211,9 +227,13 @@ window.openStockPostingModal = function(type) {
     if (type === 'in') {
         title.textContent = 'Posting Penambahan Stok';
         qtyColHeader.textContent = 'Jml Ditambahkan';
+        if (priceColHeader) priceColHeader.classList.remove('hidden');
+        if (tfoot) tfoot.classList.remove('hidden');
     } else {
         title.textContent = 'Posting Pemakaian Stok (COGS)';
         qtyColHeader.textContent = 'Sisa Stok Akhir';
+        if (priceColHeader) priceColHeader.classList.add('hidden');
+        if (tfoot) tfoot.classList.add('hidden');
     }
     
     // Auto generate doc number
@@ -221,8 +241,9 @@ window.openStockPostingModal = function(type) {
     document.getElementById('stock-posting-doc').value = `${type.toUpperCase()}-${dateStr}-${Math.floor(Math.random()*1000)}`;
     document.getElementById('stock-posting-date').value = new Date().toISOString().split('T')[0];
     
+    const colCount = type === 'in' ? 6 : 5;
     if (inventoryList.length === 0) {
-        itemsTbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Belum ada master barang. Tambahkan inventaris terlebih dahulu.</td></tr>';
+        itemsTbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center;">Belum ada master barang. Tambahkan inventaris terlebih dahulu.</td></tr>`;
         form.querySelector('button[type="submit"]').disabled = true;
     } else {
         form.querySelector('button[type="submit"]').disabled = false;
@@ -233,14 +254,41 @@ window.openStockPostingModal = function(type) {
                 <td>${escapeHtml(item.unit_small || '-')}</td>
                 <td>${item.stock_quantity || 0}</td>
                 <td>
-                    <input type="number" class="input posting-qty-input" data-itemid="${item.id}" data-currentstock="${item.stock_quantity || 0}" placeholder="${type === 'out' ? (item.stock_quantity || 0) : '0'}" min="0" step="any" style="width: 100px;">
+                    <input type="number" class="input posting-qty-input" data-itemid="${item.id}" data-currentstock="${item.stock_quantity || 0}" placeholder="${type === 'out' ? (item.stock_quantity || 0) : '0'}" min="0" step="any" style="width: 100px;" oninput="window.updateStockPostingTotal && window.updateStockPostingTotal()">
                 </td>
+                ${type === 'in' ? `
+                <td>
+                    <input type="number" class="input posting-price-input" data-itemid="${item.id}" value="${item.price || ''}" placeholder="0" min="0" step="any" style="width: 130px;" oninput="window.updateStockPostingTotal && window.updateStockPostingTotal()">
+                </td>` : ''}
             </tr>
         `).join('');
+        if (window.updateStockPostingTotal) window.updateStockPostingTotal();
     }
     
     modal.classList.remove('hidden');
 }
+
+window.updateStockPostingTotal = function() {
+    const type = document.getElementById('stock-posting-type')?.value;
+    if (type !== 'in') return;
+    
+    let totalCost = 0;
+    const qtyInputs = document.querySelectorAll('.posting-qty-input');
+    qtyInputs.forEach(qtyInput => {
+        const qty = parseFloat(qtyInput.value) || 0;
+        if (qty > 0) {
+            const itemId = qtyInput.dataset.itemid;
+            const priceInput = document.querySelector(`.posting-price-input[data-itemid="${itemId}"]`);
+            const price = priceInput ? (parseFloat(priceInput.value) || 0) : 0;
+            totalCost += qty * price;
+        }
+    });
+    
+    const totalEl = document.getElementById('stock-posting-total-cost');
+    if (totalEl) {
+        totalEl.textContent = 'Rp ' + totalCost.toLocaleString('id-ID');
+    }
+};
 
 window.handleSaveStockPosting = async function(e) {
     e.preventDefault();
@@ -265,9 +313,18 @@ window.handleSaveStockPosting = async function(e) {
             }
             
             if (qty > 0) {
+                const itemId = input.dataset.itemid;
+                let price = 0;
+                if (type === 'in') {
+                    const priceInput = document.querySelector(`.posting-price-input[data-itemid="${itemId}"]`);
+                    if (priceInput && priceInput.value.trim() !== '') {
+                        price = parseFloat(priceInput.value) || 0;
+                    }
+                }
                 items.push({
-                    item_id: input.dataset.itemid,
-                    quantity: qty
+                    item_id: itemId,
+                    quantity: qty,
+                    price: price
                 });
             }
         }
@@ -305,17 +362,51 @@ window.handleSaveStockPosting = async function(e) {
         if (headerErr) throw headerErr;
         
         // 2. Insert Details
-        const detailsPayload = items.map(item => ({
-            posting_id: postingData.id,
-            item_id: item.item_id,
-            quantity: item.quantity
-        }));
+        const detailsPayload = items.map(item => {
+            const payload = {
+                posting_id: postingData.id,
+                item_id: item.item_id,
+                quantity: item.quantity
+            };
+            if (item.price !== undefined && item.price > 0) {
+                payload.price = item.price;
+            }
+            return payload;
+        });
         
-        const { error: detailsErr } = await supabase
+        let detailsRes = await supabase
             .from('inventory_posting_items')
             .insert(detailsPayload);
             
-        if (detailsErr) throw detailsErr;
+        if (detailsRes.error && detailsRes.error.message && detailsRes.error.message.includes('price')) {
+            const fallbackPayload = items.map(item => ({
+                posting_id: postingData.id,
+                item_id: item.item_id,
+                quantity: item.quantity
+            }));
+            detailsRes = await supabase
+                .from('inventory_posting_items')
+                .insert(fallbackPayload);
+            console.warn('Kolom price belum tersedia di database inventory_posting_items. Menyimpan kuantitas stok saja.');
+        }
+            
+        if (detailsRes.error) throw detailsRes.error;
+        
+        // 3. Update harga beli/satuan terakhir pada tabel inventory_items (jika posting penambahan memiliki harga)
+        if (type === 'in') {
+            for (const item of items) {
+                if (item.price > 0) {
+                    try {
+                        await supabase
+                            .from('inventory_items')
+                            .update({ price: item.price })
+                            .eq('id', item.item_id);
+                    } catch (err) {
+                        console.warn('Kolom price belum tersedia pada tabel inventory_items:', err);
+                    }
+                }
+            }
+        }
         
         showToast('Posting stok berhasil disimpan!', 'success');
         document.getElementById('modal-stock-posting').classList.add('hidden');
@@ -346,30 +437,78 @@ window.viewPostingDetails = async function(postingId, type) {
     
     document.getElementById('modal-posting-details').classList.remove('hidden');
     
+    const priceHeader = document.getElementById('detail-posting-price-col-header');
+    const subtotalHeader = document.getElementById('detail-posting-subtotal-col-header');
+    if (type === 'in') {
+        if (priceHeader) priceHeader.classList.remove('hidden');
+        if (subtotalHeader) subtotalHeader.classList.remove('hidden');
+    } else {
+        if (priceHeader) priceHeader.classList.add('hidden');
+        if (subtotalHeader) subtotalHeader.classList.add('hidden');
+    }
+    
     try {
-        const { data, error } = await supabase
+        let data, error;
+        const res = await supabase
             .from('inventory_posting_items')
             .select(`
                 quantity,
+                price,
                 inventory_items (code, name, unit_small)
             `)
             .eq('posting_id', postingId);
             
+        if (res.error && res.error.message && res.error.message.includes('price')) {
+            const fallbackRes = await supabase
+                .from('inventory_posting_items')
+                .select(`
+                    quantity,
+                    inventory_items (code, name, unit_small)
+                `)
+                .eq('posting_id', postingId);
+            data = fallbackRes.data;
+            error = fallbackRes.error;
+        } else {
+            data = res.data;
+            error = res.error;
+        }
+            
         if (error) throw error;
         
+        const colCount = type === 'in' ? 6 : 4;
         if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Tidak ada item</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center;">Tidak ada item</td></tr>`;
             return;
         }
         
-        tbody.innerHTML = data.map(item => `
+        let totalVal = 0;
+        tbody.innerHTML = data.map(item => {
+            const qty = parseFloat(item.quantity) || 0;
+            const price = parseFloat(item.price) || 0;
+            const subtotal = qty * price;
+            if (type === 'in') totalVal += subtotal;
+            return `
             <tr>
                 <td>${escapeHtml(item.inventory_items?.code || '-')}</td>
                 <td>${escapeHtml(item.inventory_items?.name || '-')}</td>
                 <td>${escapeHtml(item.inventory_items?.unit_small || '-')}</td>
-                <td style="text-align: right;"><strong>${item.quantity}</strong></td>
+                <td style="text-align: right;"><strong>${qty}</strong></td>
+                ${type === 'in' ? `
+                <td style="text-align: right;">${price > 0 ? 'Rp ' + price.toLocaleString('id-ID') : '-'}</td>
+                <td style="text-align: right;"><strong>${subtotal > 0 ? 'Rp ' + subtotal.toLocaleString('id-ID') : '-'}</strong></td>
+                ` : ''}
             </tr>
-        `).join('');
+            `;
+        }).join('');
+        
+        if (type === 'in' && totalVal > 0) {
+            tbody.innerHTML += `
+            <tr style="background: rgba(var(--primary-rgb), 0.05); font-weight: bold;">
+                <td colspan="5" style="text-align: right;">TOTAL BIAYA PENAMBAHAN:</td>
+                <td style="text-align: right; color: var(--primary);">Rp ${totalVal.toLocaleString('id-ID')}</td>
+            </tr>
+            `;
+        }
         
     } catch (err) {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red;">Gagal memuat detail: ${err.message}</td></tr>`;

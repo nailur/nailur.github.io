@@ -6,6 +6,13 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
 ### 2026-07-28
+- **Feature (`index.html`, `js/inventory.js`, `sw.js`)**:
+  - Menambahkan inputan baru **Harga Beli / Satuan (Rp)** pada modal **Posting Penambahan Stok** (`#modal-stock-posting`) agar kasir/admin dapat memasukkan harga penambahan stok barang inventaris/bahan baku.
+  - Menambahkan perhitungan dan tampilan real-time **Total Biaya Penambahan Stok** di bagian *footer* tabel posting penambahan stok.
+  - Menambahkan kolom **Harga Satuan (Rp)** dan **Subtotal (Rp)** pada modal **Detail Posting Stok** (`#modal-posting-details`) khusus untuk transaksi penambahan stok.
+  - Menambahkan kolom dan inputan **Harga Beli / Satuan (Rp)** pada tabel utama Inventaris dan modal **Tambah/Edit Barang Inventaris** (`#modal-inventory`) sebagai harga referensi default.
+  - Menambahkan perlindungan *fallback* database saat penyimpanan dan pembacaan sehingga aplikasi tetap stabil meskipun kolom `price` belum dibuat pada tabel `inventory_items` maupun `inventory_posting_items` di Supabase.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke versi `pos-cache-v54`.
 - **Audit & Architecture Review**:
   - Melakukan audit teknis, arsitektur, dan keamanan cyber (*Cyber Security & Threat Analysis*) pada aplikasi NTPOS, mencakup perlindungan terhadap serangan SQL Injection, Cross-Site Scripting (XSS), celah logika *Price Tampering* pada RPC, isolasi RLS per outlet, ketahanan *offline* (PWA), serta performa (*Egress*).
   - Menghasilkan dokumen laporan audit pada arsip `pos_audit_report.md` yang memuat **6 temuan teknis utama** (termasuk temuan penyebab toast notifikasi "Pembaruan terpasang" yang selalu muncul berulang akibat `controllerchange` PWA) dan **2 analisis kerentanan keamanan** beserta solusinya, serta memisahkan **Konsep Sesi Shift Bersama per Outlet** ke bagian khusus sebagai keputusan desain bisnis (*By Design*).

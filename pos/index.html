@@ -1146,6 +1146,7 @@
                                     <th>Satuan Beli</th>
                                     <th>Satuan Pakai</th>
                                     <th>Konversi</th>
+                                    <th>Harga Beli / Satuan</th>
                                     <th>Sisa Stok (Pakai)</th>
                                     <th class="action-col">Aksi</th>
                                 </tr>
@@ -2076,6 +2077,11 @@
                         <input type="number" id="inventory-conversion" class="input" required="" step="any"
                             placeholder="Contoh: 15 (1 Dus = 15 Kg)">
                     </div>
+                    <div class="input-group">
+                        <label>Harga Beli / Satuan (Rp)</label>
+                        <input type="number" id="inventory-price" class="input" min="0" step="any"
+                            placeholder="Contoh: 15000">
+                    </div>
                     <div class="input-group" style="display: none;">
                         <label>Jumlah Stok Fisik (Dalam Satuan Pakai)</label>
                         <input type="number" id="inventory-stock" class="input" readonly step="any"
@@ -2192,16 +2198,23 @@
                             <thead style="position: sticky; top: 0; background: var(--surface); z-index: 1;">
                                 <tr>
                                     <th style="width: 15%">Kode</th>
-                                    <th style="width: 30%">Nama Barang</th>
-                                    <th style="width: 15%">Satuan</th>
-                                    <th style="width: 15%">Sisa Stok Saat Ini</th>
-                                    <th style="width: 25%" id="stock-posting-qty-col-header">Jumlah
+                                    <th style="width: 25%">Nama Barang</th>
+                                    <th style="width: 12%">Satuan</th>
+                                    <th style="width: 13%">Sisa Stok Saat Ini</th>
+                                    <th style="width: 18%" id="stock-posting-qty-col-header">Jumlah
                                         (Penambahan/Pemakaian)</th>
+                                    <th style="width: 17%" id="stock-posting-price-col-header" class="hidden">Harga Satuan (Rp)</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <!-- Items injected here -->
                             </tbody>
+                            <tfoot id="stock-posting-tfoot" class="hidden">
+                                <tr style="background: rgba(var(--primary-rgb), 0.05); font-weight: bold;">
+                                    <td colspan="5" style="text-align: right;">Total Biaya Penambahan Stok:</td>
+                                    <td id="stock-posting-total-cost" style="color: var(--primary); font-size: 1.05rem;">Rp 0</td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
 
@@ -2250,6 +2263,8 @@
                                 <th>NAMA BARANG</th>
                                 <th>SATUAN</th>
                                 <th style="text-align: right;">JUMLAH</th>
+                                <th style="text-align: right;" id="detail-posting-price-col-header" class="hidden">HARGA SATUAN (RP)</th>
+                                <th style="text-align: right;" id="detail-posting-subtotal-col-header" class="hidden">SUBTOTAL (RP)</th>
                             </tr>
                         </thead>
                         <tbody>
