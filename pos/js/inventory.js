@@ -43,7 +43,6 @@ export function renderInventory() {
             <td>${escapeHtml(item.unit_large || '-')}</td>
             <td>${escapeHtml(item.unit_small || '-')}</td>
             <td>${item.conversion_factor || 1}</td>
-            <td>${item.price > 0 ? 'Rp ' + parseFloat(item.price).toLocaleString('id-ID') : '-'}</td>
             <td>${item.stock_quantity || 0}</td>
             <td>
                 <div class="action-buttons">
@@ -73,12 +72,10 @@ export function openInventoryModal(id = null) {
             document.getElementById('inventory-purchase-unit').value = item.unit_large || '';
             document.getElementById('inventory-base-unit').value = item.unit_small || '';
             document.getElementById('inventory-conversion').value = item.conversion_factor || 1;
-            document.getElementById('inventory-price').value = item.price || '';
             document.getElementById('inventory-stock').value = item.stock_quantity;
         }
     } else {
         document.getElementById('inventory-stock').value = '';
-        document.getElementById('inventory-price').value = '';
         title.textContent = 'Tambah Item';
     }
     
@@ -102,29 +99,18 @@ export async function handleSaveInventory(e) {
         category: document.getElementById('inventory-category').value,
         unit_large: document.getElementById('inventory-purchase-unit').value,
         unit_small: document.getElementById('inventory-base-unit').value,
-        conversion_factor: parseFloat(document.getElementById('inventory-conversion').value) || 1,
-        price: parseFloat(document.getElementById('inventory-price').value) || 0
+        conversion_factor: parseFloat(document.getElementById('inventory-conversion').value) || 1
     };
     
     try {
         if (id) {
-            let res = await supabase.from('inventory_items').update(payload).eq('id', id);
-            if (res.error && res.error.message && res.error.message.includes('price')) {
-                delete payload.price;
-                res = await supabase.from('inventory_items').update(payload).eq('id', id);
-                console.warn('Kolom price belum tersedia pada tabel inventory_items.');
-            }
-            if (res.error) throw res.error;
+            const { error } = await supabase.from('inventory_items').update(payload).eq('id', id);
+            if (error) throw error;
             showToast('Item berhasil diperbarui', 'success');
         } else {
             payload.code = document.getElementById('inventory-name').value.substring(0,3).toUpperCase() + '-' + Math.floor(Math.random() * 10000);
-            let res = await supabase.from('inventory_items').insert([payload]);
-            if (res.error && res.error.message && res.error.message.includes('price')) {
-                delete payload.price;
-                res = await supabase.from('inventory_items').insert([payload]);
-                console.warn('Kolom price belum tersedia pada tabel inventory_items.');
-            }
-            if (res.error) throw res.error;
+            const { error } = await supabase.from('inventory_items').insert([payload]);
+            if (error) throw error;
             showToast('Item berhasil ditambahkan', 'success');
         }
         
@@ -391,23 +377,6 @@ window.handleSaveStockPosting = async function(e) {
         }
             
         if (detailsRes.error) throw detailsRes.error;
-        
-        // 3. Update harga beli/satuan terakhir pada tabel inventory_items (jika posting penambahan memiliki harga)
-        if (type === 'in') {
-            for (const item of items) {
-                if (item.price > 0 && item.quantity > 0) {
-                    const unitPrice = Math.round((item.price / item.quantity) * 100) / 100;
-                    try {
-                        await supabase
-                            .from('inventory_items')
-                            .update({ price: unitPrice })
-                            .eq('id', item.item_id);
-                    } catch (err) {
-                        console.warn('Kolom price belum tersedia pada tabel inventory_items:', err);
-                    }
-                }
-            }
-        }
         
         showToast('Posting stok berhasil disimpan!', 'success');
         document.getElementById('modal-stock-posting').classList.add('hidden');
