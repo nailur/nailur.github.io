@@ -5,6 +5,17 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 ## [Unreleased]
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
+### 2026-07-28
+- **Audit & Architecture Review**:
+  - Melakukan audit teknis, arsitektur, dan keamanan cyber (*Cyber Security & Threat Analysis*) pada aplikasi NTPOS, mencakup perlindungan terhadap serangan SQL Injection, Cross-Site Scripting (XSS), celah logika *Price Tampering* pada RPC, isolasi RLS per outlet, ketahanan *offline* (PWA), serta performa (*Egress*).
+  - Menghasilkan dokumen laporan audit pada arsip `pos_audit_report.md` yang memuat **6 temuan teknis utama** (termasuk temuan penyebab toast notifikasi "Pembaruan terpasang" yang selalu muncul berulang akibat `controllerchange` PWA) dan **2 analisis kerentanan keamanan** beserta solusinya, serta memisahkan **Konsep Sesi Shift Bersama per Outlet** ke bagian khusus sebagai keputusan desain bisnis (*By Design*).
+- **Fix Audit #1 (`sw.js`)**: Menambahkan 9 modul JS yang sebelumnya hilang dari `urlsToCache` (`attendance.js`, `dashboard.js`, `deposits.js`, `expenses.js`, `inventory.js`, `management.js`, `shift-master.js`, `shift-sessions.js`, `supabase.js`) agar PWA benar-benar *self-contained* dan semua halaman dapat diakses saat offline. Update `CACHE_NAME` ke `pos-cache-v52`.
+- **Fix Audit #2 (`offline.js`)**: Menambahkan pengecekan idempotensi pada `syncOfflineTransactions()` — jika Supabase mengembalikan error duplikat (kode `23505` atau pesan mengandung kata *"duplicate"*), transaksi dianggap sudah masuk ke database dan langsung dihapus dari antrean IndexedDB, mencegah *retry loop* tak terbatas.
+- **Fix Audit #3 (Database — SQL Migration)**: Menyiapkan file migrasi `migration_audit_fix_3_4.sql` untuk mengganti implementasi trigger `generate_receipt_no`. Kolom `last_receipt_seq` ditambahkan ke tabel `outlets`, dan nomor nota dibuat atomik via `UPDATE ... RETURNING` dengan *row-level lock* PostgreSQL, menggantikan `COUNT(*) + 1` yang rawan *race condition*.
+- **Fix Audit #4 (`dashboard.js` + Database — SQL Migration)**: Menambahkan parameter `p_end_date` pada RPC `get_analytics_summary` di Supabase (via `migration_audit_fix_3_4.sql`) dan memperbarui pemanggilan di `dashboard.js` agar mengirimkan `endOfDay` ke server. Filter data kini dilakukan di database, bukan di browser — menghilangkan pemborosan kuota Egress Supabase.
+- **Fix Audit #5 (`history.js`)**: Mengganti 2 query terpisah (fetch transactions + `.in('transaction_id', trxIds)`) menjadi 1 Nested Select Join PostgREST, mengeliminasi risiko HTTP Error 414 *URI Too Long* saat ekspor Excel dengan banyak transaksi.
+- **Fix Audit #6 (`app.js`)**: Memperbaiki toast *false-positive* "Pembaruan terpasang!" dengan menambahkan flag `hadController` — notifikasi kini hanya ditampilkan saat Service Worker lama benar-benar digantikan versi baru, bukan saat *initial claim* pertama kali PWA dibuka.
+
 ### 2026-07-27
 - **Feature (`dashboard.js`, `index.html`)**:
   - Menambahkan panel/kartu analisis **Estimasi Kantong Ayam Dibuka (`#chicken-bag-card`)** di bawah tabel *Produk Terjual* pada dasbor.

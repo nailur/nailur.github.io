@@ -45,9 +45,12 @@ window.loadDashboard = async function() {
     });
 
     // Fetch analytics summary for charts
+    // Audit Fix #4: Kirim p_end_date agar filter dilakukan di database,
+    // bukan di browser — hemat kuota Egress Supabase 5 GB/bulan.
     const { data: analyticsResult, error: analyticsError } = await supabase.rpc('get_analytics_summary', {
         p_outlet_ids: [activeOutletId],
-        p_start_date: startOfDay
+        p_start_date: startOfDay,
+        p_end_date: endOfDay
     });
 
     if (rpcError || analyticsError) {
@@ -251,14 +254,9 @@ window.loadDashboard = async function() {
     }
 
     // Render Charts
-    let dailyData = analyticsResult.daily_revenue || [];
-    const topProducts = analyticsResult.top_products || [];
-
-    // Filter out dates that are past the selected endDate
-    // (Because get_analytics_summary only accepts p_start_date and returns all data onwards)
-    if (endDate && endDate.value) {
-        dailyData = dailyData.filter(d => d.date <= endDate.value);
-    }
+    // Audit Fix #4: dailyData kini sudah terfilter oleh p_end_date di database.
+    // Filter client-side tidak diperlukan lagi.
+    const dailyData = analyticsResult.daily_revenue || [];
 
     const revCtx = document.getElementById('revenueChart');
     if(!revCtx) return;

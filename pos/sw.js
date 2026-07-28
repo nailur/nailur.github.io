@@ -1,6 +1,6 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'pos-cache-v51';
+const CACHE_NAME = 'pos-cache-v52';
 const urlsToCache = [
   './',
   './index.html',
@@ -17,6 +17,16 @@ const urlsToCache = [
   './js/modifiers.js',
   './js/discounts.js',
   './js/offline.js',
+  // --- Tambahan Modul Wajib Offline (Audit Fix #1) ---
+  './js/attendance.js',
+  './js/dashboard.js',
+  './js/deposits.js',
+  './js/expenses.js',
+  './js/inventory.js',
+  './js/management.js',
+  './js/shift-master.js',
+  './js/shift-sessions.js',
+  './js/supabase.js',
   './manifest.json',
   './assets/img/icon-192.png',
   './assets/img/icon-512.png',

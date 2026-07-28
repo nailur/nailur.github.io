@@ -1781,8 +1781,12 @@ setupGlobalRefreshListener();
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         let refreshing = false;
+        // Audit Fix #6: Simpan apakah halaman sudah dikontrol SW sebelumnya.
+        // Toast hanya ditampilkan saat SW LAMA diganti oleh SW BARU (genuine update),
+        // bukan saat initial claim/install pertama kali PWA dibuka.
+        let hadController = Boolean(navigator.serviceWorker.controller);
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (!refreshing) {
+            if (hadController && !refreshing) {
                 refreshing = true;
                 // DO NOT auto-reload to prevent infinite loops if imported SW scripts change dynamically
                 console.log('New ServiceWorker activated. Prompting user to refresh manually.');

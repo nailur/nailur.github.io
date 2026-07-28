@@ -170,10 +170,21 @@ export async function syncOfflineTransactions() {
                 await clearOfflineTransaction(trx.id);
                 successCount++;
             } else {
-                console.error('Offline Sync RPC Error:', rpcError);
-                trx.sync_error = rpcError.message;
-                await saveOfflineTransaction(trx);
-                failCount++;
+                // Audit Fix #2: Cek apakah error karena duplikasi — transaksi sebenarnya
+                // sudah masuk ke database (koneksi putus setelah server sukses memproses).
+                // Jika ya, hapus dari antrean offline agar tidak terus di-retry.
+                const isDuplicate = rpcError.code === '23505' ||
+                    (rpcError.message && rpcError.message.toLowerCase().includes('duplicate'));
+                if (isDuplicate) {
+                    console.warn('[Offline Sync] Transaksi sudah ada di database (duplicate), menghapus dari antrean lokal:', trx.id);
+                    await clearOfflineTransaction(trx.id);
+                    successCount++;
+                } else {
+                    console.error('Offline Sync RPC Error:', rpcError);
+                    trx.sync_error = rpcError.message;
+                    await saveOfflineTransaction(trx);
+                    failCount++;
+                }
             }
         } catch (e) {
             console.error('Failed to sync offline transaction', e);

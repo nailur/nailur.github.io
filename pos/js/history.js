@@ -40,31 +40,33 @@ export async function exportToExcel() {
     btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengekspor...';
 
     try {
+        // Audit Fix #5: Gunakan Nested Select Join (1 request HTTP) agar tidak ada
+        // parameter URL panjang dari .in('transaction_id', trxIds) yang rawan HTTP 414.
         const { data: trxData, error: trxError } = await supabase.from('transactions')
-            .select('id, created_at, total_amount, payment_method, cashier_id, discount_amount, subtotal_amount, tax_amount, receipt_no, customer_name, cash_received, change_amount, status, profiles:profiles!transactions_cashier_id_fkey(email, name)')
+            .select(`
+                id, created_at, total_amount, payment_method, cashier_id,
+                discount_amount, subtotal_amount, tax_amount, receipt_no,
+                customer_name, cash_received, change_amount, status,
+                profiles:profiles!transactions_cashier_id_fkey(email, name),
+                items:transaction_items(product_id, quantity, price, products(name))
+            `)
             .eq('outlet_id', activeOutletId)
             .gte('created_at', startOfDay)
             .lte('created_at', endOfDay)
             .order('created_at', { ascending: false });
 
         if (trxError) throw trxError;
+
         if (!trxData || trxData.length === 0) {
             showToast('Tidak ada data transaksi untuk diekspor', 'error');
             return;
         }
 
-        const trxIds = trxData.map(t => t.id);
-        const { data: itemsData, error: itemsError } = await supabase.from('transaction_items')
-            .select('transaction_id, product_id, quantity, price, products(name)')
-            .in('transaction_id', trxIds);
-
-        if (itemsError) throw itemsError;
-
         const exportRows = [];
         
         for (const trx of trxData) {
             const cashierName = trx.profiles?.name || trx.profiles?.email || '-';
-            const trxItems = itemsData.filter(i => i.transaction_id === trx.id);
+            const trxItems = trx.items || [];
             const statusLabel = trx.status === 'voided' ? 'CANCEL' : 'Berhasil';
             const customerName = trx.customer_name || '-';
             
