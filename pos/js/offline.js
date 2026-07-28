@@ -180,15 +180,24 @@ export async function syncOfflineTransactions() {
                     await clearOfflineTransaction(trx.id);
                     successCount++;
                 } else {
-                    console.error('Offline Sync RPC Error:', rpcError);
-                    trx.sync_error = rpcError.message;
+                    // Log detail error ke console agar bisa diinvestigasi
+                    console.error('[Offline Sync] GAGAL trx:', trx.id);
+                    console.error('[Offline Sync] Error code:', rpcError.code, '| Message:', rpcError.message);
+                    console.error('[Offline Sync] Payload items:', JSON.stringify(trx.items));
+                    console.error('[Offline Sync] Payload totals: subtotal=%o discount=%o tax=%o total=%o',
+                        trx.subtotal_amount, trx.discount_amount, trx.tax_amount, trx.total_amount);
+                    const errDetail = `[${rpcError.code || 'ERR'}] ${rpcError.message || 'Unknown error'}`;
+                    showToast(`Sync gagal: ${errDetail}`, 'error');
+                    trx.sync_error = errDetail;
                     await saveOfflineTransaction(trx);
                     failCount++;
                 }
             }
         } catch (e) {
-            console.error('Failed to sync offline transaction', e);
-            trx.sync_error = e.message || 'Unknown error';
+            console.error('[Offline Sync] Exception trx:', trx.id, e);
+            const errDetail = e.message || 'Unknown error';
+            showToast(`Sync error: ${errDetail}`, 'error');
+            trx.sync_error = errDetail;
             await saveOfflineTransaction(trx);
             failCount++;
         }
