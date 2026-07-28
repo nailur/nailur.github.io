@@ -258,7 +258,7 @@ window.openStockPostingModal = function(type) {
                 </td>
                 ${type === 'in' ? `
                 <td>
-                    <input type="number" class="input posting-price-input" data-itemid="${item.id}" value="${item.price || ''}" placeholder="0" min="0" step="any" style="width: 130px;" oninput="window.updateStockPostingTotal && window.updateStockPostingTotal()">
+                    <input type="number" class="input posting-price-input" data-itemid="${item.id}" value="" placeholder="0" min="0" step="any" style="width: 140px;" oninput="window.updateStockPostingTotal && window.updateStockPostingTotal()">
                 </td>` : ''}
             </tr>
         `).join('');
@@ -280,7 +280,7 @@ window.updateStockPostingTotal = function() {
             const itemId = qtyInput.dataset.itemid;
             const priceInput = document.querySelector(`.posting-price-input[data-itemid="${itemId}"]`);
             const price = priceInput ? (parseFloat(priceInput.value) || 0) : 0;
-            totalCost += qty * price;
+            totalCost += price;
         }
     });
     
@@ -395,11 +395,12 @@ window.handleSaveStockPosting = async function(e) {
         // 3. Update harga beli/satuan terakhir pada tabel inventory_items (jika posting penambahan memiliki harga)
         if (type === 'in') {
             for (const item of items) {
-                if (item.price > 0) {
+                if (item.price > 0 && item.quantity > 0) {
+                    const unitPrice = Math.round((item.price / item.quantity) * 100) / 100;
                     try {
                         await supabase
                             .from('inventory_items')
-                            .update({ price: item.price })
+                            .update({ price: unitPrice })
                             .eq('id', item.item_id);
                     } catch (err) {
                         console.warn('Kolom price belum tersedia pada tabel inventory_items:', err);
@@ -438,13 +439,10 @@ window.viewPostingDetails = async function(postingId, type) {
     document.getElementById('modal-posting-details').classList.remove('hidden');
     
     const priceHeader = document.getElementById('detail-posting-price-col-header');
-    const subtotalHeader = document.getElementById('detail-posting-subtotal-col-header');
     if (type === 'in') {
         if (priceHeader) priceHeader.classList.remove('hidden');
-        if (subtotalHeader) subtotalHeader.classList.remove('hidden');
     } else {
         if (priceHeader) priceHeader.classList.add('hidden');
-        if (subtotalHeader) subtotalHeader.classList.add('hidden');
     }
     
     try {
@@ -475,7 +473,7 @@ window.viewPostingDetails = async function(postingId, type) {
             
         if (error) throw error;
         
-        const colCount = type === 'in' ? 6 : 4;
+        const colCount = type === 'in' ? 5 : 4;
         if (!data || data.length === 0) {
             tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center;">Tidak ada item</td></tr>`;
             return;
@@ -485,8 +483,7 @@ window.viewPostingDetails = async function(postingId, type) {
         tbody.innerHTML = data.map(item => {
             const qty = parseFloat(item.quantity) || 0;
             const price = parseFloat(item.price) || 0;
-            const subtotal = qty * price;
-            if (type === 'in') totalVal += subtotal;
+            if (type === 'in') totalVal += price;
             return `
             <tr>
                 <td>${escapeHtml(item.inventory_items?.code || '-')}</td>
@@ -494,8 +491,7 @@ window.viewPostingDetails = async function(postingId, type) {
                 <td>${escapeHtml(item.inventory_items?.unit_small || '-')}</td>
                 <td style="text-align: right;"><strong>${qty}</strong></td>
                 ${type === 'in' ? `
-                <td style="text-align: right;">${price > 0 ? 'Rp ' + price.toLocaleString('id-ID') : '-'}</td>
-                <td style="text-align: right;"><strong>${subtotal > 0 ? 'Rp ' + subtotal.toLocaleString('id-ID') : '-'}</strong></td>
+                <td style="text-align: right;"><strong>${price > 0 ? 'Rp ' + price.toLocaleString('id-ID') : '-'}</strong></td>
                 ` : ''}
             </tr>
             `;
@@ -504,7 +500,7 @@ window.viewPostingDetails = async function(postingId, type) {
         if (type === 'in' && totalVal > 0) {
             tbody.innerHTML += `
             <tr style="background: rgba(var(--primary-rgb), 0.05); font-weight: bold;">
-                <td colspan="5" style="text-align: right;">TOTAL BIAYA PENAMBAHAN:</td>
+                <td colspan="4" style="text-align: right;">TOTAL BIAYA PENAMBAHAN:</td>
                 <td style="text-align: right; color: var(--primary);">Rp ${totalVal.toLocaleString('id-ID')}</td>
             </tr>
             `;
