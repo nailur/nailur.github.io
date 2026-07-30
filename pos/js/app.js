@@ -31,6 +31,7 @@ import {
     openCreateAffiliateSettingModal,
     handleSaveAffiliatePosting, 
     handleSaveAffiliateSetting, 
+    handleSaveAffiliatePeriod,
     handleSaveAffiliatePayment 
 } from './affiliate.js';
 
@@ -650,9 +651,7 @@ function setupEventListeners() {
     document.getElementById('btn-add-affiliate-posting')?.addEventListener('click', () => {
         if (window.openCreateAffiliateModal) window.openCreateAffiliateModal();
     });
-    document.getElementById('btn-add-affiliate-setting')?.addEventListener('click', () => {
-        if (window.openCreateAffiliateSettingModal) window.openCreateAffiliateSettingModal();
-    });
+    document.getElementById('form-affiliate-period')?.addEventListener('submit', handleSaveAffiliatePeriod);
     document.getElementById('form-create-affiliate-posting')?.addEventListener('submit', handleSaveAffiliatePosting);
     document.getElementById('form-affiliate-setting')?.addEventListener('submit', handleSaveAffiliateSetting);
     document.getElementById('form-pay-affiliate')?.addEventListener('submit', handleSaveAffiliatePayment);

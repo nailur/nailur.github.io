@@ -16,6 +16,8 @@ import { showToast, getLocalToday, generateRandomDocNumber, escapeHtml } from '.
 import { getCurrentProfile } from './auth.js';
 
 // State internal
+let affiliatePeriodsList = [];
+let currentActivePeriodId = null;
 let affiliateSettingsList = [];
 let affiliateProductsMaster = [];
 let affiliatePostingsList = [];
@@ -44,151 +46,341 @@ export function canAccessAffiliate() {
 
 /**
  * ----------------------------------------------------------------------------
- * 1. MASTER AFFILIATE SETTING
+ * 1. MASTER AFFILIATE - PERIODE
  * ----------------------------------------------------------------------------
  */
 
 /**
- * Memuat daftar produk & setting komisi affiliate untuk outlet aktif (mendukung riwayat periode)
+ * Memuat daftar Periode Affiliate dan produk untuk outlet aktif
  */
 export async function loadAffiliateSettings() {
     if (!canAccessAffiliate()) return;
     const outletId = getActiveOutletId();
     if (!outletId) return;
 
-    // 1. Ambil seluruh produk di outlet ini
-    const { data: productsData, error: prodError } = await supabase
-        .from('products')
-        .select('id, name, price')
-        .eq('outlet_id', outletId)
-        .order('name');
-
-    if (prodError) {
-        console.error('Error load products for Affiliate Setting:', prodError);
-        showToast('Gagal memuat produk untuk Affiliate Setting', 'error');
-        return;
-    }
-    affiliateProductsMaster = productsData || [];
-
-    // 2. Ambil setting affiliate dari affiliate_settings diurutkan berdasarkan tanggal efektif terbaru
-    const { data: settingsData, error: setError } = await supabase
-        .from('affiliate_settings')
+    // 1. Ambil semua Periode Affiliate
+    const { data: periodsData, error: periodErr } = await supabase
+        .from('affiliate_periods')
         .select('*')
         .eq('outlet_id', outletId)
         .order('effective_date', { ascending: false });
 
-    if (setError && setError.code !== 'PGRST116') {
-        console.error('Error load affiliate settings:', setError);
-    }
-
-    const settingsMap = new Map();
-    (settingsData || []).forEach(item => {
-        if (!settingsMap.has(item.product_id)) {
-            settingsMap.set(item.product_id, []);
-        }
-        settingsMap.get(item.product_id).push(item);
-    });
-
-    // 3. Gabungkan produk dengan seluruh riwayat settingnya
-    affiliateSettingsList = [];
-    affiliateProductsMaster.forEach(prod => {
-        const rows = settingsMap.get(prod.id);
-        if (rows && rows.length > 0) {
-            rows.forEach(setting => {
-                const targetQtyVal = setting.bonus_target_qty !== undefined ? setting.bonus_target_qty : 15;
-                const bonusNominalVal = setting.bonus_nominal !== undefined ? setting.bonus_nominal : setting.bulk_commission_nominal || 0;
-                affiliateSettingsList.push({
-                    id: setting.id,
-                    product_id: prod.id,
-                    product_name: prod.name,
-                    product_price: prod.price || 0,
-                    commission_nominal: Number(setting.commission_nominal || 0),
-                    bonus_target_qty: Number(targetQtyVal || 15),
-                    bonus_nominal: Number(bonusNominalVal || 0),
-                    bulk_commission_nominal: Number(setting.bulk_commission_nominal || 0),
-                    effective_date: setting.effective_date || '',
-                    end_date: setting.end_date || '',
-                    is_active: setting.is_active !== undefined ? setting.is_active : true
-                });
-            });
-        } else {
-            // Produk belum memiliki aturan komisi
-            affiliateSettingsList.push({
-                id: null,
-                product_id: prod.id,
-                product_name: prod.name,
-                product_price: prod.price || 0,
-                commission_nominal: 0,
-                bonus_target_qty: 15,
-                bonus_nominal: 0,
-                bulk_commission_nominal: 0,
-                effective_date: '',
-                end_date: '',
-                is_active: false
-            });
-        }
-    });
-
-    // Urutkan berdasarkan nama produk dan tanggal efektif menurun
-    affiliateSettingsList.sort((a, b) => {
-        const nameCmp = a.product_name.localeCompare(b.product_name);
-        if (nameCmp !== 0) return nameCmp;
-        return (b.effective_date || '').localeCompare(a.effective_date || '');
-    });
-
-    renderAffiliateSettings();
-}
-
-/**
- * Menderetkan daftar produk beserta setting komisi di tabel HTML
- */
-export function renderAffiliateSettings() {
-    const tbody = document.getElementById('affiliate-settings-table')?.querySelector('tbody');
-    if (!tbody) return;
-
-    if (affiliateSettingsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Belum ada produk tersedia</td></tr>';
+    if (periodErr && periodErr.code !== 'PGRST116') {
+        // Jika tabel affiliate_periods belum ada, tampilkan pesan ramah
+        console.warn('Tabel affiliate_periods belum tersedia. Jalankan migration SQL terlebih dahulu.', periodErr);
+        const tbody = document.getElementById('affiliate-periods-table')?.querySelector('tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--warning);">Tabel periode belum ada. Jalankan migration SQL dari affiliate_schema.sql di Supabase.</td></tr>';
         return;
     }
 
+    affiliatePeriodsList = periodsData || [];
+
+    // 2. Ambil semua produk di outlet ini (cache lokal)
+    const { data: productsData } = await supabase
+        .from('products')
+        .select('id, name, price')
+        .eq('outlet_id', outletId)
+        .order('name');
+    affiliateProductsMaster = productsData || [];
+
+    // 3. Ambil semua settings (untuk kalkulasi komisi pada posting)
+    const { data: settingsData } = await supabase
+        .from('affiliate_settings')
+        .select('*')
+        .eq('outlet_id', outletId);
+    affiliateSettingsList = (settingsData || []).map(s => ({
+        id: s.id,
+        period_id: s.period_id || null,
+        product_id: s.product_id,
+        commission_nominal: Number(s.commission_nominal || 0),
+        bonus_target_qty: Number(s.bonus_target_qty || 15),
+        bonus_nominal: Number(s.bonus_nominal !== undefined ? s.bonus_nominal : (s.bulk_commission_nominal || 0)),
+        bulk_commission_nominal: Number(s.bulk_commission_nominal || 0)
+    }));
+
+    renderAffiliatePeriods();
+}
+
+/**
+ * Render daftar Periode Affiliate di tabel utama Master tab
+ */
+export function renderAffiliatePeriods() {
+    const tbody = document.getElementById('affiliate-periods-table')?.querySelector('tbody');
+    if (!tbody) return;
+
+    if (affiliatePeriodsList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Belum ada periode komisi affiliate. Klik "+ Tambah Periode Affiliate" untuk memulai.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = affiliatePeriodsList.map(period => {
+        const startStr = period.effective_date
+            ? new Date(period.effective_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+            : '-';
+        const endStr = period.end_date
+            ? new Date(period.end_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+            : 'Sekarang';
+        const periodName = period.name ? escapeHtml(period.name) : `Periode ${startStr}`;
+        const statusBadge = period.is_active
+            ? '<span class="badge badge-success">Aktif</span>'
+            : '<span class="badge badge-secondary">Nonaktif</span>';
+
+        return `
+            <tr>
+                <td><strong>${periodName}</strong></td>
+                <td>${startStr} s/d ${endStr}</td>
+                <td>${statusBadge}</td>
+                <td style="white-space:nowrap; text-align:right;">
+                    <button class="btn btn-icon btn-secondary" title="Lihat & Edit Komisi Produk" onclick="window.openPeriodDetailModal('${period.id}')">
+                        <i class="ph ph-pencil-simple"></i>
+                    </button>
+                    ${isSuperAdmin() ? `
+                    <button class="btn btn-icon btn-danger" title="Hapus Periode" onclick="window.deleteAffiliatePeriod('${period.id}')">
+                        <i class="ph ph-trash"></i>
+                    </button>
+                    ` : ''}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Alias agar backward-compatible jika ada kode lain yang masih memanggil renderAffiliateSettings
+export const renderAffiliateSettings = renderAffiliatePeriods;
+
+/**
+ * Membuka modal form Tambah Periode Affiliate (kosong)
+ */
+window.openCreateAffiliatePeriodModal = function() {
+    if (!canAccessAffiliate()) return;
+    const modal = document.getElementById('modal-affiliate-period-form');
+    if (!modal) return;
+
+    const btnSave = document.getElementById('btn-save-affiliate-period');
+    if (btnSave) btnSave.style.display = isSuperAdmin() ? 'inline-block' : 'none';
+
+    document.getElementById('affiliate-period-id').value = '';
+    document.getElementById('affiliate-period-name').value = '';
+    document.getElementById('affiliate-period-effective-date').value = new Date().toISOString().substring(0, 10);
+    document.getElementById('affiliate-period-end-date').value = '';
+    document.getElementById('affiliate-period-is-active').checked = true;
+
+    modal.classList.remove('hidden');
+};
+
+/**
+ * Membuka modal form Edit Periode Affiliate (isi data yang ada)
+ */
+window.editAffiliatePeriod = function(periodId) {
+    const period = affiliatePeriodsList.find(p => p.id === periodId);
+    if (!period) return;
+    const modal = document.getElementById('modal-affiliate-period-form');
+    if (!modal) return;
+
+    const btnSave = document.getElementById('btn-save-affiliate-period');
+    if (btnSave) btnSave.style.display = isSuperAdmin() ? 'inline-block' : 'none';
+
+    document.getElementById('affiliate-period-id').value = period.id;
+    document.getElementById('affiliate-period-name').value = period.name || '';
+    document.getElementById('affiliate-period-effective-date').value = period.effective_date || '';
+    document.getElementById('affiliate-period-end-date').value = period.end_date || '';
+    document.getElementById('affiliate-period-is-active').checked = period.is_active !== false;
+
+    modal.classList.remove('hidden');
+};
+
+/**
+ * Saat tombol "Ubah Info Periode" di modal detail diklik, buka form periode dengan data period aktif
+ */
+window.editCurrentPeriodFromDetail = function() {
+    if (currentActivePeriodId) {
+        window.editAffiliatePeriod(currentActivePeriodId);
+    }
+};
+
+/**
+ * Simpan Periode Affiliate (Insert atau Update)
+ */
+export async function handleSaveAffiliatePeriod(event) {
+    event.preventDefault();
+    if (!isSuperAdmin()) {
+        showToast('Hanya Superadmin yang dapat menyimpan periode affiliate', 'error');
+        return;
+    }
+
+    const outletId = getActiveOutletId();
+    if (!outletId) return;
+
+    const periodId = document.getElementById('affiliate-period-id')?.value || '';
+    const name = document.getElementById('affiliate-period-name')?.value.trim() || null;
+    const effectiveDate = document.getElementById('affiliate-period-effective-date')?.value;
+    const endDateVal = document.getElementById('affiliate-period-end-date')?.value || '';
+    const endDate = endDateVal || null;
+    const isActive = document.getElementById('affiliate-period-is-active')?.checked !== false;
+
+    if (!effectiveDate) {
+        showToast('Tanggal mulai wajib diisi', 'warning');
+        return;
+    }
+    if (endDate && effectiveDate > endDate) {
+        showToast('Tanggal mulai tidak boleh lebih akhir dari tanggal selesai', 'warning');
+        return;
+    }
+
+    const btnSubmit = document.getElementById('btn-save-affiliate-period');
+    if (btnSubmit) btnSubmit.disabled = true;
+
+    const payload = { outlet_id: outletId, name, effective_date: effectiveDate, end_date: endDate, is_active: isActive };
+
+    let error = null;
+    if (periodId) {
+        const res = await supabase.from('affiliate_periods').update(payload).eq('id', periodId);
+        error = res.error;
+    } else {
+        const res = await supabase.from('affiliate_periods').insert([payload]);
+        error = res.error;
+    }
+
+    if (btnSubmit) btnSubmit.disabled = false;
+
+    if (error) {
+        console.error('Save affiliate period error:', error);
+        showToast('Gagal menyimpan periode affiliate: ' + error.message, 'error');
+    } else {
+        showToast('Periode affiliate berhasil disimpan', 'success');
+        document.getElementById('modal-affiliate-period-form')?.classList.add('hidden');
+        await loadAffiliateSettings();
+        // Jika modal detail sedang terbuka dan kita edit periode yang sama, refresh header-nya
+        if (currentActivePeriodId && (periodId === currentActivePeriodId || !periodId)) {
+            const updatedPeriod = affiliatePeriodsList.find(p => p.id === (periodId || currentActivePeriodId));
+            if (updatedPeriod) _updatePeriodDetailHeader(updatedPeriod);
+        }
+    }
+}
+
+/**
+ * Hapus Periode Affiliate beserta seluruh setting produknya (cascade)
+ */
+window.deleteAffiliatePeriod = async function(periodId) {
+    if (!isSuperAdmin()) return;
+    const period = affiliatePeriodsList.find(p => p.id === periodId);
+    const label = period?.name || 'periode ini';
+    if (!confirm(`Hapus "${label}" beserta seluruh aturan komisi produk di dalamnya?`)) return;
+
+    const { error } = await supabase.from('affiliate_periods').delete().eq('id', periodId);
+
+    if (error) {
+        console.error('Delete affiliate period error:', error);
+        showToast('Gagal menghapus periode: ' + error.message, 'error');
+    } else {
+        showToast('Periode affiliate berhasil dihapus', 'success');
+        loadAffiliateSettings();
+    }
+};
+
+/**
+ * ----------------------------------------------------------------------------
+ * 1b. DETAIL PERIODE — ATURAN KOMISI PRODUK
+ * ----------------------------------------------------------------------------
+ */
+
+/**
+ * Membuka modal detail periode dan menampilkan aturan komisi produk untuk periode tersebut
+ */
+window.openPeriodDetailModal = async function(periodId) {
+    if (!canAccessAffiliate()) return;
+    const period = affiliatePeriodsList.find(p => p.id === periodId);
+    if (!period) return;
+
+    currentActivePeriodId = periodId;
+
+    const modal = document.getElementById('modal-affiliate-period-detail');
+    if (!modal) return;
+
+    _updatePeriodDetailHeader(period);
+
+    // Visibilitas tombol yang bersifat destruktif/write
+    const btnAddSetting = document.getElementById('btn-add-period-setting');
+    if (btnAddSetting) btnAddSetting.style.display = isSuperAdmin() ? 'inline-block' : 'none';
+    const btnEditPeriod = document.getElementById('btn-edit-current-period-from-detail');
+    if (btnEditPeriod) btnEditPeriod.style.display = isSuperAdmin() ? 'inline-block' : 'none';
+
+    modal.classList.remove('hidden');
+
+    // Muat settings untuk periode ini
+    await _loadAndRenderPeriodProducts(periodId);
+};
+
+function _updatePeriodDetailHeader(period) {
+    const nameEl = document.getElementById('period-detail-header-name');
+    const datesEl = document.getElementById('period-detail-header-dates');
+    if (nameEl) nameEl.textContent = period.name || `Periode ${period.effective_date}`;
+    if (datesEl) {
+        const startStr = period.effective_date ? new Date(period.effective_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+        const endStr = period.end_date ? new Date(period.end_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sekarang';
+        datesEl.textContent = `${startStr} s/d ${endStr}`;
+    }
+}
+
+async function _loadAndRenderPeriodProducts(periodId) {
+    const tbody = document.getElementById('affiliate-period-products-table')?.querySelector('tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;"><i class="ph ph-spinner ph-spin"></i> Memuat...</td></tr>';
+
+    // Ambil settings untuk periode ini
+    const { data: settingsData, error } = await supabase
+        .from('affiliate_settings')
+        .select('*, products(name, price)')
+        .eq('period_id', periodId)
+        .order('created_at', { ascending: true });
+
+    if (error && error.code !== 'PGRST116') {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--danger);">Gagal memuat data komisi produk</td></tr>';
+        return;
+    }
+
+    const settings = settingsData || [];
+
+    if (settings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Belum ada komisi produk di periode ini. Klik "+ Atur Komisi Produk" untuk menambah.</td></tr>';
+        return;
+    }
+
+    // Simpan ke state agar openCreateAffiliateSettingModal bisa filter produk yang belum ada
+    affiliateSettingsList = settings.map(s => ({
+        id: s.id,
+        period_id: periodId,
+        product_id: s.product_id,
+        product_name: s.products?.name || '-',
+        product_price: s.products?.price || 0,
+        commission_nominal: Number(s.commission_nominal || 0),
+        bonus_target_qty: Number(s.bonus_target_qty || 15),
+        bonus_nominal: Number(s.bonus_nominal !== undefined ? s.bonus_nominal : (s.bulk_commission_nominal || 0)),
+        bulk_commission_nominal: Number(s.bulk_commission_nominal || 0)
+    }));
+
     tbody.innerHTML = affiliateSettingsList.map(item => {
-        let periodStr = '<span style="color:var(--text-secondary)">-</span>';
-        if (item.effective_date) {
-            const startFormatted = new Date(item.effective_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-            const endFormatted = item.end_date ? new Date(item.end_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sekarang';
-            periodStr = `${startFormatted} s/d ${endFormatted}`;
-        }
-
-        let statusBadge = '<span style="color:var(--text-secondary)">-</span>';
-        if (item.id) {
-            statusBadge = item.is_active 
-                ? '<span class="badge badge-success">Aktif</span>' 
-                : '<span class="badge badge-secondary">Riwayat/Nonaktif</span>';
-        }
-
-        const commNormalStr = item.commission_nominal > 0 
-            ? `<span class="badge badge-success" style="font-weight:600;">Rp ${item.commission_nominal.toLocaleString('id-ID')} / qty</span>` 
+        const commNormalStr = item.commission_nominal > 0
+            ? `<span class="badge badge-success" style="font-weight:600;">Rp ${item.commission_nominal.toLocaleString('id-ID')} / qty</span>`
             : `<span style="color:var(--text-secondary)">-</span>`;
         const targetQtyStr = `<strong>${item.bonus_target_qty || 15}</strong> qty`;
-        const bonusNominalStr = item.bonus_nominal > 0 
-            ? `<span class="badge badge-info" style="font-weight:600;">+ Rp ${item.bonus_nominal.toLocaleString('id-ID')} / ${item.bonus_target_qty || 15} qty</span>` 
+        const bonusNominalStr = item.bonus_nominal > 0
+            ? `<span class="badge badge-info" style="font-weight:600;">+ Rp ${item.bonus_nominal.toLocaleString('id-ID')} / ${item.bonus_target_qty || 15} qty</span>`
             : `<span style="color:var(--text-secondary)">-</span>`;
 
         return `
             <tr>
                 <td><strong>${escapeHtml(item.product_name)}</strong></td>
                 <td>Rp ${Number(item.product_price).toLocaleString('id-ID')}</td>
-                <td>${periodStr}</td>
-                <td>${statusBadge}</td>
                 <td>${commNormalStr}</td>
                 <td>${targetQtyStr}</td>
                 <td>${bonusNominalStr}</td>
                 <td style="white-space:nowrap; text-align:right;">
-                    <button class="btn btn-icon btn-secondary" title="Atur Komisi Produk" onclick="window.editAffiliateSetting('${item.id || ''}', '${item.product_id}')">
+                    <button class="btn btn-icon btn-secondary" title="Edit Komisi" onclick="window.editAffiliateSetting('${item.id}', '${item.product_id}')">
                         <i class="ph ph-pencil-simple"></i>
                     </button>
-                    ${isSuperAdmin() && item.id ? `
-                    <button class="btn btn-icon btn-danger" title="Hapus Aturan Komisi Ini" onclick="window.deleteAffiliateSetting('${item.id}')">
+                    ${isSuperAdmin() ? `
+                    <button class="btn btn-icon btn-danger" title="Hapus Komisi Produk Ini" onclick="window.deleteAffiliateSetting('${item.id}')">
                         <i class="ph ph-trash"></i>
                     </button>
                     ` : ''}
@@ -199,25 +391,22 @@ export function renderAffiliateSettings() {
 }
 
 /**
- * Membuka modal pengaturan komisi untuk satu produk dari tombol Atur Komisi
+ * Membuka modal pengaturan komisi untuk satu produk (edit dari tombol pencil di periode detail)
  */
 window.editAffiliateSetting = function(settingId, productId) {
     if (!canAccessAffiliate()) return;
-    const item = settingId ? affiliateSettingsList.find(i => i.id === settingId) : affiliateSettingsList.find(i => i.product_id === productId);
+    const item = affiliateSettingsList.find(i => i.id === settingId);
     if (!item) return;
 
     const modal = document.getElementById('modal-affiliate-setting');
-    const selectEl = document.getElementById('affiliate-setting-product-select');
     const nameEl = document.getElementById('affiliate-setting-product-name');
+    const selectEl = document.getElementById('affiliate-setting-product-select');
     if (!modal) return;
 
     const btnSave = document.getElementById('btn-save-affiliate-setting');
     if (btnSave) btnSave.style.display = isSuperAdmin() ? 'inline-block' : 'none';
 
-    if (nameEl) {
-        nameEl.textContent = item.product_name;
-        nameEl.style.display = 'block';
-    }
+    if (nameEl) { nameEl.textContent = item.product_name; nameEl.style.display = 'block'; }
     if (selectEl) selectEl.style.display = 'none';
 
     populateSettingForm(item, false);
@@ -225,14 +414,15 @@ window.editAffiliateSetting = function(settingId, productId) {
 };
 
 /**
- * Membuka modal pengaturan komisi dengan dropdown seluruh produk (tombol + Atur Komisi Produk)
+ * Membuka modal pengaturan komisi dengan dropdown produk yang belum ada di periode ini
  */
 export function openCreateAffiliateSettingModal() {
     if (!canAccessAffiliate()) return;
-    if (affiliateProductsMaster.length === 0) {
-        showToast('Daftar produk tidak tersedia di outlet ini', 'warning');
+    if (!currentActivePeriodId) {
+        showToast('Buka detail periode terlebih dahulu', 'warning');
         return;
     }
+
     const modal = document.getElementById('modal-affiliate-setting');
     const selectEl = document.getElementById('affiliate-setting-product-select');
     const nameEl = document.getElementById('affiliate-setting-product-name');
@@ -241,38 +431,25 @@ export function openCreateAffiliateSettingModal() {
     const btnSave = document.getElementById('btn-save-affiliate-setting');
     if (btnSave) btnSave.style.display = isSuperAdmin() ? 'inline-block' : 'none';
 
-    selectEl.innerHTML = affiliateProductsMaster.map(prod => `<option value="${prod.id}">${escapeHtml(prod.name)}</option>`).join('');
+    // Hanya tampilkan produk yang BELUM ada di periode ini
+    const existingProductIds = new Set(affiliateSettingsList.map(s => s.product_id));
+    const availableProducts = affiliateProductsMaster.filter(p => !existingProductIds.has(p.id));
+
+    if (availableProducts.length === 0) {
+        showToast('Semua produk sudah memiliki aturan komisi di periode ini', 'info');
+        return;
+    }
+
+    selectEl.innerHTML = availableProducts.map(prod => `<option value="${prod.id}">${escapeHtml(prod.name)}</option>`).join('');
     selectEl.style.display = 'block';
     if (nameEl) nameEl.style.display = 'none';
 
-    const firstProdId = affiliateProductsMaster[0]?.id;
-    const existing = affiliateSettingsList.find(i => i.product_id === firstProdId);
-    const fallbackItem = {
-        id: null,
-        product_id: firstProdId,
-        commission_nominal: existing ? existing.commission_nominal : 0,
-        bonus_target_qty: existing ? existing.bonus_target_qty : 15,
-        bonus_nominal: existing ? existing.bonus_nominal : 0,
-        effective_date: new Date().toISOString().substring(0, 10),
-        end_date: '',
-        is_active: true
-    };
-    populateSettingForm(fallbackItem, true);
+    const blankItem = { id: null, product_id: availableProducts[0]?.id, commission_nominal: 0, bonus_target_qty: 15, bonus_nominal: 0 };
+    populateSettingForm(blankItem, true);
 
-    selectEl.onchange = (e) => {
-        const selectedProdId = e.target.value;
-        const exist = affiliateSettingsList.find(i => i.product_id === selectedProdId);
-        const itemToPopulate = {
-            id: null,
-            product_id: selectedProdId,
-            commission_nominal: exist ? exist.commission_nominal : 0,
-            bonus_target_qty: exist ? exist.bonus_target_qty : 15,
-            bonus_nominal: exist ? exist.bonus_nominal : 0,
-            effective_date: new Date().toISOString().substring(0, 10),
-            end_date: '',
-            is_active: true
-        };
-        populateSettingForm(itemToPopulate, true);
+    selectEl.onchange = () => {
+        const newBlank = { id: null, product_id: selectEl.value, commission_nominal: 0, bonus_target_qty: 15, bonus_nominal: 0 };
+        populateSettingForm(newBlank, true);
     };
 
     modal.classList.remove('hidden');
@@ -281,9 +458,7 @@ export function openCreateAffiliateSettingModal() {
 function populateSettingForm(item, forceNew = false) {
     document.getElementById('affiliate-setting-id').value = forceNew ? '' : (item.id || '');
     document.getElementById('affiliate-setting-product-id').value = item.product_id || '';
-    document.getElementById('affiliate-setting-effective-date').value = item.effective_date || new Date().toISOString().substring(0, 10);
-    document.getElementById('affiliate-setting-end-date').value = item.end_date || '';
-    document.getElementById('affiliate-setting-is-active').checked = item.id ? item.is_active : true;
+    document.getElementById('affiliate-setting-period-id').value = item.period_id || currentActivePeriodId || '';
     document.getElementById('affiliate-setting-normal').value = item.commission_nominal > 0 ? item.commission_nominal : '';
     document.getElementById('affiliate-setting-target-qty').value = item.bonus_target_qty || 15;
     document.getElementById('affiliate-setting-bonus-nominal').value = item.bonus_nominal > 0 ? item.bonus_nominal : '';
@@ -291,7 +466,7 @@ function populateSettingForm(item, forceNew = false) {
 }
 
 /**
- * Menghapus/mreset pengaturan komisi produk berdasarkan ID baris periode
+ * Menghapus aturan komisi satu produk dari periode
  */
 window.deleteAffiliateSetting = async function(settingId) {
     if (!isSuperAdmin()) {
@@ -302,14 +477,9 @@ window.deleteAffiliateSetting = async function(settingId) {
     const item = affiliateSettingsList.find(i => String(i.id) === String(settingId));
     const prodName = item ? item.product_name : 'Produk ini';
 
-    if (!confirm(`Hapus aturan komisi periode ini untuk produk "${prodName}"?`)) {
-        return;
-    }
+    if (!confirm(`Hapus aturan komisi untuk produk "${prodName}" dari periode ini?`)) return;
 
-    const { error } = await supabase
-        .from('affiliate_settings')
-        .delete()
-        .eq('id', settingId);
+    const { error } = await supabase.from('affiliate_settings').delete().eq('id', settingId);
 
     if (error) {
         console.error('Error delete affiliate setting:', error);
@@ -317,8 +487,8 @@ window.deleteAffiliateSetting = async function(settingId) {
         return;
     }
 
-    showToast('Pengaturan komisi produk berhasil dihapus', 'success');
-    loadAffiliateSettings();
+    showToast('Komisi produk berhasil dihapus', 'success');
+    if (currentActivePeriodId) _loadAndRenderPeriodProducts(currentActivePeriodId);
 };
 
 /**
@@ -334,8 +504,7 @@ window.updateAffiliateSettingPreview = function() {
 
     const calc = (qty) => {
         const base = qty * commNormal;
-        let bCount = 0;
-        let bTotal = 0;
+        let bCount = 0, bTotal = 0;
         if (targetQty > 0 && qty >= targetQty && bonusNominal > 0) {
             bCount = Math.floor(qty / targetQty);
             bTotal = bCount * bonusNominal;
@@ -348,10 +517,7 @@ window.updateAffiliateSettingPreview = function() {
     const q3 = targetQty + 1;
     const q4 = targetQty * 2;
 
-    const r1 = calc(q1);
-    const r2 = calc(q2);
-    const r3 = calc(q3);
-    const r4 = calc(q4);
+    const r1 = calc(q1), r2 = calc(q2), r3 = calc(q3), r4 = calc(q4);
 
     previewEl.innerHTML = `
         <strong style="display:block; margin-bottom: 6px; color:var(--primary);"><i class="ph ph-calculator"></i> Simulasi Perhitungan Komisi & Bonus:</strong>
@@ -365,7 +531,7 @@ window.updateAffiliateSettingPreview = function() {
 };
 
 /**
- * Menyimpan / memperbarui setting komisi (periode efektif & riwayat) ke tabel affiliate_settings
+ * Menyimpan / memperbarui aturan komisi produk ke tabel affiliate_settings
  */
 export async function handleSaveAffiliateSetting(event) {
     event.preventDefault();
@@ -376,19 +542,15 @@ export async function handleSaveAffiliateSetting(event) {
 
     const outletId = getActiveOutletId();
     const settingId = document.getElementById('affiliate-setting-id')?.value || '';
-    const productId = document.getElementById('affiliate-setting-product-id')?.value;
+    const productId = document.getElementById('affiliate-setting-product-id')?.value
+        || document.getElementById('affiliate-setting-product-select')?.value;
+    const periodId = document.getElementById('affiliate-setting-period-id')?.value || currentActivePeriodId;
     const commNormal = parseFloat(document.getElementById('affiliate-setting-normal')?.value) || 0;
     const targetQty = parseInt(document.getElementById('affiliate-setting-target-qty')?.value) || 15;
     const bonusNominal = parseFloat(document.getElementById('affiliate-setting-bonus-nominal')?.value) || 0;
-    const effectiveDate = document.getElementById('affiliate-setting-effective-date')?.value || new Date().toISOString().substring(0, 10);
-    const endDateVal = document.getElementById('affiliate-setting-end-date')?.value || '';
-    const endDate = endDateVal ? endDateVal : null;
-    const isActive = document.getElementById('affiliate-setting-is-active')?.checked !== false;
 
-    if (!outletId || !productId) return;
-
-    if (endDate && effectiveDate > endDate) {
-        showToast('Tanggal mulai tidak boleh lebih akhir dari tanggal selesai', 'warning');
+    if (!outletId || !productId || !periodId) {
+        showToast('Data tidak lengkap, pastikan periode dan produk sudah dipilih', 'warning');
         return;
     }
 
@@ -397,14 +559,12 @@ export async function handleSaveAffiliateSetting(event) {
 
     const payload = {
         outlet_id: outletId,
+        period_id: periodId,
         product_id: productId,
         commission_nominal: commNormal,
         bonus_target_qty: targetQty,
         bonus_nominal: bonusNominal,
-        bulk_commission_nominal: bonusNominal,
-        effective_date: effectiveDate,
-        end_date: endDate,
-        is_active: isActive
+        bulk_commission_nominal: bonusNominal
     };
 
     let error = null;
@@ -416,31 +576,18 @@ export async function handleSaveAffiliateSetting(event) {
         error = res.error;
     }
 
-    if (error && (error.code === '42703' || error.message?.includes('effective_date') || error.message?.includes('end_date') || error.message?.includes('bonus_target_qty') || error.message?.includes('column'))) {
-        console.warn('Kolom baru belum ada di tabel DB. Melakukan fallback upsert.', error);
-        const fallbackPayload = {
-            outlet_id: outletId,
-            product_id: productId,
-            commission_nominal: commNormal,
-            bulk_commission_nominal: bonusNominal
-        };
-        const fallbackRes = await supabase
-            .from('affiliate_settings')
-            .upsert(fallbackPayload, { onConflict: 'outlet_id, product_id' });
-        error = fallbackRes.error;
-    }
-
     if (btnSubmit) btnSubmit.disabled = false;
 
     if (error) {
         console.error('Save affiliate setting error:', error);
-        showToast('Gagal menyimpan setting komisi Affiliate', 'error');
+        showToast('Gagal menyimpan setting komisi Affiliate: ' + error.message, 'error');
     } else {
         showToast('Setting komisi Affiliate berhasil disimpan', 'success');
         document.getElementById('modal-affiliate-setting')?.classList.add('hidden');
-        loadAffiliateSettings();
+        if (currentActivePeriodId) _loadAndRenderPeriodProducts(currentActivePeriodId);
     }
 }
+
 
 /**
  * ----------------------------------------------------------------------------
@@ -724,24 +871,30 @@ window.onSelectAffiliateTransactions = async function(changedCheckbox) {
     }
 
     // Fungsi helper mencari aturan komisi aktif berdasarkan tanggal transaksi
+    // 1. Cari periode yang aktif pada tanggal transaksi
+    // 2. Dalam periode tersebut, cari setting untuk produk yang dimaksud
     const findSettingForDate = (prodId, trxDate) => {
-        const matching = affiliateSettingsList.filter(s => {
-            if (s.product_id !== prodId || s.is_active === false || !s.id) return false;
-            if (s.effective_date && s.effective_date > trxDate) return false;
-            if (s.end_date && s.end_date < trxDate) return false;
+        // Cari periode yang mencakup tanggal transaksi, urut dari paling baru
+        const matchingPeriods = affiliatePeriodsList.filter(p => {
+            if (!p.is_active) return false;
+            if (p.effective_date && p.effective_date > trxDate) return false;
+            if (p.end_date && p.end_date < trxDate) return false;
             return true;
         });
-        if (matching.length > 0) {
-            matching.sort((a, b) => (b.effective_date || '').localeCompare(a.effective_date || ''));
-            return matching[0];
+        matchingPeriods.sort((a, b) => (b.effective_date || '').localeCompare(a.effective_date || ''));
+
+        // Cari setting produk dalam periode yang cocok
+        for (const period of matchingPeriods) {
+            const setting = affiliateSettingsList.find(s => s.period_id === period.id && s.product_id === prodId);
+            if (setting) return setting;
         }
-        const anyActive = affiliateSettingsList.filter(s => s.product_id === prodId && s.is_active !== false && s.id);
-        if (anyActive.length > 0) {
-            anyActive.sort((a, b) => (b.effective_date || '').localeCompare(a.effective_date || ''));
-            return anyActive[0];
-        }
+
+        // Fallback: cari setting produk apapun yang ada (periode tidak diketahui)
+        const anyActive = affiliateSettingsList.filter(s => s.product_id === prodId && s.id);
+        if (anyActive.length > 0) return anyActive[0];
         return null;
     };
+
 
     // 2. Akumulasi kuantitas (total_qty) per produk & periode efektif yang berlaku pada tanggal transaksi
     const productPeriodMap = new Map();

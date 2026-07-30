@@ -5,6 +5,16 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 ## [Unreleased]
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
+### 2026-07-31
+- **Refactor (`docs/affiliate_schema.sql`, `js/affiliate.js`, `index.html`, `js/app.js`, `sw.js`)**:
+  - **Restrukturisasi Master Affiliate**: Halaman utama tab Master Affiliate kini menampilkan daftar **Periode Affiliate** (nama, rentang tanggal, status), bukan langsung daftar produk.
+  - Menambahkan tabel `affiliate_periods` (id, outlet_id, name, effective_date, end_date, is_active) dan kolom `period_id` pada `affiliate_settings` agar setiap aturan komisi produk terikat ke suatu periode.
+  - Klik ikon Edit pada baris periode membuka modal **Master Komisi Produk** berisi daftar semua produk dengan tarif komisi dalam periode tersebut.
+  - Tambah/Edit/Hapus periode melalui modal `#modal-affiliate-period-form`.
+  - Tambah/Edit/Hapus aturan komisi produk melalui modal `#modal-affiliate-setting` (tetap, tidak berubah tampilan) dari dalam modal detail periode.
+  - Kalkulasi komisi pada fitur **Catat Affiliate** (posting) diperbarui: mencocokkan tanggal transaksi dengan `affiliate_periods.effective_date/end_date`, lalu mengambil setting produk dari `period_id` yang ditemukan.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v68`.
+
 ### 2026-07-30
 - **Feature (`docs/affiliate_schema.sql`, `js/affiliate.js`, `index.html`, `js/app.js`, `sw.js`)**:
   - Menambahkan **Modul Affiliate** independen yang khusus dapat diakses oleh peran **superadmin**.

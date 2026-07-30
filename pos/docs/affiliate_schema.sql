@@ -3,18 +3,27 @@
 -- Silakan jalankan script ini di Supabase SQL Editor
 -- ====================================================================
 
--- 1. Create table affiliate_settings (Master setting komisi per produk & riwayat periode)
+-- 1. Create table affiliate_periods (Master Periode Affiliate)
+CREATE TABLE IF NOT EXISTS public.affiliate_periods (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    outlet_id UUID NOT NULL REFERENCES public.outlets(id) ON DELETE CASCADE,
+    name TEXT NULL,
+    effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    end_date DATE NULL,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 2. Create table affiliate_settings (Master setting komisi per produk untuk suatu periode)
 CREATE TABLE IF NOT EXISTS public.affiliate_settings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     outlet_id UUID NOT NULL REFERENCES public.outlets(id) ON DELETE CASCADE,
+    period_id UUID NULL REFERENCES public.affiliate_periods(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
     commission_nominal NUMERIC NOT NULL DEFAULT 0,
     bulk_commission_nominal NUMERIC NOT NULL DEFAULT 0,
     bonus_target_qty INTEGER NOT NULL DEFAULT 15,
     bonus_nominal NUMERIC NOT NULL DEFAULT 0,
-    effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    end_date DATE NULL,
-    is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -23,11 +32,9 @@ ALTER TABLE public.affiliate_settings
 DROP CONSTRAINT IF EXISTS unique_outlet_product_affiliate;
 
 ALTER TABLE public.affiliate_settings 
+ADD COLUMN IF NOT EXISTS period_id UUID NULL REFERENCES public.affiliate_periods(id) ON DELETE CASCADE,
 ADD COLUMN IF NOT EXISTS bonus_target_qty INTEGER NOT NULL DEFAULT 15,
-ADD COLUMN IF NOT EXISTS bonus_nominal NUMERIC NOT NULL DEFAULT 0,
-ADD COLUMN IF NOT EXISTS effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
-ADD COLUMN IF NOT EXISTS end_date DATE NULL,
-ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true;
+ADD COLUMN IF NOT EXISTS bonus_nominal NUMERIC NOT NULL DEFAULT 0;
 
 -- 2. Create table affiliate_postings (Dokumen rekap klaim komisi Affiliate)
 CREATE TABLE IF NOT EXISTS public.affiliate_postings (
@@ -113,11 +120,25 @@ CREATE POLICY "Superadmin ALL affiliate_posting_transactions" ON public.affiliat
         )
     );
 
+-- Enable RLS for affiliate_periods
+ALTER TABLE public.affiliate_periods ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Superadmin ALL affiliate_periods" ON public.affiliate_periods
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE profiles.id = auth.uid() 
+              AND profiles.role = 'superadmin'
+        )
+    );
+
 -- Grant privileges to authenticated users (RLS will restrict to superadmin)
+GRANT ALL ON public.affiliate_periods TO authenticated;
 GRANT ALL ON public.affiliate_settings TO authenticated;
 GRANT ALL ON public.affiliate_postings TO authenticated;
 GRANT ALL ON public.affiliate_posting_items TO authenticated;
 GRANT ALL ON public.affiliate_posting_transactions TO authenticated;
+GRANT ALL ON public.affiliate_periods TO service_role;
 GRANT ALL ON public.affiliate_settings TO service_role;
 GRANT ALL ON public.affiliate_postings TO service_role;
 GRANT ALL ON public.affiliate_posting_items TO service_role;
@@ -127,7 +148,9 @@ GRANT ALL ON public.affiliate_posting_transactions TO service_role;
 -- Performance Indexes (Meringankan beban query & menghemat CPU/IOPS Supabase)
 -- ====================================================================
 
+CREATE INDEX IF NOT EXISTS idx_affiliate_periods_outlet ON public.affiliate_periods(outlet_id, effective_date DESC);
 CREATE INDEX IF NOT EXISTS idx_affiliate_settings_outlet ON public.affiliate_settings(outlet_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_settings_period ON public.affiliate_settings(period_id);
 CREATE INDEX IF NOT EXISTS idx_affiliate_postings_outlet_date ON public.affiliate_postings(outlet_id, posting_date DESC);
 CREATE INDEX IF NOT EXISTS idx_affiliate_posting_items_posting ON public.affiliate_posting_items(posting_id);
 CREATE INDEX IF NOT EXISTS idx_affiliate_posting_trx_posting ON public.affiliate_posting_transactions(posting_id);

@@ -1341,26 +1341,22 @@
                 <div id="subtab-affiliate-settings" class="subtab-pane hidden">
                     <div class="action-bar" style="flex-wrap: wrap; gap: 10px; justify-content: space-between;">
                         <div>
-                            <h3>Master Setting Komisi Produk Affiliate</h3>
-                            <small style="color:var(--text-secondary)">Semua produk di outlet otomatis terdaftar. Pilih produk untuk menentukan komisinya.</small>
+                            <h3>Master Periode Komisi Affiliate</h3>
+                            <small style="color:var(--text-secondary)">Kelola riwayat periode komisi affiliate di outlet ini. Klik ikon Edit pada periode untuk mengatur komisi produk di dalamnya.</small>
                         </div>
                         <div>
-                            <button class="btn btn-primary" id="btn-add-affiliate-setting">
-                                <i class="ph ph-plus"></i> Atur Komisi Produk
+                            <button class="btn btn-primary" id="btn-add-affiliate-period" onclick="window.openCreateAffiliatePeriodModal()">
+                                <i class="ph ph-plus"></i> Tambah Periode Affiliate
                             </button>
                         </div>
                     </div>
                     <div class="table-responsive">
-                        <table class="data-table" id="affiliate-settings-table">
+                        <table class="data-table" id="affiliate-periods-table">
                             <thead>
                                 <tr>
-                                    <th>Nama Produk</th>
-                                    <th>Harga Jual</th>
-                                    <th>Periode Efektif</th>
+                                    <th>Periode Affiliate</th>
+                                    <th>Rentang Tanggal</th>
                                     <th>Status</th>
-                                    <th>Komisi Satuan (Rp/Qty)</th>
-                                    <th>Target Kelipatan (Qty)</th>
-                                    <th>Bonus Kelipatan (Rp)</th>
                                     <th class="action-col" style="text-align:right;">Aksi</th>
                                 </tr>
                             </thead>
@@ -2496,36 +2492,105 @@
     <!-- MODALS MODUL AFFILIATE (SUPERADMIN)    -->
     <!-- ======================================= -->
 
-    <!-- 1. Modal Atur Setting Komisi Produk -->
-    <div id="modal-affiliate-setting" class="modal-overlay hidden">
-        <div class="modal-content glass-panel" style="max-width: 480px; width: 95%;">
+    <!-- 1. Modal Tambah/Edit Periode Affiliate -->
+    <div id="modal-affiliate-period-form" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 460px; width: 95%;">
             <div class="modal-header">
-                <h3><i class="ph ph-gear"></i> Atur Komisi Affiliate</h3>
-                <button class="btn-close" data-close="modal-affiliate-setting"><i class="ph ph-x"></i></button>
+                <h3><i class="ph ph-calendar"></i> Tambah / Edit Periode Affiliate</h3>
+                <button class="btn-close" data-close="modal-affiliate-period-form"><i class="ph ph-x"></i></button>
             </div>
-            <form id="form-affiliate-setting">
-                <input type="hidden" id="affiliate-setting-id">
-                <input type="hidden" id="affiliate-setting-product-id">
-                <div style="margin-bottom: 15px; padding: 10px 12px; background: var(--bg-secondary); border-radius: 8px;">
-                    <strong id="affiliate-setting-product-name" style="font-size: 1.05rem;"></strong>
-                    <select id="affiliate-setting-product-select" class="input-field" style="width: 100%; display: none; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-main); font-weight: 600;"></select>
+            <form id="form-affiliate-period">
+                <input type="hidden" id="affiliate-period-id">
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label for="affiliate-period-name">Nama / Keterangan Periode (Opsional)</label>
+                    <input type="text" id="affiliate-period-name" class="input" placeholder="Contoh: Promo Agustus 2026">
                 </div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
                     <div class="input-group">
-                        <label for="affiliate-setting-effective-date">Tanggal Mulai *</label>
-                        <input type="date" id="affiliate-setting-effective-date" class="input" required>
+                        <label for="affiliate-period-effective-date">Tanggal Mulai *</label>
+                        <input type="date" id="affiliate-period-effective-date" class="input" required>
                     </div>
                     <div class="input-group">
-                        <label for="affiliate-setting-end-date">Tanggal Selesai (Opsional)</label>
-                        <input type="date" id="affiliate-setting-end-date" class="input">
+                        <label for="affiliate-period-end-date">Tanggal Selesai (Opsional)</label>
+                        <input type="date" id="affiliate-period-end-date" class="input">
                         <small style="color:var(--text-secondary)">Kosong = s/d Sekarang</small>
                     </div>
                 </div>
                 <div class="input-group" style="margin-bottom: 15px;">
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                        <input type="checkbox" id="affiliate-setting-is-active" checked style="width:16px; height:16px;">
-                        <span style="font-weight:600;">Aturan Komisi Ini Aktif</span>
+                        <input type="checkbox" id="affiliate-period-is-active" checked style="width:16px; height:16px;">
+                        <span style="font-weight:600;">Periode Komisi Ini Aktif</span>
                     </label>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn" data-close="modal-affiliate-period-form">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-affiliate-period">Simpan Periode</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 1b. Modal Detail Periode Affiliate (Tampilan Master Komisi Produk untuk Periode Terpilih) -->
+    <div id="modal-affiliate-period-detail" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 900px; width: 96%; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <div>
+                    <h3 style="margin-bottom:2px;"><i class="ph ph-gear-six"></i> Master Komisi Produk: <span id="period-detail-header-name" style="color:var(--primary)"></span></h3>
+                    <small id="period-detail-header-dates" style="color:var(--text-secondary);"></small>
+                </div>
+                <button class="btn-close" data-close="modal-affiliate-period-detail"><i class="ph ph-x"></i></button>
+            </div>
+            <div style="padding: 15px 20px;">
+                <div class="action-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btn-edit-current-period-from-detail" onclick="window.editCurrentPeriodFromDetail()">
+                            <i class="ph ph-pencil-simple"></i> Ubah Info Periode
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-primary" id="btn-add-period-setting" onclick="window.openCreateAffiliateSettingModal()">
+                            <i class="ph ph-plus"></i> Atur Komisi Produk
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="affiliate-period-products-table">
+                        <thead>
+                            <tr>
+                                <th>Nama Produk</th>
+                                <th>Harga Jual</th>
+                                <th>Komisi Satuan (Rp/Qty)</th>
+                                <th>Target Kelipatan (Qty)</th>
+                                <th>Bonus Kelipatan (Rp)</th>
+                                <th class="action-col" style="text-align:right;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+                    <button type="button" class="btn" data-close="modal-affiliate-period-detail">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1c. Modal Atur Setting Komisi Produk -->
+    <div id="modal-affiliate-setting" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 480px; width: 95%;">
+            <div class="modal-header">
+                <h3><i class="ph ph-gear"></i> Atur Komisi Produk</h3>
+                <button class="btn-close" data-close="modal-affiliate-setting"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-affiliate-setting">
+                <input type="hidden" id="affiliate-setting-id">
+                <input type="hidden" id="affiliate-setting-product-id">
+                <input type="hidden" id="affiliate-setting-period-id">
+                <div style="margin-bottom: 15px; padding: 10px 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong id="affiliate-setting-product-name" style="font-size: 1.05rem;"></strong>
+                    <select id="affiliate-setting-product-select" class="input-field" style="width: 100%; display: none; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-main); font-weight: 600;"></select>
                 </div>
                 <div class="input-group">
                     <label for="affiliate-setting-normal">Komisi Satuan (Rp / Qty)</label>
