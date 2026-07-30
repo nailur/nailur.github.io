@@ -99,6 +99,10 @@ export async function loadAffiliateSettings() {
     }));
 
     renderAffiliatePeriods();
+
+    // Sembunyikan tombol write untuk Owner
+    const btnAddPeriod = document.getElementById('btn-add-affiliate-period');
+    if (btnAddPeriod) btnAddPeriod.style.display = isSuperAdmin() ? 'inline-block' : 'none';
 }
 
 /**
@@ -618,6 +622,10 @@ export async function loadAffiliatePostings() {
 
     affiliatePostingsList = data || [];
     renderAffiliatePostings();
+
+    // Sembunyikan tombol write untuk Owner
+    const btnAddPosting = document.getElementById('btn-add-affiliate-posting');
+    if (btnAddPosting) btnAddPosting.style.display = isSuperAdmin() ? 'inline-block' : 'none';
 }
 
 /**

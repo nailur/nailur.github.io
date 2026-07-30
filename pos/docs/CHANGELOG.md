@@ -14,6 +14,11 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
   - Tambah/Edit/Hapus aturan komisi produk melalui modal `#modal-affiliate-setting` (tetap, tidak berubah tampilan) dari dalam modal detail periode.
   - Kalkulasi komisi pada fitur **Catat Affiliate** (posting) diperbarui: mencocokkan tanggal transaksi dengan `affiliate_periods.effective_date/end_date`, lalu mengambil setting produk dari `period_id` yang ditemukan.
   - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v68`.
+- **Feature - Owner Read Access (`docs/affiliate_schema.sql`, `js/affiliate.js`)**:
+  - Menambahkan RLS policy `Owner SELECT` pada seluruh tabel affiliate (`affiliate_periods`, `affiliate_settings`, `affiliate_postings`, `affiliate_posting_items`, `affiliate_posting_transactions`) agar role **Owner** dapat membaca data tanpa dapat menulis/menghapus.
+  - **Owner diizinkan**: lihat listing & detail Posting Affiliate, lihat listing & detail (komisi produk) Master Affiliate.
+  - **Owner diblokir**: tombol "Catat Affiliate" disembunyikan, tombol "Tambah Periode Affiliate" disembunyikan, tombol Delete/Hapus tidak muncul, tombol Simpan/Bayar tidak muncul — semuanya dikontrol via `isSuperAdmin()`.
+  - Script SQL diperbarui dengan `DROP POLICY IF EXISTS` sebelum setiap `CREATE POLICY` agar idempoten dan aman dijalankan berulang.
 
 ### 2026-07-30
 - **Feature (`docs/affiliate_schema.sql`, `js/affiliate.js`, `index.html`, `js/app.js`, `sw.js`)**:

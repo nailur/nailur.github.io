@@ -72,72 +72,93 @@ CREATE TABLE IF NOT EXISTS public.affiliate_posting_transactions (
 );
 
 -- ====================================================================
--- Enable Row Level Security (RLS) & Policies (Khusus Superadmin)
+-- Enable Row Level Security (RLS) & Policies
+-- Superadmin: ALL (read + write)
+-- Owner: SELECT only (read)
 -- ====================================================================
 
 ALTER TABLE public.affiliate_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.affiliate_postings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.affiliate_posting_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.affiliate_posting_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.affiliate_periods ENABLE ROW LEVEL SECURITY;
 
--- Policies for affiliate_settings
+-- ----------------------------------------------------------------
+-- affiliate_settings
+-- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Superadmin ALL affiliate_settings" ON public.affiliate_settings;
 CREATE POLICY "Superadmin ALL affiliate_settings" ON public.affiliate_settings
     FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
-              AND profiles.role = 'superadmin'
-        )
+        EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'superadmin')
     );
 
--- Policies for affiliate_postings
+DROP POLICY IF EXISTS "Owner SELECT affiliate_settings" ON public.affiliate_settings;
+CREATE POLICY "Owner SELECT affiliate_settings" ON public.affiliate_settings
+    FOR SELECT USING (
+        EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'owner')
+    );
+
+-- ----------------------------------------------------------------
+-- affiliate_postings
+-- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Superadmin ALL affiliate_postings" ON public.affiliate_postings;
 CREATE POLICY "Superadmin ALL affiliate_postings" ON public.affiliate_postings
     FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
-              AND profiles.role = 'superadmin'
-        )
+        EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'superadmin')
     );
 
--- Policies for affiliate_posting_items
+DROP POLICY IF EXISTS "Owner SELECT affiliate_postings" ON public.affiliate_postings;
+CREATE POLICY "Owner SELECT affiliate_postings" ON public.affiliate_postings
+    FOR SELECT USING (
+        EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'owner')
+    );
+
+-- ----------------------------------------------------------------
+-- affiliate_posting_items
+-- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Superadmin ALL affiliate_posting_items" ON public.affiliate_posting_items;
 CREATE POLICY "Superadmin ALL affiliate_posting_items" ON public.affiliate_posting_items
     FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
-              AND profiles.role = 'superadmin'
-        )
+        EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'superadmin')
     );
 
--- Policies for affiliate_posting_transactions
+DROP POLICY IF EXISTS "Owner SELECT affiliate_posting_items" ON public.affiliate_posting_items;
+CREATE POLICY "Owner SELECT affiliate_posting_items" ON public.affiliate_posting_items
+    FOR SELECT USING (
+        EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'owner')
+    );
+
+-- ----------------------------------------------------------------
+-- affiliate_posting_transactions
+-- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Superadmin ALL affiliate_posting_transactions" ON public.affiliate_posting_transactions;
 CREATE POLICY "Superadmin ALL affiliate_posting_transactions" ON public.affiliate_posting_transactions
     FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
-              AND profiles.role = 'superadmin'
-        )
+        EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'superadmin')
     );
 
--- Enable RLS for affiliate_periods
-ALTER TABLE public.affiliate_periods ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owner SELECT affiliate_posting_transactions" ON public.affiliate_posting_transactions;
+CREATE POLICY "Owner SELECT affiliate_posting_transactions" ON public.affiliate_posting_transactions
+    FOR SELECT USING (
+        EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'owner')
+    );
 
+-- ----------------------------------------------------------------
+-- affiliate_periods
+-- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Superadmin ALL affiliate_periods" ON public.affiliate_periods;
 CREATE POLICY "Superadmin ALL affiliate_periods" ON public.affiliate_periods
     FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
-              AND profiles.role = 'superadmin'
-        )
+        EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'superadmin')
     );
 
--- Grant privileges to authenticated users (RLS will restrict to superadmin)
+DROP POLICY IF EXISTS "Owner SELECT affiliate_periods" ON public.affiliate_periods;
+CREATE POLICY "Owner SELECT affiliate_periods" ON public.affiliate_periods
+    FOR SELECT USING (
+        EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'owner')
+    );
+
+-- Grant privileges to authenticated users (RLS will enforce role restrictions)
 GRANT ALL ON public.affiliate_periods TO authenticated;
 GRANT ALL ON public.affiliate_settings TO authenticated;
 GRANT ALL ON public.affiliate_postings TO authenticated;
@@ -148,6 +169,7 @@ GRANT ALL ON public.affiliate_settings TO service_role;
 GRANT ALL ON public.affiliate_postings TO service_role;
 GRANT ALL ON public.affiliate_posting_items TO service_role;
 GRANT ALL ON public.affiliate_posting_transactions TO service_role;
+
 
 -- ====================================================================
 -- Performance Indexes (Meringankan beban query & menghemat CPU/IOPS Supabase)
