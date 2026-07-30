@@ -312,7 +312,8 @@ export async function loadAffiliatePostings() {
         .from('affiliate_postings')
         .select('*, profiles:created_by(name)')
         .eq('outlet_id', outletId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(100);
 
     if (error && error.code !== 'PGRST116') {
         console.error('Error load affiliate postings:', error);
@@ -407,21 +408,22 @@ export async function openCreateAffiliateModal() {
 
     modal.classList.remove('hidden');
 
-    // 1. Ambil ID transaksi yang sudah diklaim
+    // 1. Ambil ID transaksi yang sudah diklaim (limit agar hemat usage DB)
     const { data: claimedData, error: claimedError } = await supabase
         .from('affiliate_posting_transactions')
-        .select('transaction_id');
+        .select('transaction_id')
+        .limit(2000);
 
     const claimedIds = new Set((claimedData || []).map(row => row.transaction_id));
 
-    // 2. Ambil transaksi yang sudah selesai (completed) pada outlet aktif
+    // 2. Ambil transaksi yang sudah selesai (completed) pada outlet aktif (limit 100 agar hemat usage & cepat)
     const { data: trxs, error: trxError } = await supabase
         .from('transactions')
         .select('id, receipt_no, created_at, customer_name, total_amount')
         .eq('outlet_id', outletId)
         .eq('status', 'completed')
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(100);
 
     if (trxError) {
         console.error('Error load unclaimed transactions:', trxError);
@@ -857,11 +859,11 @@ window.viewAffiliateDetails = async function(postingId) {
     document.getElementById('detail-affiliate-status').textContent = post.status;
     document.getElementById('detail-affiliate-total').textContent = `Rp ${Number(post.total_amount).toLocaleString('id-ID')}`;
 
-    // 1. Ambil rincian item produk
-    const { data: itemsData } = await supabase
-        .from('affiliate_posting_items')
-        .select('*')
-        .eq('posting_id', postingId);
+    // 1. Ambil rincian item produk & transaksi yang diklaim secara paralel (hemat waktu & responsif)
+    const [ { data: itemsData }, { data: trxLinks } ] = await Promise.all([
+        supabase.from('affiliate_posting_items').select('*').eq('posting_id', postingId),
+        supabase.from('affiliate_posting_transactions').select('transaction_id, transactions(receipt_no, created_at, customer_name, total_amount)').eq('posting_id', postingId)
+    ]);
 
     const itemsTbody = document.getElementById('detail-affiliate-items-tbody');
     if (itemsTbody) {
@@ -878,12 +880,6 @@ window.viewAffiliateDetails = async function(postingId) {
             `).join('');
         }
     }
-
-    // 2. Ambil daftar transaksi penjualan yang diklaim
-    const { data: trxLinks } = await supabase
-        .from('affiliate_posting_transactions')
-        .select('transaction_id, transactions(receipt_no, created_at, customer_name, total_amount)')
-        .eq('posting_id', postingId);
 
     const trxTbody = document.getElementById('detail-affiliate-trx-tbody');
     if (trxTbody) {

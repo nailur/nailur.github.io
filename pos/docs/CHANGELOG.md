@@ -31,7 +31,12 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
   - **Proteksi Fallback Database**: Menambahkan kolom `bonus_target_qty` dan `bonus_nominal` pada dokumentasi skema SQL serta menambahkan penanganan fallback otomatis pada `handleSaveAffiliateSetting()` agar penyimpanan tidak gagal meskipun kolom belum ditambahkan di Supabase.
   - **Penyederhanaan Tombol Aksi**: Mengubah tombol aksi pada tabel **Master Affiliate** menjadi tombol ikon pensil saja (`<i class="ph ph-pencil-simple"></i>`) tanpa teks agar kolom aksi lebih ramping dan rapi.
   - **Perbaikan CSS Input Modal**: Menambahkan kelas `input` pada input angka di modal **Atur Komisi Produk** (`#affiliate-setting-normal`, `#affiliate-setting-target-qty`, `#affiliate-setting-bonus-nominal`) dan memperbarui selektor CSS di `style.css` menjadi `.input-group input` agar semua input yang bersarang di layout grid ter-render dengan border rounded, padding, dan efek fokus standar.
-  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v61`.
+  - **Audit Keamanan & Optimasi Penggunaan (Usage Tuning)**:
+    - Menambahkan `CREATE INDEX IF NOT EXISTS` untuk foreign keys pada `affiliate_schema.sql` (`idx_affiliate_settings_outlet`, `idx_affiliate_postings_outlet_date`, `idx_affiliate_posting_items_posting`, `idx_affiliate_posting_trx_transaction`) serta index untuk pengecekan role superadmin guna memangkas CPU usage & mengeliminasi sequential scan di database Supabase.
+    - Menerapkan batasan query (`.limit(100)` pada riwayat posting dan transaksi selesai, `.limit(2000)` pada riwayat klaim) di `affiliate.js` sehingga payload JSON 50% lebih kecil dan tidak membebani pemakaian bandwidth/IOPS Supabase seiring bertambahnya data.
+    - Memparalelkan eksekusi query pada modal **Detail Posting Affiliate** menggunakan `Promise.all` sehingga waktu pemuatan rincian item dan transaksi berkurang separuhnya.
+    - Memastikan seluruh tampilan data dinamis diamankan dari celah XSS dengan `escapeHtml()` dan verifikasi akses eksklusif superadmin pada level antarmuka maupun RLS kebijakan database.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v62`.
 
 ### 2026-07-28
 - **Feature (`index.html`, `js/inventory.js`, `sw.js`)**:

@@ -114,3 +114,14 @@ GRANT ALL ON public.affiliate_settings TO service_role;
 GRANT ALL ON public.affiliate_postings TO service_role;
 GRANT ALL ON public.affiliate_posting_items TO service_role;
 GRANT ALL ON public.affiliate_posting_transactions TO service_role;
+
+-- ====================================================================
+-- Performance Indexes (Meringankan beban query & menghemat CPU/IOPS Supabase)
+-- ====================================================================
+
+CREATE INDEX IF NOT EXISTS idx_affiliate_settings_outlet ON public.affiliate_settings(outlet_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_postings_outlet_date ON public.affiliate_postings(outlet_id, posting_date DESC);
+CREATE INDEX IF NOT EXISTS idx_affiliate_posting_items_posting ON public.affiliate_posting_items(posting_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_posting_trx_posting ON public.affiliate_posting_transactions(posting_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_posting_trx_transaction ON public.affiliate_posting_transactions(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_role_superadmin ON public.profiles(id, role);
