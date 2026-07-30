@@ -416,12 +416,14 @@ export async function openCreateAffiliateModal() {
 
     const claimedIds = new Set((claimedData || []).map(row => row.transaction_id));
 
-    // 2. Ambil transaksi yang sudah selesai (completed) pada outlet aktif (limit 100 agar hemat usage & cepat)
+    // 2. Ambil transaksi yang sudah selesai (completed) pada outlet aktif & pastikan BUKAN transaksi void/cancel
     const { data: trxs, error: trxError } = await supabase
         .from('transactions')
-        .select('id, receipt_no, created_at, customer_name, total_amount')
+        .select('id, receipt_no, created_at, customer_name, total_amount, status')
         .eq('outlet_id', outletId)
         .eq('status', 'completed')
+        .neq('status', 'voided')
+        .neq('status', 'cancelled')
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -431,8 +433,15 @@ export async function openCreateAffiliateModal() {
         return;
     }
 
-    // Filter yang belum ada di claimedIds
-    unclaimedTransactionsList = (trxs || []).filter(t => !claimedIds.has(t.id));
+    // Filter ganda di JavaScript: pastikan transaksi belum diklaim & benar-benar bukan transaksi yang di-cancel/void
+    unclaimedTransactionsList = (trxs || []).filter(t => {
+        if (claimedIds.has(t.id)) return false;
+        const st = String(t.status || '').toLowerCase();
+        if (st === 'voided' || st === 'void' || st === 'cancelled' || st === 'cancel' || st === 'batal') {
+            return false;
+        }
+        return true;
+    });
 
     renderUnclaimedTransactionsTable();
 }

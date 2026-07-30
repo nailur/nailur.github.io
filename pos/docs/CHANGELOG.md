@@ -36,7 +36,8 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
     - Menerapkan batasan query (`.limit(100)` pada riwayat posting dan transaksi selesai, `.limit(2000)` pada riwayat klaim) di `affiliate.js` sehingga payload JSON 50% lebih kecil dan tidak membebani pemakaian bandwidth/IOPS Supabase seiring bertambahnya data.
     - Memparalelkan eksekusi query pada modal **Detail Posting Affiliate** menggunakan `Promise.all` sehingga waktu pemuatan rincian item dan transaksi berkurang separuhnya.
     - Memastikan seluruh tampilan data dinamis diamankan dari celah XSS dengan `escapeHtml()` dan verifikasi akses eksklusif superadmin pada level antarmuka maupun RLS kebijakan database.
-  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v62`.
+  - **Filter Ganda Anti-Cancel/Void (`js/affiliate.js`)**: Menambahkan filter `.neq('status', 'voided')` dan `.neq('status', 'cancelled')` pada query Supabase di `openCreateAffiliateModal()` serta penjagaan ganda di level JavaScript (`t.status !== 'voided' && t.status !== 'cancelled'`, dst.) untuk menjamin 100% hanya transaksi berhasil yang dapat dipilih dan diklaim sebagai komisi Affiliate.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v63`.
 
 ### 2026-07-28
 - **Feature (`index.html`, `js/inventory.js`, `sw.js`)**:
