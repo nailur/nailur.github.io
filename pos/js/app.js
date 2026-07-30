@@ -361,10 +361,10 @@ async function routeUser(profile) {
     // Absensi selalu tampil untuk semua role yang masuk POS view
     document.getElementById('nav-attendance').classList.remove('hidden');
 
-    // Tab Affiliate eksklusif HANYA untuk superadmin
+    // Tab Affiliate untuk superadmin dan owner
     const navAffiliateBtn = document.getElementById('nav-affiliate');
     const saNavAffiliateBtn = document.getElementById('sa-nav-affiliate');
-    if (profile && profile.role === 'superadmin') {
+    if (profile && (profile.role === 'superadmin' || profile.role === 'owner')) {
         if (navAffiliateBtn) navAffiliateBtn.classList.remove('hidden');
         if (saNavAffiliateBtn) saNavAffiliateBtn.classList.remove('hidden');
     } else {

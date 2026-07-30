@@ -39,8 +39,11 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
   - **Filter Ganda Anti-Cancel/Void (`js/affiliate.js`)**: Menambahkan filter `.neq('status', 'voided')` dan `.neq('status', 'cancelled')` pada query Supabase di `openCreateAffiliateModal()` serta penjagaan ganda di level JavaScript (`t.status !== 'voided' && t.status !== 'cancelled'`, dst.) untuk menjamin 100% hanya transaksi berhasil yang dapat dipilih dan diklaim sebagai komisi Affiliate.
   - **Pagination Transaksi Belum Diklaim (`index.html`, `js/affiliate.js`)**: Menambahkan kontrol pagination (15 transaksi per halaman) di bawah tabel transaksi pada modal **Catat Klaim Affiliate Baru** serta memperluas batas pengambilan data hingga 5000 transaksi sehingga pengguna dapat menjelajahi dan memilih seluruh transaksi penjualan lama tanpa terhalang limit, dengan tetap mempertahankan transaksi yang dicentang lintas halaman.
   - **Fitur Hapus Master Komisi Produk (`js/affiliate.js`)**: Menambahkan tombol hapus (ikon tempat sampah `<i class="ph ph-trash"></i>`) pada setiap baris tabel **Master Setting Komisi Produk Affiliate** beserta fungsi `window.deleteAffiliateSetting()` sehingga Superadmin dapat menghapus atau mereset pengaturan komisi produk kembali ke `-` (Rp 0).
-  - **Perapian Alinemen Kolom Bukti Transfer & Aksi (`index.html`, `js/affiliate.js`)**: Menambahkan `style="text-align:center;"` pada header dan sel kolom **Bukti Transfer** sehingga ikon gambar bukti transfer atau tanda `-` berada persis di tengah secara simetris dan rapi, serta menyelaraskan kolom **Aksi** dengan rata kanan.
-  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v65`.
+  - **Hak Akses & Pembatasan Role Owner pada Modul Affiliate (`js/app.js`, `js/affiliate.js`)**:
+    - Membuka akses menu dan tab **Affiliate** untuk pengguna dengan role `owner` (selain `superadmin`).
+    - **Batasan Owner di Rekap Posting**: Owner dapat menekan tombol *Catat Affiliate* untuk simulasi perhitungan namun tombol *Simpan Posting* di dalam modal dihilangkan. Owner dapat melihat daftar posting, melihat *Bukti Transfer*, serta *Lihat Detail*, namun tombol *Hapus* dan tombol *Bayar Komisi* dihilangkan.
+    - **Batasan Owner di Master Affiliate**: Owner dapat melihat daftar komisi produk dan membuka *Atur Komisi Produk*, namun tombol *Simpan Komisi* di dalam modal serta ikon tombol *Hapus Komisi* pada tabel dihilangkan.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v66`.
 
 ### 2026-07-28
 - **Feature (`index.html`, `js/inventory.js`, `sw.js`)**:

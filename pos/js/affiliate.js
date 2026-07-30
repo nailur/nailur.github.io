@@ -32,6 +32,16 @@ export function isSuperAdmin() {
     return profile && profile.role === 'superadmin';
 }
 
+export function isOwner() {
+    const profile = getCurrentProfile();
+    return profile && profile.role === 'owner';
+}
+
+export function canAccessAffiliate() {
+    const profile = getCurrentProfile();
+    return profile && (profile.role === 'superadmin' || profile.role === 'owner');
+}
+
 /**
  * ----------------------------------------------------------------------------
  * 1. MASTER AFFILIATE SETTING
@@ -42,7 +52,7 @@ export function isSuperAdmin() {
  * Memuat daftar produk & setting komisi affiliate untuk outlet aktif
  */
 export async function loadAffiliateSettings() {
-    if (!isSuperAdmin()) return;
+    if (!canAccessAffiliate()) return;
     const outletId = getActiveOutletId();
     if (!outletId) return;
 
@@ -127,9 +137,11 @@ export function renderAffiliateSettings() {
                     <button class="btn btn-icon btn-secondary" title="Atur Komisi Produk" onclick="window.editAffiliateSetting('${item.product_id}')">
                         <i class="ph ph-pencil-simple"></i>
                     </button>
+                    ${isSuperAdmin() ? `
                     <button class="btn btn-icon btn-danger" title="Hapus Komisi Produk" onclick="window.deleteAffiliateSetting('${item.product_id}')">
                         <i class="ph ph-trash"></i>
                     </button>
+                    ` : ''}
                 </td>
             </tr>
         `;
@@ -140,7 +152,7 @@ export function renderAffiliateSettings() {
  * Membuka modal pengaturan komisi untuk satu produk dari tombol Atur Komisi
  */
 window.editAffiliateSetting = function(productId) {
-    if (!isSuperAdmin()) return;
+    if (!canAccessAffiliate()) return;
     const item = affiliateSettingsList.find(i => i.product_id === productId);
     if (!item) return;
 
@@ -148,6 +160,9 @@ window.editAffiliateSetting = function(productId) {
     const selectEl = document.getElementById('affiliate-setting-product-select');
     const nameEl = document.getElementById('affiliate-setting-product-name');
     if (!modal) return;
+
+    const btnSave = document.getElementById('btn-save-affiliate-setting');
+    if (btnSave) btnSave.style.display = isSuperAdmin() ? 'inline-block' : 'none';
 
     if (nameEl) {
         nameEl.textContent = item.product_name;
@@ -163,7 +178,7 @@ window.editAffiliateSetting = function(productId) {
  * Membuka modal pengaturan komisi dengan dropdown seluruh produk (tombol + Atur Komisi Produk)
  */
 export function openCreateAffiliateSettingModal() {
-    if (!isSuperAdmin()) return;
+    if (!canAccessAffiliate()) return;
     if (affiliateSettingsList.length === 0) {
         showToast('Daftar produk tidak tersedia di outlet ini', 'warning');
         return;
@@ -172,6 +187,9 @@ export function openCreateAffiliateSettingModal() {
     const selectEl = document.getElementById('affiliate-setting-product-select');
     const nameEl = document.getElementById('affiliate-setting-product-name');
     if (!modal || !selectEl) return;
+
+    const btnSave = document.getElementById('btn-save-affiliate-setting');
+    if (btnSave) btnSave.style.display = isSuperAdmin() ? 'inline-block' : 'none';
 
     selectEl.innerHTML = affiliateSettingsList.map(item => `<option value="${item.product_id}">${escapeHtml(item.product_name)}</option>`).join('');
     selectEl.style.display = 'block';
@@ -344,7 +362,7 @@ export async function handleSaveAffiliateSetting(event) {
  * Memuat riwayat postingan affiliate untuk outlet aktif
  */
 export async function loadAffiliatePostings() {
-    if (!isSuperAdmin()) return;
+    if (!canAccessAffiliate()) return;
     const outletId = getActiveOutletId();
     if (!outletId) return;
 
@@ -399,7 +417,7 @@ export function renderAffiliatePostings() {
                 </td>
                 <td>${escapeHtml(adminName)}</td>
                 <td style="white-space:nowrap; text-align:right;">
-                    ${!isPaid ? `
+                    ${!isPaid && isSuperAdmin() ? `
                         <button class="btn btn-icon btn-success" onclick="window.openPayAffiliateModal('${post.id}')" title="Bayar Komisi">
                             <i class="ph ph-money"></i>
                         </button>
@@ -407,9 +425,11 @@ export function renderAffiliatePostings() {
                     <button class="btn btn-icon btn-secondary" onclick="window.viewAffiliateDetails('${post.id}')" title="Lihat Detail">
                         <i class="ph ph-eye"></i>
                     </button>
+                    ${isSuperAdmin() ? `
                     <button class="btn btn-icon btn-danger" onclick="window.deleteAffiliatePosting('${post.id}')" title="Hapus">
                         <i class="ph ph-trash"></i>
                     </button>
+                    ` : ''}
                 </td>
             </tr>
         `;
@@ -426,8 +446,8 @@ export function renderAffiliatePostings() {
  * Membuka modal Add Affiliate Posting & memuat transaksi yang belum diklaim
  */
 export async function openCreateAffiliateModal() {
-    if (!isSuperAdmin()) {
-        showToast('Hanya superadmin yang dapat membuat Posting Affiliate', 'error');
+    if (!canAccessAffiliate()) {
+        showToast('Anda tidak memiliki hak akses untuk membuat Posting Affiliate', 'error');
         return;
     }
     const outletId = getActiveOutletId();
@@ -437,6 +457,9 @@ export async function openCreateAffiliateModal() {
 
     const modal = document.getElementById('modal-create-affiliate-posting');
     if (!modal) return;
+
+    const btnSubmit = document.getElementById('btn-submit-create-affiliate');
+    if (btnSubmit) btnSubmit.style.display = isSuperAdmin() ? 'inline-block' : 'none';
 
     // Reset form
     document.getElementById('affiliate-posting-affiliator').value = '';
@@ -922,7 +945,7 @@ export async function handleSaveAffiliatePayment(event) {
  * Melihat gambar bukti transfer dari storage privat menggunakan signed URL
  */
 window.viewAffiliateProof = async function(fileName) {
-    if (!isSuperAdmin() || !fileName) return;
+    if (!canAccessAffiliate() || !fileName) return;
 
     // Buat signed URL berdurasi 1 jam (3600 detik)
     const { data, error } = await supabase.storage
@@ -954,7 +977,7 @@ window.viewAffiliateProof = async function(fileName) {
  * Membuka modal detail rincian item komisi dan transaksi yang diklaim
  */
 window.viewAffiliateDetails = async function(postingId) {
-    if (!isSuperAdmin()) return;
+    if (!canAccessAffiliate()) return;
     const post = affiliatePostingsList.find(p => p.id === postingId);
     if (!post) return;
 
