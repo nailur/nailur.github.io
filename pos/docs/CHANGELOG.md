@@ -13,7 +13,8 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
   - Menambahkan fitur **Master Setting Komisi Produk**: pengaturan komisi normal (< 15 qty) dan komisi order masal (≥ 15 qty) secara persentase/nominal rupiah, dengan kalkulasi saling terhubung.
   - Menambahkan fitur **Klaim & Posting Affiliate**: memilih satu atau banyak transaksi penjualan yang belum diklaim (`affiliate_claimed = false`), menghitung komisi secara otomatis per item berdasarkan akumulasi kuantitas (mengaktifkan tarif massal otomatis apabila total kuantitas ≥ 15 box).
   - Menambahkan fitur **Pembayaran & Upload Bukti Transfer**: status default *Unpaid* dapat dikonfirmasi menjadi *Paid* dengan melampirkan bukti transfer yang dikompres otomatis di sisi klien via `browser-image-compression`.
-  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v57` serta menambahkan `affiliate.js` ke daftar `urlsToCache`.
+  - Menambahkan tombol pintasan **Affiliate** pada navigasi tab **Pengaturan** (`#sa-nav-affiliate`) agar Superadmin dapat langsung membuka Modul Affiliate baik dari tampilan POS Kasir maupun dari tampilan Pengaturan.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v58` serta menambahkan `affiliate.js` ke daftar `urlsToCache`.
 
 ### 2026-07-28
 - **Feature (`index.html`, `js/inventory.js`, `sw.js`)**:

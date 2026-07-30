@@ -361,12 +361,13 @@ async function routeUser(profile) {
 
     // Tab Affiliate eksklusif HANYA untuk superadmin
     const navAffiliateBtn = document.getElementById('nav-affiliate');
-    if (navAffiliateBtn) {
-        if (profile && profile.role === 'superadmin') {
-            navAffiliateBtn.classList.remove('hidden');
-        } else {
-            navAffiliateBtn.classList.add('hidden');
-        }
+    const saNavAffiliateBtn = document.getElementById('sa-nav-affiliate');
+    if (profile && profile.role === 'superadmin') {
+        if (navAffiliateBtn) navAffiliateBtn.classList.remove('hidden');
+        if (saNavAffiliateBtn) saNavAffiliateBtn.classList.remove('hidden');
+    } else {
+        if (navAffiliateBtn) navAffiliateBtn.classList.add('hidden');
+        if (saNavAffiliateBtn) saNavAffiliateBtn.classList.add('hidden');
     }
 }
 
@@ -800,6 +801,12 @@ function setupEventListeners() {
     // Main Tabs (Pengaturan & Manajemen)
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
+            if (e.currentTarget.id === 'sa-nav-affiliate') {
+                showView('pos');
+                const affBtn = document.getElementById('nav-affiliate');
+                if (affBtn) affBtn.click();
+                return;
+            }
             const viewId = 'superadmin-view';
             const storageKey = 'management_active_tab';
             

@@ -1,6 +1,6 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'pos-cache-v57';
+const CACHE_NAME = 'pos-cache-v58';
 const urlsToCache = [
   './',
   './index.html',
