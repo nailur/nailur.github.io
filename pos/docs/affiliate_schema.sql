@@ -3,7 +3,7 @@
 -- Silakan jalankan script ini di Supabase SQL Editor
 -- ====================================================================
 
--- 1. Create table affiliate_settings (Master setting komisi per produk)
+-- 1. Create table affiliate_settings (Master setting komisi per produk & riwayat periode)
 CREATE TABLE IF NOT EXISTS public.affiliate_settings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     outlet_id UUID NOT NULL REFERENCES public.outlets(id) ON DELETE CASCADE,
@@ -12,14 +12,22 @@ CREATE TABLE IF NOT EXISTS public.affiliate_settings (
     bulk_commission_nominal NUMERIC NOT NULL DEFAULT 0,
     bonus_target_qty INTEGER NOT NULL DEFAULT 15,
     bonus_nominal NUMERIC NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT unique_outlet_product_affiliate UNIQUE (outlet_id, product_id)
+    effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    end_date DATE NULL,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Note: Jika tabel affiliate_settings sudah ada sebelumnya, jalankan perintah berikut:
+-- Note: Jika tabel affiliate_settings sudah ada sebelumnya, jalankan perintah migrasi berikut:
+ALTER TABLE public.affiliate_settings 
+DROP CONSTRAINT IF EXISTS unique_outlet_product_affiliate;
+
 ALTER TABLE public.affiliate_settings 
 ADD COLUMN IF NOT EXISTS bonus_target_qty INTEGER NOT NULL DEFAULT 15,
-ADD COLUMN IF NOT EXISTS bonus_nominal NUMERIC NOT NULL DEFAULT 0;
+ADD COLUMN IF NOT EXISTS bonus_nominal NUMERIC NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
+ADD COLUMN IF NOT EXISTS end_date DATE NULL,
+ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true;
 
 -- 2. Create table affiliate_postings (Dokumen rekap klaim komisi Affiliate)
 CREATE TABLE IF NOT EXISTS public.affiliate_postings (

@@ -43,7 +43,11 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
     - Membuka akses menu dan tab **Affiliate** untuk pengguna dengan role `owner` (selain `superadmin`).
     - **Batasan Owner di Rekap Posting**: Owner dapat menekan tombol *Catat Affiliate* untuk simulasi perhitungan namun tombol *Simpan Posting* di dalam modal dihilangkan. Owner dapat melihat daftar posting, melihat *Bukti Transfer*, serta *Lihat Detail*, namun tombol *Hapus* dan tombol *Bayar Komisi* dihilangkan.
     - **Batasan Owner di Master Affiliate**: Owner dapat melihat daftar komisi produk dan membuka *Atur Komisi Produk*, namun tombol *Simpan Komisi* di dalam modal serta ikon tombol *Hapus Komisi* pada tabel dihilangkan.
-  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v66`.
+  - **Periode Efektif & Riwayat (Effective Date & Historical) pada Master Affiliate (`affiliate_schema.sql`, `index.html`, `js/affiliate.js`)**:
+    - **Multi-Periode (Historical)**: Menambahkan dukungan tanggal efektif (`effective_date` s/d `end_date`) dan status aktif (`is_active`) sehingga 1 produk dapat memiliki banyak baris riwayat tarif komisi berdasarkan rentang waktu.
+    - **Akurasi Klaim Komisi Berdasarkan Tanggal Transaksi**: Pada modal **Catat Affiliate**, sistem mencocokkan tanggal transaksi penjualan (`transaction_date`) dengan periode komisi yang aktif pada tanggal terjadinya transaksi. Transaksi lama akan tetap dihitung menggunakan tarif komisi lama secara otomatis dan akurat.
+    - **Tampilan Tabel & Modal**: Menambahkan kolom **Periode Efektif** dan badge **Status** (`Aktif` / `Riwayat/Nonaktif`) pada tabel Master Affiliate serta input tanggal mulai, tanggal selesai, dan toggle status aktif pada modal **Atur Komisi Produk**.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v67`.
 
 ### 2026-07-28
 - **Feature (`index.html`, `js/inventory.js`, `sw.js`)**:
