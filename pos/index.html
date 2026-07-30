@@ -2574,6 +2574,22 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Pagination Bar Transaksi Belum Diklaim -->
+                    <div id="affiliate-unclaimed-pagination" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:8px 12px; background:var(--bg-secondary); border-radius:8px; font-size:0.85rem; flex-wrap:wrap; gap:8px;">
+                        <div>
+                            <span style="font-weight:600; color:var(--primary);">Terpilih: <span id="affiliate-selected-count">0</span> transaksi</span>
+                            <span style="color:var(--text-secondary); margin-left:8px;" id="affiliate-total-unclaimed-text"></span>
+                        </div>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="window.changeUnclaimedPage(-1)" id="btn-unclaimed-prev" style="padding:4px 10px;">
+                                <i class="ph ph-caret-left"></i> Sebelumnya
+                            </button>
+                            <span style="font-weight:600; padding:0 4px;" id="affiliate-page-info">Halaman 1 / 1</span>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="window.changeUnclaimedPage(1)" id="btn-unclaimed-next" style="padding:4px 10px;">
+                                Selanjutnya <i class="ph ph-caret-right"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="margin-bottom: 20px;">

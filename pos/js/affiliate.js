@@ -21,6 +21,8 @@ let affiliateProductsMaster = [];
 let affiliatePostingsList = [];
 let unclaimedTransactionsList = [];
 let selectedTransactionIds = new Set();
+let currentUnclaimedPage = 1;
+const UNCLAIMED_PAGE_SIZE = 15;
 
 /**
  * Memeriksa apakah user saat ini adalah superadmin
@@ -121,8 +123,8 @@ export function renderAffiliateSettings() {
                 <td>${commNormalStr}</td>
                 <td>${targetQtyStr}</td>
                 <td>${bonusNominalStr}</td>
-                <td style="text-align:right;">
-                    <button class="btn btn-sm btn-secondary" style="padding:6px 10px; font-size:0.95rem; border-radius:8px;" title="Atur Komisi Produk" onclick="window.editAffiliateSetting('${item.product_id}')">
+                <td style="white-space:nowrap;">
+                    <button class="btn btn-icon btn-secondary" title="Atur Komisi Produk" onclick="window.editAffiliateSetting('${item.product_id}')">
                         <i class="ph ph-pencil-simple"></i>
                     </button>
                 </td>
@@ -350,28 +352,26 @@ export function renderAffiliatePostings() {
                 <td><strong>${escapeHtml(post.affiliator_name)}</strong></td>
                 <td>Rp ${Number(post.total_amount).toLocaleString('id-ID')}</td>
                 <td><span class="badge ${badgeClass}">${escapeHtml(post.status)}</span></td>
-                <td>
+                <td style="white-space:nowrap;">
                     ${isPaid && post.proof_attachment ? `
-                        <button class="btn btn-sm btn-secondary" onclick="window.viewAffiliateProof('${escapeHtml(post.proof_attachment)}')">
-                            <i class="ph ph-image"></i> Lihat Bukti
+                        <button class="btn btn-icon btn-secondary" onclick="window.viewAffiliateProof('${escapeHtml(post.proof_attachment)}')" title="Lihat Bukti">
+                            <i class="ph ph-image"></i>
                         </button>
                     ` : '<span style="color:var(--text-secondary);">-</span>'}
                 </td>
                 <td>${escapeHtml(adminName)}</td>
-                <td style="text-align:right;">
-                    <div style="display:inline-flex; gap:6px;">
-                        ${!isPaid ? `
-                            <button class="btn btn-sm btn-success" onclick="window.openPayAffiliateModal('${post.id}')" title="Bayar Komisi">
-                                <i class="ph ph-money"></i> Bayar
-                            </button>
-                        ` : ''}
-                        <button class="btn btn-sm btn-secondary" onclick="window.viewAffiliateDetails('${post.id}')" title="Lihat Detail">
-                            <i class="ph ph-eye"></i> Detail
+                <td style="white-space:nowrap;">
+                    ${!isPaid ? `
+                        <button class="btn btn-icon btn-success" onclick="window.openPayAffiliateModal('${post.id}')" title="Bayar Komisi">
+                            <i class="ph ph-money"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="window.deleteAffiliatePosting('${post.id}')" title="Hapus Posting">
-                            <i class="ph ph-trash"></i>
-                        </button>
-                    </div>
+                    ` : ''}
+                    <button class="btn btn-icon btn-secondary" onclick="window.viewAffiliateDetails('${post.id}')" title="Lihat Detail">
+                        <i class="ph ph-eye"></i>
+                    </button>
+                    <button class="btn btn-icon btn-danger" onclick="window.deleteAffiliatePosting('${post.id}')" title="Hapus">
+                        <i class="ph ph-trash"></i>
+                    </button>
                 </td>
             </tr>
         `;
@@ -425,7 +425,7 @@ export async function openCreateAffiliateModal() {
         .neq('status', 'voided')
         .neq('status', 'cancelled')
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(5000);
 
     if (trxError) {
         console.error('Error load unclaimed transactions:', trxError);
@@ -443,28 +443,53 @@ export async function openCreateAffiliateModal() {
         return true;
     });
 
+    currentUnclaimedPage = 1;
     renderUnclaimedTransactionsTable();
 }
 
 /**
- * Menderetkan daftar transaksi belum diklaim dengan Checkbox
+ * Menderetkan daftar transaksi belum diklaim dengan Checkbox & Pagination
  */
 function renderUnclaimedTransactionsTable() {
     const tbody = document.getElementById('affiliate-unclaimed-transactions-table')?.querySelector('tbody');
     if (!tbody) return;
 
-    if (unclaimedTransactionsList.length === 0) {
+    const totalTrx = unclaimedTransactionsList.length;
+    const totalPages = Math.max(1, Math.ceil(totalTrx / UNCLAIMED_PAGE_SIZE));
+    if (currentUnclaimedPage > totalPages) currentUnclaimedPage = totalPages;
+    if (currentUnclaimedPage < 1) currentUnclaimedPage = 1;
+
+    // Update teks pagination
+    const totalTextEl = document.getElementById('affiliate-total-unclaimed-text');
+    if (totalTextEl) totalTextEl.textContent = `(Total ${totalTrx} belum diklaim)`;
+
+    const pageInfoEl = document.getElementById('affiliate-page-info');
+    if (pageInfoEl) pageInfoEl.textContent = `Halaman ${currentUnclaimedPage} / ${totalPages}`;
+
+    const prevBtn = document.getElementById('btn-unclaimed-prev');
+    if (prevBtn) prevBtn.disabled = (currentUnclaimedPage <= 1);
+
+    const nextBtn = document.getElementById('btn-unclaimed-next');
+    if (nextBtn) nextBtn.disabled = (currentUnclaimedPage >= totalPages);
+
+    if (totalTrx === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada transaksi penjualan yang belum diklaim</td></tr>';
+        updateSelectedCountDisplay();
         return;
     }
 
-    tbody.innerHTML = unclaimedTransactionsList.map(trx => {
+    const startIdx = (currentUnclaimedPage - 1) * UNCLAIMED_PAGE_SIZE;
+    const endIdx = startIdx + UNCLAIMED_PAGE_SIZE;
+    const pageItems = unclaimedTransactionsList.slice(startIdx, endIdx);
+
+    tbody.innerHTML = pageItems.map(trx => {
         const receiptNo = trx.receipt_no || trx.id.substring(0, 8).toUpperCase();
         const tDate = new Date(trx.created_at).toLocaleString('id-ID');
+        const isChecked = selectedTransactionIds.has(trx.id);
         return `
             <tr>
                 <td style="text-align:center; width:40px;">
-                    <input type="checkbox" class="affiliate-trx-checkbox" value="${trx.id}" onchange="window.onSelectAffiliateTransactions()">
+                    <input type="checkbox" class="affiliate-trx-checkbox" value="${trx.id}" ${isChecked ? 'checked' : ''} onchange="window.onSelectAffiliateTransactions(this)">
                 </td>
                 <td><strong>#${escapeHtml(receiptNo)}</strong></td>
                 <td>${tDate}</td>
@@ -473,15 +498,51 @@ function renderUnclaimedTransactionsTable() {
             </tr>
         `;
     }).join('');
+
+    updateSelectedCountDisplay();
 }
 
 /**
- * Pemicu dari checkbox transaksi: mengaktifkan kalkulasi komisi otomatis
+ * Mengubah halaman tabel transaksi belum diklaim
  */
-window.onSelectAffiliateTransactions = async function() {
-    selectedTransactionIds.clear();
-    const checkboxes = document.querySelectorAll('.affiliate-trx-checkbox:checked');
-    checkboxes.forEach(cb => selectedTransactionIds.add(cb.value));
+window.changeUnclaimedPage = function(delta) {
+    const totalPages = Math.max(1, Math.ceil(unclaimedTransactionsList.length / UNCLAIMED_PAGE_SIZE));
+    currentUnclaimedPage += delta;
+    if (currentUnclaimedPage < 1) currentUnclaimedPage = 1;
+    if (currentUnclaimedPage > totalPages) currentUnclaimedPage = totalPages;
+    renderUnclaimedTransactionsTable();
+};
+
+/**
+ * Memperbarui tampilan badge jumlah transaksi terpilih
+ */
+function updateSelectedCountDisplay() {
+    const countEl = document.getElementById('affiliate-selected-count');
+    if (countEl) {
+        countEl.textContent = selectedTransactionIds.size;
+    }
+}
+
+/**
+ * Pemicu dari checkbox transaksi: mengaktifkan kalkulasi komisi otomatis lintas halaman
+ */
+window.onSelectAffiliateTransactions = async function(changedCheckbox) {
+    if (changedCheckbox && changedCheckbox instanceof HTMLInputElement) {
+        if (changedCheckbox.checked) {
+            selectedTransactionIds.add(changedCheckbox.value);
+        } else {
+            selectedTransactionIds.delete(changedCheckbox.value);
+        }
+    } else {
+        // Fallback jika dipanggil tanpa param (check semua yang tampil di halaman ini)
+        const checkboxes = document.querySelectorAll('.affiliate-trx-checkbox');
+        checkboxes.forEach(cb => {
+            if (cb.checked) selectedTransactionIds.add(cb.value);
+            else selectedTransactionIds.delete(cb.value);
+        });
+    }
+
+    updateSelectedCountDisplay();
 
     const previewTbody = document.getElementById('affiliate-calculation-preview');
     const totalDisplay = document.getElementById('affiliate-posting-total-display');

@@ -37,7 +37,9 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
     - Memparalelkan eksekusi query pada modal **Detail Posting Affiliate** menggunakan `Promise.all` sehingga waktu pemuatan rincian item dan transaksi berkurang separuhnya.
     - Memastikan seluruh tampilan data dinamis diamankan dari celah XSS dengan `escapeHtml()` dan verifikasi akses eksklusif superadmin pada level antarmuka maupun RLS kebijakan database.
   - **Filter Ganda Anti-Cancel/Void (`js/affiliate.js`)**: Menambahkan filter `.neq('status', 'voided')` dan `.neq('status', 'cancelled')` pada query Supabase di `openCreateAffiliateModal()` serta penjagaan ganda di level JavaScript (`t.status !== 'voided' && t.status !== 'cancelled'`, dst.) untuk menjamin 100% hanya transaksi berhasil yang dapat dipilih dan diklaim sebagai komisi Affiliate.
-  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v63`.
+  - **Pagination Transaksi Belum Diklaim (`index.html`, `js/affiliate.js`)**: Menambahkan kontrol pagination (15 transaksi per halaman) di bawah tabel transaksi pada modal **Catat Klaim Affiliate Baru** serta memperluas batas pengambilan data hingga 5000 transaksi sehingga pengguna dapat menjelajahi dan memilih seluruh transaksi penjualan lama tanpa terhalang limit, dengan tetap mempertahankan transaksi yang dicentang lintas halaman.
+  - **Konsistensi Ikon Tombol Aksi (`js/affiliate.js`)**: Menyelaraskan seluruh tombol aksi pada tabel **Rekap Komisi Affiliate** (Detail, Hapus, Bayar, Lihat Bukti) dan **Master Affiliate** (Edit/Atur Komisi) menggunakan gaya ikon tunggal konsisten (`btn-icon`, `<i class="ph ph-eye"></i>`, `<i class="ph ph-trash"></i>`, `<i class="ph ph-pencil-simple"></i>`) sesuai dengan menu lainnya seperti Setoran.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v64`.
 
 ### 2026-07-28
 - **Feature (`index.html`, `js/inventory.js`, `sw.js`)**:
