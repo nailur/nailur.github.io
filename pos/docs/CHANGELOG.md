@@ -21,6 +21,15 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
   - **Penghapusan Menu dari Pengaturan**: Menghapus tombol menu **Affiliate** dari navbar tab **Pengaturan** sesuai spesifikasi bahwa Modul Affiliate eksklusif hanya muncul pada menu utama POS.
   - **Penambahan Tombol "+ Atur Komisi Produk"**: Menambahkan tombol **+ Atur Komisi Produk** pada action bar **Master Affiliate** yang membuka modal dengan dropdown pilihan seluruh produk di outlet, mempermudah penambahan/pengaturan komisi tanpa harus scroll di tabel.
   - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v59`.
+- **UI Compactness & Formula Bonus Kelipatan (`index.html`, `css/style.css`, `js/affiliate.js`, `docs/affiliate_schema.sql`, `docs/Database_ERD.md`, `sw.js`)**:
+  - **Tampilan Tabel Compact**: Mengurangi padding vertikal dan font-size pada tabel **Master Affiliate** dan **Posting Affiliate** (`padding: 6px 10px`, tombol `btn-sm` compact) serta menyusun isi sel dalam satu baris agar tampilan lebih ringkas dan hemat ruang layar.
+  - **Formula Komisi & Bonus Kelipatan**: Mengubah logika formula komisi Master Affiliate sesuai spesifikasi pengguna:
+    - Komisi dihitung dari **Komisi Satuan** (`commission_nominal`) dikali total kuantitas item.
+    - Menambahkan parameter **Target Qty Kelipatan** (`bonus_target_qty`, default 15 namun dapat diubah bebas ke angka lain misal 10) dan **Bonus Nominal** (`bonus_nominal`, misal Rp 5.000).
+    - Setiap akumulasi kuantitas produk mencapai kelipatan target tersebut, afiliator mendapatkan tambahan bonus nominal sebesar `Math.floor(total_qty / target_qty) * bonus_nominal` (misal 15 atau 16 item dapat 1x bonus Rp 5.000, 30 item dapat 2x bonus Rp 10.000, dst).
+  - **Simulasi Live di Modal Setting**: Menambahkan kotak *live simulation* pada modal **Atur Komisi Produk** yang langsung menghitung dan menampilkan simulasi komisi untuk 14, 15, 16, hingga 30 qty secara real-time saat pengguna mengetik angka komisi/target/bonus.
+  - **Proteksi Fallback Database**: Menambahkan kolom `bonus_target_qty` dan `bonus_nominal` pada dokumentasi skema SQL serta menambahkan penanganan fallback otomatis pada `handleSaveAffiliateSetting()` agar penyimpanan tidak gagal meskipun kolom belum ditambahkan di Supabase.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v60`.
 
 ### 2026-07-28
 - **Feature (`index.html`, `js/inventory.js`, `sw.js`)**:

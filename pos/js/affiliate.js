@@ -76,11 +76,15 @@ export async function loadAffiliateSettings() {
     // 3. Gabungkan produk dengan settingnya
     affiliateSettingsList = affiliateProductsMaster.map(prod => {
         const setting = settingsMap.get(prod.id) || {};
+        const targetQtyVal = setting.bonus_target_qty !== undefined ? setting.bonus_target_qty : 15;
+        const bonusNominalVal = setting.bonus_nominal !== undefined ? setting.bonus_nominal : setting.bulk_commission_nominal || 0;
         return {
             product_id: prod.id,
             product_name: prod.name,
             product_price: prod.price || 0,
             commission_nominal: Number(setting.commission_nominal || 0),
+            bonus_target_qty: Number(targetQtyVal || 15),
+            bonus_nominal: Number(bonusNominalVal || 0),
             bulk_commission_nominal: Number(setting.bulk_commission_nominal || 0),
             setting_id: setting.id || null
         };
@@ -97,29 +101,28 @@ export function renderAffiliateSettings() {
     if (!tbody) return;
 
     if (affiliateSettingsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada produk tersedia</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada produk tersedia</td></tr>';
         return;
     }
 
     tbody.innerHTML = affiliateSettingsList.map(item => {
-        const hasSetting = item.commission_nominal > 0 || item.bulk_commission_nominal > 0;
-        const total15Box = Math.round(item.bulk_commission_nominal * 15);
+        const commNormalStr = item.commission_nominal > 0 
+            ? `<span class="badge badge-success" style="font-weight:600;">Rp ${item.commission_nominal.toLocaleString('id-ID')} / qty</span>` 
+            : `<span style="color:var(--text-secondary)">-</span>`;
+        const targetQtyStr = `<strong>${item.bonus_target_qty || 15}</strong> qty`;
+        const bonusNominalStr = item.bonus_nominal > 0 
+            ? `<span class="badge badge-info" style="font-weight:600;">+ Rp ${item.bonus_nominal.toLocaleString('id-ID')} / ${item.bonus_target_qty || 15} qty</span>` 
+            : `<span style="color:var(--text-secondary)">-</span>`;
+
         return `
             <tr>
-                <td><strong>${escapeHtml(item.product_name)}</strong><br><small style="color:var(--text-secondary)">Harga: Rp ${Number(item.product_price).toLocaleString('id-ID')}</small></td>
-                <td>
-                    ${item.commission_nominal > 0 
-                        ? `<span class="badge badge-success">Rp ${item.commission_nominal.toLocaleString('id-ID')} / qty</span>` 
-                        : `<span style="color:var(--text-secondary)">-</span>`}
-                </td>
-                <td>
-                    ${item.bulk_commission_nominal > 0 
-                        ? `<span class="badge badge-info">Rp ${item.bulk_commission_nominal.toLocaleString('id-ID', {maximumFractionDigits: 2})} / qty</span>
-                           <br><small style="color:var(--text-secondary)">(Rp ${total15Box.toLocaleString('id-ID')} / 15 box)</small>` 
-                        : `<span style="color:var(--text-secondary)">-</span>`}
-                </td>
+                <td><strong>${escapeHtml(item.product_name)}</strong></td>
+                <td>Rp ${Number(item.product_price).toLocaleString('id-ID')}</td>
+                <td>${commNormalStr}</td>
+                <td>${targetQtyStr}</td>
+                <td>${bonusNominalStr}</td>
                 <td style="text-align:right;">
-                    <button class="btn btn-sm btn-secondary" onclick="window.editAffiliateSetting('${item.product_id}')">
+                    <button class="btn btn-sm btn-secondary" style="padding:4px 10px; font-size:0.8rem;" onclick="window.editAffiliateSetting('${item.product_id}')">
                         <i class="ph ph-pencil-simple"></i> Atur Komisi
                     </button>
                 </td>
@@ -183,26 +186,52 @@ export function openCreateAffiliateSettingModal() {
 function populateSettingForm(item) {
     document.getElementById('affiliate-setting-product-id').value = item.product_id;
     document.getElementById('affiliate-setting-normal').value = item.commission_nominal > 0 ? item.commission_nominal : '';
-    document.getElementById('affiliate-setting-bulk').value = item.bulk_commission_nominal > 0 ? item.bulk_commission_nominal : '';
-    const total15 = item.bulk_commission_nominal > 0 ? Math.round(item.bulk_commission_nominal * 15) : '';
-    document.getElementById('affiliate-setting-bulk-15box').value = total15;
+    document.getElementById('affiliate-setting-target-qty').value = item.bonus_target_qty || 15;
+    document.getElementById('affiliate-setting-bonus-nominal').value = item.bonus_nominal > 0 ? item.bonus_nominal : '';
+    if (window.updateAffiliateSettingPreview) window.updateAffiliateSettingPreview();
 }
 
 /**
- * Sinkronisasi otomatis input Bulk per Qty <-> Total 15 Box di Modal Setting
+ * Live simulasi perhitungan komisi dan bonus kelipatan di Modal Setting
  */
-window.syncAffiliateBulkInput = function(source) {
-    const bulkInput = document.getElementById('affiliate-setting-bulk');
-    const bulk15BoxInput = document.getElementById('affiliate-setting-bulk-15box');
-    if (!bulkInput || !bulk15BoxInput) return;
+window.updateAffiliateSettingPreview = function() {
+    const previewEl = document.getElementById('affiliate-setting-live-preview');
+    if (!previewEl) return;
 
-    if (source === 'qty') {
-        const val = parseFloat(bulkInput.value) || 0;
-        bulk15BoxInput.value = val > 0 ? Math.round(val * 15) : '';
-    } else if (source === '15box') {
-        const val = parseFloat(bulk15BoxInput.value) || 0;
-        bulkInput.value = val > 0 ? (val / 15).toFixed(2) : '';
-    }
+    const commNormal = parseFloat(document.getElementById('affiliate-setting-normal')?.value) || 0;
+    const targetQty = parseInt(document.getElementById('affiliate-setting-target-qty')?.value) || 15;
+    const bonusNominal = parseFloat(document.getElementById('affiliate-setting-bonus-nominal')?.value) || 0;
+
+    const calc = (qty) => {
+        const base = qty * commNormal;
+        let bCount = 0;
+        let bTotal = 0;
+        if (targetQty > 0 && qty >= targetQty && bonusNominal > 0) {
+            bCount = Math.floor(qty / targetQty);
+            bTotal = bCount * bonusNominal;
+        }
+        return { total: base + bTotal, base, bCount, bTotal };
+    };
+
+    const q1 = Math.max(1, targetQty - 1);
+    const q2 = targetQty;
+    const q3 = targetQty + 1;
+    const q4 = targetQty * 2;
+
+    const r1 = calc(q1);
+    const r2 = calc(q2);
+    const r3 = calc(q3);
+    const r4 = calc(q4);
+
+    previewEl.innerHTML = `
+        <strong style="display:block; margin-bottom: 6px; color:var(--primary);"><i class="ph ph-calculator"></i> Simulasi Perhitungan Komisi & Bonus:</strong>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px; color:var(--text-main);">
+            <div>Beli <strong>${q1} item</strong>: <span style="font-weight:600;">Rp ${Math.round(r1.total).toLocaleString('id-ID')}</span> <small>(0 bonus)</small></div>
+            <div>Beli <strong>${q2} item</strong>: <span style="font-weight:700; color:var(--success);">Rp ${Math.round(r2.total).toLocaleString('id-ID')}</span> <small>(+ Bonus Rp ${Math.round(r2.bTotal).toLocaleString('id-ID')})</small></div>
+            <div>Beli <strong>${q3} item</strong>: <span style="font-weight:600;">Rp ${Math.round(r3.total).toLocaleString('id-ID')}</span> <small>(+ Bonus Rp ${Math.round(r3.bTotal).toLocaleString('id-ID')})</small></div>
+            <div>Beli <strong>${q4} item</strong>: <span style="font-weight:700; color:var(--success);">Rp ${Math.round(r4.total).toLocaleString('id-ID')}</span> <small>(+ Bonus 2x Rp ${Math.round(r4.bTotal).toLocaleString('id-ID')})</small></div>
+        </div>
+    `;
 };
 
 /**
@@ -218,7 +247,8 @@ export async function handleSaveAffiliateSetting(event) {
     const outletId = getActiveOutletId();
     const productId = document.getElementById('affiliate-setting-product-id')?.value;
     const commNormal = parseFloat(document.getElementById('affiliate-setting-normal')?.value) || 0;
-    const commBulk = parseFloat(document.getElementById('affiliate-setting-bulk')?.value) || 0;
+    const targetQty = parseInt(document.getElementById('affiliate-setting-target-qty')?.value) || 15;
+    const bonusNominal = parseFloat(document.getElementById('affiliate-setting-bonus-nominal')?.value) || 0;
 
     if (!outletId || !productId) return;
 
@@ -229,12 +259,28 @@ export async function handleSaveAffiliateSetting(event) {
         outlet_id: outletId,
         product_id: productId,
         commission_nominal: commNormal,
-        bulk_commission_nominal: commBulk
+        bonus_target_qty: targetQty,
+        bonus_nominal: bonusNominal,
+        bulk_commission_nominal: bonusNominal
     };
 
-    const { error } = await supabase
+    let { error } = await supabase
         .from('affiliate_settings')
         .upsert(payload, { onConflict: 'outlet_id, product_id' });
+
+    if (error && (error.code === '42703' || error.message?.includes('bonus_target_qty') || error.message?.includes('bonus_nominal') || error.message?.includes('column'))) {
+        console.warn('Kolom bonus_target_qty/bonus_nominal belum ada di tabel DB. Melakukan fallback ke kolom lama.', error);
+        const fallbackPayload = {
+            outlet_id: outletId,
+            product_id: productId,
+            commission_nominal: commNormal,
+            bulk_commission_nominal: bonusNominal
+        };
+        const fallbackRes = await supabase
+            .from('affiliate_settings')
+            .upsert(fallbackPayload, { onConflict: 'outlet_id, product_id' });
+        error = fallbackRes.error;
+    }
 
     if (btnSubmit) btnSubmit.disabled = false;
 
@@ -478,25 +524,34 @@ window.onSelectAffiliateTransactions = async function() {
     productQtyMap.forEach(item => {
         const setting = settingMap.get(item.product_id) || {};
         const commNormal = Number(setting.commission_nominal || 0);
-        const commBulk = Number(setting.bulk_commission_nominal || 0);
+        const targetQty = Number(setting.bonus_target_qty !== undefined ? setting.bonus_target_qty : 15);
+        const bonusNominal = Number(setting.bonus_nominal !== undefined ? setting.bonus_nominal : setting.bulk_commission_nominal || 0);
 
-        // FORMULA MASSAL >= 15 QTY
-        // Jika pemesanan (total_qty) >= 15 dan memiliki setting komisi massal, gunakan tarif bulk
-        let appliedRate = commNormal;
-        let rateLabel = 'Normal';
-        if (item.total_qty >= 15 && commBulk > 0) {
-            appliedRate = commBulk;
-            rateLabel = 'Order Masal (≥15)';
+        const baseSubtotal = item.total_qty * commNormal;
+        let bonusCount = 0;
+        let bonusSubtotal = 0;
+        if (targetQty > 0 && item.total_qty >= targetQty && bonusNominal > 0) {
+            bonusCount = Math.floor(item.total_qty / targetQty);
+            bonusSubtotal = bonusCount * bonusNominal;
         }
 
-        const subtotal = item.total_qty * appliedRate;
+        const subtotal = baseSubtotal + bonusSubtotal;
         grandTotalCommission += subtotal;
+
+        let rateLabel = `Rp ${commNormal.toLocaleString('id-ID')} / item`;
+        if (bonusCount > 0) {
+            rateLabel += ` + Bonus ${bonusCount}x Rp ${bonusNominal.toLocaleString('id-ID')} (Kelipatan ${targetQty})`;
+        }
 
         calculatedItems.push({
             product_id: item.product_id,
             product_name: item.product_name,
             total_qty: item.total_qty,
-            commission_rate: appliedRate,
+            commission_rate: commNormal,
+            bonus_count: bonusCount,
+            bonus_nominal: bonusNominal,
+            base_subtotal: baseSubtotal,
+            bonus_subtotal: bonusSubtotal,
             rate_label: rateLabel,
             subtotal: subtotal
         });
@@ -510,9 +565,15 @@ window.onSelectAffiliateTransactions = async function() {
             previewTbody.innerHTML = calculatedItems.map(row => `
                 <tr>
                     <td><strong>${escapeHtml(row.product_name)}</strong></td>
-                    <td style="text-align:center;">${row.total_qty}</td>
-                    <td>Rp ${Number(row.commission_rate).toLocaleString('id-ID')} <br><small style="color:var(--text-secondary)">(${row.rate_label})</small></td>
-                    <td style="text-align:right;"><strong>Rp ${Math.round(row.subtotal).toLocaleString('id-ID')}</strong></td>
+                    <td style="text-align:center; font-weight:600;">${row.total_qty}</td>
+                    <td>
+                        <span>Rp ${Number(row.commission_rate).toLocaleString('id-ID')} / item</span>
+                        ${row.bonus_count > 0 ? `<br><span class="badge badge-info" style="font-size:0.78rem;">+ Bonus ${row.bonus_count}x Rp ${Number(row.bonus_nominal).toLocaleString('id-ID')} (Kelipatan ${settingMap.get(row.product_id)?.bonus_target_qty || 15})</span>` : ''}
+                    </td>
+                    <td style="text-align:right;">
+                        <strong>Rp ${Math.round(row.subtotal).toLocaleString('id-ID')}</strong>
+                        ${row.bonus_count > 0 ? `<br><small style="color:var(--text-secondary);">(Base: Rp ${Math.round(row.base_subtotal).toLocaleString('id-ID')} + Bonus: Rp ${Math.round(row.bonus_subtotal).toLocaleString('id-ID')})</small>` : ''}
+                    </td>
                 </tr>
             `).join('');
         }

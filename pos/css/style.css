@@ -1455,3 +1455,21 @@ table.data-table th:last-child::after {
     border-color: var(--primary);
 }
 
+/* Affiliate Module Compact Styling */
+#affiliate-settings-table th,
+#affiliate-settings-table td,
+#affiliate-postings-table th,
+#affiliate-postings-table td {
+    padding: 6px 10px !important;
+    font-size: 0.88rem;
+    vertical-align: middle;
+}
+#affiliate-settings-table th,
+#affiliate-postings-table th {
+    padding: 8px 10px !important;
+    font-size: 0.8rem;
+}
+#affiliate-settings-table tr:hover,
+#affiliate-postings-table tr:hover {
+    background: rgba(0, 0, 0, 0.015);
+}

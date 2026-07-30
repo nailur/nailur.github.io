@@ -221,8 +221,10 @@ erDiagram
 | `id` | `uuid` | Primary |
 | `outlet_id` | `uuid` | Foreign Key (`outlets`) |
 | `product_id` | `uuid` | Foreign Key (`products`) |
-| `commission_nominal` | `numeric` | Komisi normal (< 15 qty) |
-| `bulk_commission_nominal` | `numeric` | Komisi massal (>= 15 qty) |
+| `commission_nominal` | `numeric` | Komisi satuan per item |
+| `bulk_commission_nominal` | `numeric` | (Legacy/Fallback) Komisi massal |
+| `bonus_target_qty` | `integer` | Kelipatan target kuantitas (Default 15) |
+| `bonus_nominal` | `numeric` | Bonus nominal per kelipatan tercapai |
 | `created_at` | `timestamptz` | Default `now()` |
 
 ### Table `affiliate_postings`

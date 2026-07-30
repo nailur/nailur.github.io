@@ -10,9 +10,16 @@ CREATE TABLE IF NOT EXISTS public.affiliate_settings (
     product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
     commission_nominal NUMERIC NOT NULL DEFAULT 0,
     bulk_commission_nominal NUMERIC NOT NULL DEFAULT 0,
+    bonus_target_qty INTEGER NOT NULL DEFAULT 15,
+    bonus_nominal NUMERIC NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT unique_outlet_product_affiliate UNIQUE (outlet_id, product_id)
 );
+
+-- Note: Jika tabel affiliate_settings sudah ada sebelumnya, jalankan perintah berikut:
+ALTER TABLE public.affiliate_settings 
+ADD COLUMN IF NOT EXISTS bonus_target_qty INTEGER NOT NULL DEFAULT 15,
+ADD COLUMN IF NOT EXISTS bonus_nominal NUMERIC NOT NULL DEFAULT 0;
 
 -- 2. Create table affiliate_postings (Dokumen rekap klaim komisi Affiliate)
 CREATE TABLE IF NOT EXISTS public.affiliate_postings (
