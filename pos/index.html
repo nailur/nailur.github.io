@@ -701,6 +701,8 @@
                         Stok</button>
                     <button class="pos-nav-btn" data-target="deposits-tab-content"><i class="ph ph-wallet"></i>
                         Setoran</button>
+                    <button class="pos-nav-btn hidden" id="nav-affiliate" data-target="affiliate-tab-content"><i class="ph ph-users-four"></i>
+                        Affiliate</button>
                 </div>
 
                 <div class="nav-right" style="gap: 5px;">
@@ -1297,6 +1299,64 @@
                 </div>
                 <div id="deposits-load-more-container" style="text-align:center; margin-top:15px; display:none;">
                     <button class="btn btn-secondary" onclick="window.loadMoreDeposits()">Muat Lebih Banyak</button>
+                </div>
+            </div>
+            <div id="affiliate-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
+                <div class="tabs sub-tabs"
+                    style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0;">
+                    <button class="sub-nav-btn active" data-target="subtab-affiliate-postings">Posting Affiliate</button>
+                    <button class="sub-nav-btn" data-target="subtab-affiliate-settings">Master Affiliate</button>
+                </div>
+
+                <div id="subtab-affiliate-postings" class="subtab-pane active">
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Rekap Komisi Affiliate</h3>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" id="btn-add-affiliate-posting">
+                                <i class="ph ph-plus"></i> Catat Affiliate
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="affiliate-postings-table">
+                            <thead>
+                                <tr>
+                                    <th>No. Dokumen</th>
+                                    <th>Tgl Posting</th>
+                                    <th>Nama Afiliator</th>
+                                    <th>Total Komisi</th>
+                                    <th>Status</th>
+                                    <th>Bukti Transfer</th>
+                                    <th>Kasir/Admin</th>
+                                    <th class="action-col" style="text-align:right;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="subtab-affiliate-settings" class="subtab-pane hidden">
+                    <div class="action-bar">
+                        <h3>Master Setting Komisi Produk Affiliate</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="affiliate-settings-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama Produk</th>
+                                    <th>Komisi Normal (< 15 Qty)</th>
+                                    <th>Komisi Order Masal (≥ 15 Qty)</th>
+                                    <th class="action-col" style="text-align:right;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
@@ -2417,6 +2477,213 @@
                     <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ======================================= -->
+    <!-- MODALS MODUL AFFILIATE (SUPERADMIN)    -->
+    <!-- ======================================= -->
+
+    <!-- 1. Modal Atur Setting Komisi Produk -->
+    <div id="modal-affiliate-setting" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 480px; width: 95%;">
+            <div class="modal-header">
+                <h3><i class="ph ph-gear"></i> Atur Komisi Affiliate</h3>
+                <button class="btn-close" data-close="modal-affiliate-setting"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-affiliate-setting">
+                <input type="hidden" id="affiliate-setting-product-id">
+                <div style="margin-bottom: 15px; padding: 10px 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong id="affiliate-setting-product-name" style="font-size: 1.05rem;"></strong>
+                </div>
+                <div class="input-group">
+                    <label for="affiliate-setting-normal">Komisi Normal (< 15 Qty) (Rp / Qty)</label>
+                    <input type="number" id="affiliate-setting-normal" min="0" step="any" placeholder="Contoh: 300">
+                    <small style="color:var(--text-secondary)">Komisi standar per produk untuk pembelian reguler.</small>
+                </div>
+                <div class="input-group" style="margin-top: 15px;">
+                    <label>Komisi Order Masal (≥ 15 Qty)</label>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <small style="display:block; color:var(--text-secondary); margin-bottom:4px;">Tarif Rp / Qty</small>
+                            <input type="number" id="affiliate-setting-bulk" min="0" step="any" placeholder="Contoh: 708.33" oninput="window.syncAffiliateBulkInput('qty')">
+                        </div>
+                        <div>
+                            <small style="display:block; color:var(--text-secondary); margin-bottom:4px;">Total untuk 15 Box</small>
+                            <input type="number" id="affiliate-setting-bulk-15box" min="0" step="any" placeholder="Contoh: 10625" oninput="window.syncAffiliateBulkInput('15box')">
+                        </div>
+                    </div>
+                    <small style="color:var(--text-secondary); display:block; margin-top:4px;">Keduanya saling terhubung otomatis. Jika akumulasi dalam satu klaim mencapai ≥ 15 qty, tarif massal ini akan diterapkan.</small>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn" data-close="modal-affiliate-setting">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-affiliate-setting">Simpan Komisi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Modal Buat Posting Affiliate (Klaim Transaksi) -->
+    <div id="modal-create-affiliate-posting" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 780px; width: 95%; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3><i class="ph ph-plus-circle"></i> Catat Klaim Affiliate Baru</h3>
+                <button class="btn-close" data-close="modal-create-affiliate-posting"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-create-affiliate-posting">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div class="input-group">
+                        <label for="affiliate-posting-affiliator">Nama Afiliator *</label>
+                        <input type="text" id="affiliate-posting-affiliator" required placeholder="Contoh: Afiliator A / Reseller">
+                    </div>
+                    <div class="input-group">
+                        <label for="affiliate-posting-notes">Keterangan / Catatan (Opsional)</label>
+                        <input type="text" id="affiliate-posting-notes" placeholder="Contoh: Komisi promo mingguan">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; display:block; margin-bottom: 8px;">Pilih Transaksi Penjualan Belum Diklaim:</label>
+                    <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
+                        <table class="data-table" id="affiliate-unclaimed-transactions-table" style="margin: 0;">
+                            <thead style="position: sticky; top: 0; background: var(--bg-surface); z-index: 1;">
+                                <tr>
+                                    <th style="width: 40px; text-align:center;">#</th>
+                                    <th>No. Struk</th>
+                                    <th>Tanggal</th>
+                                    <th>Pelanggan</th>
+                                    <th>Total Transaksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="5" style="text-align:center;">Memuat data transaksi...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; display:block; margin-bottom: 8px;">Pratinjau Perhitungan Komisi Per Item:</label>
+                    <div class="table-responsive" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
+                        <table class="data-table" style="margin: 0;">
+                            <thead style="position: sticky; top: 0; background: var(--bg-surface); z-index: 1;">
+                                <tr>
+                                    <th>Nama Produk</th>
+                                    <th style="text-align:center;">Total Qty</th>
+                                    <th>Tarif Komisi (Normal/Massal)</th>
+                                    <th style="text-align:right;">Subtotal Komisi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="affiliate-calculation-preview">
+                                <tr><td colspan="4" style="text-align:center;">Pilih minimal 1 transaksi penjualan untuk menghitung komisi</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content: space-between; align-items:center; background: var(--bg-secondary); padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+                    <span style="font-weight: 600;">Total Komisi Afiliator:</span>
+                    <span id="affiliate-posting-total-display" style="font-size: 1.3rem; font-weight: 700; color: var(--success);">Rp 0</span>
+                </div>
+
+                <div style="display:flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn" data-close="modal-create-affiliate-posting">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-create-affiliate">Simpan Posting (Unpaid)</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Modal Bayar & Upload Bukti Transfer -->
+    <div id="modal-pay-affiliate" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 450px; width: 95%;">
+            <div class="modal-header">
+                <h3><i class="ph ph-money"></i> Pembayaran Komisi Affiliate</h3>
+                <button class="btn-close" data-close="modal-pay-affiliate"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-pay-affiliate">
+                <input type="hidden" id="pay-affiliate-posting-id">
+                <div style="background: var(--bg-secondary); padding: 12px 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">No. Dokumen: <strong id="pay-affiliate-doc-number"></strong></div>
+                    <div style="font-size: 1rem; font-weight: 600; margin: 4px 0;" id="pay-affiliate-name"></div>
+                    <div style="font-size: 1.2rem; font-weight: 700; color: var(--success);" id="pay-affiliate-amount"></div>
+                </div>
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label for="pay-affiliate-file">Upload Bukti Transfer / Pembayaran (Opsional)</label>
+                    <input type="file" id="pay-affiliate-file" accept="image/*">
+                    <small style="color:var(--text-secondary)">Gambar akan dikompres otomatis dan disimpan dengan aman.</small>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn" data-close="modal-pay-affiliate">Batal</button>
+                    <button type="submit" class="btn btn-success" id="btn-submit-pay-affiliate">Konfirmasi Bayar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Modal Pratinjau Bukti Transfer -->
+    <div id="modal-preview-affiliate-proof" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 520px; width: 95%; text-align: center;">
+            <div class="modal-header">
+                <h3><i class="ph ph-image"></i> Bukti Transfer Affiliate</h3>
+                <button class="btn-close" data-close="modal-preview-affiliate-proof"><i class="ph ph-x"></i></button>
+            </div>
+            <div style="margin: 15px 0;">
+                <img id="preview-affiliate-proof-img" src="" alt="Bukti Transfer" style="max-width: 100%; max-height: 65vh; border-radius: 8px; border: 1px solid var(--border);">
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                <a id="preview-affiliate-proof-download" href="" target="_blank" download class="btn btn-secondary">
+                    <i class="ph ph-download"></i> Buka / Unduh Gambar
+                </a>
+                <button type="button" class="btn btn-primary" data-close="modal-preview-affiliate-proof">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Modal Detail Posting Affiliate -->
+    <div id="modal-detail-affiliate" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3><i class="ph ph-file-text"></i> Detail Posting Affiliate</h3>
+                <button class="btn-close" data-close="modal-detail-affiliate"><i class="ph ph-x"></i></button>
+            </div>
+            <div style="background: var(--bg-secondary); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div><small style="color:var(--text-secondary)">No. Dokumen</small><div id="detail-affiliate-doc" style="font-weight:700;"></div></div>
+                <div><small style="color:var(--text-secondary)">Afiliator</small><div id="detail-affiliate-name" style="font-weight:700;"></div></div>
+                <div><small style="color:var(--text-secondary)">Tanggal Posting</small><div id="detail-affiliate-date"></div></div>
+                <div><small style="color:var(--text-secondary)">Status / Total</small><div><span id="detail-affiliate-status" style="font-weight:600;"></span> - <strong id="detail-affiliate-total" style="color:var(--success)"></strong></div></div>
+            </div>
+            <h4 style="margin-bottom: 8px;">Rincian Komisi Produk</h4>
+            <div class="table-responsive" style="margin-bottom: 20px;">
+                <table class="data-table" style="margin:0;">
+                    <thead>
+                        <tr>
+                            <th>Nama Produk</th>
+                            <th style="text-align:center;">Qty</th>
+                            <th>Tarif Komisi</th>
+                            <th style="text-align:right;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detail-affiliate-items-tbody"></tbody>
+                </table>
+            </div>
+            <h4 style="margin-bottom: 8px;">Transaksi Penjualan Terklaim</h4>
+            <div class="table-responsive" style="margin-bottom: 10px;">
+                <table class="data-table" style="margin:0;">
+                    <thead>
+                        <tr>
+                            <th>No. Struk</th>
+                            <th>Tanggal</th>
+                            <th>Pelanggan</th>
+                            <th style="text-align:right;">Total Penjualan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detail-affiliate-trx-tbody"></tbody>
+                </table>
+            </div>
+            <div style="display:flex; justify-content: flex-end; margin-top: 15px;">
+                <button type="button" class="btn btn-primary" data-close="modal-detail-affiliate">Tutup</button>
+            </div>
         </div>
     </div>
 

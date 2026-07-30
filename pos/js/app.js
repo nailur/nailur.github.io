@@ -24,12 +24,23 @@ import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMa
 import { loadDeposits, handleSaveDeposit } from './deposits.js';
 import { loadShifts, handleSaveShift, openShiftModal } from './shift-master.js';
 import { loadDiscounts, setupDiscountForm } from './discounts.js';
+import { 
+    loadAffiliateSettings, 
+    loadAffiliatePostings, 
+    openCreateAffiliateModal, 
+    handleSaveAffiliatePosting, 
+    handleSaveAffiliateSetting, 
+    handleSaveAffiliatePayment 
+} from './affiliate.js';
 
 window.loadInventoryForManagement = function() { loadInventory(); loadStockPostings(); };
 window.loadExpensesForManagement = loadExpenses;
 window.loadDepositsForManagement = loadDeposits;
 window.loadShifts = loadShifts;
 window.loadDiscounts = loadDiscounts;
+window.loadAffiliateSettings = loadAffiliateSettings;
+window.loadAffiliatePostings = loadAffiliatePostings;
+window.openCreateAffiliateModal = openCreateAffiliateModal;
 
 window.getCurrentProfile = getCurrentProfile;
 window.getCurrentUser = getCurrentUser;
@@ -347,6 +358,16 @@ async function routeUser(profile) {
 
     // Absensi selalu tampil untuk semua role yang masuk POS view
     document.getElementById('nav-attendance').classList.remove('hidden');
+
+    // Tab Affiliate eksklusif HANYA untuk superadmin
+    const navAffiliateBtn = document.getElementById('nav-affiliate');
+    if (navAffiliateBtn) {
+        if (profile && profile.role === 'superadmin') {
+            navAffiliateBtn.classList.remove('hidden');
+        } else {
+            navAffiliateBtn.classList.add('hidden');
+        }
+    }
 }
 
 async function initPosMultiOutlet(profile) {
@@ -410,6 +431,8 @@ async function initPosMultiOutlet(profile) {
             if (window.loadExpensesForManagement) window.loadExpensesForManagement();
             if (window.loadDepositsForManagement) window.loadDepositsForManagement();
             if (window.loadShifts) window.loadShifts();
+            if (window.loadAffiliatePostings) window.loadAffiliatePostings();
+            if (window.loadAffiliateSettings) window.loadAffiliateSettings();
         };
         
         // Guard: mencegah listener bertumpuk saat re-login tanpa reload
@@ -621,6 +644,12 @@ function setupEventListeners() {
     document.getElementById('form-deposit')?.addEventListener('submit', handleSaveDeposit);
 
     document.getElementById('form-shift-master')?.addEventListener('submit', handleSaveShift);
+    document.getElementById('btn-add-affiliate-posting')?.addEventListener('click', () => {
+        if (window.openCreateAffiliateModal) window.openCreateAffiliateModal();
+    });
+    document.getElementById('form-create-affiliate-posting')?.addEventListener('submit', handleSaveAffiliatePosting);
+    document.getElementById('form-affiliate-setting')?.addEventListener('submit', handleSaveAffiliateSetting);
+    document.getElementById('form-pay-affiliate')?.addEventListener('submit', handleSaveAffiliatePayment);
 
     // Mobile Sidebar Logic
     const btnMobileMenu = document.getElementById('btn-mobile-menu');
@@ -833,6 +862,10 @@ function setupEventListeners() {
             
             if(targetId === 'history-tab-content') loadHistory();
             if(targetId === 'attendance-history-tab-content') loadAttendanceHistory();
+            if(targetId === 'affiliate-tab-content') {
+                loadAffiliatePostings();
+                loadAffiliateSettings();
+            }
             if(targetId === 'dashboard-tab-content') {
                 if (!document.getElementById('script-dashboard')) {
                     const script = document.createElement('script');
@@ -1071,6 +1104,11 @@ async function initPos() {
         loadExpenseMaster();
         loadExpenses();
         loadDeposits();
+        const prof = getCurrentProfile();
+        if (prof && prof.role === 'superadmin') {
+            loadAffiliatePostings();
+            loadAffiliateSettings();
+        }
     }
     // Restore active tab
     const savedTab = localStorage.getItem('pos_active_tab') || 'pos-tab-content';

@@ -215,11 +215,51 @@ erDiagram
 | `is_active` | `bool` |  Nullable |
 | `payment_discounts` | `jsonb` |  Nullable |
 
+### Table `affiliate_settings`
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `outlet_id` | `uuid` | Foreign Key (`outlets`) |
+| `product_id` | `uuid` | Foreign Key (`products`) |
+| `commission_nominal` | `numeric` | Komisi normal (< 15 qty) |
+| `bulk_commission_nominal` | `numeric` | Komisi massal (>= 15 qty) |
+| `created_at` | `timestamptz` | Default `now()` |
+
+### Table `affiliate_postings`
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `outlet_id` | `uuid` | Foreign Key (`outlets`) |
+| `document_number` | `text` | No Dokumen Rekap |
+| `affiliator_name` | `text` | Nama Afiliator |
+| `posting_date` | `date` | Default `CURRENT_DATE` |
+| `total_amount` | `numeric` | Total Komisi |
+| `status` | `text` | Check `'Unpaid'`, `'Paid'` |
+| `proof_attachment` | `text` | Nullable (Bukti transfer) |
+| `paid_at` | `timestamptz` | Nullable |
+| `notes` | `text` | Nullable |
+| `created_by` | `uuid` | Foreign Key (`profiles`) |
+| `created_at` | `timestamptz` | Default `now()` |
+
+### Table `affiliate_posting_items` & `affiliate_posting_transactions`
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `posting_id` | `uuid` | Foreign Key (`affiliate_postings`) |
+| `product_id` | `uuid` | Foreign Key (`products`), Nullable |
+| `transaction_id` | `uuid` | Foreign Key (`transactions`), Unique |
+| `total_qty` | `numeric` | Total Qty item |
+| `commission_rate` | `numeric` | Tarif komisi item |
+| `subtotal` | `numeric` | Subtotal komisi |
+
 ---
 
 ## 3. Row Level Security (RLS) Policies
 
 Sistem mengimplementasikan RLS secara ekstensif dan granular. Berikut adalah daftar spesifik *policies* yang mengamankan setiap tabel:
+
+### `affiliate_settings`, `affiliate_postings`, `affiliate_posting_items`, & `affiliate_posting_transactions`
+- **Superadmin Only**: `Superadmin ALL affiliate_settings`, `Superadmin ALL affiliate_postings`, `Superadmin ALL affiliate_posting_items`, `Superadmin ALL affiliate_posting_transactions` (Hanya profil dengan role `superadmin` yang memiliki akses penuh atas modul Affiliate ini).
 
 ### `attendance` / `attendances`
 - **Superadmin / Owner**: `Superadmin ALL attendance`, `Owner ALL attendance`, `Superadmin ALL attendances` (Akses penuh).

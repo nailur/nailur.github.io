@@ -65,7 +65,8 @@ Struktur modular *vanilla* untuk pengelolaan kode yang rapi:
 │   ├── expenses.js              # Pencatatan biaya operasional (Operational Costs) harian
 │   ├── deposits.js              # Pencatatan setoran penjualan bank (Sales Deposits)
 │   ├── discounts.js             # Pengelolaan diskon global, metode pembayaran, per item
-│   └── modifiers.js             # Opsi kustomisasi produk (Topping, Ukuran, Level)
+│   ├── modifiers.js             # Opsi kustomisasi produk (Topping, Ukuran, Level)
+│   └── affiliate.js             # Modul khusus Superadmin untuk klaim dan rekap komisi Affiliate
 │
 ├── index.html                   # Halaman Tunggal (SPA) Antarmuka POS
 ├── manifest.json                # Metadata PWA

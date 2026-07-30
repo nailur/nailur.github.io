@@ -5,6 +5,16 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 ## [Unreleased]
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
+### 2026-07-30
+- **Feature (`docs/affiliate_schema.sql`, `js/affiliate.js`, `index.html`, `js/app.js`, `sw.js`)**:
+  - Menambahkan **Modul Affiliate** independen yang khusus dapat diakses oleh peran **superadmin**.
+  - Membuat skema tabel Supabase (`affiliate_settings`, `affiliate_postings`, `affiliate_posting_items`, `affiliate_posting_transactions`) dengan RLS eksklusif `superadmin` (`auth.uid() = superadmin`).
+  - Menambahkan menu dan navigasi tab **Affiliate** pada `index.html` dengan dua subtab: **Posting Affiliate** dan **Master Affiliate**.
+  - Menambahkan fitur **Master Setting Komisi Produk**: pengaturan komisi normal (< 15 qty) dan komisi order masal (≥ 15 qty) secara persentase/nominal rupiah, dengan kalkulasi saling terhubung.
+  - Menambahkan fitur **Klaim & Posting Affiliate**: memilih satu atau banyak transaksi penjualan yang belum diklaim (`affiliate_claimed = false`), menghitung komisi secara otomatis per item berdasarkan akumulasi kuantitas (mengaktifkan tarif massal otomatis apabila total kuantitas ≥ 15 box).
+  - Menambahkan fitur **Pembayaran & Upload Bukti Transfer**: status default *Unpaid* dapat dikonfirmasi menjadi *Paid* dengan melampirkan bukti transfer yang dikompres otomatis di sisi klien via `browser-image-compression`.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v57` serta menambahkan `affiliate.js` ke daftar `urlsToCache`.
+
 ### 2026-07-28
 - **Feature (`index.html`, `js/inventory.js`, `sw.js`)**:
   - Mengubah label dan perilaku input pada modal **Posting Penambahan Stok** (`#modal-stock-posting`) dari "Harga Satuan" menjadi **Harga Penambahan (Rp)**, yaitu langsung total harga beli/biaya untuk jumlah item yang ditambahkan saat itu (mengeliminasi keharusan kasir menghitung harga satuan secara manual).
