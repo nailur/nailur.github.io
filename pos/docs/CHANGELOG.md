@@ -15,6 +15,12 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
   - Menambahkan fitur **Pembayaran & Upload Bukti Transfer**: status default *Unpaid* dapat dikonfirmasi menjadi *Paid* dengan melampirkan bukti transfer yang dikompres otomatis di sisi klien via `browser-image-compression`.
   - Menambahkan tombol pintasan **Affiliate** pada navigasi tab **Pengaturan** (`#sa-nav-affiliate`) agar Superadmin dapat langsung membuka Modul Affiliate baik dari tampilan POS Kasir maupun dari tampilan Pengaturan.
   - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v58` serta menambahkan `affiliate.js` ke daftar `urlsToCache`.
+- **Bugfix & UI Improvement (`index.html`, `js/affiliate.js`, `js/app.js`, `sw.js`)**:
+  - **Perbaikan Overlap Tabel**: Mengganti variabel warna latar belakang pada header tabel sticky dari `var(--bg-surface)` menjadi `var(--surface)` agar header tidak transparan dan teks baris di bawahnya tidak bertumpuk/tabrakan.
+  - **Perbaikan Query Database**: Menghapus kolom `is_active` dari query `.select()` pada `products` di `loadAffiliateSettings()` karena tabel `products` tidak memiliki kolom tersebut, mengeliminasi error `400 Bad Request (column products.is_active does not exist)` dan pesan error toast saat refresh halaman.
+  - **Penghapusan Menu dari Pengaturan**: Menghapus tombol menu **Affiliate** dari navbar tab **Pengaturan** sesuai spesifikasi bahwa Modul Affiliate eksklusif hanya muncul pada menu utama POS.
+  - **Penambahan Tombol "+ Atur Komisi Produk"**: Menambahkan tombol **+ Atur Komisi Produk** pada action bar **Master Affiliate** yang membuka modal dengan dropdown pilihan seluruh produk di outlet, mempermudah penambahan/pengaturan komisi tanpa harus scroll di tabel.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v59`.
 
 ### 2026-07-28
 - **Feature (`index.html`, `js/inventory.js`, `sw.js`)**:

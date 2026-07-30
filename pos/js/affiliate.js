@@ -44,18 +44,19 @@ export async function loadAffiliateSettings() {
     const outletId = getActiveOutletId();
     if (!outletId) return;
 
-    // 1. Ambil seluruh produk aktif di outlet ini
+    // 1. Ambil seluruh produk di outlet ini
     const { data: productsData, error: prodError } = await supabase
         .from('products')
-        .select('id, name, price, is_active')
+        .select('id, name, price')
         .eq('outlet_id', outletId)
         .order('name');
 
     if (prodError) {
+        console.error('Error load products for Affiliate Setting:', prodError);
         showToast('Gagal memuat produk untuk Affiliate Setting', 'error');
         return;
     }
-    affiliateProductsMaster = (productsData || []).filter(p => p.is_active !== false);
+    affiliateProductsMaster = productsData || [];
 
     // 2. Ambil setting affiliate dari affiliate_settings
     const { data: settingsData, error: setError } = await supabase
@@ -128,7 +129,7 @@ export function renderAffiliateSettings() {
 }
 
 /**
- * Membuka modal pengaturan komisi untuk satu produk
+ * Membuka modal pengaturan komisi untuk satu produk dari tombol Atur Komisi
  */
 window.editAffiliateSetting = function(productId) {
     if (!isSuperAdmin()) return;
@@ -136,19 +137,56 @@ window.editAffiliateSetting = function(productId) {
     if (!item) return;
 
     const modal = document.getElementById('modal-affiliate-setting');
+    const selectEl = document.getElementById('affiliate-setting-product-select');
+    const nameEl = document.getElementById('affiliate-setting-product-name');
     if (!modal) return;
 
+    if (nameEl) {
+        nameEl.textContent = item.product_name;
+        nameEl.style.display = 'block';
+    }
+    if (selectEl) selectEl.style.display = 'none';
+
+    populateSettingForm(item);
+    modal.classList.remove('hidden');
+};
+
+/**
+ * Membuka modal pengaturan komisi dengan dropdown seluruh produk (tombol + Atur Komisi Produk)
+ */
+export function openCreateAffiliateSettingModal() {
+    if (!isSuperAdmin()) return;
+    if (affiliateSettingsList.length === 0) {
+        showToast('Daftar produk tidak tersedia di outlet ini', 'warning');
+        return;
+    }
+    const modal = document.getElementById('modal-affiliate-setting');
+    const selectEl = document.getElementById('affiliate-setting-product-select');
+    const nameEl = document.getElementById('affiliate-setting-product-name');
+    if (!modal || !selectEl) return;
+
+    selectEl.innerHTML = affiliateSettingsList.map(item => `<option value="${item.product_id}">${escapeHtml(item.product_name)}</option>`).join('');
+    selectEl.style.display = 'block';
+    if (nameEl) nameEl.style.display = 'none';
+
+    const firstItem = affiliateSettingsList[0];
+    populateSettingForm(firstItem);
+
+    selectEl.onchange = (e) => {
+        const selectedItem = affiliateSettingsList.find(i => i.product_id === e.target.value);
+        if (selectedItem) populateSettingForm(selectedItem);
+    };
+
+    modal.classList.remove('hidden');
+}
+
+function populateSettingForm(item) {
     document.getElementById('affiliate-setting-product-id').value = item.product_id;
-    document.getElementById('affiliate-setting-product-name').textContent = item.product_name;
     document.getElementById('affiliate-setting-normal').value = item.commission_nominal > 0 ? item.commission_nominal : '';
-    
-    // Untuk order masal, kita sediakan input tarif per Qty dan input Total untuk 15 Box
     document.getElementById('affiliate-setting-bulk').value = item.bulk_commission_nominal > 0 ? item.bulk_commission_nominal : '';
     const total15 = item.bulk_commission_nominal > 0 ? Math.round(item.bulk_commission_nominal * 15) : '';
     document.getElementById('affiliate-setting-bulk-15box').value = total15;
-
-    modal.classList.remove('hidden');
-};
+}
 
 /**
  * Sinkronisasi otomatis input Bulk per Qty <-> Total 15 Box di Modal Setting

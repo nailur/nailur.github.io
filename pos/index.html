@@ -204,8 +204,6 @@
                         Server</button>
                     <button class="tab-btn" data-target="announcement-tab"><i class="ph ph-megaphone"></i>
                         Pengumuman</button>
-                    <button class="tab-btn hidden" id="sa-nav-affiliate" title="Buka Modul Affiliate"><i class="ph ph-users-four"></i>
-                        Affiliate</button>
                 </div>
                 <div class="nav-right" style="gap: 5px;">
                     <span id="sa-user-info" class="user-badge hide-mobile hidden"
@@ -1341,8 +1339,16 @@
                 </div>
 
                 <div id="subtab-affiliate-settings" class="subtab-pane hidden">
-                    <div class="action-bar">
-                        <h3>Master Setting Komisi Produk Affiliate</h3>
+                    <div class="action-bar" style="flex-wrap: wrap; gap: 10px; justify-content: space-between;">
+                        <div>
+                            <h3>Master Setting Komisi Produk Affiliate</h3>
+                            <small style="color:var(--text-secondary)">Semua produk di outlet otomatis terdaftar. Pilih produk untuk menentukan komisinya.</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary" id="btn-add-affiliate-setting">
+                                <i class="ph ph-plus"></i> Atur Komisi Produk
+                            </button>
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table class="data-table" id="affiliate-settings-table">
@@ -2497,6 +2503,7 @@
                 <input type="hidden" id="affiliate-setting-product-id">
                 <div style="margin-bottom: 15px; padding: 10px 12px; background: var(--bg-secondary); border-radius: 8px;">
                     <strong id="affiliate-setting-product-name" style="font-size: 1.05rem;"></strong>
+                    <select id="affiliate-setting-product-select" class="input-field" style="width: 100%; display: none; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-main); font-weight: 600;"></select>
                 </div>
                 <div class="input-group">
                     <label for="affiliate-setting-normal">Komisi Normal (< 15 Qty) (Rp / Qty)</label>
@@ -2548,7 +2555,7 @@
                     <label style="font-weight: 600; display:block; margin-bottom: 8px;">Pilih Transaksi Penjualan Belum Diklaim:</label>
                     <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
                         <table class="data-table" id="affiliate-unclaimed-transactions-table" style="margin: 0;">
-                            <thead style="position: sticky; top: 0; background: var(--bg-surface); z-index: 1;">
+                            <thead style="position: sticky; top: 0; background: var(--surface); z-index: 1;">
                                 <tr>
                                     <th style="width: 40px; text-align:center;">#</th>
                                     <th>No. Struk</th>
@@ -2568,7 +2575,7 @@
                     <label style="font-weight: 600; display:block; margin-bottom: 8px;">Pratinjau Perhitungan Komisi Per Item:</label>
                     <div class="table-responsive" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
                         <table class="data-table" style="margin: 0;">
-                            <thead style="position: sticky; top: 0; background: var(--bg-surface); z-index: 1;">
+                            <thead style="position: sticky; top: 0; background: var(--surface); z-index: 1;">
                                 <tr>
                                     <th>Nama Produk</th>
                                     <th style="text-align:center;">Total Qty</th>

@@ -28,6 +28,7 @@ import {
     loadAffiliateSettings, 
     loadAffiliatePostings, 
     openCreateAffiliateModal, 
+    openCreateAffiliateSettingModal,
     handleSaveAffiliatePosting, 
     handleSaveAffiliateSetting, 
     handleSaveAffiliatePayment 
@@ -41,6 +42,7 @@ window.loadDiscounts = loadDiscounts;
 window.loadAffiliateSettings = loadAffiliateSettings;
 window.loadAffiliatePostings = loadAffiliatePostings;
 window.openCreateAffiliateModal = openCreateAffiliateModal;
+window.openCreateAffiliateSettingModal = openCreateAffiliateSettingModal;
 
 window.getCurrentProfile = getCurrentProfile;
 window.getCurrentUser = getCurrentUser;
@@ -647,6 +649,9 @@ function setupEventListeners() {
     document.getElementById('form-shift-master')?.addEventListener('submit', handleSaveShift);
     document.getElementById('btn-add-affiliate-posting')?.addEventListener('click', () => {
         if (window.openCreateAffiliateModal) window.openCreateAffiliateModal();
+    });
+    document.getElementById('btn-add-affiliate-setting')?.addEventListener('click', () => {
+        if (window.openCreateAffiliateSettingModal) window.openCreateAffiliateSettingModal();
     });
     document.getElementById('form-create-affiliate-posting')?.addEventListener('submit', handleSaveAffiliatePosting);
     document.getElementById('form-affiliate-setting')?.addEventListener('submit', handleSaveAffiliateSetting);
