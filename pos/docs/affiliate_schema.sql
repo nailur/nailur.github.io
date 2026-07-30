@@ -81,6 +81,7 @@ ALTER TABLE public.affiliate_posting_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.affiliate_posting_transactions ENABLE ROW LEVEL SECURITY;
 
 -- Policies for affiliate_settings
+DROP POLICY IF EXISTS "Superadmin ALL affiliate_settings" ON public.affiliate_settings;
 CREATE POLICY "Superadmin ALL affiliate_settings" ON public.affiliate_settings
     FOR ALL USING (
         EXISTS (
@@ -91,6 +92,7 @@ CREATE POLICY "Superadmin ALL affiliate_settings" ON public.affiliate_settings
     );
 
 -- Policies for affiliate_postings
+DROP POLICY IF EXISTS "Superadmin ALL affiliate_postings" ON public.affiliate_postings;
 CREATE POLICY "Superadmin ALL affiliate_postings" ON public.affiliate_postings
     FOR ALL USING (
         EXISTS (
@@ -101,6 +103,7 @@ CREATE POLICY "Superadmin ALL affiliate_postings" ON public.affiliate_postings
     );
 
 -- Policies for affiliate_posting_items
+DROP POLICY IF EXISTS "Superadmin ALL affiliate_posting_items" ON public.affiliate_posting_items;
 CREATE POLICY "Superadmin ALL affiliate_posting_items" ON public.affiliate_posting_items
     FOR ALL USING (
         EXISTS (
@@ -111,6 +114,7 @@ CREATE POLICY "Superadmin ALL affiliate_posting_items" ON public.affiliate_posti
     );
 
 -- Policies for affiliate_posting_transactions
+DROP POLICY IF EXISTS "Superadmin ALL affiliate_posting_transactions" ON public.affiliate_posting_transactions;
 CREATE POLICY "Superadmin ALL affiliate_posting_transactions" ON public.affiliate_posting_transactions
     FOR ALL USING (
         EXISTS (
@@ -123,6 +127,7 @@ CREATE POLICY "Superadmin ALL affiliate_posting_transactions" ON public.affiliat
 -- Enable RLS for affiliate_periods
 ALTER TABLE public.affiliate_periods ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Superadmin ALL affiliate_periods" ON public.affiliate_periods;
 CREATE POLICY "Superadmin ALL affiliate_periods" ON public.affiliate_periods
     FOR ALL USING (
         EXISTS (
