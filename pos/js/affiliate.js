@@ -123,9 +123,12 @@ export function renderAffiliateSettings() {
                 <td>${commNormalStr}</td>
                 <td>${targetQtyStr}</td>
                 <td>${bonusNominalStr}</td>
-                <td style="white-space:nowrap;">
+                <td style="white-space:nowrap; text-align:right;">
                     <button class="btn btn-icon btn-secondary" title="Atur Komisi Produk" onclick="window.editAffiliateSetting('${item.product_id}')">
                         <i class="ph ph-pencil-simple"></i>
+                    </button>
+                    <button class="btn btn-icon btn-danger" title="Hapus Komisi Produk" onclick="window.deleteAffiliateSetting('${item.product_id}')">
+                        <i class="ph ph-trash"></i>
                     </button>
                 </td>
             </tr>
@@ -192,6 +195,41 @@ function populateSettingForm(item) {
     document.getElementById('affiliate-setting-bonus-nominal').value = item.bonus_nominal > 0 ? item.bonus_nominal : '';
     if (window.updateAffiliateSettingPreview) window.updateAffiliateSettingPreview();
 }
+
+/**
+ * Menghapus/mreset pengaturan komisi produk
+ */
+window.deleteAffiliateSetting = async function(productId) {
+    if (!isSuperAdmin()) {
+        showToast('Hanya Superadmin yang dapat menghapus pengaturan komisi affiliate', 'error');
+        return;
+    }
+
+    const item = affiliateSettingsList.find(i => String(i.product_id) === String(productId));
+    const prodName = item ? item.product_name : 'Produk ini';
+
+    if (!confirm(`Hapus pengaturan komisi untuk produk "${prodName}"?`)) {
+        return;
+    }
+
+    const outletId = getCurrentOutletId();
+    if (!outletId) return;
+
+    const { error } = await supabase
+        .from('affiliate_settings')
+        .delete()
+        .eq('outlet_id', outletId)
+        .eq('product_id', productId);
+
+    if (error) {
+        console.error('Error delete affiliate setting:', error);
+        showToast('Gagal menghapus komisi produk: ' + error.message, 'error');
+        return;
+    }
+
+    showToast('Pengaturan komisi produk berhasil dihapus', 'success');
+    loadAffiliateSettings();
+};
 
 /**
  * Live simulasi perhitungan komisi dan bonus kelipatan di Modal Setting
@@ -352,7 +390,7 @@ export function renderAffiliatePostings() {
                 <td><strong>${escapeHtml(post.affiliator_name)}</strong></td>
                 <td>Rp ${Number(post.total_amount).toLocaleString('id-ID')}</td>
                 <td><span class="badge ${badgeClass}">${escapeHtml(post.status)}</span></td>
-                <td style="white-space:nowrap;">
+                <td style="white-space:nowrap; text-align:center;">
                     ${isPaid && post.proof_attachment ? `
                         <button class="btn btn-icon btn-secondary" onclick="window.viewAffiliateProof('${escapeHtml(post.proof_attachment)}')" title="Lihat Bukti">
                             <i class="ph ph-image"></i>
@@ -360,7 +398,7 @@ export function renderAffiliatePostings() {
                     ` : '<span style="color:var(--text-secondary);">-</span>'}
                 </td>
                 <td>${escapeHtml(adminName)}</td>
-                <td style="white-space:nowrap;">
+                <td style="white-space:nowrap; text-align:right;">
                     ${!isPaid ? `
                         <button class="btn btn-icon btn-success" onclick="window.openPayAffiliateModal('${post.id}')" title="Bayar Komisi">
                             <i class="ph ph-money"></i>
