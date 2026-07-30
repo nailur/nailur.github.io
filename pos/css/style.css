@@ -131,9 +131,9 @@ body {
     color: var(--text-main);
 }
 
-.input-group>input,
-.input-group>select,
-.input-group>textarea,
+.input-group input,
+.input-group select,
+.input-group textarea,
 .password-wrapper>input,
 .input {
     width: 100%;

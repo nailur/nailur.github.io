@@ -122,8 +122,8 @@ export function renderAffiliateSettings() {
                 <td>${targetQtyStr}</td>
                 <td>${bonusNominalStr}</td>
                 <td style="text-align:right;">
-                    <button class="btn btn-sm btn-secondary" style="padding:4px 10px; font-size:0.8rem;" onclick="window.editAffiliateSetting('${item.product_id}')">
-                        <i class="ph ph-pencil-simple"></i> Atur Komisi
+                    <button class="btn btn-sm btn-secondary" style="padding:6px 10px; font-size:0.95rem; border-radius:8px;" title="Atur Komisi Produk" onclick="window.editAffiliateSetting('${item.product_id}')">
+                        <i class="ph ph-pencil-simple"></i>
                     </button>
                 </td>
             </tr>

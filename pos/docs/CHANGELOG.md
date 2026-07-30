@@ -29,7 +29,9 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
     - Setiap akumulasi kuantitas produk mencapai kelipatan target tersebut, afiliator mendapatkan tambahan bonus nominal sebesar `Math.floor(total_qty / target_qty) * bonus_nominal` (misal 15 atau 16 item dapat 1x bonus Rp 5.000, 30 item dapat 2x bonus Rp 10.000, dst).
   - **Simulasi Live di Modal Setting**: Menambahkan kotak *live simulation* pada modal **Atur Komisi Produk** yang langsung menghitung dan menampilkan simulasi komisi untuk 14, 15, 16, hingga 30 qty secara real-time saat pengguna mengetik angka komisi/target/bonus.
   - **Proteksi Fallback Database**: Menambahkan kolom `bonus_target_qty` dan `bonus_nominal` pada dokumentasi skema SQL serta menambahkan penanganan fallback otomatis pada `handleSaveAffiliateSetting()` agar penyimpanan tidak gagal meskipun kolom belum ditambahkan di Supabase.
-  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v60`.
+  - **Penyederhanaan Tombol Aksi**: Mengubah tombol aksi pada tabel **Master Affiliate** menjadi tombol ikon pensil saja (`<i class="ph ph-pencil-simple"></i>`) tanpa teks agar kolom aksi lebih ramping dan rapi.
+  - **Perbaikan CSS Input Modal**: Menambahkan kelas `input` pada input angka di modal **Atur Komisi Produk** (`#affiliate-setting-normal`, `#affiliate-setting-target-qty`, `#affiliate-setting-bonus-nominal`) dan memperbarui selektor CSS di `style.css` menjadi `.input-group input` agar semua input yang bersarang di layout grid ter-render dengan border rounded, padding, dan efek fokus standar.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v61`.
 
 ### 2026-07-28
 - **Feature (`index.html`, `js/inventory.js`, `sw.js`)**:
