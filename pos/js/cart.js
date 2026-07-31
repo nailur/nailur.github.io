@@ -176,7 +176,7 @@ function calculateTotals() {
     let discountPercent = dp ? (parseFloat(dp.value) || 0) : 0;
     let discountNominal = dn ? (parseFloat(dn.value) || 0) : 0;
     
-    // Validasi minimal belanja per payment method
+    // Validate minimum purchase per payment method
     const activeDiscount = window.getActiveDiscount ? window.getActiveDiscount() : null;
     if (activeDiscount && activeDiscount.payment_discounts && activeDiscount.payment_discounts[method]) {
         const methodDiscount = activeDiscount.payment_discounts[method];

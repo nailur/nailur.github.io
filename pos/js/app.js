@@ -59,7 +59,7 @@ window.addToCart = addToCart;
 window.updateQty = updateQty;
 window.emptyCart = emptyCart;
 // window.openCheckoutModal, finalizeCheckout, calculateChange, printReceipt, printReceiptBluetooth
-// didaftarkan di checkout.js
+// registered in checkout.js
 window.loadHistory = loadHistory;
 window.exportToExcel = exportToExcel;
 window.changeHistoryPage = changeHistoryPage;
@@ -91,7 +91,7 @@ const posView = document.getElementById('pos-view');
 
 
 
-// showToast, showConfirm, debounce, escapeHtml, getLocalToday dipindah ke utils.js
+// Utilities moved to utils.js
 
 // ------------------------------
 // GLOBAL REALTIME SYNC
@@ -243,7 +243,7 @@ async function routeUser(profile) {
         logout();
     }
     
-    // Tampilkan tombol manajemen untuk role manajerial
+    // Show management button for managerial roles
     if (['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(profile.role)) {
         const btnMgmt = document.getElementById('btn-management');
         if (btnMgmt) btnMgmt.classList.remove('hidden');
@@ -252,7 +252,7 @@ async function routeUser(profile) {
         if (btnMgmt) btnMgmt.classList.add('hidden');
     }
     
-    // Sembunyikan tab POS tertentu untuk kasir
+    // Hide specific POS tabs for cashiers
     const posStockBtn = document.querySelector('.pos-nav-btn[data-target="stock-tab-content"]');
     const posExpensesBtn = document.querySelector('.pos-nav-btn[data-target="expenses-tab-content"]');
     const posDepositsBtn = document.querySelector('.pos-nav-btn[data-target="deposits-tab-content"]');
@@ -266,10 +266,10 @@ async function routeUser(profile) {
         if(posDepositsBtn) posDepositsBtn.classList.remove('hidden');
     }
 
-    // Absensi selalu tampil untuk semua role yang masuk POS view
+    // Attendance tab is always visible for all roles in POS view
     document.getElementById('nav-attendance').classList.remove('hidden');
 
-    // Tab Affiliate untuk superadmin dan owner
+    // Affiliate tab is visible for superadmin and owner
     const navAffiliateBtn = document.getElementById('nav-affiliate');
     const saNavAffiliateBtn = document.getElementById('sa-nav-affiliate');
     if (profile && (profile.role === 'superadmin' || profile.role === 'owner')) {
@@ -336,7 +336,7 @@ async function initPosMultiOutlet(profile) {
             if (window.loadDiscounts) window.loadDiscounts();
             renderCart();
 
-            // Hanya load data untuk tab yang sedang aktif agar ringan:
+            // Lazy load only the active tab's data for performance:
             const currentTab = localStorage.getItem('pos_active_tab') || 'pos-tab-content';
             if (currentTab === 'history-tab-content') loadHistory();
             else if (currentTab === 'stock-tab-content') { loadInventory(); loadStockPostings(); }
@@ -357,7 +357,7 @@ async function initPosMultiOutlet(profile) {
             }
         };
         
-        // Guard: mencegah listener bertumpuk saat re-login tanpa reload
+        // Guard: prevent duplicate listeners when re-logging in without reload
         if (!selector._outletChangeAttached) {
             selector.addEventListener('change', handleChange);
             selector._outletChangeAttached = true;
@@ -505,7 +505,7 @@ function setupEventListeners() {
 
     document.getElementById('btn-back-pos').addEventListener('click', () => {
         showView('pos');
-        // Pastikan tab kasir terbuka
+        // Ensure cashier tab is open
         document.querySelector('.pos-nav-btn[data-target="pos-tab-content"]')?.click();
     });
     // Logout
@@ -653,7 +653,7 @@ function setupEventListeners() {
         });
     });
 
-    // Tutup modal jika klik di luar area konten (di area overlay yang gelap)
+    // Close modal when clicking on dark backdrop overlay outside modal content
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
@@ -984,7 +984,7 @@ async function initPos() {
         if (window.loadDiscounts) window.loadDiscounts();
         renderCart();
     }
-    // Restore active tab (click akan memuat data modul terkait jika diperlukan)
+    // Restore active tab (click will trigger data loading for that module if needed)
     const savedTab = localStorage.getItem('pos_active_tab') || 'pos-tab-content';
     const btn = document.querySelector(`.pos-nav-btn[data-target="${savedTab}"]`);
     if(btn) btn.click();
@@ -1130,11 +1130,11 @@ window.exportAttendanceExcel = async () => {
         window.XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Absensi");
 
         const colWidths = [
-            { wch: 15 }, // Tanggal
-            { wch: 25 }, // Nama
+            { wch: 15 }, // Date
+            { wch: 25 }, // Name
             { wch: 15 }, // Role
             { wch: 20 }, // Shift
-            { wch: 15 }, // Jam Shift
+            { wch: 15 }, // Shift Hours
             { wch: 15 }, // In
             { wch: 15 }, // Out
             { wch: 10 }  // Status
@@ -1212,14 +1212,14 @@ window.exportAttendanceExcel = async () => {
         }]);
         
         sessionWorksheet['!cols'] = [
-            { wch: 25 }, // Waktu Buka
-            { wch: 25 }, // Waktu Tutup
-            { wch: 20 }, // Buka Oleh
-            { wch: 20 }, // Tutup Oleh
+            { wch: 25 }, // Open Time
+            { wch: 25 }, // Close Time
+            { wch: 20 }, // Opened By
+            { wch: 20 }, // Closed By
             { wch: 10 }, // Status
-            { wch: 15 }, // Saldo Awal
-            { wch: 15 }, // Saldo Akhir
-            { wch: 15 }  // Selisih
+            { wch: 15 }, // Opening Balance
+            { wch: 15 }, // Closing Balance
+            { wch: 15 }  // Variance
         ];
         window.XLSX.utils.book_append_sheet(workbook, sessionWorksheet, "Riwayat Shift");
 
@@ -1561,7 +1561,7 @@ window.sendCustomNotification = async function(e) {
         supabase.removeChannel(targetChannel);
     }
     
-    // Kirim Push Notification via Vercel API (OneSignal)
+    // Send Push Notification via Vercel API (OneSignal)
     try {
         const pushResp = await fetch('https://nailur.vercel.app/api/pos-broadcast', {
             method: 'POST',
@@ -1586,7 +1586,7 @@ window.sendCustomNotification = async function(e) {
     btn.disabled = false;
 };
 
-// loadTargetUsers dipindah ke users.js
+// loadTargetUsers moved to users.js
 
 // Start listening when file loads
 setupGlobalRefreshListener();
@@ -1594,10 +1594,9 @@ setupGlobalRefreshListener();
 // ------------------------------
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        // Audit Fix #6 (Refined): Dengarkan pesan APP_UPDATED dari sw.js yang hanya dikirim
-        // ketika versi CACHE_NAME berubah dan cache lama benar-benar dihapus.
-        // Ini menghindari toast palsu ("Pembaruan terpasang") akibat perubahan skrip CDN OneSignal
-        // atau klaim ulang ServiceWorker saat PWA dibuka kembali.
+        // Audit Fix #6 (Refined): Listen for APP_UPDATED from sw.js sent only when
+        // CACHE_NAME changes and old caches are purged. Prevents false update toasts
+        // triggered by CDN scripts or SW re-claims on tab reopen.
         let updateNotified = false;
         navigator.serviceWorker.addEventListener('message', (event) => {
             if (event.data && event.data.type === 'APP_UPDATED' && !updateNotified) {

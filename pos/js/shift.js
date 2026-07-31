@@ -14,7 +14,7 @@ export async function checkActiveShift() {
     try {
         const profile = getCurrentProfile();
         if (!profile || profile.role === 'superadmin') {
-            // Superadmin tak perlu lock shift
+            // Superadmin does not need shift locking
             unlockPOS();
             return null;
         }
@@ -49,7 +49,7 @@ export async function checkActiveShift() {
 export function lockPOS() {
     document.getElementById('pos-lock-screen')?.classList.remove('hidden');
     document.getElementById('btn-close-shift')?.classList.add('hidden');
-    // Matikan pencarian produk atau fungsi add to cart
+    // Disable product search and add-to-cart while POS is locked
 }
 
 export function unlockPOS() {
@@ -63,7 +63,7 @@ export async function handleOpenShift(e) {
     const profile = getCurrentProfile();
 
     try {
-        // Cek apakah user sudah punya sesi shift yang masih open
+        // Check if user already has an active open shift session
         const { data: existingSession, error: checkError } = await supabase
             .from('shift_sessions')
             .select('id, opened_at')

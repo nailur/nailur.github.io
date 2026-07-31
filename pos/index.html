@@ -170,7 +170,7 @@
         <!-- 2. SUPERADMIN DASHBOARD -->
         <!-- ======================= -->
 
-        <!-- Tampilan Manajemen (Operations) -->
+        <!-- Operations Management View -->
         <section id="superadmin-view" class="view-section hidden pos-view-container">
             <!-- Mobile Header for SA -->
             <div class="mobile-pos-header hidden-desktop glass-panel">
@@ -307,7 +307,7 @@
                         </div>
                     </div>
 
-                    <!-- 3. KELOLA USERS TAB -->
+                    <!-- 3. MANAGE USERS TAB -->
                     <div id="users-tab" class="tab-pane hidden">
                         <div class="action-bar">
                             <h3>Daftar Pengguna</h3>
@@ -339,18 +339,18 @@
 
 
 
-                    <!-- MANAJEMEN STOK TAB -->
+                    <!-- STOCK MANAGEMENT TAB -->
 
 
-                    <!-- BIAYA OPERASIONAL TAB -->
+                    <!-- OPERATIONAL EXPENSES TAB -->
 
 
-                    <!-- SETORAN PENJUALAN TAB -->
+                    <!-- SALES DEPOSITS TAB -->
 
 
                     <!-- removed analytics-tab -->
                     
-                    <!-- X. DISKON TAB -->
+                    <!-- X. DISCOUNTS TAB -->
                     <div id="discounts-tab" class="tab-pane hidden">
                         <div class="action-bar">
                             <h3>Daftar Diskon</h3>
@@ -375,8 +375,8 @@
                         </div>
                     </div>
 
-                    <!-- 4. INFO SERVER TAB -->
-                    <!-- 4. INFO SERVER TAB (FREE PLAN MONITOR & UPGRADE ADVISOR) -->
+                    <!-- 4. SERVER INFO TAB -->
+                    <!-- 4. SERVER INFO TAB (FREE PLAN MONITOR & UPGRADE ADVISOR) -->
                     <div id="server-info-tab" class="tab-pane hidden">
                         <div class="action-bar"
                             style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -537,7 +537,7 @@
                             </div>
                         </div>
 
-                        <!-- 6. Kapan Harus Upgrade atau Migrasi Server? (Advisor Section) -->
+                        <!-- 6. When to Upgrade or Migrate Server? (Advisor Section) -->
                         <div class="glass-panel" style="padding: 22px; margin-top: 16px;">
                             <h4 style="margin: 0 0 14px 0; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; color: var(--text-primary);">
                                 <i class="ph-fill ph-compass" style="color: var(--primary);"></i> Panduan Kritis: Kapan Harus Upgrade atau Migrasi Server?
@@ -958,7 +958,7 @@
                     </table>
                 </div>
 
-                <!-- TABEL RIWAYAT SHIFT -->
+                <!-- SHIFT HISTORY TABLE -->
                 <div class="action-bar" style="flex-wrap: wrap; gap: 10px; margin-top: 40px;">
                     <h2>Riwayat Sesi Shift (Buka/Tutup)</h2>
                 </div>
@@ -1081,10 +1081,16 @@
                     </div>
                 </div>
 
-                <!-- Estimasi Penggunaan Kantong Ayam Card -->
-                <div class="glass-panel" id="chicken-bag-card"
-                    style="margin-top: 20px; margin-bottom: 20px; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
-                    <!-- Injected dynamically in dashboard.js -->
+                <!-- Estimasi Penggunaan Kantong Ayam & Packaging Box Cards (Side-by-Side) -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-top: 20px; margin-bottom: 20px;">
+                    <div class="glass-panel" id="chicken-bag-card"
+                        style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+                        <!-- Injected dynamically in dashboard.js -->
+                    </div>
+                    <div class="glass-panel" id="packaging-box-card"
+                        style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+                        <!-- Injected dynamically in dashboard.js -->
+                    </div>
                 </div>
 
                 <div class="analytics-charts-grid" style="display: grid; gap: 15px; margin-bottom: 20px;">
@@ -1752,7 +1758,7 @@
         </div>
     </div>
 
-    <!-- Modal Detail Transaksi -->
+    <!-- Transaction Detail Modal -->
     <div id="modal-transaction-details" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 600px; width: 90%;">
             <div class="modal-header">
@@ -1802,7 +1808,7 @@
         </div>
     </div>
 
-    <!-- Modal Edit Profile (Sendiri) -->
+    <!-- My Profile Edit Modal -->
     <div id="modal-edit-profile" class="modal-overlay hidden">
         <div class="modal-content glass-panel">
             <div class="modal-header">
@@ -1947,7 +1953,7 @@
         </div>
     </div>
 
-    <!-- Modals untuk Fitur Back-Office & Shift -->
+    <!-- Back-Office & Shift Modals -->
 
     <!-- 1. Modal Open Shift -->
     <div id="modal-open-shift" class="modal-overlay hidden">
@@ -1998,7 +2004,7 @@
         </div>
     </div>
 
-    <!-- 3. Modal Biaya Operasional -->
+    <!-- 3. Expense Modal -->
     <div id="modal-expense" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 600px;">
             <div class="modal-header">
@@ -2064,7 +2070,7 @@
         </div>
     </div>
 
-    <!-- 4. Modal Setoran Penjualan -->
+    <!-- 4. Sales Deposit Modal -->
     <div id="modal-deposit" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 450px;">
             <div class="modal-header">
@@ -2110,7 +2116,7 @@
         </div>
     </div>
 
-    <!-- 5. Modal Manajemen Stok (Inventory) -->
+    <!-- 5. Inventory Management Modal -->
     <div id="modal-inventory" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 500px;">
             <div class="modal-header">
@@ -2164,7 +2170,7 @@
         </div>
     </div>
 
-    <!-- 6. Modal Master Shift -->
+    <!-- 6. Shift Master Modal -->
     <div id="modal-shift-master" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 400px;">
             <div class="modal-header">
@@ -2198,7 +2204,7 @@
         </div>
     </div>
 
-    <!-- 7. Modal Master Biaya Operasional -->
+    <!-- 7. Operating Expense Master Modal -->
     <div id="modal-expense-master" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 400px;">
             <div class="modal-header">
@@ -2448,7 +2454,7 @@
     </div>
 
     <!-- ======================= -->
-    <!-- MODAL CANCEL TRANSAKSI    -->
+    <!-- TRANSACTION VOID MODAL -->
     <!-- ======================= -->
     <div id="modal-void" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 400px; width: 95%;">
@@ -2495,10 +2501,10 @@
     </div>
 
     <!-- ======================================= -->
-    <!-- MODALS MODUL AFFILIATE (SUPERADMIN)    -->
+    <!-- AFFILIATE MODULE MODALS (SUPERADMIN) -->
     <!-- ======================================= -->
 
-    <!-- 1. Modal Tambah/Edit Periode Affiliate -->
+    <!-- 1. Add / Edit Affiliate Period Modal -->
     <div id="modal-affiliate-period-form" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 460px; width: 95%;">
             <div class="modal-header">
@@ -2536,7 +2542,7 @@
         </div>
     </div>
 
-    <!-- 1b. Modal Detail Periode Affiliate (Tampilan Master Komisi Produk untuk Periode Terpilih) -->
+    <!-- 1b. Affiliate Period Detail Modal (Product Commission Master for Selected Period) -->
     <div id="modal-affiliate-period-detail" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 900px; width: 96%; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header">
@@ -2583,7 +2589,7 @@
         </div>
     </div>
 
-    <!-- 1c. Modal Atur Setting Komisi Produk -->
+    <!-- 1c. Product Commission Setting Modal -->
     <div id="modal-affiliate-setting" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 480px; width: 95%;">
             <div class="modal-header">
@@ -2628,7 +2634,7 @@
         </div>
     </div>
 
-    <!-- 2. Modal Buat Posting Affiliate (Klaim Transaksi) -->
+    <!-- 2. Create Affiliate Posting Modal (Transaction Claim) -->
     <div id="modal-create-affiliate-posting" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 780px; width: 95%; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header">
@@ -2666,7 +2672,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <!-- Pagination Bar Transaksi Belum Diklaim -->
+                    <!-- Unclaimed Transactions Pagination Bar -->
                     <div id="affiliate-unclaimed-pagination" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:8px 12px; background:var(--bg-secondary); border-radius:8px; font-size:0.85rem; flex-wrap:wrap; gap:8px;">
                         <div>
                             <span style="font-weight:600; color:var(--primary);">Terpilih: <span id="affiliate-selected-count">0</span> transaksi</span>
@@ -2716,7 +2722,7 @@
         </div>
     </div>
 
-    <!-- 3. Modal Bayar & Upload Bukti Transfer -->
+    <!-- 3. Commission Payment & Transfer Proof Upload Modal -->
     <div id="modal-pay-affiliate" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 450px; width: 95%;">
             <div class="modal-header">
@@ -2743,7 +2749,7 @@
         </div>
     </div>
 
-    <!-- 4. Modal Pratinjau Bukti Transfer -->
+    <!-- 4. Transfer Proof Preview Modal -->
     <div id="modal-preview-affiliate-proof" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 520px; width: 95%; text-align: center;">
             <div class="modal-header">
@@ -2762,7 +2768,7 @@
         </div>
     </div>
 
-    <!-- 5. Modal Detail Posting Affiliate -->
+    <!-- 5. Affiliate Posting Detail Modal -->
     <div id="modal-detail-affiliate" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header">

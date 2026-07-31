@@ -69,7 +69,7 @@ export async function loadProfile(userId) {
     currentProfile._timestamp = Date.now();
     // Obfuscate cached data to prevent easy reading
     const encodedStr = btoa(encodeURIComponent(JSON.stringify(currentProfile)));
-    localStorage.setItem('pos_profile', encodedStr); // Cache ke localStorage
+    localStorage.setItem('pos_profile', encodedStr); // Cache to localStorage
     return currentProfile;
 }
 

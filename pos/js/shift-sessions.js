@@ -5,7 +5,7 @@ export async function loadShiftSessions() {
     const tbody = document.querySelector('#shift-sessions-table tbody');
     if (!tbody) return;
 
-    // Gunakan filter tanggal dari input absensi
+    // Use date filters from attendance inputs
     const startDate = document.getElementById('attendance-start-date')?.value;
     const endDate = document.getElementById('attendance-end-date')?.value;
     const activeOutletId = getActiveOutletId();

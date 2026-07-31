@@ -16,7 +16,7 @@ export async function initManagement() {
     // owner: all except server-info & announcement
     // kepala_cabang: outlets, users, shifts, stock, expenses, deposits, analytics (no branches, server-info, announcement)
     // kepala_toko: users, shifts, stock, expenses (add only), deposits (add only), (no branches, outlets, analytics, server-info, announcement)
-    // kasir: NO access to management at all (button hidden)
+    // cashier: NO access to management at all (button hidden)
 
     const tabMap = {
         'branches-tab': { roles: ['superadmin', 'owner'] },
@@ -439,10 +439,8 @@ export async function populateShiftOptions(selectedShiftId = null) {
     }
 }
 
-// Tidak perlu merespon pada onchange outlet lagi untuk shift
-// Tapi mungkin masih dipanggil kalau role berubah
+// No shift filtering needed on outlet change; kept for potential future extensions
 document.getElementById('user-outlet')?.addEventListener('change', (e) => {
-    // nothing to do for shifts anymore, but we can leave it
 });
 
 export async function deleteUser(id) {

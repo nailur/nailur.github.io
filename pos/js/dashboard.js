@@ -45,8 +45,8 @@ window.loadDashboard = async function() {
     });
 
     // Fetch analytics summary for charts
-    // Audit Fix #4: Kirim p_end_date agar filter dilakukan di database,
-    // bukan di browser — hemat kuota Egress Supabase 5 GB/bulan.
+    // Audit Fix #4: Pass p_end_date so filtering is done in database,
+    // not in browser — saves Egress Supabase quota (5 GB/month).
     const { data: analyticsResult, error: analyticsError } = await supabase.rpc('get_analytics_summary', {
         p_outlet_ids: [activeOutletId],
         p_start_date: startOfDay,
@@ -131,36 +131,58 @@ window.loadDashboard = async function() {
     if (window.enableTableSort) window.enableTableSort('dashboard-method-table');
     if (window.enableTableSort) window.enableTableSort('dashboard-product-table');
 
-    // Perhitungan Kantong Ayam (1 Kantong = 9 potong: 3 Dada, 2 Paha Atas, 2 Paha Bawah, 2 Sayap)
-    let countDada = 0;
-    let countPahaAtas = 0;
-    let countPahaBawah = 0;
-    let countSayap = 0;
-    let countLainnya = 0;
+    // Chicken Bag & Packaging Box calculations
+    let countDada = 0, countPahaAtas = 0, countPahaBawah = 0, countSayap = 0, countLainnya = 0;
+    let countBoxM = 0, countBoxXS = 0;
+    let boxM_OriDada = 0, boxM_OriPahaAtas = 0, boxM_OriPahaBawah = 0, boxM_OriSayap = 0;
+    let boxM_GeprekDada = 0, boxM_GeprekPahaAtas = 0, boxM_GeprekPahaBawah = 0, boxM_GeprekSayap = 0;
+    let boxXS_GeprekDada = 0, boxXS_GeprekPahaAtas = 0, boxXS_GeprekPahaBawah = 0, boxXS_GeprekSayap = 0;
 
     productData.forEach(p => {
         const name = (p.name || '').toLowerCase();
         const qty = Number(p.qty) || 0;
-        let matched = false;
+        let matchedPart = false;
 
         if (name.includes('dada')) {
             countDada += qty;
-            matched = true;
+            matchedPart = true;
         }
         if (name.includes('paha atas')) {
             countPahaAtas += qty;
-            matched = true;
+            matchedPart = true;
         }
         if (name.includes('paha bawah') || (name.includes('paha') && !name.includes('paha atas'))) {
             countPahaBawah += qty;
-            matched = true;
+            matchedPart = true;
         }
         if (name.includes('sayap') || name.includes('wing')) {
             countSayap += qty;
-            matched = true;
+            matchedPart = true;
         }
-        if (!matched && (name.includes('ayam') || name.includes('chicken'))) {
+        if (!matchedPart && (name.includes('ayam') || name.includes('chicken'))) {
             countLainnya += qty;
+        }
+
+        // Packaging Box Categorization (Box Ukuran M vs Box Ukuran XS)
+        const isPaket = name.includes('paket');
+        const isOri = name.includes('ori') || name.includes('original');
+        const isGeprek = name.includes('geprek');
+
+        if (isPaket && isOri) {
+            if (name.includes('dada')) { boxM_OriDada += qty; countBoxM += qty; }
+            else if (name.includes('paha atas')) { boxM_OriPahaAtas += qty; countBoxM += qty; }
+            else if (name.includes('paha bawah') || name.includes('paha')) { boxM_OriPahaBawah += qty; countBoxM += qty; }
+            else if (name.includes('sayap') || name.includes('wing')) { boxM_OriSayap += qty; countBoxM += qty; }
+        } else if (isPaket && isGeprek) {
+            if (name.includes('dada')) { boxM_GeprekDada += qty; countBoxM += qty; }
+            else if (name.includes('paha atas')) { boxM_GeprekPahaAtas += qty; countBoxM += qty; }
+            else if (name.includes('paha bawah') || name.includes('paha')) { boxM_GeprekPahaBawah += qty; countBoxM += qty; }
+            else if (name.includes('sayap') || name.includes('wing')) { boxM_GeprekSayap += qty; countBoxM += qty; }
+        } else if (!isPaket && isGeprek) {
+            if (name.includes('dada')) { boxXS_GeprekDada += qty; countBoxXS += qty; }
+            else if (name.includes('paha atas')) { boxXS_GeprekPahaAtas += qty; countBoxXS += qty; }
+            else if (name.includes('paha bawah') || name.includes('paha')) { boxXS_GeprekPahaBawah += qty; countBoxXS += qty; }
+            else if (name.includes('sayap') || name.includes('wing')) { boxXS_GeprekSayap += qty; countBoxXS += qty; }
         }
     });
 
@@ -181,81 +203,182 @@ window.loadDashboard = async function() {
     const chickenCardEl = document.getElementById('chicken-bag-card');
     if (chickenCardEl) {
         chickenCardEl.innerHTML = `
-            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                 <div>
-                    <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: var(--primary);">
-                        Estimasi Kantong Ayam Dibuka
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 1.05rem; color: var(--primary);">
+                        <i class="ph-fill ph-package"></i> Estimasi Kantong Ayam Dibuka
                     </h3>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">1 Kantong = 9 potong (3 Dada, 2 Paha Atas, 2 Paha Bawah, 2 Sayap)</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted);">1 Kantong = 9 pcs (3 Dada, 2 Paha Atas, 2 Paha Bawah, 2 Sayap)</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                    <div style="text-align: right;">
-                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Potong Terjual</div>
-                        <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">${totalPieces} pcs <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">(${equivBags} kantong)</span></div>
+                <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); padding: 5px 10px; border-radius: 8px; text-align: center; white-space: nowrap;">
+                    <div style="font-size: 0.65rem; color: #10b981; font-weight: 600; text-transform: uppercase;">Kantong Dibuka</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #10b981;">${totalBagsOpened} <span style="font-size: 0.75rem; font-weight: 600;">Kantong</span></div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(59, 130, 246, 0.08); padding: 7px 10px; border-radius: 6px; font-size: 0.8rem;">
+                <span style="color: var(--text-secondary); font-weight: 600;">Total Potong Ayam Terjual:</span>
+                <strong style="color: var(--primary); font-size: 0.88rem;">${totalPieces} pcs (${equivBags} kantong)</strong>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 0.88rem;">Dada</span>
+                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">3 pcs/kntg</span>
                     </div>
-                    <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); padding: 8px 16px; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 0.75rem; color: #10b981; font-weight: 600; text-transform: uppercase;">Kantong Dibuka</div>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: #10b981;">${totalBagsOpened} <span style="font-size: 0.9rem; font-weight: 600;">Kantong</span></div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">${countDada} <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.73rem; color: var(--text-muted); margin-top: 6px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqDada} kntg</strong></span>
+                        <span>Sisa: <strong style="color: ${sisaDada > 0 ? '#10b981' : 'var(--text-main)'};">${sisaDada} pcs</strong></span>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 0.88rem;">Paha Atas</span>
+                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">2 pcs/kntg</span>
+                    </div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">${countPahaAtas} <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.73rem; color: var(--text-muted); margin-top: 6px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaAtas} kntg</strong></span>
+                        <span>Sisa: <strong style="color: ${sisaPahaAtas > 0 ? '#10b981' : 'var(--text-main)'};">${sisaPahaAtas} pcs</strong></span>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 0.88rem;">Paha Bawah</span>
+                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">2 pcs/kntg</span>
+                    </div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">${countPahaBawah} <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.73rem; color: var(--text-muted); margin-top: 6px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaBawah} kntg</strong></span>
+                        <span>Sisa: <strong style="color: ${sisaPahaBawah > 0 ? '#10b981' : 'var(--text-main)'};">${sisaPahaBawah} pcs</strong></span>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 0.88rem;">Sayap</span>
+                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">2 pcs/kntg</span>
+                    </div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">${countSayap} <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.73rem; color: var(--text-muted); margin-top: 6px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqSayap} kntg</strong></span>
+                        <span>Sisa: <strong style="color: ${sisaSayap > 0 ? '#10b981' : 'var(--text-main)'};">${sisaSayap} pcs</strong></span>
+                    </div>
+                </div>
+            </div>
+            ${countLainnya > 0 ? `<div style="font-size: 0.75rem; color: var(--warning);"><i class="ph ph-info"></i> Terdapat ${countLainnya} potong menu olahan ayam lainnya tanpa spesifikasi bagian.</div>` : ''}
+        `;
+    }
+
+    const boxCardEl = document.getElementById('packaging-box-card');
+    if (boxCardEl) {
+        boxCardEl.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                <div>
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 1.05rem; color: #f59e0b;">
+                        <i class="ph-fill ph-cube"></i> Estimasi Packaging Box Terpakai
+                    </h3>
+                    <span style="font-size: 0.72rem; color: var(--text-muted);">Estimasi pemakaian box berdasarkan menu Paket Ori, Paket Geprek & Geprek</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); padding: 5px 8px; border-radius: 8px; text-align: center; white-space: nowrap;">
+                        <div style="font-size: 0.62rem; color: #f59e0b; font-weight: 600; text-transform: uppercase;">Box M</div>
+                        <div style="font-size: 1.15rem; font-weight: 800; color: #f59e0b;">${countBoxM} <span style="font-size: 0.7rem; font-weight: 600;">Box</span></div>
+                    </div>
+                    <div style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.4); padding: 5px 8px; border-radius: 8px; text-align: center; white-space: nowrap;">
+                        <div style="font-size: 0.62rem; color: #8b5cf6; font-weight: 600; text-transform: uppercase;">Box XS</div>
+                        <div style="font-size: 1.15rem; font-weight: 800; color: #8b5cf6;">${countBoxXS} <span style="font-size: 0.7rem; font-weight: 600;">Box</span></div>
                     </div>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
-                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <span style="font-weight: 700; font-size: 0.95rem;">Dada</span>
-                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">3 pcs / kantong</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(245, 158, 11, 0.08); padding: 7px 10px; border-radius: 6px; font-size: 0.8rem;">
+                <span style="color: var(--text-secondary); font-weight: 600;">Total Seluruh Packaging Box Terpakai:</span>
+                <strong style="color: #f59e0b; font-size: 0.88rem;">${countBoxM + countBoxXS} Box (M: ${countBoxM}, XS: ${countBoxXS})</strong>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+                        <span style="font-weight: 700; font-size: 0.85rem; color: #f59e0b;">Box Ukuran M (Paket Ayam Ori & Geprek)</span>
+                        <span style="font-size: 0.72rem; font-weight: 700; color: #f59e0b;">${countBoxM} Box Terpakai</span>
                     </div>
-                    <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countDada} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqDada} kantong</strong></span>
-                        <span>Sisa Kantong: <strong style="color: ${sisaDada > 0 ? '#10b981' : 'var(--text-main)'};">${sisaDada} pcs</strong></span>
+                    <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">Paket Ayam Ori</div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; margin-bottom: 8px;">
+                        <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Dada</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxM_OriDada}</div>
+                        </div>
+                        <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Atas</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxM_OriPahaAtas}</div>
+                        </div>
+                        <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Bwh</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxM_OriPahaBawah}</div>
+                        </div>
+                        <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Sayap</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxM_OriSayap}</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">Paket Ayam Geprek</div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center;">
+                        <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Dada</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxM_GeprekDada}</div>
+                        </div>
+                        <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Atas</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxM_GeprekPahaAtas}</div>
+                        </div>
+                        <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Bwh</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxM_GeprekPahaBawah}</div>
+                        </div>
+                        <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Sayap</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxM_GeprekSayap}</div>
+                        </div>
                     </div>
                 </div>
 
-                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <span style="font-weight: 700; font-size: 0.95rem;">Paha Atas</span>
-                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / kantong</span>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+                        <span style="font-weight: 700; font-size: 0.85rem; color: #8b5cf6;">Box Ukuran XS (Ayam Geprek Non-Paket)</span>
+                        <span style="font-size: 0.72rem; font-weight: 700; color: #8b5cf6;">${countBoxXS} Box Terpakai</span>
                     </div>
-                    <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countPahaAtas} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaAtas} kantong</strong></span>
-                        <span>Sisa Kantong: <strong style="color: ${sisaPahaAtas > 0 ? '#10b981' : 'var(--text-main)'};">${sisaPahaAtas} pcs</strong></span>
-                    </div>
-                </div>
-
-                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <span style="font-weight: 700; font-size: 0.95rem;">Paha Bawah</span>
-                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / kantong</span>
-                    </div>
-                    <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countPahaBawah} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaBawah} kantong</strong></span>
-                        <span>Sisa Kantong: <strong style="color: ${sisaPahaBawah > 0 ? '#10b981' : 'var(--text-main)'};">${sisaPahaBawah} pcs</strong></span>
-                    </div>
-                </div>
-
-                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <span style="font-weight: 700; font-size: 0.95rem;">Sayap</span>
-                        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;">2 pcs / kantong</span>
-                    </div>
-                    <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">${countSayap} <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqSayap} kantong</strong></span>
-                        <span>Sisa Kantong: <strong style="color: ${sisaSayap > 0 ? '#10b981' : 'var(--text-main)'};">${sisaSayap} pcs</strong></span>
+                    <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">Ayam Geprek</div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center;">
+                        <div style="background: rgba(139, 92, 246, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Dada</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxXS_GeprekDada}</div>
+                        </div>
+                        <div style="background: rgba(139, 92, 246, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Atas</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxXS_GeprekPahaAtas}</div>
+                        </div>
+                        <div style="background: rgba(139, 92, 246, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Bwh</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxXS_GeprekPahaBawah}</div>
+                        </div>
+                        <div style="background: rgba(139, 92, 246, 0.08); padding: 4px; border-radius: 4px;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Sayap</div>
+                            <div style="font-weight: 700; font-size: 0.82rem;">${boxXS_GeprekSayap}</div>
+                        </div>
                     </div>
                 </div>
             </div>
-            ${countLainnya > 0 ? `<div style="font-size: 0.8rem; color: var(--warning);"><i class="ph ph-info"></i> Terdapat ${countLainnya} potong menu olahan ayam lainnya tanpa spesifikasi bagian (Dada/Paha/Sayap).</div>` : ''}
         `;
     }
 
     // Render Charts
-    // Audit Fix #4: dailyData kini sudah terfilter oleh p_end_date di database.
-    // Filter client-side tidak diperlukan lagi.
+    // Audit Fix #4: dailyData is already filtered by p_end_date in database.
+    // Client-side filtering is no longer needed.
     const dailyData = analyticsResult.daily_revenue || [];
 
     const revCtx = document.getElementById('revenueChart');
@@ -263,7 +386,18 @@ window.loadDashboard = async function() {
 
     const { data: costsData } = await supabase
         .from('operational_costs')
-        .select('cost_date, total_amount')
+        .select(`
+            cost_date,
+            total_amount,
+            notes,
+            operational_cost_items (
+                subtotal,
+                expense_items (
+                    name,
+                    category
+                )
+            )
+        `)
         .eq('outlet_id', activeOutletId)
         .gte('cost_date', startDate.value)
         .lte('cost_date', endDate.value);
@@ -278,12 +412,33 @@ window.loadDashboard = async function() {
             allDatesSet.add(c.cost_date);
             const amt = Number(c.total_amount) || 0;
             expensesByDate[c.cost_date] = (expensesByDate[c.cost_date] || 0) + amt;
-            cashExpensesByDate[c.cost_date] = (cashExpensesByDate[c.cost_date] || 0) + amt;
+
+            // Exclude stock expenses from cashExpensesByDate so Net Cash Revenue is not reduced by stock purchasing
+            let nonStockAmt = 0;
+            if (c.operational_cost_items && c.operational_cost_items.length > 0) {
+                c.operational_cost_items.forEach(item => {
+                    const sub = Number(item.subtotal) || 0;
+                    const cat = (item.expense_items?.category || '').toLowerCase();
+                    const name = (item.expense_items?.name || '').toLowerCase();
+                    const isStock = cat.includes('bahan') || cat.includes('stok') || cat.includes('stock') ||
+                                    name.includes('stok') || name.includes('stock') || name.includes('bahan') || name.includes('ayam');
+                    if (!isStock) {
+                        nonStockAmt += sub;
+                    }
+                });
+            } else {
+                const notes = (c.notes || '').toLowerCase();
+                const isStock = notes.includes('stok') || notes.includes('stock') || notes.includes('bahan') || notes.includes('ayam');
+                if (!isStock) {
+                    nonStockAmt = amt;
+                }
+            }
+            cashExpensesByDate[c.cost_date] = (cashExpensesByDate[c.cost_date] || 0) + nonStockAmt;
             totalExpenseAmt += amt;
         });
     }
 
-    // Include stock addition costs (biaya penambahan stok - inventory_postings type = 'in') as expenses
+    // Include stock addition costs (inventory_postings type = 'in') as expenses
     try {
         const { data: stockInPostings, error: stockInErr } = await supabase
             .from('inventory_postings')
@@ -413,7 +568,7 @@ window.loadDashboard = async function() {
             
             let methodFee = 0;
             if (s.payment_method !== 'Tunai') {
-                // Hitung potongan MDR
+                // Calculate MDR fee deduction
                 const activeOutletObj = window.posOutletsList?.find(o => o.id === activeOutletId);
                 if (activeOutletObj && activeOutletObj.mdr_fees && activeOutletObj.mdr_fees[s.payment_method]) {
                     const feeCfg = activeOutletObj.mdr_fees[s.payment_method];
@@ -459,7 +614,7 @@ window.loadDashboard = async function() {
     const depositData = compDates.map(d => depositsByDate[d] || 0);
 
     // Calculate difference (selisih) per day: Setoran - Omset Bersih Cash
-    // Jika Setoran < Omset Cash -> Negatif (Kurang Setor, akan berwarna merah)
+    // If Deposit < Net Cash Revenue -> Negative (Under-deposited, highlighted in red)
     const selisihData = compDates.map((d, i) => Math.round(depositData[i] - netCashRevenueData[i]));
 
     const baseDatasets = [
@@ -553,7 +708,7 @@ window.loadDashboard = async function() {
         });
     }
 
-    // ── Chart: Jam Sibuk Transaksi (Peak Hours 00:00 - 23:00) ────────
+    // ── Chart: Transaction Peak Hours (00:00 - 23:00) ────────
     const peakCtx = document.getElementById('peakHoursChart');
     if (peakCtx) {
         const hourlyCounts = new Array(24).fill(0);
@@ -839,7 +994,7 @@ window.exportDashboardExcel = async function() {
         return window.showToast('Library XLSX gagal dimuat', 'error');
     }
 
-    // Sheet 1: Data Pendapatan Kotor dan Pengeluaran
+    // Sheet 1: Gross Revenue and Expense Data
     const sheet1Rows = [];
     let totalGross = 0;
     let totalExp = 0;
@@ -869,7 +1024,7 @@ window.exportDashboardExcel = async function() {
         "Net (Pendapatan - Pengeluaran) (Rp)": totalNet
     });
 
-    // Sheet 2: Data Omset Bersih dari Masing-Masing Payment Method
+    // Sheet 2: Net Revenue breakdown by Payment Method
     const sheet2Rows = [];
     const methodTotals = {};
     ALL_PAYMENT_METHODS.forEach(m => methodTotals[m] = 0);

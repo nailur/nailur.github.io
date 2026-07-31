@@ -12,7 +12,7 @@ export let historyTotalCount = 0;
 export async function exportToExcel() {
     if (!activeOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
     
-    // Lazy load SheetJS jika belum dimuat
+    // Lazy load SheetJS library if not yet loaded
     if (!window.XLSX) {
         try {
             await new Promise((resolve, reject) => {
@@ -40,8 +40,8 @@ export async function exportToExcel() {
     btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengekspor...';
 
     try {
-        // Audit Fix #5: Gunakan Nested Select Join (1 request HTTP) agar tidak ada
-        // parameter URL panjang dari .in('transaction_id', trxIds) yang rawan HTTP 414.
+        // Audit Fix #5: Use nested select join (single HTTP request) to prevent
+        // HTTP 414 URI Too Long errors from large .in('transaction_id', trxIds) queries.
         const { data: trxData, error: trxError } = await supabase.from('transactions')
             .select(`
                 id, created_at, total_amount, payment_method, cashier_id,
@@ -110,7 +110,7 @@ export async function exportToExcel() {
 
         const worksheet = XLSX.utils.json_to_sheet(exportRows);
         
-        // Format currency columns (I=Harga Satuan, J=Subtotal Produk, K=Diskon, L=Pajak, M=Total Transaksi)
+        // Format currency columns (I=Unit Price, J=Product Subtotal, K=Discount, L=Tax, M=Total Transaction)
         for (let cell in worksheet) {
             if (cell[0] === '!') continue;
             const col = cell.replace(/[0-9]/g, '');
@@ -124,19 +124,19 @@ export async function exportToExcel() {
         XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Transaksi");
         
         const colWidths = [
-            { wch: 15 },  // ID Transaksi
-            { wch: 20 },  // Tanggal
+            { wch: 15 },  // Transaction ID
+            { wch: 20 },  // Date
             { wch: 20 },  // Customer
-            { wch: 20 },  // Kasir
+            { wch: 20 },  // Cashier
             { wch: 10 },  // Status
-            { wch: 15 },  // Metode Pembayaran
-            { wch: 25 },  // Produk
-            { wch: 10 },  // Kuantitas
-            { wch: 15 },  // Harga Satuan
-            { wch: 15 },  // Subtotal Produk
-            { wch: 15 },  // Diskon
-            { wch: 15 },  // Pajak
-            { wch: 15 }   // Total Transaksi
+            { wch: 15 },  // Payment Method
+            { wch: 25 },  // Product
+            { wch: 10 },  // Quantity
+            { wch: 15 },  // Unit Price
+            { wch: 15 },  // Product Subtotal
+            { wch: 15 },  // Discount
+            { wch: 15 },  // Tax
+            { wch: 15 }   // Total Transaction
         ];
         worksheet['!cols'] = colWidths;
 
@@ -406,11 +406,11 @@ export async function reprintReceipt(trx, items) {
     const received = trx.cash_received || trx.total_amount;
     const outletObj = trx.outlets || null;
     
-    // Jika printer Bluetooth terhubung, langsung cetak ke printer Bluetooth
+    // Print directly to connected Bluetooth thermal printer if available
     if (isPrinterConnected()) {
         printReceiptBluetooth(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj, trx.notes);
     } else {
-        // Fallback ke Web Print (browser print dialog)
+        // Fallback to browser standard print dialog
         printReceipt(receiptNo, cartItems, trx.total_amount, received, trx.payment_method, trx.created_at, cashierName, trx.customer_name, totalsObj, outletObj, trx.notes);
     }
 }

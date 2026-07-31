@@ -6,6 +6,20 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
 ### 2026-07-31
+- **Exclude Stock Expenses from Net Cash Revenue & Add Packaging Box Estimation Card (`js/dashboard.js`, `index.html`, `sw.js`)**:
+  - Updated `loadDashboard()` in `pos/js/dashboard.js` to inspect `operational_cost_items` and exclude items categorized as Stock (`Bahan Tambahan`, `Stok`, etc.) from `cashExpensesByDate`. This ensures Net Cash Revenue (`Omset Bersih Cash`) in deposit comparison charts only subtracts non-stock operational cash expenses.
+  - Redesigned and shrunken `#chicken-bag-card` into a compact layout to fit side-by-side with `#packaging-box-card`.
+  - Created `#packaging-box-card` in `pos/index.html` and `pos/js/dashboard.js` to estimate packaging box usage based on sold menu items: Box Ukuran M for all `Paket Ayam Ori` and `Paket Ayam Geprek` variants (Dada, Paha Atas, Paha Bawah, Sayap), and Box Ukuran XS for all `Ayam Geprek` (non-paket) variants.
+  - Bumped `CACHE_NAME` in `pos/sw.js` to `pos-cache-v81` per **Rule 3**.
+
+- **Complete Codebase Token Optimization, Dead Comment Cleanup & Security/Performance Audit (`js/*.js`, `index.html`, `sw.js`)**:
+  - Conducted a comprehensive final audit across all NTPOS JavaScript modules (`shift.js`, `shift-sessions.js`, `offline.js`, `management.js`, `history.js`, `dashboard.js`, `app.js`, `affiliate.js`, `cart.js`, `auth.js`) and translated all remaining Indonesian technical comments and Excel column header annotations to English to ensure 100% compliance with **Rule 8 (Token Efficiency)**.
+  - Translated all remaining Indonesian section header comments in `affiliate.js` and all Indonesian HTML block/section comments in `index.html` to English.
+  - Removed dead/redundant commented-out blocks while preserving critical business logic explanations per **Rule 6**.
+  - **Security Assessment**: Verified defensive XSS prevention via consistent `escapeHtml()` usage across user-rendered DOM strings (`cart.js`, `history.js`, `products.js`, `affiliate.js`). Confirmed data persistence and transaction integrity are securely offloaded to Supabase RPC functions (`process_checkout`, RLS policies) to prevent client-side parameter manipulation.
+  - **Performance Verification**: Checked database queries across modules; confirmed query optimizations such as nested select joins (`Audit Fix #5` in `history.js`), client-side image compression (`browser-image-compression` in `products.js` and `affiliate.js`), and lazy loading of module tabs and external libraries (`SheetJS` in `history.js`).
+  - Bumped PWA Service Worker cache version in `sw.js` to `pos-cache-v80` per **Rule 3**.
+
 - **Include Stock Addition Costs in Dashboard Expenses (`js/dashboard.js`, `sw.js`)**:
   - Updated `loadDashboard()` in `pos/js/dashboard.js` to fetch stock addition postings (`inventory_postings` with `type = 'in'`) and accumulate item prices (`TOTAL BIAYA PENAMBAHAN`) into `expensesByDate` alongside `operational_costs`.
   - Maintained separate `cashExpensesByDate` (`operational_costs` only) for cashier Net Revenue Cash calculations so deposit comparison (`selisihData`) remains unaffected by backend stock purchasing.

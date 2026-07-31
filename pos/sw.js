@@ -1,6 +1,6 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'pos-cache-v76';
+const CACHE_NAME = 'pos-cache-v81';
 const urlsToCache = [
   './',
   './index.html',
@@ -20,7 +20,7 @@ const urlsToCache = [
   './js/modifiers.js',
   './js/discounts.js',
   './js/offline.js',
-  // --- Tambahan Modul Wajib Offline (Audit Fix #1) ---
+  // --- Offline required modules (Audit Fix #1) ---
   './js/attendance.js',
   './js/affiliate.js',
   './js/dashboard.js',
@@ -48,7 +48,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// App shell = file yang sering berubah (JS/CSS/HTML)
+// App shell = files that change frequently (JS/CSS/HTML)
 function isAppShell(url) {
   const path = new URL(url).pathname;
   return path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css') || path.endsWith('/');
@@ -59,11 +59,11 @@ self.addEventListener('fetch', event => {
 
   const url = event.request.url;
 
-  // API requests — jangan di-cache, langsung ke network
+  // API requests — do not cache, fetch directly from network
   if (url.includes('supabase.co') || url.includes('api.github.com')) return;
 
   if (isAppShell(url)) {
-    // NETWORK-FIRST: Selalu ambil versi terbaru, fallback ke cache saat offline
+    // NETWORK-FIRST: Always fetch latest version, fallback to cache when offline
     event.respondWith(
       fetch(event.request)
         .then(response => {
@@ -76,7 +76,7 @@ self.addEventListener('fetch', event => {
         .catch(() => caches.match(event.request))
     );
   } else {
-    // CACHE-FIRST: Untuk aset statis (icon, gambar, font, manifest)
+    // CACHE-FIRST: For static assets (icons, images, fonts, manifest)
     event.respondWith(
       caches.match(event.request)
         .then(cached => {

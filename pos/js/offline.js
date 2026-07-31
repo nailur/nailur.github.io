@@ -170,18 +170,17 @@ export async function syncOfflineTransactions() {
                 await clearOfflineTransaction(trx.id);
                 successCount++;
             } else {
-                // Audit Fix #2: Cek apakah error karena duplikasi — transaksi sebenarnya
-                // sudah masuk ke database (koneksi putus setelah server sukses memproses).
-                // Jika ya, hapus dari antrean offline agar tidak terus di-retry.
+                // Audit Fix #2: Check if error is due to duplicate record (transaction succeeded before connection dropped).
+                // If so, clear from local queue to avoid endless retry loops.
                 const isDuplicate = rpcError.code === '23505' ||
                     (rpcError.message && rpcError.message.toLowerCase().includes('duplicate'));
                 if (isDuplicate) {
-                    console.warn('[Offline Sync] Transaksi sudah ada di database (duplicate), menghapus dari antrean lokal:', trx.id);
+                    console.warn('[Offline Sync] Transaction already exists in DB (duplicate), clearing local queue:', trx.id);
                     await clearOfflineTransaction(trx.id);
                     successCount++;
                 } else {
-                    // Log detail error ke console agar bisa diinvestigasi
-                    console.error('[Offline Sync] GAGAL trx:', trx.id);
+                    // Log detailed error to console for investigation
+                    console.error('[Offline Sync] FAILED trx:', trx.id);
                     console.error('[Offline Sync] Error code:', rpcError.code, '| Message:', rpcError.message);
                     console.error('[Offline Sync] Payload items:', JSON.stringify(trx.items));
                     console.error('[Offline Sync] Payload totals: subtotal=%o discount=%o tax=%o total=%o',

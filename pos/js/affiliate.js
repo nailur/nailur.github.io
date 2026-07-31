@@ -1,12 +1,12 @@
 /**
  * ============================================================================
- * NTPOS - Modul Affiliate (Khusus Superadmin)
+ * NTPOS - Affiliate Module (Superadmin only)
  * ============================================================================
- * Modul ini menangani:
- * 1. Master Affiliate Setting (konfigurasi komisi normal & order masal >= 15 qty)
- * 2. Posting / Klaim Affiliate dengan multi-select transaksi yang belum diklaim
- * 3. Kalkulasi otomatis berdasarkan akumulasi qty per produk
- * 4. Pembayaran (Unpaid -> Paid) disertai upload bukti transfer ke storage privat
+ * Handles:
+ * 1. Affiliate Period & Commission Settings (normal & bulk order >= 15 qty)
+ * 2. Affiliate Postings / Claims with multi-select unclaimed transactions
+ * 3. Automatic commission calculation based on accumulated product quantities
+ * 4. Payment processing (Unpaid -> Paid) with transfer proof attachment upload
  * ============================================================================
  */
 
@@ -15,7 +15,7 @@ import { getActiveOutletId } from './state.js';
 import { showToast, getLocalToday, generateRandomDocNumber, escapeHtml } from './utils.js';
 import { getCurrentProfile } from './auth.js';
 
-// State internal
+// Internal state
 let affiliatePeriodsList = [];
 let currentActivePeriodId = null;
 let affiliateSettingsList = [];
@@ -28,7 +28,7 @@ let currentUnclaimedPage = 1;
 const UNCLAIMED_PAGE_SIZE = 15;
 
 /**
- * Memeriksa apakah user saat ini adalah superadmin
+ * Check if current user is superadmin
  */
 export function isSuperAdmin() {
     const profile = getCurrentProfile();
@@ -47,19 +47,19 @@ export function canAccessAffiliate() {
 
 /**
  * ----------------------------------------------------------------------------
- * 1. MASTER AFFILIATE - PERIODE
+ * 1. AFFILIATE MASTER - PERIODS
  * ----------------------------------------------------------------------------
  */
 
 /**
- * Memuat daftar Periode Affiliate dan produk untuk outlet aktif
+ * Load Affiliate Periods and products for active outlet
  */
 export async function loadAffiliateSettings() {
     if (!canAccessAffiliate()) return;
     const outletId = getActiveOutletId();
     if (!outletId) return;
 
-    // 1. Ambil semua Periode Affiliate
+    // 1. Fetch all Affiliate Periods
     const { data: periodsData, error: periodErr } = await supabase
         .from('affiliate_periods')
         .select('*')
@@ -67,7 +67,7 @@ export async function loadAffiliateSettings() {
         .order('effective_date', { ascending: false });
 
     if (periodErr && periodErr.code !== 'PGRST116') {
-        // Jika tabel affiliate_periods belum ada, tampilkan pesan ramah
+        // If affiliate_periods table does not exist, display helpful migration warning
         console.warn('Tabel affiliate_periods belum tersedia. Jalankan migration SQL terlebih dahulu.', periodErr);
         const tbody = document.getElementById('affiliate-periods-table')?.querySelector('tbody');
         if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--warning);">Tabel periode belum ada. Jalankan migration SQL dari affiliate_schema.sql di Supabase.</td></tr>';
@@ -76,7 +76,7 @@ export async function loadAffiliateSettings() {
 
     affiliatePeriodsList = periodsData || [];
 
-    // 2. Ambil semua produk di outlet ini (cache lokal)
+    // 2. Fetch all products in active outlet (local cache)
     const { data: productsData } = await supabase
         .from('products')
         .select('id, name, price')
@@ -84,7 +84,7 @@ export async function loadAffiliateSettings() {
         .order('name');
     affiliateProductsMaster = productsData || [];
 
-    // 3. Ambil semua settings (untuk kalkulasi komisi pada posting)
+    // 3. Fetch all settings (for commission calculation on postings)
     const { data: settingsData } = await supabase
         .from('affiliate_settings')
         .select('*')
@@ -101,13 +101,13 @@ export async function loadAffiliateSettings() {
 
     renderAffiliatePeriods();
 
-    // Sembunyikan tombol write untuk Owner
+    // Hide write buttons for Owner role
     const btnAddPeriod = document.getElementById('btn-add-affiliate-period');
     if (btnAddPeriod) btnAddPeriod.style.display = isSuperAdmin() ? 'inline-block' : 'none';
 }
 
 /**
- * Render daftar Periode Affiliate di tabel utama Master tab
+ * Render Affiliate Periods list in Master tab table
  */
 export function renderAffiliatePeriods() {
     const tbody = document.getElementById('affiliate-periods-table')?.querySelector('tbody');
@@ -150,11 +150,11 @@ export function renderAffiliatePeriods() {
     }).join('');
 }
 
-// Alias agar backward-compatible jika ada kode lain yang masih memanggil renderAffiliateSettings
+// Backward-compatible alias for renderAffiliateSettings callers
 export const renderAffiliateSettings = renderAffiliatePeriods;
 
 /**
- * Membuka modal form Tambah Periode Affiliate (kosong)
+ * Open Create Affiliate Period modal (empty form)
  */
 window.openCreateAffiliatePeriodModal = function() {
     if (!canAccessAffiliate()) return;
@@ -174,7 +174,7 @@ window.openCreateAffiliatePeriodModal = function() {
 };
 
 /**
- * Membuka modal form Edit Periode Affiliate (isi data yang ada)
+ * Open Edit Affiliate Period modal form (populate existing data)
  */
 window.editAffiliatePeriod = function(periodId) {
     const period = affiliatePeriodsList.find(p => p.id === periodId);
@@ -195,7 +195,7 @@ window.editAffiliatePeriod = function(periodId) {
 };
 
 /**
- * Saat tombol "Ubah Info Periode" di modal detail diklik, buka form periode dengan data period aktif
+ * When "Edit Period Info" button in detail modal is clicked, open period form with active period data
  */
 window.editCurrentPeriodFromDetail = function() {
     if (currentActivePeriodId) {
@@ -204,7 +204,7 @@ window.editCurrentPeriodFromDetail = function() {
 };
 
 /**
- * Simpan Periode Affiliate (Insert atau Update)
+ * Save Affiliate Period (Insert or Update)
  */
 export async function handleSaveAffiliatePeriod(event) {
     event.preventDefault();
@@ -255,7 +255,7 @@ export async function handleSaveAffiliatePeriod(event) {
         showToast('Periode affiliate berhasil disimpan', 'success');
         document.getElementById('modal-affiliate-period-form')?.classList.add('hidden');
         await loadAffiliateSettings();
-        // Jika modal detail sedang terbuka dan kita edit periode yang sama, refresh header-nya
+        // Refresh header if detail modal is open for the same period being edited
         if (currentActivePeriodId && (periodId === currentActivePeriodId || !periodId)) {
             const updatedPeriod = affiliatePeriodsList.find(p => p.id === (periodId || currentActivePeriodId));
             if (updatedPeriod) _updatePeriodDetailHeader(updatedPeriod);
@@ -264,7 +264,7 @@ export async function handleSaveAffiliatePeriod(event) {
 }
 
 /**
- * Hapus Periode Affiliate beserta seluruh setting produknya (cascade)
+ * Delete Affiliate Period along with all its product settings (cascade)
  */
 window.deleteAffiliatePeriod = async function(periodId) {
     if (!isSuperAdmin()) return;
@@ -285,12 +285,12 @@ window.deleteAffiliatePeriod = async function(periodId) {
 
 /**
  * ----------------------------------------------------------------------------
- * 1b. DETAIL PERIODE — ATURAN KOMISI PRODUK
+ * 1b. PERIOD DETAIL — PRODUCT COMMISSION RULES
  * ----------------------------------------------------------------------------
  */
 
 /**
- * Membuka modal detail periode dan menampilkan aturan komisi produk untuk periode tersebut
+ * Open period detail modal and display product commission rules for this period
  */
 window.openPeriodDetailModal = async function(periodId) {
     if (!canAccessAffiliate()) return;
@@ -304,7 +304,7 @@ window.openPeriodDetailModal = async function(periodId) {
 
     _updatePeriodDetailHeader(period);
 
-    // Visibilitas tombol yang bersifat destruktif/write
+    // Visibility of write/destructive action buttons
     const btnAddSetting = document.getElementById('btn-add-period-setting');
     if (btnAddSetting) btnAddSetting.style.display = isSuperAdmin() ? 'inline-block' : 'none';
     const btnEditPeriod = document.getElementById('btn-edit-current-period-from-detail');
@@ -312,7 +312,7 @@ window.openPeriodDetailModal = async function(periodId) {
 
     modal.classList.remove('hidden');
 
-    // Muat settings untuk periode ini
+    // Load commission settings for this period
     await _loadAndRenderPeriodProducts(periodId);
 };
 
@@ -332,7 +332,7 @@ async function _loadAndRenderPeriodProducts(periodId) {
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;"><i class="ph ph-spinner ph-spin"></i> Memuat...</td></tr>';
 
-    // Ambil settings untuk periode ini
+    // Fetch commission settings for this period
     const { data: settingsData, error } = await supabase
         .from('affiliate_settings')
         .select('*, products(name, price)')
@@ -351,7 +351,7 @@ async function _loadAndRenderPeriodProducts(periodId) {
         return;
     }
 
-    // Simpan ke state agar openCreateAffiliateSettingModal bisa filter produk yang belum ada
+    // Cache in state so openCreateAffiliateSettingModal can filter available products
     affiliateSettingsList = settings.map(s => ({
         id: s.id,
         period_id: periodId,
@@ -396,7 +396,7 @@ async function _loadAndRenderPeriodProducts(periodId) {
 }
 
 /**
- * Membuka modal pengaturan komisi untuk satu produk (edit dari tombol pencil di periode detail)
+ * Open commission setting modal for a single product (edit from pencil button in period detail)
  */
 window.editAffiliateSetting = function(settingId, productId) {
     if (!canAccessAffiliate()) return;
@@ -419,7 +419,7 @@ window.editAffiliateSetting = function(settingId, productId) {
 };
 
 /**
- * Membuka modal pengaturan komisi dengan dropdown produk yang belum ada di periode ini
+ * Open commission setting modal with dropdown of products not yet added in this period
  */
 export function openCreateAffiliateSettingModal() {
     if (!canAccessAffiliate()) return;
@@ -436,7 +436,7 @@ export function openCreateAffiliateSettingModal() {
     const btnSave = document.getElementById('btn-save-affiliate-setting');
     if (btnSave) btnSave.style.display = isSuperAdmin() ? 'inline-block' : 'none';
 
-    // Hanya tampilkan produk yang BELUM ada di periode ini
+    // Only show products NOT YET configured in this period
     const existingProductIds = new Set(affiliateSettingsList.map(s => s.product_id));
     const availableProducts = affiliateProductsMaster.filter(p => !existingProductIds.has(p.id));
 
@@ -471,7 +471,7 @@ function populateSettingForm(item, forceNew = false) {
 }
 
 /**
- * Menghapus aturan komisi satu produk dari periode
+ * Delete product commission rule from period
  */
 window.deleteAffiliateSetting = async function(settingId) {
     if (!isSuperAdmin()) {
@@ -497,7 +497,7 @@ window.deleteAffiliateSetting = async function(settingId) {
 };
 
 /**
- * Live simulasi perhitungan komisi dan bonus kelipatan di Modal Setting
+ * Live simulation of commission and tier bonus calculation in Setting Modal
  */
 window.updateAffiliateSettingPreview = function() {
     const previewEl = document.getElementById('affiliate-setting-live-preview');
@@ -536,7 +536,7 @@ window.updateAffiliateSettingPreview = function() {
 };
 
 /**
- * Menyimpan / memperbarui aturan komisi produk ke tabel affiliate_settings
+ * Save / update product commission rule into affiliate_settings table
  */
 export async function handleSaveAffiliateSetting(event) {
     event.preventDefault();
@@ -596,12 +596,12 @@ export async function handleSaveAffiliateSetting(event) {
 
 /**
  * ----------------------------------------------------------------------------
- * 2. POSTING AFFILIATE (DAFTAR REKAP KOMISI)
+ * 2. AFFILIATE POSTING (COMMISSION RECAP LIST)
  * ----------------------------------------------------------------------------
  */
 
 /**
- * Memuat riwayat postingan affiliate untuk outlet aktif
+ * Load affiliate posting history for active outlet
  */
 export async function loadAffiliatePostings() {
     if (!canAccessAffiliate()) return;
@@ -624,13 +624,13 @@ export async function loadAffiliatePostings() {
     affiliatePostingsList = data || [];
     renderAffiliatePostings();
 
-    // Sembunyikan tombol write untuk Owner
+    // Hide write buttons for Owner role
     const btnAddPosting = document.getElementById('btn-add-affiliate-posting');
     if (btnAddPosting) btnAddPosting.style.display = isSuperAdmin() ? 'inline-block' : 'none';
 }
 
 /**
- * Menderetkan riwayat postingan affiliate di tabel HTML
+ * Render affiliate postings history in HTML table
  */
 export function renderAffiliatePostings() {
     const tbody = document.getElementById('affiliate-postings-table')?.querySelector('tbody');
@@ -687,12 +687,12 @@ export function renderAffiliatePostings() {
 
 /**
  * ----------------------------------------------------------------------------
- * 3. PEMBUATAN POSTING AFFILIATE BARU (MULTI-TRANSACTION CLAIM)
+ * 3. CREATE NEW AFFILIATE POSTING (MULTI-TRANSACTION CLAIM)
  * ----------------------------------------------------------------------------
  */
 
 /**
- * Membuka modal Add Affiliate Posting & memuat transaksi yang belum diklaim
+ * Open Add Affiliate Posting modal & load unclaimed transactions
  */
 export async function openCreateAffiliateModal(editPostingId = null) {
     if (!canAccessAffiliate()) {
@@ -734,7 +734,7 @@ export async function openCreateAffiliateModal(editPostingId = null) {
 
     modal.classList.remove('hidden');
 
-    // 1. Ambil ID transaksi yang sudah diklaim
+    // 1. Fetch transaction IDs that have already been claimed
     const { data: claimedData, error: claimedError } = await supabase
         .from('affiliate_posting_transactions')
         .select('transaction_id, posting_id')
@@ -752,7 +752,7 @@ export async function openCreateAffiliateModal(editPostingId = null) {
 
     myTrxIds.forEach(id => selectedTransactionIds.add(id));
 
-    // 2. Ambil transaksi yang sudah selesai (completed) pada outlet aktif & pastikan BUKAN transaksi void/cancel
+    // 2. Fetch completed transactions for active outlet & exclude voided/cancelled ones
     const { data: trxs, error: trxError } = await supabase
         .from('transactions')
         .select('id, receipt_no, created_at, customer_name, total_amount, status')
@@ -769,7 +769,7 @@ export async function openCreateAffiliateModal(editPostingId = null) {
         return;
     }
 
-    // Filter ganda di JavaScript: pastikan transaksi belum diklaim orang lain & bukan void/cancel
+    // Double-check in JavaScript: ensure transaction not claimed by others and not void/cancel
     unclaimedTransactionsList = (trxs || []).filter(t => {
         if (claimedIdsByOthers.has(t.id)) return false;
         const st = String(t.status || '').toLowerCase();
@@ -779,7 +779,7 @@ export async function openCreateAffiliateModal(editPostingId = null) {
         return true;
     });
 
-    // Pastikan transaksi yang sudah ter-check pada mode edit ada dalam daftar
+    // Ensure transactions already checked in edit mode are present in the list
     if (myTrxIds.size > 0) {
         const existingIds = new Set(unclaimedTransactionsList.map(t => t.id));
         const missingIds = Array.from(myTrxIds).filter(id => !existingIds.has(id));
@@ -803,7 +803,7 @@ export async function openCreateAffiliateModal(editPostingId = null) {
 }
 
 /**
- * Menderetkan daftar transaksi belum diklaim dengan Checkbox & Pagination
+ * Render list of unclaimed transactions with Checkbox & Pagination
  */
 function renderUnclaimedTransactionsTable() {
     const tbody = document.getElementById('affiliate-unclaimed-transactions-table')?.querySelector('tbody');
@@ -814,7 +814,7 @@ function renderUnclaimedTransactionsTable() {
     if (currentUnclaimedPage > totalPages) currentUnclaimedPage = totalPages;
     if (currentUnclaimedPage < 1) currentUnclaimedPage = 1;
 
-    // Update teks pagination
+    // Update pagination text
     const totalTextEl = document.getElementById('affiliate-total-unclaimed-text');
     if (totalTextEl) totalTextEl.textContent = `(Total ${totalTrx} belum diklaim)`;
 
@@ -858,7 +858,7 @@ function renderUnclaimedTransactionsTable() {
 }
 
 /**
- * Mengubah halaman tabel transaksi belum diklaim
+ * Change page of unclaimed transactions table
  */
 window.changeUnclaimedPage = function(delta) {
     const totalPages = Math.max(1, Math.ceil(unclaimedTransactionsList.length / UNCLAIMED_PAGE_SIZE));
@@ -869,7 +869,7 @@ window.changeUnclaimedPage = function(delta) {
 };
 
 /**
- * Memperbarui tampilan badge jumlah transaksi terpilih
+ * Update selected transaction count badge display
  */
 function updateSelectedCountDisplay() {
     const countEl = document.getElementById('affiliate-selected-count');
@@ -879,7 +879,7 @@ function updateSelectedCountDisplay() {
 }
 
 /**
- * Pemicu dari checkbox transaksi: mengaktifkan kalkulasi komisi otomatis lintas halaman
+ * Triggered by transaction checkbox selection: enables automatic cross-page commission calculation
  */
 window.onSelectAffiliateTransactions = async function(changedCheckbox, skipCheckboxSync = false) {
     if (!skipCheckboxSync) {
@@ -890,7 +890,7 @@ window.onSelectAffiliateTransactions = async function(changedCheckbox, skipCheck
                 selectedTransactionIds.delete(changedCheckbox.value);
             }
         } else if (changedCheckbox !== null) {
-            // Fallback jika dipanggil tanpa param (check semua yang tampil di halaman ini)
+            // Fallback when called without parameter (check all visible checkboxes on page)
             const checkboxes = document.querySelectorAll('.affiliate-trx-checkbox');
             checkboxes.forEach(cb => {
                 if (cb.checked) selectedTransactionIds.add(cb.value);
@@ -916,7 +916,7 @@ window.onSelectAffiliateTransactions = async function(changedCheckbox, skipCheck
         previewTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;"><i class="ph ph-spinner ph-spin"></i> Menghitung komisi item...</td></tr>';
     }
 
-    // 1. Ambil seluruh transaction_items dari transaksi yang dipilih (beserta tanggal transaksi untuk pencocokan periode efektif)
+    // 1. Fetch all transaction_items for selected transactions (with created_at for effective period matching)
     const trxIdsArray = Array.from(selectedTransactionIds);
     const { data: itemsData, error: itemsErr } = await supabase
         .from('transaction_items')
@@ -929,11 +929,11 @@ window.onSelectAffiliateTransactions = async function(changedCheckbox, skipCheck
         return;
     }
 
-    // Fungsi helper mencari aturan komisi aktif berdasarkan tanggal transaksi
-    // 1. Cari periode yang aktif pada tanggal transaksi
-    // 2. Dalam periode tersebut, cari setting untuk produk yang dimaksud
+    // Helper function to find active commission rules based on transaction date
+    // 1. Find active period covering transaction date
+    // 2. Within that period, find setting for the specific product
     const findSettingForDate = (prodId, trxDate) => {
-        // Cari periode yang mencakup tanggal transaksi, urut dari paling baru
+        // Find periods covering transaction date, sorted most recent first
         const matchingPeriods = affiliatePeriodsList.filter(p => {
             if (!p.is_active) return false;
             if (p.effective_date && p.effective_date > trxDate) return false;
@@ -942,20 +942,20 @@ window.onSelectAffiliateTransactions = async function(changedCheckbox, skipCheck
         });
         matchingPeriods.sort((a, b) => (b.effective_date || '').localeCompare(a.effective_date || ''));
 
-        // Cari setting produk dalam periode yang cocok
+        // Find product setting within matched period
         for (const period of matchingPeriods) {
             const setting = affiliateSettingsList.find(s => s.period_id === period.id && s.product_id === prodId);
             if (setting) return setting;
         }
 
-        // Fallback: cari setting produk apapun yang ada (periode tidak diketahui)
+        // Fallback: find any setting for product if period unknown
         const anyActive = affiliateSettingsList.filter(s => s.product_id === prodId && s.id);
         if (anyActive.length > 0) return anyActive[0];
         return null;
     };
 
 
-    // 2. Akumulasi kuantitas (total_qty) per produk & periode efektif yang berlaku pada tanggal transaksi
+    // 2. Accumulate quantity (total_qty) per product & effective period valid on transaction date
     const productPeriodMap = new Map();
     (itemsData || []).forEach(item => {
         const prodId = item.product_id;
@@ -1026,7 +1026,7 @@ window.onSelectAffiliateTransactions = async function(changedCheckbox, skipCheck
         });
     });
 
-    // 4. Render hasil kalkulasi di tabel HTML
+    // 4. Render calculation results in HTML table
     if (previewTbody) {
         if (calculatedItems.length === 0) {
             previewTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Tidak ada item produk dalam transaksi yang dipilih</td></tr>';
@@ -1055,13 +1055,13 @@ window.onSelectAffiliateTransactions = async function(changedCheckbox, skipCheck
         totalDisplay.textContent = `Rp ${Math.round(grandTotalCommission).toLocaleString('id-ID')}`;
     }
 
-    // Simpan hasil sementara untuk proses simpan
+    // Cache calculated results for save process
     window._affiliateCurrentCalculatedItems = calculatedItems;
     window._affiliateCurrentGrandTotal = Math.round(grandTotalCommission);
 };
 
 /**
- * Menyimpan Posting Affiliate baru beserta item dan relasi transaksi
+ * Save new Affiliate Posting along with items and transaction links
  */
 export async function handleSaveAffiliatePosting(event) {
     event.preventDefault();
@@ -1112,19 +1112,19 @@ export async function handleSaveAffiliatePosting(event) {
             return;
         }
 
-        // Hapus item kuno & transaksi kuno sebelum insert baru
+        // Purge old items & transaction links before inserting new ones
         await Promise.all([
             supabase.from('affiliate_posting_items').delete().eq('posting_id', postingId),
             supabase.from('affiliate_posting_transactions').delete().eq('posting_id', postingId)
         ]);
     } else {
-        // 1. Generate nomor dokumen (contoh: AFF-20260730-1234)
+        // 1. Generate document number (e.g., AFF-20260730-1234)
         const todayStr = getLocalToday().replace(/-/g, '');
         const randNum = Math.floor(1000 + Math.random() * 9000);
         const documentNo = `AFF-${todayStr}-${randNum}`;
         const profile = getCurrentProfile();
 
-        // 2. Insert ke affiliate_postings
+        // 2. Insert into affiliate_postings
         const postingPayload = {
             outlet_id: outletId,
             document_number: documentNo,
@@ -1152,7 +1152,7 @@ export async function handleSaveAffiliatePosting(event) {
         postingId = postData.id;
     }
 
-    // 3. Insert ke affiliate_posting_items
+    // 3. Insert into affiliate_posting_items
     const itemsPayload = calculatedItems.map(item => ({
         posting_id: postingId,
         product_id: item.product_id,
@@ -1169,7 +1169,7 @@ export async function handleSaveAffiliatePosting(event) {
         if (itemsErr) console.error('Error insert affiliate posting items:', itemsErr);
     }
 
-    // 4. Insert ke affiliate_posting_transactions (Relasi ke transaksi-transaksi)
+    // 4. Insert into affiliate_posting_transactions (link to claimed transactions)
     const trxPayload = Array.from(selectedTransactionIds).map(trxId => ({
         posting_id: postingId,
         transaction_id: trxId
@@ -1193,12 +1193,12 @@ export async function handleSaveAffiliatePosting(event) {
 
 /**
  * ----------------------------------------------------------------------------
- * 4. PEMBAYARAN DAN UPLOAD BUKTI TRANSFER
+ * 4. PAYMENT & TRANSFER PROOF UPLOAD
  * ----------------------------------------------------------------------------
  */
 
 /**
- * Membuka modal pembayaran dan upload bukti transfer untuk postingan Unpaid
+ * Open payment and transfer proof upload modal for Unpaid postings
  */
 window.openPayAffiliateModal = function(postingId) {
     if (!isSuperAdmin()) return;
@@ -1221,7 +1221,7 @@ window.openPayAffiliateModal = function(postingId) {
 };
 
 /**
- * Menyimpan status pembayaran (Paid) dan mengupload bukti transfer gambar
+ * Save payment status (Paid) and upload image transfer proof
  */
 export async function handleSaveAffiliatePayment(event) {
     event.preventDefault();
@@ -1239,12 +1239,12 @@ export async function handleSaveAffiliatePayment(event) {
 
     let attachmentFileName = null;
 
-    // 1. Proses upload gambar ke bucket privat "attachments" jika ada file
+    // 1. Upload image to private "attachments" bucket if file provided
     if (fileInput && fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
         let compressedFile = file;
 
-        // Kompresi gambar di sisi klien menggunakan browser-image-compression
+        // Client-side image compression using browser-image-compression
         try {
             if (typeof window.imageCompression === 'function') {
                 compressedFile = await window.imageCompression(file, {
@@ -1281,7 +1281,7 @@ export async function handleSaveAffiliatePayment(event) {
         attachmentFileName = fileName;
     }
 
-    // 2. Update status posting menjadi Paid
+    // 2. Update posting status to Paid
     const updatePayload = {
         status: 'Paid',
         paid_at: new Date().toISOString()
@@ -1311,12 +1311,12 @@ export async function handleSaveAffiliatePayment(event) {
 }
 
 /**
- * Melihat gambar bukti transfer dari storage privat menggunakan signed URL
+ * View transfer proof image from private storage using signed URL
  */
 window.viewAffiliateProof = async function(fileName) {
     if (!canAccessAffiliate() || !fileName) return;
 
-    // Buat signed URL berdurasi 1 jam (3600 detik)
+    // Create 1-hour signed URL (3600 seconds)
     const { data, error } = await supabase.storage
         .from('attachments')
         .createSignedUrl(fileName, 3600);
@@ -1338,12 +1338,12 @@ window.viewAffiliateProof = async function(fileName) {
 
 /**
  * ----------------------------------------------------------------------------
- * 5. LIHAT DETAIL POSTING & HAPUS
+ * 5. VIEW POSTING DETAILS & DELETE
  * ----------------------------------------------------------------------------
  */
 
 /**
- * Membuka modal detail rincian item komisi dan transaksi yang diklaim
+ * Open modal showing commission item details and claimed transactions
  */
 window.viewAffiliateDetails = async function(postingId) {
     if (!canAccessAffiliate()) return;
@@ -1359,7 +1359,7 @@ window.viewAffiliateDetails = async function(postingId) {
     document.getElementById('detail-affiliate-status').textContent = post.status;
     document.getElementById('detail-affiliate-total').textContent = `Rp ${Number(post.total_amount).toLocaleString('id-ID')}`;
 
-    // 1. Ambil rincian item produk & transaksi yang diklaim secara paralel (hemat waktu & responsif)
+    // 1. Fetch claimed product items & transaction links in parallel (responsive performance)
     const [ { data: itemsData }, { data: trxLinks } ] = await Promise.all([
         supabase.from('affiliate_posting_items').select('*').eq('posting_id', postingId),
         supabase.from('affiliate_posting_transactions').select('transaction_id, transactions(receipt_no, created_at, customer_name, total_amount)').eq('posting_id', postingId)
@@ -1419,7 +1419,7 @@ window.viewAffiliateDetails = async function(postingId) {
 };
 
 /**
- * Membuka modal edit untuk postingan berstatus Unpaid (Khusus Superadmin)
+ * Open edit modal for Unpaid postings (Superadmin only)
  */
 window.editAffiliatePosting = async function(postingId) {
     if (!isSuperAdmin()) {
@@ -1439,7 +1439,7 @@ window.editAffiliatePosting = async function(postingId) {
 };
 
 /**
- * Menghapus dokumen Posting Affiliate (kembali melepaskan klaim transaksi)
+ * Delete Affiliate Posting document (releases claimed transactions)
  */
 window.deleteAffiliatePosting = async function(postingId) {
     if (!isSuperAdmin()) return;
