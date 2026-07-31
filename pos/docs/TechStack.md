@@ -1,77 +1,77 @@
 # Technology Stack - NTPOS
 
 ## 1. Overview
-NTPOS menggunakan ekosistem **JAMStack (JavaScript, APIs, Markup)** dan **BaaS (Backend-as-a-Service)** untuk mencapai skalabilitas tinggi dengan **Zero-Server Maintenance**. Keamanan data dan logika bisnis berat dipindahkan (di-*offload*) langsung ke tingkat *Database Engine*.
+NTPOS utilizes a **JAMStack (JavaScript, APIs, Markup)** and **BaaS (Backend-as-a-Service)** ecosystem to achieve high scalability with **Zero-Server Maintenance**. Data security and heavy business logic are offloaded directly to the Database Engine level.
 
 ## 2. Frontend (Client-side)
-Aplikasi klien murni dibangun tanpa *bundler* atau *framework* berat (React/Vue/Angular), menjaga ukuran *bundle* sekecil mungkin.
+The client application is built without heavy bundlers or frameworks (React/Vue/Angular), keeping bundle sizes minimal.
 
-- **Bahasa/Struktur**: HTML5, CSS3, Vanilla JavaScript (ES6+).
+- **Language/Structure**: HTML5, CSS3, Vanilla JavaScript (ES6+).
 - **Progressive Web App (PWA)**: 
-  - `manifest.json` (Pengaturan instalasi & *Theme*).
-  - `sw.js` (Service Worker untuk dukungan *Offline First* dan sinkronisasi).
-- **Library Pihak Ketiga**:
-  - **Phosphor Icons**: Sistem ikon UI yang modern dan konsisten.
-  - **Chart.js**: Visualisasi data analitik untuk laporan pendapatan dan statistik penjualan.
-  - **SheetJS**: Pemrosesan dan pengeksporan tabel data HTML/JSON menjadi format file Microsoft Excel (.xlsx).
-  - **Browser Image Compression**: Modul kompresi gambar (kuitansi, foto produk) di sisi klien (menghemat *bandwidth* unggah).
-  - **OneSignal SDK**: Pengelolaan *Push Notifications* (*Broadcasts*).
+  - `manifest.json` (Installation settings & theme).
+  - `sw.js` (Service Worker for Offline-First caching and synchronization).
+- **Third-Party Libraries**:
+  - **Phosphor Icons**: Modern and consistent UI icon system.
+  - **Chart.js**: Analytical data visualization for revenue reports and sales statistics.
+  - **SheetJS**: HTML/JSON data table processing and export to Microsoft Excel (.xlsx) format.
+  - **Browser Image Compression**: Client-side image compression for receipts and product photos (reducing upload bandwidth).
+  - **OneSignal SDK**: Push Notification broadcasting management.
 
 ## 3. Backend & Database (Supabase)
-Seluruh lapisan *backend* ditangani oleh **Supabase (PostgreSQL)**, yang memberikan fitur lengkap setara *enterprise*:
+The entire backend layer is powered by **Supabase (PostgreSQL)**, providing enterprise-grade capabilities:
 
-- **Supabase Auth**: Manajemen autentikasi (Login/Signup) terintegrasi secara otomatis dengan tabel kustom `profiles` via *Database Triggers*.
-- **PostgreSQL**: Penyimpanan data relasional skala penuh.
-- **Row Level Security (RLS)**: Lapisan pertahanan utama. Kebijakan akses (*Policies*) diterapkan di setiap tabel untuk memastikan pengguna hanya bisa membaca/menulis data sesuai dengan cakupan *role* (Superadmin vs Kasir) dan wilayahnya (*Outlet* / *Branch*).
+- **Supabase Auth**: Authentication management (Login/Signup) integrated with custom `profiles` tables via database triggers.
+- **PostgreSQL**: Full-scale relational database storage.
+- **Row Level Security (RLS)**: Core defensive layer. Policies are applied across tables ensuring users can only read/write data within their role scope (Superadmin vs Cashier) and assigned outlet/branch.
 - **Database Functions (RPC)**:
-  - Proses bisnis kritis seperti kalkulasi *Checkout* transaksi (`process_checkout`), pembuatan ID kuitansi otomatis (`generate_receipt_no`), dan rekap analitik (`get_analytics_summary`) dijalankan sebagai fungsi SQL di server (*Stored Procedures*), mencegah manipulasi data dari sisi klien.
-- **Supabase Edge Functions**: Menjalankan logika *server-side* berbasis Deno (contoh: `create-user`) menggunakan *Service Role Key* untuk operasi level-admin (membuat *user* dengan peran spesifik tanpa batasan *client*).
-- **Supabase Storage**: Sistem penyimpanan media dengan kebijakan akses per-Bucket:
-  - `product-images` (Public): Penyimpanan foto katalog produk.
-  - `attachments` (Private): Penyimpanan dokumen internal seperti foto bukti setoran bank, hanya dapat diakses oleh user terautentikasi.
+  - Critical business processes such as transaction checkout (`process_checkout`), automatic receipt number generation (`generate_receipt_no`), and analytics summaries (`get_analytics_summary`) run as server-side SQL stored procedures to prevent client-side data tampering.
+- **Supabase Edge Functions**: Deno-based server-side functions (e.g., `create-user`) utilizing the Service Role Key for admin-level operations.
+- **Supabase Storage**: Bucket-scoped media storage:
+  - `product-images` (Public): Catalog product images.
+  - `attachments` (Private): Internal documents such as bank deposit slips, restricted to authenticated users.
 
 ## 4. Directory Structure Map
-Struktur modular *vanilla* untuk pengelolaan kode yang rapi:
+Vanilla modular structure for clean codebase organization:
 
 ```text
 📁 /pos/
-├── 📁 assets/                     # Library eksternal lokal
-│   ├── 📁 img/                    # Aset gambar PWA (Icons)
+├── 📁 assets/                     # Local external libraries and assets
+│   ├── 📁 img/                    # PWA image assets (Icons)
 │   ├── 📁 lib/                    # supabase.min.js, browser-image-compression.js
 │
-├── 📁 css/                        # File stylesheet
-│   ├── style.css                # Styling utama aplikasi
-│   ├── style-modals.css         # Styling khusus untuk popup/modal
+├── 📁 css/                        # Stylesheets
+│   ├── style.css                # Primary application stylesheet
+│   ├── style-modals.css         # Popup and modal specific styling
 │
-├── 📁 docs/                       # Dokumentasi Aplikasi (PRD, ERD, TechStack, DOM_Modal_Map, Business_Rules_Formulas, RPC_Functions, Changelog)
+├── 📁 docs/                       # Application documentation (PRD, ERD, TechStack, DOM_Modal_Map, Business_Rules_Formulas, RPC_Functions, CHANGELOG)
 │
-├── 📁 js/                         # Logika Modul Klien (Vanilla JS)
-│   ├── app.js                   # Entry point, inisialisasi UI, routing halaman SPA
-│   ├── utils.js                 # Fungsi utilitas umum (showToast, escapeHtml, debounce, dll)
-│   ├── users.js                 # UI manajemen akun & staf (filterUserOutlets, handleRoleSelectionChange, loadTargetUsers)
-│   ├── checkout.js              # Fasad modul Checkout & Pembayaran (re-export dari cart.js)
-│   ├── state.js                 # Global state management untuk keranjang dan UI
-│   ├── auth.js                  # Logika login, logout, dan manajemen sesi (Supabase)
-│   ├── supabase.js              # Konfigurasi dan inisialisasi klien Supabase DB
-│   ├── offline.js               # Caching, deteksi offline, sinkronisasi data tertunda
-│   ├── products.js              # Pengambilan dan rendering katalog produk toko
-│   ├── cart.js                  # Logika keranjang belanja, kalkulasi total, checkout
-│   ├── history.js               # Riwayat transaksi harian dan ekspor ke Excel
-│   ├── dashboard.js             # Visualisasi analitik (Chart.js), laporan penjualan
-│   ├── shift.js                 # Logika pembukaan/penutupan laci kasir (Cash Drawer)
-│   ├── shift-master.js          # Pengelolaan shift secara umum (Master data)
-│   ├── shift-sessions.js        # Logika sesi shift berjalan oleh user tertentu
-│   ├── attendance.js            # Modul absensi (Clock In / Clock Out) staf
-│   ├── printer.js               # Perintah cetak struk ESC/POS via Bluetooth Web API
-│   ├── inventory.js             # Manajemen stok in/out, konversi unit, kategori
-│   ├── management.js            # Modul manajemen Superadmin (Cabang, User, Outlet)
-│   ├── expenses.js              # Pencatatan biaya operasional (Operational Costs) harian
-│   ├── deposits.js              # Pencatatan setoran penjualan bank (Sales Deposits)
-│   ├── discounts.js             # Pengelolaan diskon global, metode pembayaran, per item
-│   ├── modifiers.js             # Opsi kustomisasi produk (Topping, Ukuran, Level)
-│   └── affiliate.js             # Modul khusus Superadmin untuk klaim dan rekap komisi Affiliate
+├── 📁 js/                         # Client modules (Vanilla JS)
+│   ├── app.js                   # Application entry point, UI initialization, SPA tab routing
+│   ├── utils.js                 # Shared utilities (showToast, escapeHtml, debounce, etc.)
+│   ├── users.js                 # User & staff management UI (filterUserOutlets, handleRoleSelectionChange, loadTargetUsers)
+│   ├── checkout.js              # Checkout & Payment module facade (re-exports from cart.js)
+│   ├── state.js                 # Global state management for cart and UI
+│   ├── auth.js                  # Authentication, login, logout, session handling (Supabase)
+│   ├── supabase.js              # Supabase DB client configuration and initialization
+│   ├── offline.js               # Caching, offline detection, queued transaction synchronization
+│   ├── products.js              # Catalog product fetching and rendering
+│   ├── cart.js                  # Shopping cart logic, total calculation, checkout execution
+│   ├── history.js               # Transaction history list and Excel export
+│   ├── dashboard.js             # Analytics dashboards (Chart.js), separate Operational vs Stock expenses, revenue reports
+│   ├── shift.js                 # Cash drawer opening/closing logic
+│   ├── shift-master.js          # Shift master data management
+│   ├── shift-sessions.js        # Active shift session tracking
+│   ├── attendance.js            # Staff attendance (Clock In / Clock Out)
+│   ├── printer.js               # Bluetooth Web API ESC/POS receipt printing
+│   ├── inventory.js             # Stock in/out management, unit conversions, categories
+│   ├── management.js            # Superadmin management (Branches, Users, Outlets)
+│   ├── expenses.js              # Operational costs recording and category management
+│   ├── deposits.js              # Sales deposit slips and bank reconciliation
+│   ├── discounts.js             # Global discounts, payment methods, item-level discounts
+│   ├── modifiers.js             # Product customization options (Toppings, Sizes, Levels)
+│   └── affiliate.js             # Superadmin affiliate commission claiming and period payouts
 │
-├── index.html                   # Halaman Tunggal (SPA) Antarmuka POS
-├── manifest.json                # Metadata PWA
-└── sw.js                        # Service Worker PWA
+├── index.html                   # Single Page Application (SPA) POS interface
+├── manifest.json                # PWA metadata
+└── sw.js                        # PWA Service Worker (CACHE_NAME versioning)
 ```

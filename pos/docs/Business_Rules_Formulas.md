@@ -54,3 +54,34 @@ This document summarizes the core business rules, calculation logic, and formula
   Expected Balance = Opening Balance + Total Cash Transactions + Total Deposits - Total Expenses
   ```
 - **Cash Variance**: `Actual Cash Count - Expected Balance` (Positive = Surplus, Negative = Shortage).
+
+---
+
+## 5. Dashboard Financial & Expense Separation
+- **Operational Expenses (`Pengeluaran Operasional`)**: Aggregated from `operational_costs` table.
+- **Stock Expenses (`Pengeluaran Stock`)**: Aggregated from `inventory_postings` table where `type = 'in'`.
+- **Net Cash Revenue (`Omset Bersih Cash`)**:
+  ```
+  Net Cash Revenue = Cash Revenue - Operational Expenses
+  ```
+  *Note: Stock Expenses do not reduce Net Cash Revenue. This ensures daily cash deposit comparisons (`Selisih = Setoran - Omset Bersih Cash`) reflect cashier cash flows without backend inventory purchase distortions.*
+- **Deposit Variance (`Selisih`)**:
+  ```
+  Selisih = Setoran (Cash Deposit) - Net Cash Revenue
+  ```
+- **Estimated Net Profit (`Estimasi Laba Bersih`)**:
+  ```
+  Net Profit = Gross Revenue - MDR Fees - Operational Expenses - Stock Expenses
+  ```
+- **Profit Sharing**: Calculated from Net Profit based on configurable percentages for Business Owner and Investor.
+
+---
+
+## 6. Packaging & Consumables Estimation
+- **Chicken Bags (`Kantong Ayam Dibuka`)**:
+  - Estimated per chicken part (`Dada`, `Paha Atas`, `Paha Bawah`, `Sayap`) based on sold item names.
+  - Compares estimated usage against inventory stock (`inventory_items`).
+- **Packaging Boxes (`Packaging Box Terpakai`)**:
+  - **Box Ukuran M**: Assigned to all sold `Paket Ayam Ori` and `Paket Ayam Geprek` variants (`Dada`, `Paha Atas`, `Paha Bawah`, `Sayap`).
+  - **Box Ukuran XS**: Assigned to all sold `Ayam Geprek` (non-paket) variants (`Dada`, `Paha Atas`, `Paha Bawah`, `Sayap`).
+

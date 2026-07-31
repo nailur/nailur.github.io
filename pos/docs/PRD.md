@@ -1,47 +1,55 @@
 # Product Requirements Document (PRD) - NTPOS
 
 ## 1. Introduction
-NTPOS adalah sistem kasir (Point of Sale) terpadu yang dibangun dengan arsitektur **Progressive Web App (PWA)** dan **Serverless** backend. Sistem ini dirancang untuk memfasilitasi transaksi toko dengan cepat (mendukung mode offline), sekaligus memberikan kontrol manajemen tingkat tinggi secara berjenjang untuk bisnis multi-cabang.
+NTPOS is an integrated Point of Sale (POS) system built with a **Progressive Web App (PWA)** and **Serverless** backend architecture. It is designed to facilitate high-speed store transactions with robust offline support while providing granular multi-role management for multi-branch food & retail operations.
 
 ## 2. Target Audience & Roles
-Sistem menggunakan pendekatan *Multi-Role* yang ketat (diatur via Supabase RLS):
-- **Superadmin**: Akses penuh ke seluruh sistem, cabang, outlet, dan pengaturan pengguna.
-- **Owner**: Pemilik bisnis dengan akses baca (monitoring) atau pengelolaan level atas ke seluruh cabang.
-- **Kepala Cabang**: Mengelola operasional beberapa outlet di bawah satu cabang tertentu.
-- **Kepala Toko**: Mengelola produk, stok, absensi, dan memantau transaksi spesifik pada 1 outlet.
-- **Kasir**: Menjalankan transaksi harian, absensi, dan pengelolaan laci uang (*Cash Drawer*).
+The system enforces strict role-based access control via Supabase Row Level Security (RLS):
+- **Superadmin**: Full administrative access across all branches, outlets, users, financial settings, and affiliate payouts.
+- **Owner**: Business owner with read/write oversight across branches, profit-sharing views, and financial analytics.
+- **Branch Head (Kepala Cabang)**: Operates and oversees multiple outlets within a designated branch.
+- **Store Manager (Kepala Toko)**: Manages inventory, staff attendance, product availability, and operations for a single outlet.
+- **Cashier**: Processes daily sales, manages active cash drawer shifts, and records operational expenses.
 
 ## 3. Core Features
 
-### 3.1. Modul POS (Point of Sale) & Transaksi
-- **Katalog & Modifiers**: Pencarian produk secara *real-time*, dukungan *Modifiers* (opsi tambahan pada produk seperti *Topping*, Ukuran).
-- **Manajemen Keranjang (Cart)**: Kalkulasi subtotal, pajak, diskon (global maupun per-item), dan total akhir.
-- **Metode Pembayaran**: Fleksibilitas metode pembayaran (Cash, Transfer, E-Wallet, dll).
-- **Manajemen Struk & Printer**: Pencetakan struk langsung menggunakan Printer Thermal Bluetooth, dukungan fitur *Void* transaksi.
-- **Offline Support**: Aplikasi tetap dapat digunakan meski koneksi terputus berkat Service Worker dan *Caching*.
+### 3.1. POS & Transaction Processing
+- **Real-Time Catalog & Modifiers**: Searchable product catalog with support for item modifiers (e.g., Toppings, Spice Levels, Sizes).
+- **Cart Management**: Dynamic subtotal, tax, item-level/global discount calculation, and checkout execution.
+- **Flexible Payments**: Support for Cash, QRIS, Debit, Credit, and Online Transfers with configurable MDR fees per method.
+- **Receipt & Printer**: Thermal Bluetooth printer integration (ESC/POS Web API) and transaction void capabilities.
+- **Offline First**: Service Worker caching (`CACHE_NAME` versioned) enables seamless operation during network outages.
 
-### 3.2. Manajemen Kasir & Shift (Cash Drawer)
-- Pencatatan saldo awal laci uang (*Starting Cash*).
-- Validasi penutupan shift (*End Time* / *Ending Cash*).
-- Menghindari manipulasi data dengan pencatatan otomatis transaksi pada sesi yang aktif.
+### 3.2. Cash Drawer & Shift Management (`shift-sessions`)
+- Mandatory opening cash drawer balance entry (`Starting Cash`).
+- Shift session tracking that binds sales and operational expenses to the active cashier shift.
+- Expected cash reconciliation against actual cash count upon shift closing.
 
-### 3.3. Manajemen Inventaris & Operasional
-- **Inventory Postings**: Sistem stok masuk/keluar (In/Out) dengan rasio konversi (*conversion rate*) dari satuan besar ke satuan kecil.
-- **Biaya Operasional (Operational Costs)**: Pencatatan pengeluaran harian toko yang mengikat pada sesi shift kasir.
-- **Setoran Penjualan (Sales Deposits)**: Fitur pelaporan uang fisik yang disetorkan ke bank/rekening tujuan.
+### 3.3. Inventory & Financial Management
+- **Inventory Postings**: Multi-unit stock in/out adjustments with automatic conversion ratios.
+- **Expense Separation**:
+  - **Operational Expenses**: Day-to-day store expenses (`operational_costs`).
+  - **Stock Expenses**: Inventory replenishment costs (`inventory_postings` where `type = 'in'`).
+- **Sales Deposits**: Bank deposit slips and reconciliation with Net Cash Revenue.
 
-### 3.4. Kepegawaian & Absensi (Attendance)
-- Modul *Clock In* dan *Clock Out* untuk mencatat jam kehadiran.
-- Terhubung langsung dengan profil pengguna dan outlet tempat bekerja.
+### 3.4. Staff & Attendance (`attendance`)
+- Clock In / Clock Out tracking bound to user profiles and assigned outlets.
 
-### 3.5. Analitik, Laporan & Notifikasi
-- **Dashboard Summary**: Laporan visual (grafik dengan Chart.js) mencakup pendapatan, produk terlaris, dan rasio metode pembayaran.
-- **Eksport Excel**: Kemampuan mengunduh riwayat transaksi dan absensi menggunakan SheetJS.
-- **Push Notification**: Sistem *Broadcast* dari Superadmin ke seluruh perangkat (Mobile/Desktop) melalui OneSignal.
-- **Optimasi Gambar**: Otomatisasi kompresi gambar di klien (*Browser Image Compression*) sebelum masuk ke database.
+### 3.5. Dashboard Analytics & Packaging Estimation
+- **Financial Analytics**: Interactive Chart.js graphs displaying Gross Revenue, Operational Expenses, Stock Expenses, and Net Revenue by payment method.
+- **Net Cash Isolation**: Isolates daily cashier cash flow (`Cash Sales - Operational Expenses`) from backend stock purchases for deposit variance tracking (`Selisih`).
+- **Packaging Box & Consumables Estimation**:
+  - Automatically calculates `Kantong Ayam Dibuka` based on sold chicken pieces.
+  - Calculates `Packaging Box Terpakai`: **Box Ukuran M** for all `Paket Ayam Ori` and `Paket Ayam Geprek` variants; **Box Ukuran XS** for `Ayam Geprek` non-paket variants.
+- **Profit Sharing**: Calculates Estimated Net Profit and splits returns between Business Owner and Investor based on outlet configuration.
 
-## 4. User Flow (Kasir)
-1. **Clock-in & Shift Open**: Kasir masuk, melakukan absen, dan membuka *Cash Drawer* dengan memasukkan modal awal.
-2. **Transaksi**: Kasir memilih produk, menambahkan *modifiers* jika ada, menerapkan diskon, lalu memproses pembayaran (*Checkout*).
-3. **Closing Shift**: Saat selesai bekerja, kasir menutup *Cash Drawer*, menghitung sisa kas fisik, dan mencatat *Operational Costs* (jika ada).
-4. **Sinkronisasi**: Jika transaksi dilakukan secara *offline*, sistem akan memantau konektivitas dan menyinkronkan data ke *cloud* (Supabase) secara transparan.
+### 3.6. Affiliate Commission System (`affiliate`)
+- Dedicated Superadmin/Owner module for managing affiliate partners.
+- Configurable base commission, bulk threshold rates, and multiple target bonuses (`bonus_target_qty` and `bonus_nominal`).
+- Period claim creation and commission payout settlement.
+
+## 4. User Flow (Cashier)
+1. **Clock-in & Shift Open**: Cashier logs in, clocks attendance, and opens the cash drawer by inputting starting cash.
+2. **Sales Execution**: Cashier selects items, applies modifiers/discounts, and completes checkout.
+3. **Closing Shift**: Cashier closes shift, enters physical cash count, and reviews cash variance.
+4. **Synchronization**: Queued offline transactions automatically sync to Supabase once connectivity is restored.

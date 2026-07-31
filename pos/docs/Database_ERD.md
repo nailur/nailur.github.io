@@ -1,6 +1,6 @@
 # Database Architecture & ERD - NTPOS
 
-Sistem database menggunakan **Supabase (PostgreSQL)** dengan fokus tinggi pada keamanan tingkat baris (Row Level Security) dan otomatisasi bisnis melalui *Triggers* dan *Functions*. Dokumen ini memuat keseluruhan skema, kebijakan, dan fungsi bawaan yang menjadi tulang punggung NTPOS.
+The database system utilizes **Supabase (PostgreSQL)** with strict emphasis on Row Level Security (RLS) and business automation via database Triggers and Stored Functions (RPC). This document presents the complete schema, policies, and functions powering NTPOS.
 
 ## 1. Entity Relationship Diagram (ERD)
 
