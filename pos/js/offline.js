@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { showToast } from './app.js';
+import { showToast } from './utils.js';
 
 let _dbInstance = null;
 export async function initDB() {

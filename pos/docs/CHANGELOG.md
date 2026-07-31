@@ -6,6 +6,58 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
 ### 2026-07-31
+- **English Documentation Mandate & Translation (`.agents/AGENTS.md`, `docs/Business_Rules_Formulas.md`)**:
+  - Expanded **Rule 8** in `.agents/AGENTS.md` to require all project documentation (`.md` files in `docs/` such as architecture, tech stack, business rules, changelogs, etc.) to be written in English to optimize tokenizer token efficiency.
+  - Translated [`pos/docs/Business_Rules_Formulas.md`](file:///c:/Users/nailur/Documents/Apps/nailur.github.io/pos/docs/Business_Rules_Formulas.md) to English as the standard reference document.
+
+- **Token Optimization & Global Rule Update (`.agents/AGENTS.md`, `js/utils.js`, `js/users.js`, `js/checkout.js`, `js/products.js`, `sw.js`)**:
+  - Dikonfirmasi seluruh nama fungsi dan variabel pada modul hasil modularisasi (`utils.js`, `users.js`, `checkout.js`, `products.js`) sudah menggunakan bahasa Inggris (`showToast`, `escapeHtml`, `openCheckoutModal`, dll).
+  - Mengubah seluruh komentar teknis berbahasa Indonesia di file `utils.js`, `users.js`, `checkout.js`, dan `products.js` menjadi bahasa Inggris yang ringkas untuk menghemat konsumsi token tokenizer BPE.
+  - Menambahkan **Rule 8 (English Code Identifiers & Technical Comments)** ke file `.agents/AGENTS.md` agar seluruh agen AI untuk proyek NTPOS dan NTGold selalu menggunakan bahasa Inggris untuk nama fungsi, variabel, dan komentar teknis.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v75`.
+
+- **Modularisasi Tahap 4 — Checkout & Pembayaran (`js/checkout.js`, `js/cart.js`, `js/app.js`, `sw.js`)**:
+  - Membuat file baru `js/checkout.js` sebagai **modul fasad** resmi Checkout & Pembayaran.
+  - `checkout.js` me-re-export dan mendaftarkan ke `window`: `openCheckoutModal`, `finalizeCheckout`, `calculateChange`, `printReceipt`, `printReceiptBluetooth` dari `cart.js` — seluruh implementasi (validasi nominal tunai, kalkulasi diskon per metode, proses RPC `process_checkout`, penyimpanan offline, cetak struk browser & Bluetooth ESC/POS) tetap di `cart.js`.
+  - **Bugfix kritis**: `cart.js` memanggil `getActiveDiscount()` di `applyActiveDiscount()` tanpa import. Ditambahkan `import { getActiveDiscount } from './discounts.js'` untuk memastikan kalkulasi diskon otomatis saat modal checkout dibuka tidak error di runtime.
+  - `app.js` kini mengimport fungsi checkout dari `checkout.js` (bukan langsung `cart.js`) dan menghapus 5 baris `window.*` duplikat yang kini ditangani `checkout.js`.
+  - Memperbarui `docs/TechStack.md` dengan entri `utils.js`, `users.js`, dan `checkout.js`.
+  - Memperbarui `docs/DOM_Modal_Map.md` dengan referensi file JS yang benar untuk modal Checkout.
+  - Menambahkan `./js/checkout.js` ke `urlsToCache` di `sw.js`.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v74`.
+
+- **Modularisasi Tahap 3 — Katalog Produk & Diskon (`js/products.js`, `js/discounts.js`, `js/app.js`, `sw.js`)**:
+  - Fungsi `loadProducts`, `renderProducts`, `handleSaveProduct`, `editProduct`, `deleteProduct`, `showAllProducts` sudah berada di `products.js` sejak awal — **dikonfirmasi lengkap, tidak perlu dipindah**.
+  - Menambahkan `openProductModal()` ke `products.js`: mengekstrak logika buka modal tambah produk dari inline event listener `#btn-add-product` di `app.js` menjadi fungsi `export` tersendiri + `window.openProductModal`. `app.js` kini cukup memanggil `openProductModal` langsung.
+  - Fungsi `loadDiscounts`, `editDiscount`, `deleteDiscount`, `getActiveDiscount`, `setupDiscountForm` sudah berada di `discounts.js` — **dikonfirmasi lengkap**.
+  - **Bugfix**: Menambahkan `escapeHtml` ke import `discounts.js` (`renderDiscounts` menggunakan `escapeHtml` tanpa import — bug latent XSS protection).
+  - Memperbarui `docs/DOM_Modal_Map.md` dengan referensi file JS yang benar untuk modal Produk dan Diskon.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v73`.
+
+- **Modularisasi Tahap 2 (`js/utils.js`, `js/app.js`, dan 12 modul konsumen, `sw.js`)**:
+  - Membuat file baru `js/utils.js` berisi 8 fungsi utilitas umum: `getLocalToday`, `showToast`, `showConfirm`, `debounce`, `escapeHtml`, `generateOrderId`, `generateRandomDocNumber`, `enableTableSort`.
+  - Memindahkan seluruh definisi tersebut dari `app.js` ke `utils.js`. Fungsi `generateOrderId` menggunakan `window.emptyCart` untuk menghindari circular dependency dengan `cart.js`.
+  - `setupGlobalRealtimeSync` beserta konstanta `debouncedLoad*` tetap di `app.js` (bukan utilitas murni, terikat ke state outlet).
+  - Memperbarui import di 12 modul: `auth.js`, `cart.js`, `attendance.js`, `discounts.js`, `deposits.js`, `expenses.js`, `history.js`, `inventory.js`, `management.js`, `modifiers.js`, `offline.js`, `products.js`, `shift.js`, `shift-master.js`, `affiliate.js` — semuanya beralih dari `./app.js` ke `./utils.js`.
+  - `window.showToast`, `window.escapeHtml`, `window.enableTableSort` didaftarkan di `utils.js`.
+  - Menambahkan `./js/utils.js` ke `urlsToCache` di `sw.js`.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v72`.
+
+- **Modularisasi Tahap 1 (`js/users.js`, `js/app.js`, `sw.js`)**:
+  - Membuat file baru `js/users.js` sebagai modul UI Manajemen Akun & Staf.
+  - Memindahkan `filterUserOutlets`, `handleRoleSelectionChange`, dan `loadTargetUsers` dari `app.js` ke `users.js`.
+  - Ketiga fungsi didaftarkan ke `window` di `users.js` agar tombol HTML & `management.js` tetap berfungsi normal.
+  - `app.js` kini menggunakan `import './users.js'` dan memanggil ketiga fungsi via `window.*`.
+  - Menambahkan `./js/users.js` ke daftar `urlsToCache` di `sw.js`.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v71`.
+- **Documentation (Token-Saving Reference Guides)**:
+  - Menambahkan dokumen `docs/DOM_Modal_Map.md` yang memetakan seluruh ID Modal, ID Form, tombol, dan fungsi JS pembuka/penyimpan di `pos/index.html`.
+  - Menambahkan dokumen `docs/Business_Rules_Formulas.md` yang merangkum aturan bisnis utama serta rumus perhitungan (diskon, komisi affiliate, bonus kelipatan, dan kasir shift).
+  - Menambahkan dokumen `docs/RPC_Functions.md` sebagai referensi pemanggilan fungsi RPC Supabase beserta kebijakan RLS per role.
+  - Memperbarui `docs/TechStack.md` untuk mencantumkan dokumen-dokumen baru tersebut.
+- **Documentation Consolidation (`docs/Database_ERD.md`, `docs/affiliate_schema.sql`)**:
+  - Menggabungkan seluruh spesifikasi dan kueri SQL DDL Modul Affiliate dari `affiliate_schema.sql` ke dalam `Database_ERD.md` (diagram ERD, skema tabel `affiliate_periods`, `affiliate_settings`, dsb, RLS policies, index, serta script migrasi SQL lengkap).
+  - Menghapus file `affiliate_schema.sql` yang redundan agar `Database_ERD.md` menjadi sumber kebenaran tunggal (*single source of truth*).
 - **Refactor (`docs/affiliate_schema.sql`, `js/affiliate.js`, `index.html`, `js/app.js`, `sw.js`)**:
   - **Restrukturisasi Master Affiliate**: Halaman utama tab Master Affiliate kini menampilkan daftar **Periode Affiliate** (nama, rentang tanggal, status), bukan langsung daftar produk.
   - Menambahkan tabel `affiliate_periods` (id, outlet_id, name, effective_date, end_date, is_active) dan kolom `period_id` pada `affiliate_settings` agar setiap aturan komisi produk terikat ke suatu periode.
@@ -19,6 +71,17 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
   - **Owner diizinkan**: lihat listing & detail Posting Affiliate, lihat listing & detail (komisi produk) Master Affiliate.
   - **Owner diblokir**: tombol "Catat Affiliate" disembunyikan, tombol "Tambah Periode Affiliate" disembunyikan, tombol Delete/Hapus tidak muncul, tombol Simpan/Bayar tidak muncul — semuanya dikontrol via `isSuperAdmin()`.
   - Script SQL diperbarui dengan `DROP POLICY IF EXISTS` sebelum setiap `CREATE POLICY` agar idempoten dan aman dijalankan berulang.
+- **Feature - Edit Unpaid Affiliate Posting (`js/affiliate.js`, `index.html`, `sw.js`)**:
+  - Menambahkan kemampuan untuk mengedit kembali Posting Affiliate yang masih berstatus **Unpaid** (khusus **Superadmin**).
+  - Menambahkan tombol ikon **Edit** (`<i class="ph ph-pencil-simple"></i>`) pada baris tabel Rekap Komisi Affiliate untuk postingan berstatus Unpaid, serta tombol **Edit Posting** di dalam modal Detail Posting Affiliate.
+  - Memperbarui `openCreateAffiliateModal(editPostingId)` agar mendukung mode edit: otomatis memuat Nama Afiliator dan Keterangan/Catatan eksisting, memuat transaksi-transaksi yang sudah terikat pada postingan tersebut ke dalam daftar pilihan, dan memperbarui kalkulasi secara langsung.
+  - Memperbarui `handleSaveAffiliatePosting()` untuk membedakan mode tambah baru dengan mode edit: saat mode edit, data `affiliate_postings` diperbarui, item dan relasi transaksi lama dihapus dan digantikan dengan daftar transaksi baru yang dipilih.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v69`.
+- **Performance - First Load Optimization & Lazy Loading (`js/app.js`, `js/inventory.js`, `index.html`, `sw.js`)**:
+  - **Lazy Loading per Tab**: Menghapus pemanggilan sinkron/eager loading seluruh modul (`loadInventory()`, `loadStockPostings()`, `loadExpenses()`, `loadDeposits()`, `loadAffiliate...`) pada `initPos()` saat aplikasi pertama kali dimuat. Data modul kini dipanggil secara *lazy* hanya ketika tab terkait diaktifkan oleh pengguna, mengurangi dari ~15 query paralel menjadi hanya 3 query utama saat login di tab Kasir/POS.
+  - **Non-blocking Product Loading**: Menghilangkan *blocking await* pada pemanggilan `loadProducts()` di `initPos()`, sehingga tampilan antarmuka Kasir langsung selesai dirender dari cache lokal tanpa menunggu penyelesaian fetch background dari server.
+  - **Limit & Load More pada Riwayat Stok**: Menambahkan `.limit(50)` (menggunakan `.range(0, 49)`) pada `loadStockPostings()` agar tidak menarik ribuan riwayat stok sekaligus. Menambahkan tombol **"Muat Lebih Banyak"** (`window.loadMoreStockPostings()`) di bawah tabel Riwayat Penambahan dan Pemakaian Stok agar riwayat lama tetap dapat diakses seutuhnya.
+  - Memperbarui `CACHE_NAME` pada `sw.js` ke `pos-cache-v70`.
 
 ### 2026-07-30
 - **Feature (`docs/affiliate_schema.sql`, `js/affiliate.js`, `index.html`, `js/app.js`, `sw.js`)**:

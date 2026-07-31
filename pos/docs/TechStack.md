@@ -43,10 +43,13 @@ Struktur modular *vanilla* untuk pengelolaan kode yang rapi:
 │   ├── style.css                # Styling utama aplikasi
 │   ├── style-modals.css         # Styling khusus untuk popup/modal
 │
-├── 📁 docs/                       # Dokumentasi Aplikasi (PRD, ERD, TechStack)
+├── 📁 docs/                       # Dokumentasi Aplikasi (PRD, ERD, TechStack, DOM_Modal_Map, Business_Rules_Formulas, RPC_Functions, Changelog)
 │
 ├── 📁 js/                         # Logika Modul Klien (Vanilla JS)
 │   ├── app.js                   # Entry point, inisialisasi UI, routing halaman SPA
+│   ├── utils.js                 # Fungsi utilitas umum (showToast, escapeHtml, debounce, dll)
+│   ├── users.js                 # UI manajemen akun & staf (filterUserOutlets, handleRoleSelectionChange, loadTargetUsers)
+│   ├── checkout.js              # Fasad modul Checkout & Pembayaran (re-export dari cart.js)
 │   ├── state.js                 # Global state management untuk keranjang dan UI
 │   ├── auth.js                  # Logika login, logout, dan manajemen sesi (Supabase)
 │   ├── supabase.js              # Konfigurasi dan inisialisasi klien Supabase DB

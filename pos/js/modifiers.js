@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { showToast, escapeHtml, showConfirm } from './app.js';
+import { showToast, escapeHtml, showConfirm } from './utils.js';
 import { products } from './products.js';
 
 // Cache: productId -> { groups: [...], modifiers: [...] }

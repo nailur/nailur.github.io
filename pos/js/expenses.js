@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { getActiveOutletId } from './state.js';
-import { showToast, getLocalToday, generateRandomDocNumber, escapeHtml } from './app.js';
+import { showToast, getLocalToday, generateRandomDocNumber, escapeHtml } from './utils.js';
 import { getActiveShiftSession } from './shift.js';
 import { getCurrentProfile } from './auth.js';
 

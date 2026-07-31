@@ -31,6 +31,15 @@ erDiagram
     OUTLETS ||--o{ OPERATIONAL_COSTS : "incurs"
     OPERATIONAL_COSTS ||--|{ OPERATIONAL_COST_ITEMS : "details"
     EXPENSE_ITEMS ||--o{ OPERATIONAL_COST_ITEMS : "used for"
+    
+    OUTLETS ||--o{ AFFILIATE_PERIODS : "defines"
+    OUTLETS ||--o{ AFFILIATE_SETTINGS : "configures"
+    OUTLETS ||--o{ AFFILIATE_POSTINGS : "records"
+    AFFILIATE_PERIODS ||--o{ AFFILIATE_SETTINGS : "groups"
+    PRODUCTS ||--o{ AFFILIATE_SETTINGS : "has commission"
+    AFFILIATE_POSTINGS ||--|{ AFFILIATE_POSTING_ITEMS : "details"
+    AFFILIATE_POSTINGS ||--|{ AFFILIATE_POSTING_TRANSACTIONS : "claims"
+    TRANSACTIONS ||--o| AFFILIATE_POSTING_TRANSACTIONS : "claimed in"
 ```
 
 ---
@@ -215,11 +224,23 @@ erDiagram
 | `is_active` | `bool` |  Nullable |
 | `payment_discounts` | `jsonb` |  Nullable |
 
+### Table `affiliate_periods`
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `outlet_id` | `uuid` | Foreign Key (`outlets`), On Delete Cascade |
+| `name` | `text` | Nullable (Nama Periode) |
+| `effective_date` | `date` | Default `CURRENT_DATE` |
+| `end_date` | `date` | Nullable (Tanggal akhir periode) |
+| `is_active` | `boolean` | Default `true` |
+| `created_at` | `timestamptz` | Default `now()` |
+
 ### Table `affiliate_settings`
 | Name | Type | Constraints |
 |------|------|-------------|
 | `id` | `uuid` | Primary |
 | `outlet_id` | `uuid` | Foreign Key (`outlets`) |
+| `period_id` | `uuid` | Foreign Key (`affiliate_periods`), Nullable, On Delete Cascade |
 | `product_id` | `uuid` | Foreign Key (`products`) |
 | `commission_nominal` | `numeric` | Komisi satuan per item |
 | `bulk_commission_nominal` | `numeric` | (Legacy/Fallback) Komisi massal |
@@ -260,8 +281,9 @@ erDiagram
 
 Sistem mengimplementasikan RLS secara ekstensif dan granular. Berikut adalah daftar spesifik *policies* yang mengamankan setiap tabel:
 
-### `affiliate_settings`, `affiliate_postings`, `affiliate_posting_items`, & `affiliate_posting_transactions`
-- **Superadmin Only**: `Superadmin ALL affiliate_settings`, `Superadmin ALL affiliate_postings`, `Superadmin ALL affiliate_posting_items`, `Superadmin ALL affiliate_posting_transactions` (Hanya profil dengan role `superadmin` yang memiliki akses penuh atas modul Affiliate ini).
+### `affiliate_periods`, `affiliate_settings`, `affiliate_postings`, `affiliate_posting_items`, & `affiliate_posting_transactions`
+- **Superadmin ALL**: `Superadmin ALL affiliate_periods`, `Superadmin ALL affiliate_settings`, `Superadmin ALL affiliate_postings`, `Superadmin ALL affiliate_posting_items`, `Superadmin ALL affiliate_posting_transactions` (Akses penuh untuk role `superadmin`).
+- **Owner SELECT**: `Owner SELECT affiliate_periods`, `Owner SELECT affiliate_settings`, `Owner SELECT affiliate_postings`, `Owner SELECT affiliate_posting_items`, `Owner SELECT affiliate_posting_transactions` (Akses baca / read-only untuk role `owner`).
 
 ### `attendance` / `attendances`
 - **Superadmin / Owner**: `Superadmin ALL attendance`, `Owner ALL attendance`, `Superadmin ALL attendances` (Akses penuh).
@@ -729,6 +751,11 @@ END;
 - `idx_expense_items_outlet_id`: pada `expense_items(outlet_id)`
 - `idx_global_discounts_outlet_id`: pada `global_discounts(outlet_id)`
 - `idx_inventory_items_outlet_id`: pada `inventory_items(outlet_id)`
+- `idx_affiliate_periods_outlet`: pada `affiliate_periods(outlet_id, effective_date DESC)`
+- `idx_affiliate_settings_outlet`: pada `affiliate_settings(outlet_id)`
+- `idx_affiliate_postings_outlet_date`: pada `affiliate_postings(outlet_id, posting_date DESC)`
+- `idx_affiliate_posting_items_posting`: pada `affiliate_posting_items(posting_id)`
+- `idx_affiliate_posting_trx_transaction`: pada `affiliate_posting_transactions(transaction_id)`
 - `profiles_email_key`: *Unique constraint index* pada `profiles(email)`
 - Dan seluruh Primary Key default (`_pkey`) untuk tiap-tiap tabel (ex: `outlets_pkey`, `transactions_pkey`, dll).
 
@@ -757,3 +784,126 @@ Penyimpanan aset statis seperti gambar produk dan dokumen operasional diatur dal
      - *Allow authenticated uploads to attachments* (`INSERT` untuk `authenticated`).
      - *Allow authenticated reads from attachments* (`SELECT` untuk `authenticated`).
      - Publik **tidak memiliki** akses `SELECT` (Aman dari pembacaan eksternal).
+
+---
+
+## 7. Affiliate Module Schema (SQL Migration DDL)
+
+Berikut adalah skema lengkap beserta kueri DDL migrasi dan RLS untuk **Modul Affiliate**:
+
+```sql
+-- 1. Create table affiliate_periods (Master Periode Affiliate)
+CREATE TABLE IF NOT EXISTS public.affiliate_periods (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    outlet_id UUID NOT NULL REFERENCES public.outlets(id) ON DELETE CASCADE,
+    name TEXT NULL,
+    effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    end_date DATE NULL,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 2. Create table affiliate_settings (Master setting komisi per produk untuk suatu periode)
+CREATE TABLE IF NOT EXISTS public.affiliate_settings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    outlet_id UUID NOT NULL REFERENCES public.outlets(id) ON DELETE CASCADE,
+    period_id UUID NULL REFERENCES public.affiliate_periods(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    commission_nominal NUMERIC NOT NULL DEFAULT 0,
+    bulk_commission_nominal NUMERIC NOT NULL DEFAULT 0,
+    bonus_target_qty INTEGER NOT NULL DEFAULT 15,
+    bonus_nominal NUMERIC NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 3. Create table affiliate_postings (Dokumen rekap klaim komisi Affiliate)
+CREATE TABLE IF NOT EXISTS public.affiliate_postings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    outlet_id UUID NOT NULL REFERENCES public.outlets(id) ON DELETE CASCADE,
+    document_number TEXT NOT NULL,
+    affiliator_name TEXT NOT NULL,
+    posting_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    total_amount NUMERIC NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'Unpaid' CHECK (status IN ('Unpaid', 'Paid')),
+    proof_attachment TEXT NULL,
+    paid_at TIMESTAMPTZ NULL,
+    notes TEXT NULL,
+    created_by UUID NULL REFERENCES public.profiles(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 4. Create table affiliate_posting_items (Rincian kalkulasi per item produk)
+CREATE TABLE IF NOT EXISTS public.affiliate_posting_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    posting_id UUID NOT NULL REFERENCES public.affiliate_postings(id) ON DELETE CASCADE,
+    product_id UUID NULL REFERENCES public.products(id) ON DELETE SET NULL,
+    product_name TEXT NOT NULL,
+    total_qty NUMERIC NOT NULL DEFAULT 0,
+    commission_rate NUMERIC NOT NULL DEFAULT 0,
+    subtotal NUMERIC NOT NULL DEFAULT 0
+);
+
+-- 5. Create table affiliate_posting_transactions (Relasi m-to-m ke transaksi penjualan)
+CREATE TABLE IF NOT EXISTS public.affiliate_posting_transactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    posting_id UUID NOT NULL REFERENCES public.affiliate_postings(id) ON DELETE CASCADE,
+    transaction_id UUID NOT NULL REFERENCES public.transactions(id) ON DELETE CASCADE,
+    CONSTRAINT unique_affiliate_transaction UNIQUE (transaction_id)
+);
+
+-- Row Level Security (RLS)
+ALTER TABLE public.affiliate_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.affiliate_postings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.affiliate_posting_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.affiliate_posting_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.affiliate_periods ENABLE ROW LEVEL SECURITY;
+
+-- Superadmin ALL policies
+DROP POLICY IF EXISTS "Superadmin ALL affiliate_settings" ON public.affiliate_settings;
+CREATE POLICY "Superadmin ALL affiliate_settings" ON public.affiliate_settings
+    FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'superadmin'));
+
+DROP POLICY IF EXISTS "Superadmin ALL affiliate_postings" ON public.affiliate_postings;
+CREATE POLICY "Superadmin ALL affiliate_postings" ON public.affiliate_postings
+    FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'superadmin'));
+
+DROP POLICY IF EXISTS "Superadmin ALL affiliate_posting_items" ON public.affiliate_posting_items;
+CREATE POLICY "Superadmin ALL affiliate_posting_items" ON public.affiliate_posting_items
+    FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'superadmin'));
+
+DROP POLICY IF EXISTS "Superadmin ALL affiliate_posting_transactions" ON public.affiliate_posting_transactions;
+CREATE POLICY "Superadmin ALL affiliate_posting_transactions" ON public.affiliate_posting_transactions
+    FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'superadmin'));
+
+DROP POLICY IF EXISTS "Superadmin ALL affiliate_periods" ON public.affiliate_periods;
+CREATE POLICY "Superadmin ALL affiliate_periods" ON public.affiliate_periods
+    FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'superadmin'));
+
+-- Owner SELECT policies
+DROP POLICY IF EXISTS "Owner SELECT affiliate_settings" ON public.affiliate_settings;
+CREATE POLICY "Owner SELECT affiliate_settings" ON public.affiliate_settings
+    FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'owner'));
+
+DROP POLICY IF EXISTS "Owner SELECT affiliate_postings" ON public.affiliate_postings;
+CREATE POLICY "Owner SELECT affiliate_postings" ON public.affiliate_postings
+    FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'owner'));
+
+DROP POLICY IF EXISTS "Owner SELECT affiliate_posting_items" ON public.affiliate_posting_items;
+CREATE POLICY "Owner SELECT affiliate_posting_items" ON public.affiliate_posting_items
+    FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'owner'));
+
+DROP POLICY IF EXISTS "Owner SELECT affiliate_posting_transactions" ON public.affiliate_posting_transactions;
+CREATE POLICY "Owner SELECT affiliate_posting_transactions" ON public.affiliate_posting_transactions
+    FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'owner'));
+
+DROP POLICY IF EXISTS "Owner SELECT affiliate_periods" ON public.affiliate_periods;
+CREATE POLICY "Owner SELECT affiliate_periods" ON public.affiliate_periods
+    FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'owner'));
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_affiliate_periods_outlet ON public.affiliate_periods(outlet_id, effective_date DESC);
+CREATE INDEX IF NOT EXISTS idx_affiliate_settings_outlet ON public.affiliate_settings(outlet_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_postings_outlet_date ON public.affiliate_postings(outlet_id, posting_date DESC);
+CREATE INDEX IF NOT EXISTS idx_affiliate_posting_items_posting ON public.affiliate_posting_items(posting_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_posting_trx_transaction ON public.affiliate_posting_transactions(transaction_id);
+```

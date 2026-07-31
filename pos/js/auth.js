@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { showToast } from './app.js';
+import { showToast } from './utils.js';
 
 var currentUser = null;
 var currentProfile = null;

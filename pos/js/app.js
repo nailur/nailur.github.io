@@ -1,11 +1,13 @@
 /* global XLSX */
 import { supabase } from './supabase.js';
+import { showToast, showConfirm, debounce, escapeHtml, getLocalToday, generateOrderId, generateRandomDocNumber, enableTableSort } from './utils.js';
 import { checkSession, login, logout, getCurrentUser, getCurrentProfile } from './auth.js';
 import { connectPrinter, openPrinterModal, initPrinterModal, autoConnectPrinter } from './printer.js';
 import { startAttendanceClock, checkAttendanceStatus } from './attendance.js';
 import { syncOfflineTransactions, initDB } from './offline.js';
-import { products, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts } from './products.js';
-import { cart, addToCart, addToCartWithModifiers, updateQty, emptyCart, renderCart, calculateChange, openCheckoutModal, finalizeCheckout, printReceipt, printReceiptBluetooth } from './cart.js';
+import { products, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts, openProductModal } from './products.js';
+import { cart, addToCart, addToCartWithModifiers, updateQty, emptyCart, renderCart } from './cart.js';
+import { openCheckoutModal, finalizeCheckout, calculateChange, printReceipt, printReceiptBluetooth } from './checkout.js';
 import './modifiers.js';
 import { loadHistory, exportToExcel, changeHistoryPage, viewTransactionDetails, reprintTransactionById } from './history.js';
 import { 
@@ -24,6 +26,7 @@ import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMa
 import { loadDeposits, handleSaveDeposit } from './deposits.js';
 import { loadShifts, handleSaveShift, openShiftModal } from './shift-master.js';
 import { loadDiscounts, setupDiscountForm } from './discounts.js';
+import './users.js';
 import { 
     loadAffiliateSettings, 
     loadAffiliatePostings, 
@@ -55,11 +58,8 @@ window.showAllProducts = showAllProducts;
 window.addToCart = addToCart;
 window.updateQty = updateQty;
 window.emptyCart = emptyCart;
-window.openCheckoutModal = openCheckoutModal;
-window.finalizeCheckout = finalizeCheckout;
-window.printReceipt = printReceipt;
-window.printReceiptBluetooth = printReceiptBluetooth;
-window.calculateChange = calculateChange;
+// window.openCheckoutModal, finalizeCheckout, calculateChange, printReceipt, printReceiptBluetooth
+// didaftarkan di checkout.js
 window.loadHistory = loadHistory;
 window.exportToExcel = exportToExcel;
 window.changeHistoryPage = changeHistoryPage;
@@ -89,61 +89,9 @@ const loginView = document.getElementById('login-view');
 const superadminView = document.getElementById('superadmin-view');
 const posView = document.getElementById('pos-view');
 
-export function getLocalToday() {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().split('T')[0];
-}
 
-// Toasts
-export function showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    if (type === 'error') toast.style.background = 'var(--danger)';
-    if (type === 'success') toast.style.background = 'var(--success)';
-    
-    toast.innerHTML = `
-        <i class="ph-fill ph-${type === 'success' ? 'check-circle' : type === 'error' ? 'warning-circle' : 'info'}"></i>
-        <span>${message}</span>
-    `;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.animation = 'fadeOut 0.3s ease-out forwards';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
 
-export function showConfirm(message, onConfirm) {
-    document.getElementById('confirm-message').textContent = message;
-    const modal = document.getElementById('modal-confirm');
-    const btnYes = document.getElementById('btn-confirm-yes');
-    
-    const newBtnYes = btnYes.cloneNode(true);
-    btnYes.parentNode.replaceChild(newBtnYes, btnYes);
-    
-    newBtnYes.addEventListener('click', () => {
-        modal.classList.add('hidden');
-        if (onConfirm) onConfirm();
-    });
-    
-    modal.classList.remove('hidden');
-}
-
-// Debounce Utility
-export function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
+// showToast, showConfirm, debounce, escapeHtml, getLocalToday dipindah ke utils.js
 
 // ------------------------------
 // GLOBAL REALTIME SYNC
@@ -162,94 +110,53 @@ const debouncedLoadDeposits = debounce(() => { if (window.loadDepositsForManagem
 const debouncedLoadHistory = debounce(() => { loadHistory(); }, 500);
 
 export function setupGlobalRealtimeSync() {
-    // Remove previous channel if exists
     if (globalSyncChannel) {
         supabase.removeChannel(globalSyncChannel);
         globalSyncChannel = null;
     }
-    
+
     if (!activeOutletId) return;
-    
+
     console.log('[GlobalSync] Setting up realtime for outlet:', activeOutletId);
-    
+
     globalSyncChannel = supabase.channel(`global-sync:${activeOutletId}`);
-    
+
     globalSyncChannel
-        // Products
         .on('postgres_changes',
             { event: '*', schema: 'public', table: 'products', filter: `outlet_id=eq.${activeOutletId}` },
-            (payload) => {
-                console.log('[GlobalSync] Product change:', payload.eventType);
-                debouncedLoadProducts();
-            }
+            (payload) => { console.log('[GlobalSync] Product change:', payload.eventType); debouncedLoadProducts(); }
         )
-        // Product Modifiers
         .on('postgres_changes',
             { event: '*', schema: 'public', table: 'product_modifiers' },
-            (payload) => {
-                console.log('[GlobalSync] Modifier change:', payload.eventType);
-                debouncedLoadProducts();
-            }
+            (payload) => { console.log('[GlobalSync] Modifier change:', payload.eventType); debouncedLoadProducts(); }
         )
-        // Shift Sessions
         .on('postgres_changes',
             { event: '*', schema: 'public', table: 'shift_sessions', filter: `outlet_id=eq.${activeOutletId}` },
-            (payload) => {
-                console.log('[GlobalSync] Shift session change:', payload.eventType);
-                debouncedCheckShift();
-            }
+            (payload) => { console.log('[GlobalSync] Shift session change:', payload.eventType); debouncedCheckShift(); }
         )
-        // Global Discounts
         .on('postgres_changes',
             { event: '*', schema: 'public', table: 'global_discounts', filter: `outlet_id=eq.${activeOutletId}` },
-            (payload) => {
-                console.log('[GlobalSync] Discount change:', payload.eventType);
-                debouncedLoadDiscounts();
-            }
+            (payload) => { console.log('[GlobalSync] Discount change:', payload.eventType); debouncedLoadDiscounts(); }
         )
-        // Inventory Items
         .on('postgres_changes',
             { event: '*', schema: 'public', table: 'inventory_items', filter: `outlet_id=eq.${activeOutletId}` },
-            (payload) => {
-                console.log('[GlobalSync] Inventory change:', payload.eventType);
-                debouncedLoadInventory();
-            }
+            (payload) => { console.log('[GlobalSync] Inventory change:', payload.eventType); debouncedLoadInventory(); }
         )
-        // Operational Costs (Expenses)
         .on('postgres_changes',
             { event: '*', schema: 'public', table: 'operational_costs', filter: `outlet_id=eq.${activeOutletId}` },
-            (payload) => {
-                console.log('[GlobalSync] Expense change:', payload.eventType);
-                debouncedLoadExpenses();
-            }
+            (payload) => { console.log('[GlobalSync] Expense change:', payload.eventType); debouncedLoadExpenses(); }
         )
-        // Sales Deposits
         .on('postgres_changes',
             { event: '*', schema: 'public', table: 'sales_deposits', filter: `outlet_id=eq.${activeOutletId}` },
-            (payload) => {
-                console.log('[GlobalSync] Deposit change:', payload.eventType);
-                debouncedLoadDeposits();
-            }
+            (payload) => { console.log('[GlobalSync] Deposit change:', payload.eventType); debouncedLoadDeposits(); }
         )
-        // Transactions (for history tab)
         .on('postgres_changes',
             { event: '*', schema: 'public', table: 'transactions', filter: `outlet_id=eq.${activeOutletId}` },
-            (payload) => {
-                console.log('[GlobalSync] Transaction change:', payload.eventType);
-                debouncedLoadHistory();
-            }
+            (payload) => { console.log('[GlobalSync] Transaction change:', payload.eventType); debouncedLoadHistory(); }
         )
-        .subscribe((status) => {
-            console.log('[GlobalSync] Channel status:', status);
-        });
+        .subscribe((status) => { console.log('[GlobalSync] Channel status:', status); });
 }
 
-// HTML Escape (XSS Protection)
-export function escapeHtml(str) {
-    if (!str) return '';
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-}
-window.escapeHtml = escapeHtml;
 
 // Global State
 // products state moved to products.js
@@ -427,16 +334,27 @@ async function initPosMultiOutlet(profile) {
             setupGlobalRealtimeSync();
             loadProducts();
             if (window.loadDiscounts) window.loadDiscounts();
-            loadHistory();
-            if(window.loadDashboard) window.loadDashboard();
-            
-            // Reload management data if they are bound
-            if (window.loadInventoryForManagement) window.loadInventoryForManagement();
-            if (window.loadExpensesForManagement) window.loadExpensesForManagement();
-            if (window.loadDepositsForManagement) window.loadDepositsForManagement();
-            if (window.loadShifts) window.loadShifts();
-            if (window.loadAffiliatePostings) window.loadAffiliatePostings();
-            if (window.loadAffiliateSettings) window.loadAffiliateSettings();
+            renderCart();
+
+            // Hanya load data untuk tab yang sedang aktif agar ringan:
+            const currentTab = localStorage.getItem('pos_active_tab') || 'pos-tab-content';
+            if (currentTab === 'history-tab-content') loadHistory();
+            else if (currentTab === 'stock-tab-content') { loadInventory(); loadStockPostings(); }
+            else if (currentTab === 'expenses-tab-content') { loadExpenseMaster(); loadExpenses(); }
+            else if (currentTab === 'deposits-tab-content') loadDeposits();
+            else if (currentTab === 'affiliate-tab-content') { loadAffiliatePostings(); loadAffiliateSettings(); }
+            else if (currentTab === 'dashboard-tab-content' && window.loadDashboard) window.loadDashboard();
+            else if (currentTab === 'attendance-history-tab-content' && window.loadAttendanceHistory) window.loadAttendanceHistory();
+
+            // Reload management data if on management view
+            if (document.getElementById('superadmin-view') && !document.getElementById('superadmin-view').classList.contains('hidden')) {
+                if (window.loadInventoryForManagement) window.loadInventoryForManagement();
+                if (window.loadExpensesForManagement) window.loadExpensesForManagement();
+                if (window.loadDepositsForManagement) window.loadDepositsForManagement();
+                if (window.loadShifts) window.loadShifts();
+                if (window.loadAffiliatePostings) window.loadAffiliatePostings();
+                if (window.loadAffiliateSettings) window.loadAffiliateSettings();
+            }
         };
         
         // Guard: mencegah listener bertumpuk saat re-login tanpa reload
@@ -873,6 +791,17 @@ function setupEventListeners() {
             
             if(targetId === 'history-tab-content') loadHistory();
             if(targetId === 'attendance-history-tab-content') loadAttendanceHistory();
+            if(targetId === 'stock-tab-content') {
+                loadInventory();
+                loadStockPostings();
+            }
+            if(targetId === 'expenses-tab-content') {
+                loadExpenseMaster();
+                loadExpenses();
+            }
+            if(targetId === 'deposits-tab-content') {
+                loadDeposits();
+            }
             if(targetId === 'affiliate-tab-content') {
                 loadAffiliatePostings();
                 loadAffiliateSettings();
@@ -935,7 +864,7 @@ function setupEventListeners() {
         document.getElementById('user-password').setAttribute('required', 'true');
         document.getElementById('user-status').value = 'active';
         document.getElementById('user-branch').innerHTML = branchesList.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-        filterUserOutlets();
+        if (window.filterUserOutlets) window.filterUserOutlets();
         
         // Filter options based on role
         const role = getCurrentProfile()?.role;
@@ -963,7 +892,7 @@ function setupEventListeners() {
         document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
         
         document.getElementById('modal-user').classList.remove('hidden');
-        handleRoleSelectionChange();
+        if (window.handleRoleSelectionChange) window.handleRoleSelectionChange();
     });
 
     document.getElementById('user-branch').addEventListener('change', (e) => {
@@ -972,8 +901,8 @@ function setupEventListeners() {
         document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
     });
 
-    document.getElementById('user-role').addEventListener('change', handleRoleSelectionChange);
-    document.getElementById('user-branch').addEventListener('change', filterUserOutlets);
+    document.getElementById('user-role').addEventListener('change', () => { if(window.handleRoleSelectionChange) window.handleRoleSelectionChange(); });
+    document.getElementById('user-branch').addEventListener('change', () => { if(window.filterUserOutlets) window.filterUserOutlets(); });
 
     document.getElementById('form-branch').addEventListener('submit', handleAddBranch);
     document.getElementById('form-outlet').addEventListener('submit', handleAddOutlet);
@@ -1002,16 +931,7 @@ function setupEventListeners() {
         }
     });
 
-    document.getElementById('btn-add-product').addEventListener('click', () => {
-        if (!activeOutletId) { showToast('Pilih outlet dulu', 'error'); return; }
-        document.getElementById('form-product').reset();
-        document.getElementById('product-id').value = '';
-        document.getElementById('product-image').value = '';
-        document.getElementById('product-image-preview-container').classList.add('hidden');
-        document.getElementById('product-image-preview').src = '';
-        document.getElementById('product-modal-title').textContent = 'Tambah Produk';
-        document.getElementById('modal-product').classList.remove('hidden');
-    });
+    document.getElementById('btn-add-product').addEventListener('click', openProductModal);
 
     document.getElementById('form-product').addEventListener('submit', handleSaveProduct);
     document.getElementById('product-search').addEventListener('input', debounce((e) => renderProducts(e.target.value), 300));
@@ -1042,53 +962,6 @@ function setupEventListeners() {
     document.getElementById('analytics-period-filter')?.addEventListener('change', () => { if(window.loadAnalytics) window.loadAnalytics() });
 }
 
-function filterUserOutlets() {
-    const branchId = document.getElementById('user-branch').value;
-    const myRole = getCurrentProfile()?.role;
-    let filteredOutlets = outletsList;
-
-    if (myRole === 'kepala_cabang') {
-        filteredOutlets = outletsList.filter(o => o.branch_id === getCurrentProfile().branch_id);
-    } else if (branchId) {
-        filteredOutlets = outletsList.filter(o => o.branch_id === branchId);
-    }
-
-    document.getElementById('user-outlet').innerHTML = filteredOutlets.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
-}
-
-function handleRoleSelectionChange() {
-    const role = document.getElementById('user-role').value;
-    const branchGroup = document.getElementById('group-user-branch');
-    const outletGroup = document.getElementById('group-user-outlet');
-    const shiftGroup = document.getElementById('group-user-shift');
-    const myRole = getCurrentProfile()?.role;
-    
-    if (role === 'owner' || role === 'superadmin') {
-        branchGroup.classList.add('hidden');
-        outletGroup.classList.add('hidden');
-        if(shiftGroup) shiftGroup.classList.add('hidden');
-    } else if (role === 'kepala_cabang') {
-        if(myRole === 'superadmin' || myRole === 'owner') branchGroup.classList.remove('hidden');
-        else branchGroup.classList.add('hidden');
-        outletGroup.classList.add('hidden');
-        if(shiftGroup) shiftGroup.classList.add('hidden');
-    } else {
-        if(myRole === 'superadmin' || myRole === 'owner') branchGroup.classList.remove('hidden');
-        else branchGroup.classList.add('hidden');
-        if(myRole === 'kepala_toko') outletGroup.classList.add('hidden'); // Kepala toko can't change outlet
-        else outletGroup.classList.remove('hidden');
-        
-        // Populate shift will handle showing shiftGroup if there are shifts available
-        if(window.populateShiftOptions) window.populateShiftOptions(document.getElementById('user-outlet').value);
-    }
-
-    filterUserOutlets();
-}
-
-// ------------------------------
-// Management Logic moved to management.js
-
-
 // ------------------------------
 // POS / ADMIN LOGIC
 // ------------------------------
@@ -1107,21 +980,11 @@ async function initPos() {
 
     generateOrderId(false);
     if (activeOutletId) {
-        await loadProducts();
+        loadProducts();
         if (window.loadDiscounts) window.loadDiscounts();
         renderCart();
-        loadInventory();
-        loadStockPostings();
-        loadExpenseMaster();
-        loadExpenses();
-        loadDeposits();
-        const prof = getCurrentProfile();
-        if (prof && prof.role === 'superadmin') {
-            loadAffiliatePostings();
-            loadAffiliateSettings();
-        }
     }
-    // Restore active tab
+    // Restore active tab (click akan memuat data modul terkait jika diperlukan)
     const savedTab = localStorage.getItem('pos_active_tab') || 'pos-tab-content';
     const btn = document.querySelector(`.pos-nav-btn[data-target="${savedTab}"]`);
     if(btn) btn.click();
@@ -1160,91 +1023,6 @@ async function initPos() {
             }
         });
     }
-}
-
-export function generateOrderId(resetCart = true) {
-    const id = 'ORD-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    const orderIdEl = document.getElementById('current-order-id');
-    if(orderIdEl) orderIdEl.textContent = id;
-    
-    if (resetCart) {
-        emptyCart();
-        const cashEl = document.getElementById('cash-received');
-        if(cashEl) cashEl.value = '';
-    }
-}
-
-export function generateRandomDocNumber(prefix) {
-    return prefix + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-}
-
-// Attendance logic moved to attendance.js
-
-// Products logic moved to products.js
-
-// Cart logic moved to cart.js
-
-
-
-// History logic moved to history.js
-
-
-
-// Table Sorting Logic
-window.enableTableSort = enableTableSort;
-export function enableTableSort(tableId) {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-
-    const headers = table.querySelectorAll('th');
-    
-    headers.forEach((header, index) => {
-        // Skip sort for action column
-        if (header.classList.contains('action-col')) return;
-
-        header.style.cursor = 'pointer';
-        header.title = "Klik untuk mengurutkan";
-        
-        let sortAsc = true;
-        
-        header.addEventListener('click', () => {
-            const tbody = table.querySelector('tbody');
-            if (!tbody) return;
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            
-            // Remove sort icons from other headers
-            headers.forEach(h => {
-                const icon = h.querySelector('.sort-icon');
-                if (icon) icon.remove();
-            });
-
-            // Add sort icon to current header
-            const icon = document.createElement('i');
-            icon.className = `sort-icon ph ph-caret-${sortAsc ? 'up' : 'down'}`;
-            icon.style.marginLeft = '5px';
-            header.appendChild(icon);
-
-            rows.sort((a, b) => {
-                const cellA = a.querySelectorAll('td')[index]?.textContent.trim() || '';
-                const cellB = b.querySelectorAll('td')[index]?.textContent.trim() || '';
-
-                // Check if numeric
-                const numA = parseFloat(cellA.replace(/[^0-9.-]+/g,""));
-                const numB = parseFloat(cellB.replace(/[^0-9.-]+/g,""));
-
-                if (!isNaN(numA) && !isNaN(numB) && cellA.match(/[0-9]/) && cellB.match(/[0-9]/)) {
-                    return sortAsc ? numA - numB : numB - numA;
-                }
-
-                return sortAsc ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
-            });
-
-            tbody.innerHTML = '';
-            rows.forEach(row => tbody.appendChild(row));
-            
-            sortAsc = !sortAsc;
-        });
-    });
 }
 
 // Start App
@@ -1808,20 +1586,7 @@ window.sendCustomNotification = async function(e) {
     btn.disabled = false;
 };
 
-async function loadTargetUsers() {
-    const select = document.getElementById('announcement-target');
-    if (!select) return;
-    
-    const { data: users, error } = await supabase.from('profiles').select('id, name, email').neq('role', 'superadmin');
-    if (users && !error) {
-        select.innerHTML = '<option value="all">Semua Kasir</option>';
-        users.forEach(u => {
-            const name = u.name || u.email;
-            select.innerHTML += `<option value="${u.id}">${name}</option>`;
-        });
-    }
-}
-window.loadTargetUsers = loadTargetUsers;
+// loadTargetUsers dipindah ke users.js
 
 // Start listening when file loads
 setupGlobalRefreshListener();

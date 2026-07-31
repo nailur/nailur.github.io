@@ -12,7 +12,7 @@
 
 import { supabase } from './supabase.js';
 import { getActiveOutletId } from './state.js';
-import { showToast, getLocalToday, generateRandomDocNumber, escapeHtml } from './app.js';
+import { showToast, getLocalToday, generateRandomDocNumber, escapeHtml } from './utils.js';
 import { getCurrentProfile } from './auth.js';
 
 // State internal
@@ -23,6 +23,7 @@ let affiliateProductsMaster = [];
 let affiliatePostingsList = [];
 let unclaimedTransactionsList = [];
 let selectedTransactionIds = new Set();
+let editingAffiliatePostingId = null;
 let currentUnclaimedPage = 1;
 const UNCLAIMED_PAGE_SIZE = 15;
 
@@ -666,6 +667,9 @@ export function renderAffiliatePostings() {
                         <button class="btn btn-icon btn-success" onclick="window.openPayAffiliateModal('${post.id}')" title="Bayar Komisi">
                             <i class="ph ph-money"></i>
                         </button>
+                        <button class="btn btn-icon btn-secondary" onclick="window.editAffiliatePosting('${post.id}')" title="Edit Posting">
+                            <i class="ph ph-pencil-simple"></i>
+                        </button>
                     ` : ''}
                     <button class="btn btn-icon btn-secondary" onclick="window.viewAffiliateDetails('${post.id}')" title="Lihat Detail">
                         <i class="ph ph-eye"></i>
@@ -690,37 +694,63 @@ export function renderAffiliatePostings() {
 /**
  * Membuka modal Add Affiliate Posting & memuat transaksi yang belum diklaim
  */
-export async function openCreateAffiliateModal() {
+export async function openCreateAffiliateModal(editPostingId = null) {
     if (!canAccessAffiliate()) {
         showToast('Anda tidak memiliki hak akses untuk membuat Posting Affiliate', 'error');
+        return;
+    }
+    if (editPostingId && !isSuperAdmin()) {
+        showToast('Hanya superadmin yang dapat mengedit Posting Affiliate', 'error');
         return;
     }
     const outletId = getActiveOutletId();
     if (!outletId) return;
 
     selectedTransactionIds.clear();
+    editingAffiliatePostingId = editPostingId || null;
 
     const modal = document.getElementById('modal-create-affiliate-posting');
     if (!modal) return;
 
     const btnSubmit = document.getElementById('btn-submit-create-affiliate');
-    if (btnSubmit) btnSubmit.style.display = isSuperAdmin() ? 'inline-block' : 'none';
+    if (btnSubmit) {
+        btnSubmit.style.display = isSuperAdmin() ? 'inline-block' : 'none';
+        btnSubmit.textContent = editingAffiliatePostingId ? 'Simpan Perubahan' : 'Simpan Posting';
+    }
 
-    // Reset form
-    document.getElementById('affiliate-posting-affiliator').value = '';
-    document.getElementById('affiliate-posting-notes').value = '';
+    const editPost = editingAffiliatePostingId ? affiliatePostingsList.find(p => p.id === editingAffiliatePostingId) : null;
+    const titleEl = modal.querySelector('h3');
+    if (titleEl) {
+        titleEl.innerHTML = editPost 
+            ? `<i class="ph ph-pencil-simple"></i> Edit Posting Affiliate (${escapeHtml(editPost.document_number)})`
+            : `<i class="ph ph-plus-circle"></i> Catat Klaim Affiliate Baru`;
+    }
+
+    // Reset / Set form
+    document.getElementById('affiliate-posting-affiliator').value = editPost ? (editPost.affiliator_name || '') : '';
+    document.getElementById('affiliate-posting-notes').value = editPost ? (editPost.notes || '') : '';
     document.getElementById('affiliate-calculation-preview').innerHTML = '<tr><td colspan="4" style="text-align:center;">Pilih minimal 1 transaksi penjualan untuk menghitung komisi</td></tr>';
     document.getElementById('affiliate-posting-total-display').textContent = 'Rp 0';
 
     modal.classList.remove('hidden');
 
-    // 1. Ambil ID transaksi yang sudah diklaim (limit agar hemat usage DB)
+    // 1. Ambil ID transaksi yang sudah diklaim
     const { data: claimedData, error: claimedError } = await supabase
         .from('affiliate_posting_transactions')
-        .select('transaction_id')
+        .select('transaction_id, posting_id')
         .limit(2000);
 
-    const claimedIds = new Set((claimedData || []).map(row => row.transaction_id));
+    const claimedIdsByOthers = new Set();
+    const myTrxIds = new Set();
+    (claimedData || []).forEach(row => {
+        if (editingAffiliatePostingId && String(row.posting_id) === String(editingAffiliatePostingId)) {
+            myTrxIds.add(row.transaction_id);
+        } else {
+            claimedIdsByOthers.add(row.transaction_id);
+        }
+    });
+
+    myTrxIds.forEach(id => selectedTransactionIds.add(id));
 
     // 2. Ambil transaksi yang sudah selesai (completed) pada outlet aktif & pastikan BUKAN transaksi void/cancel
     const { data: trxs, error: trxError } = await supabase
@@ -739,9 +769,9 @@ export async function openCreateAffiliateModal() {
         return;
     }
 
-    // Filter ganda di JavaScript: pastikan transaksi belum diklaim & benar-benar bukan transaksi yang di-cancel/void
+    // Filter ganda di JavaScript: pastikan transaksi belum diklaim orang lain & bukan void/cancel
     unclaimedTransactionsList = (trxs || []).filter(t => {
-        if (claimedIds.has(t.id)) return false;
+        if (claimedIdsByOthers.has(t.id)) return false;
         const st = String(t.status || '').toLowerCase();
         if (st === 'voided' || st === 'void' || st === 'cancelled' || st === 'cancel' || st === 'batal') {
             return false;
@@ -749,8 +779,27 @@ export async function openCreateAffiliateModal() {
         return true;
     });
 
+    // Pastikan transaksi yang sudah ter-check pada mode edit ada dalam daftar
+    if (myTrxIds.size > 0) {
+        const existingIds = new Set(unclaimedTransactionsList.map(t => t.id));
+        const missingIds = Array.from(myTrxIds).filter(id => !existingIds.has(id));
+        if (missingIds.length > 0) {
+            const { data: missingTrxs } = await supabase
+                .from('transactions')
+                .select('id, receipt_no, created_at, customer_name, total_amount, status')
+                .in('id', missingIds);
+            if (missingTrxs && missingTrxs.length > 0) {
+                unclaimedTransactionsList.unshift(...missingTrxs);
+            }
+        }
+    }
+
     currentUnclaimedPage = 1;
     renderUnclaimedTransactionsTable();
+
+    if (editingAffiliatePostingId && selectedTransactionIds.size > 0) {
+        await window.onSelectAffiliateTransactions(null, true);
+    }
 }
 
 /**
@@ -832,20 +881,22 @@ function updateSelectedCountDisplay() {
 /**
  * Pemicu dari checkbox transaksi: mengaktifkan kalkulasi komisi otomatis lintas halaman
  */
-window.onSelectAffiliateTransactions = async function(changedCheckbox) {
-    if (changedCheckbox && changedCheckbox instanceof HTMLInputElement) {
-        if (changedCheckbox.checked) {
-            selectedTransactionIds.add(changedCheckbox.value);
-        } else {
-            selectedTransactionIds.delete(changedCheckbox.value);
+window.onSelectAffiliateTransactions = async function(changedCheckbox, skipCheckboxSync = false) {
+    if (!skipCheckboxSync) {
+        if (changedCheckbox && changedCheckbox instanceof HTMLInputElement) {
+            if (changedCheckbox.checked) {
+                selectedTransactionIds.add(changedCheckbox.value);
+            } else {
+                selectedTransactionIds.delete(changedCheckbox.value);
+            }
+        } else if (changedCheckbox !== null) {
+            // Fallback jika dipanggil tanpa param (check semua yang tampil di halaman ini)
+            const checkboxes = document.querySelectorAll('.affiliate-trx-checkbox');
+            checkboxes.forEach(cb => {
+                if (cb.checked) selectedTransactionIds.add(cb.value);
+                else selectedTransactionIds.delete(cb.value);
+            });
         }
-    } else {
-        // Fallback jika dipanggil tanpa param (check semua yang tampil di halaman ini)
-        const checkboxes = document.querySelectorAll('.affiliate-trx-checkbox');
-        checkboxes.forEach(cb => {
-            if (cb.checked) selectedTransactionIds.add(cb.value);
-            else selectedTransactionIds.delete(cb.value);
-        });
     }
 
     updateSelectedCountDisplay();
@@ -1039,38 +1090,67 @@ export async function handleSaveAffiliatePosting(event) {
     const btnSubmit = document.getElementById('btn-submit-create-affiliate');
     if (btnSubmit) btnSubmit.disabled = true;
 
-    // 1. Generate nomor dokumen (contoh: AFF-20260730-1234)
-    const todayStr = getLocalToday().replace(/-/g, '');
-    const randNum = Math.floor(1000 + Math.random() * 9000);
-    const documentNo = `AFF-${todayStr}-${randNum}`;
-    const profile = getCurrentProfile();
+    let postingId = null;
 
-    // 2. Insert ke affiliate_postings
-    const postingPayload = {
-        outlet_id: outletId,
-        document_number: documentNo,
-        affiliator_name: affiliatorName,
-        posting_date: getLocalToday(),
-        total_amount: grandTotal,
-        status: 'Unpaid',
-        notes: notes,
-        created_by: profile ? profile.id : null
-    };
+    if (editingAffiliatePostingId) {
+        postingId = editingAffiliatePostingId;
+        const updatePayload = {
+            affiliator_name: affiliatorName,
+            total_amount: grandTotal,
+            notes: notes
+        };
 
-    const { data: postData, error: postErr } = await supabase
-        .from('affiliate_postings')
-        .insert([postingPayload])
-        .select()
-        .single();
+        const { error: upErr } = await supabase
+            .from('affiliate_postings')
+            .update(updatePayload)
+            .eq('id', postingId);
 
-    if (postErr || !postData) {
-        console.error('Error insert affiliate posting:', postErr);
-        showToast('Gagal membuat Posting Affiliate', 'error');
-        if (btnSubmit) btnSubmit.disabled = false;
-        return;
+        if (upErr) {
+            console.error('Error update affiliate posting:', upErr);
+            showToast('Gagal memperbarui Posting Affiliate: ' + upErr.message, 'error');
+            if (btnSubmit) btnSubmit.disabled = false;
+            return;
+        }
+
+        // Hapus item kuno & transaksi kuno sebelum insert baru
+        await Promise.all([
+            supabase.from('affiliate_posting_items').delete().eq('posting_id', postingId),
+            supabase.from('affiliate_posting_transactions').delete().eq('posting_id', postingId)
+        ]);
+    } else {
+        // 1. Generate nomor dokumen (contoh: AFF-20260730-1234)
+        const todayStr = getLocalToday().replace(/-/g, '');
+        const randNum = Math.floor(1000 + Math.random() * 9000);
+        const documentNo = `AFF-${todayStr}-${randNum}`;
+        const profile = getCurrentProfile();
+
+        // 2. Insert ke affiliate_postings
+        const postingPayload = {
+            outlet_id: outletId,
+            document_number: documentNo,
+            affiliator_name: affiliatorName,
+            posting_date: getLocalToday(),
+            total_amount: grandTotal,
+            status: 'Unpaid',
+            notes: notes,
+            created_by: profile ? profile.id : null
+        };
+
+        const { data: postData, error: postErr } = await supabase
+            .from('affiliate_postings')
+            .insert([postingPayload])
+            .select()
+            .single();
+
+        if (postErr || !postData) {
+            console.error('Error insert affiliate posting:', postErr);
+            showToast('Gagal membuat Posting Affiliate', 'error');
+            if (btnSubmit) btnSubmit.disabled = false;
+            return;
+        }
+
+        postingId = postData.id;
     }
-
-    const postingId = postData.id;
 
     // 3. Insert ke affiliate_posting_items
     const itemsPayload = calculatedItems.map(item => ({
@@ -1104,8 +1184,9 @@ export async function handleSaveAffiliatePosting(event) {
     }
 
     if (btnSubmit) btnSubmit.disabled = false;
-    showToast('Posting Affiliate berhasil dibuat', 'success');
+    showToast(editingAffiliatePostingId ? 'Posting Affiliate berhasil diperbarui' : 'Posting Affiliate berhasil dibuat', 'success');
     document.getElementById('modal-create-affiliate-posting')?.classList.add('hidden');
+    editingAffiliatePostingId = null;
 
     loadAffiliatePostings();
 }
@@ -1321,7 +1402,40 @@ window.viewAffiliateDetails = async function(postingId) {
         }
     }
 
+    const btnEditDetail = document.getElementById('btn-edit-detail-affiliate');
+    if (btnEditDetail) {
+        if (post.status === 'Unpaid' && isSuperAdmin()) {
+            btnEditDetail.style.display = 'inline-block';
+            btnEditDetail.onclick = () => {
+                modal.classList.add('hidden');
+                window.editAffiliatePosting(postingId);
+            };
+        } else {
+            btnEditDetail.style.display = 'none';
+        }
+    }
+
     modal.classList.remove('hidden');
+};
+
+/**
+ * Membuka modal edit untuk postingan berstatus Unpaid (Khusus Superadmin)
+ */
+window.editAffiliatePosting = async function(postingId) {
+    if (!isSuperAdmin()) {
+        showToast('Hanya superadmin yang dapat mengedit Posting Affiliate', 'error');
+        return;
+    }
+    const post = affiliatePostingsList.find(p => p.id === postingId);
+    if (!post) {
+        showToast('Data posting tidak ditemukan', 'error');
+        return;
+    }
+    if (post.status === 'Paid') {
+        showToast('Posting dengan status Paid tidak dapat diedit', 'warning');
+        return;
+    }
+    await openCreateAffiliateModal(postingId);
 };
 
 /**

@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { activeOutletId } from './state.js';
-import { showToast } from './app.js';
+import { showToast } from './utils.js';
 import { getCurrentProfile } from './auth.js';
 import { handleClockIn, handleClockOut, currentAttendanceRecord } from './attendance.js';
 

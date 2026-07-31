@@ -43,7 +43,7 @@ Peta file penting untuk membantu pemahaman arsitektur secara instan:
     ├── index.html             # Antarmuka (UI) utama aplikasi
     ├── manifest.json          # Konfigurasi PWA (Icon & Display)
     ├── sw.js                  # Service Worker untuk caching PWA
-    ├── 📁 docs/                 # Dokumentasi (PRD, ERD, TechStack, Changelog)
+    ├── 📁 docs/                 # Dokumentasi (PRD, ERD, TechStack, Changelog, DOM_Modal_Map, Business_Rules_Formulas, RPC_Functions)
     └── 📁 res/                  # Aset statis
         ├── 📁 css/main.min.css  # Desain dan Styling
         └── 📁 js/main.js        # Logika utama aplikasi (API Fetch, Auth, DOM)

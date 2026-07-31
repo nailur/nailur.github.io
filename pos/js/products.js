@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { showToast, escapeHtml } from './app.js';
+import { showToast, escapeHtml } from './utils.js';
 import { activeOutletId } from './state.js';
 import { getOfflineProducts, saveOfflineProducts } from './offline.js';
 import { getCurrentProfile } from './auth.js';
@@ -264,3 +264,16 @@ export function showAllProducts() {
     productShowAll = true;
     renderProducts();
 }
+
+// Open add product modal (called from btn-add-product in app.js / window)
+export function openProductModal() {
+    if (!activeOutletId) { showToast('Pilih outlet dulu', 'error'); return; }
+    document.getElementById('form-product').reset();
+    document.getElementById('product-id').value = '';
+    document.getElementById('product-image').value = '';
+    document.getElementById('product-image-preview-container').classList.add('hidden');
+    document.getElementById('product-image-preview').src = '';
+    document.getElementById('product-modal-title').textContent = 'Tambah Produk';
+    document.getElementById('modal-product').classList.remove('hidden');
+}
+window.openProductModal = openProductModal;

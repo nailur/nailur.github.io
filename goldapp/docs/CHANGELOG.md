@@ -5,6 +5,13 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 ## [Unreleased]
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
+### 2026-07-31
+- **Documentation (Token-Saving Reference Guides)**:
+  - Menambahkan dokumen `docs/DOM_Modal_Map.md` yang memetakan ID Modal, form, dan fungsi JS untuk menghemat token pencarian AI.
+  - Menambahkan dokumen `docs/Business_Rules_Formulas.md` yang merangkum rumus perhitungan portofolio dan aturan bisnis.
+  - Menambahkan dokumen `docs/RPC_Functions.md` sebagai referensi fungsi database dan aturan RLS.
+  - Memperbarui `docs/TechStack.md` untuk mendaftarkan dokumen-dokumen baru ini.
+
 ### 2026-07-22
 - **Documentation**: Membuat inisialisasi dokumen arsitektur proyek (PRD, Database ERD, Tech Stack).
 - **Setup**: Mengkonfigurasi folder `docs/` untuk menyimpan riwayat pekerjaan, environment variables map, dan file Changelog ini.

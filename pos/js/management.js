@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { showToast, escapeHtml } from './app.js';
+import { showToast, escapeHtml } from './utils.js';
 import {
     branchesList, outletsList,
     setBranchesList, setOutletsList

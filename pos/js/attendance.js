@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { getCurrentProfile } from './auth.js';
-import { getLocalToday, showToast, escapeHtml } from './app.js';
+import { getLocalToday, showToast, escapeHtml } from './utils.js';
 import { activeOutletId } from './state.js';
 import { loadShiftSessions } from './shift-sessions.js';
 

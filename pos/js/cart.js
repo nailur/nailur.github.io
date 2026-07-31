@@ -1,11 +1,12 @@
 import { supabase } from './supabase.js';
-import { showToast, escapeHtml, generateOrderId } from './app.js';
+import { showToast, escapeHtml, generateOrderId } from './utils.js';
 import { activeOutletId, posOutletsList, getActiveOutletId, getPosOutletsList } from './state.js';
 import { products, loadProducts } from './products.js';
 import { saveOfflineTransaction } from './offline.js';
 import { getCurrentProfile } from './auth.js';
 import { printReceiptNative } from './printer.js';
 import { showModifierSelection } from './modifiers.js';
+import { getActiveDiscount } from './discounts.js';
 
 export let cart = [];
 try {

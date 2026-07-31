@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { getActiveOutletId } from './state.js';
-import { showToast, escapeHtml } from './app.js';
+import { showToast, escapeHtml } from './utils.js';
 
 let shiftsList = [];
 

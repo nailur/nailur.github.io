@@ -1182,6 +1182,9 @@
                             <tbody></tbody>
                         </table>
                     </div>
+                    <div id="stock-in-load-more-container" style="text-align: center; margin-top: 15px; display: none;">
+                        <button class="btn btn-secondary" onclick="window.loadMoreStockPostings()"><i class="ph ph-arrow-counter-clockwise"></i> Muat Lebih Banyak</button>
+                    </div>
                 </div>
 
                 <div id="subtab-stock-out" class="subtab-pane hidden">
@@ -1206,6 +1209,9 @@
                             </thead>
                             <tbody></tbody>
                         </table>
+                    </div>
+                    <div id="stock-out-load-more-container" style="text-align: center; margin-top: 15px; display: none;">
+                        <button class="btn btn-secondary" onclick="window.loadMoreStockPostings()"><i class="ph ph-arrow-counter-clockwise"></i> Muat Lebih Banyak</button>
                     </div>
                 </div>
             </div>
@@ -2630,6 +2636,7 @@
                 <button class="btn-close" data-close="modal-create-affiliate-posting"><i class="ph ph-x"></i></button>
             </div>
             <form id="form-create-affiliate-posting">
+                <input type="hidden" id="affiliate-posting-edit-id" value="">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                     <div class="input-group">
                         <label for="affiliate-posting-affiliator">Nama Afiliator *</label>
@@ -2796,7 +2803,10 @@
                     <tbody id="detail-affiliate-trx-tbody"></tbody>
                 </table>
             </div>
-            <div style="display:flex; justify-content: flex-end; margin-top: 15px;">
+            <div style="display:flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+                <button type="button" class="btn btn-secondary" id="btn-edit-detail-affiliate" style="display:none;">
+                    <i class="ph ph-pencil-simple"></i> Edit Posting
+                </button>
                 <button type="button" class="btn btn-primary" data-close="modal-detail-affiliate">Tutup</button>
             </div>
         </div>

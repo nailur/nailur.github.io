@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { getActiveOutletId } from './state.js';
-import { showToast, escapeHtml } from './app.js';
+import { showToast, escapeHtml } from './utils.js';
 
 let inventoryList = [];
 
@@ -147,9 +147,19 @@ window.editInventory = openInventoryModal;
 window.deleteInventory = deleteInventory;
 
 let postingsList = { in: [], out: [] };
+const STOCK_POSTINGS_PAGE_SIZE = 50;
+let stockPostingsPage = 0;
+let hasMoreStockPostings = true;
 
-export async function loadStockPostings() {
+export async function loadStockPostings(append = false) {
     if (!getActiveOutletId()) return;
+    
+    if (!append) {
+        stockPostingsPage = 0;
+        hasMoreStockPostings = true;
+    }
+
+    if (!hasMoreStockPostings) return;
     
     const { data, error } = await supabase
         .from('inventory_postings')
@@ -159,19 +169,34 @@ export async function loadStockPostings() {
         `)
         .eq('outlet_id', getActiveOutletId())
         .order('posting_date', { ascending: false })
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(stockPostingsPage * STOCK_POSTINGS_PAGE_SIZE, (stockPostingsPage + 1) * STOCK_POSTINGS_PAGE_SIZE - 1);
         
     if (error) {
         console.error('Error loading postings:', error);
         return;
     }
     
-    postingsList.in = data.filter(p => p.type === 'in') || [];
-    postingsList.out = data.filter(p => p.type === 'out') || [];
-    
+    if (data.length < STOCK_POSTINGS_PAGE_SIZE) {
+        hasMoreStockPostings = false;
+    }
+
+    if (append) {
+        postingsList.in = [...postingsList.in, ...((data || []).filter(p => p.type === 'in'))];
+        postingsList.out = [...postingsList.out, ...((data || []).filter(p => p.type === 'out'))];
+    } else {
+        postingsList.in = (data || []).filter(p => p.type === 'in');
+        postingsList.out = (data || []).filter(p => p.type === 'out');
+    }
+
+    stockPostingsPage++;
     renderStockPostings('in');
     renderStockPostings('out');
 }
+
+window.loadMoreStockPostings = function() {
+    loadStockPostings(true);
+};
 
 function renderStockPostings(type) {
     const tbody = document.getElementById(`stock-${type}-table`)?.querySelector('tbody');
@@ -181,6 +206,8 @@ function renderStockPostings(type) {
     
     if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem;">Belum ada data posting ${type === 'in' ? 'penambahan' : 'pemakaian'}</td></tr>`;
+        const loadMoreBtn = document.getElementById(`stock-${type}-load-more-container`);
+        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
         return;
     }
     
@@ -195,6 +222,11 @@ function renderStockPostings(type) {
             </td>
         </tr>
     `).join('');
+    
+    const loadMoreBtn = document.getElementById(`stock-${type}-load-more-container`);
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = hasMoreStockPostings ? 'block' : 'none';
+    }
 }
 
 window.openStockPostingModal = function(type) {
