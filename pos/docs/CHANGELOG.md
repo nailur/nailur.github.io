@@ -6,6 +6,12 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
 ### 2026-07-31
+- **Include Stock Addition Costs in Dashboard Expenses (`js/dashboard.js`, `sw.js`)**:
+  - Updated `loadDashboard()` in `pos/js/dashboard.js` to fetch stock addition postings (`inventory_postings` with `type = 'in'`) and accumulate item prices (`TOTAL BIAYA PENAMBAHAN`) into `expensesByDate` alongside `operational_costs`.
+  - Maintained separate `cashExpensesByDate` (`operational_costs` only) for cashier Net Revenue Cash calculations so deposit comparison (`selisihData`) remains unaffected by backend stock purchasing.
+  - Updated Net Profit card label (`#net-profit-card`) and Excel Export (`Sheet 1`) column headers to `"Pengeluaran (Operasional & Stok)"` for transparent financial reporting.
+  - Bumped `CACHE_NAME` in `sw.js` to `pos-cache-v76`.
+
 - **English Documentation Mandate & Translation (`.agents/AGENTS.md`, `docs/Business_Rules_Formulas.md`)**:
   - Expanded **Rule 8** in `.agents/AGENTS.md` to require all project documentation (`.md` files in `docs/` such as architecture, tech stack, business rules, changelogs, etc.) to be written in English to optimize tokenizer token efficiency.
   - Translated [`pos/docs/Business_Rules_Formulas.md`](file:///c:/Users/nailur/Documents/Apps/nailur.github.io/pos/docs/Business_Rules_Formulas.md) to English as the standard reference document.

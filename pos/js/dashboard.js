@@ -269,6 +269,7 @@ window.loadDashboard = async function() {
         .lte('cost_date', endDate.value);
         
     const expensesByDate = {};
+    const cashExpensesByDate = {};
     const allDatesSet = new Set(dailyData.map(d => d.date));
     let totalExpenseAmt = 0;
     
@@ -277,8 +278,37 @@ window.loadDashboard = async function() {
             allDatesSet.add(c.cost_date);
             const amt = Number(c.total_amount) || 0;
             expensesByDate[c.cost_date] = (expensesByDate[c.cost_date] || 0) + amt;
+            cashExpensesByDate[c.cost_date] = (cashExpensesByDate[c.cost_date] || 0) + amt;
             totalExpenseAmt += amt;
         });
+    }
+
+    // Include stock addition costs (biaya penambahan stok - inventory_postings type = 'in') as expenses
+    try {
+        const { data: stockInPostings, error: stockInErr } = await supabase
+            .from('inventory_postings')
+            .select(`
+                id,
+                posting_date,
+                inventory_posting_items (price)
+            `)
+            .eq('outlet_id', activeOutletId)
+            .eq('type', 'in')
+            .gte('posting_date', startDate.value)
+            .lte('posting_date', endDate.value);
+
+        if (!stockInErr && stockInPostings) {
+            stockInPostings.forEach(p => {
+                const itemsCost = (p.inventory_posting_items || []).reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+                if (itemsCost > 0) {
+                    allDatesSet.add(p.posting_date);
+                    expensesByDate[p.posting_date] = (expensesByDate[p.posting_date] || 0) + itemsCost;
+                    totalExpenseAmt += itemsCost;
+                }
+            });
+        }
+    } catch (e) {
+        console.warn('Could not load stock posting costs for dashboard:', e);
     }
 
     const dashExpenseEl = document.getElementById('dash-total-expense');
@@ -419,10 +449,10 @@ window.loadDashboard = async function() {
         return Math.round(rev - fees - expense);
     });
 
-    // Net Revenue Cash = Cash Revenue - Expenses (per day)
+    // Net Revenue Cash = Cash Revenue - Operational Cash Expenses (per day)
     const netCashRevenueData = compDates.map(d => {
         const cash = salesByDate[d] ? salesByDate[d].cash : 0;
-        const expense = expensesByDate[d] || 0;
+        const expense = cashExpensesByDate[d] || 0;
         return Math.round(cash - expense);
     });
 
@@ -670,7 +700,7 @@ window.loadDashboard = async function() {
                     <span style="font-weight: 600; color: var(--danger);">- Rp ${totalFeesMDR.toLocaleString('id-ID')}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
-                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Operasional</span>
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran (Operasional & Stok)</span>
                     <span style="font-weight: 600; color: var(--danger);">- Rp ${totalOperationalExpenses.toLocaleString('id-ID')}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 10px 12px; border-radius: 6px; margin-top: 4px;">
@@ -827,7 +857,7 @@ window.exportDashboardExcel = async function() {
         sheet1Rows.push({
             "Tanggal": d,
             "Pendapatan Kotor (Rp)": gross,
-            "Pengeluaran Operasional (Rp)": exp,
+            "Pengeluaran (Operasional & Stok) (Rp)": exp,
             "Net (Pendapatan - Pengeluaran) (Rp)": net
         });
     });
@@ -835,7 +865,7 @@ window.exportDashboardExcel = async function() {
     sheet1Rows.push({
         "Tanggal": "TOTAL",
         "Pendapatan Kotor (Rp)": totalGross,
-        "Pengeluaran Operasional (Rp)": totalExp,
+        "Pengeluaran (Operasional & Stok) (Rp)": totalExp,
         "Net (Pendapatan - Pengeluaran) (Rp)": totalNet
     });
 
