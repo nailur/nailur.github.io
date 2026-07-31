@@ -1251,6 +1251,7 @@
                                     <th>No. Dokumen</th>
                                     <th>Tgl Biaya</th>
                                     <th>Total (Rp)</th>
+                                    <th>Metode</th>
                                     <th>Keterangan</th>
                                     <th>Kasir</th>
                                     <th class="action-col">Aksi</th>
@@ -2058,10 +2059,19 @@
                         </table>
                     </div>
 
-                    <div class="input-group">
-                        <label>Total Keseluruhan (Rp)</label>
-                        <input type="number" id="expense-total" class="input" readonly
-                            style="background-color: var(--bg-tertiary); font-weight: bold; font-size: 1.1rem; color: var(--primary);">
+                    <div style="display: flex; gap: 15px;">
+                        <div class="input-group" style="flex: 1;">
+                            <label>Total Keseluruhan (Rp)</label>
+                            <input type="number" id="expense-total" class="input" readonly
+                                style="background-color: var(--bg-tertiary); font-weight: bold; font-size: 1.1rem; color: var(--primary);">
+                        </div>
+                        <div class="input-group" style="flex: 1;">
+                            <label>Metode Pembayaran</label>
+                            <select id="expense-payment-method" class="input">
+                                <option value="Tunai">Tunai</option>
+                                <option value="Non-Tunai">Non-Tunai</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="input-group">
                         <label>Keterangan Tambahan</label>

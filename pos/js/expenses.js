@@ -79,11 +79,17 @@ export function renderExpenses() {
     const canEdit = ['superadmin', 'owner', 'kepala_cabang', 'kepala_toko'].includes(role);
     const canDelete = ['superadmin', 'owner', 'kepala_cabang'].includes(role);
     
-    tbody.innerHTML = expensesList.map(exp => `
+    tbody.innerHTML = expensesList.map(exp => {
+        const method = exp.payment_method || 'Tunai';
+        const methodBadge = method === 'Non-Tunai'
+            ? `<span class="badge" style="background:var(--primary); color:white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem;">Non-Tunai</span>`
+            : `<span class="badge" style="background:var(--success); color:white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem;">Tunai</span>`;
+        return `
         <tr>
             <td>${escapeHtml(exp.document_number)}</td>
             <td>${new Date(exp.cost_date).toLocaleDateString('id-ID')}</td>
             <td>Rp ${exp.total_amount.toLocaleString('id-ID')}</td>
+            <td>${methodBadge}</td>
             <td>${escapeHtml(exp.notes || '-')}</td>
             <td>${escapeHtml(exp.profiles?.name || '-')}</td>
             <td>
@@ -91,7 +97,8 @@ export function renderExpenses() {
                 ${canDelete ? `<button class="btn btn-icon btn-danger" onclick="window.deleteExpense('${exp.id}')" title="Hapus"><i class="ph ph-trash"></i></button>` : ''}
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
     
     const loadMoreBtn = document.getElementById('expenses-load-more-container');
     if (loadMoreBtn) {
@@ -251,6 +258,8 @@ export async function editExpense(id) {
     
     document.getElementById('expense-id').value = exp.id;
     document.getElementById('expense-notes').value = exp.notes || '';
+    const methodSelect = document.getElementById('expense-payment-method');
+    if (methodSelect) methodSelect.value = exp.payment_method || 'Tunai';
     
     const modal = document.getElementById('modal-expense');
     const title = modal.querySelector('h2');
@@ -299,12 +308,14 @@ export async function handleSaveExpense(e) {
     const expenseId = document.getElementById('expense-id').value;
     const total = parseFloat(document.getElementById('expense-total').value);
     const notes = document.getElementById('expense-notes').value;
+    const paymentMethod = document.getElementById('expense-payment-method')?.value || 'Tunai';
     
     try {
         if (expenseId) {
             const { error: err1 } = await supabase.from('operational_costs').update({
                 total_amount: total,
-                notes: notes
+                notes: notes,
+                payment_method: paymentMethod
             }).eq('id', expenseId);
             if (err1) throw err1;
             
@@ -331,6 +342,7 @@ export async function handleSaveExpense(e) {
                 cost_date: getLocalToday(),
                 total_amount: total,
                 notes,
+                payment_method: paymentMethod,
                 created_by: profileId
             }]).select('id').single();
             

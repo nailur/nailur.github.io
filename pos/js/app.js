@@ -549,7 +549,12 @@ function setupEventListeners() {
         if(window.expenseCurrentItems) window.expenseCurrentItems = [];
         if(window.renderExpenseItemsTable) window.renderExpenseItemsTable();
         document.getElementById('expense-id').value = '';
-        document.getElementById('modal-expense').classList.remove('hidden');
+        const methodSelect = document.getElementById('expense-payment-method');
+        if(methodSelect) methodSelect.value = 'Tunai';
+        const modal = document.getElementById('modal-expense');
+        const title = modal?.querySelector('h2');
+        if(title) title.textContent = 'Catat Pengeluaran';
+        modal?.classList.remove('hidden');
     });
     document.getElementById('btn-add-expense-item')?.addEventListener('click', () => {
         if(window.addExpenseItem) window.addExpenseItem();

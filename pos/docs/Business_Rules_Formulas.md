@@ -58,13 +58,13 @@ This document summarizes the core business rules, calculation logic, and formula
 ---
 
 ## 5. Dashboard Financial & Expense Separation
-- **Operational Expenses (`Pengeluaran Operasional`)**: Aggregated from `operational_costs` table.
+- **Operational Expenses (`Pengeluaran Operasional`)**: Aggregated from `operational_costs` table. Can be recorded as either `Tunai` or `Non-Tunai`.
 - **Stock Expenses (`Pengeluaran Stock`)**: Aggregated from `inventory_postings` table where `type = 'in'`.
 - **Net Cash Revenue (`Omset Bersih Cash`)**:
   ```
-  Net Cash Revenue = Cash Revenue - Operational Expenses
+  Net Cash Revenue = Cash Revenue - Operational Expenses (Tunai Only)
   ```
-  *Note: Stock Expenses do not reduce Net Cash Revenue. This ensures daily cash deposit comparisons (`Selisih = Setoran - Omset Bersih Cash`) reflect cashier cash flows without backend inventory purchase distortions.*
+  *Note: Non-Tunai Operational Expenses and Stock Expenses do not reduce Net Cash Revenue. This ensures daily cash deposit comparisons (`Selisih = Setoran - Omset Bersih Cash`) reflect physical cashier cash flows without backend inventory purchase or non-cash expense distortions.*
 - **Deposit Variance (`Selisih`)**:
   ```
   Selisih = Setoran (Cash Deposit) - Net Cash Revenue

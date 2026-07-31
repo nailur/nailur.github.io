@@ -186,6 +186,7 @@ erDiagram
 | `document_number` | `text` |  |
 | `cost_date` | `date` |  |
 | `total_amount` | `numeric` |  |
+| `payment_method` | `text` |  Nullable (Tunai / Non-Tunai) |
 | `expense_item_id` | `uuid` | Nullable (on items)|
 | `quantity` | `numeric` | (on items) |
 | `price` | `numeric` | (on items) |

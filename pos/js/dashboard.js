@@ -225,11 +225,11 @@ window.loadDashboard = async function() {
                 <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 700; font-size: 0.88rem;">Dada</span>
-                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">3 pcs/kntg</span>
+                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">3 pcs/kantong</span>
                     </div>
                     <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">${countDada} <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.73rem; color: var(--text-muted); margin-top: 6px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqDada} kntg</strong></span>
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqDada} kantong</strong></span>
                         <span>Sisa: <strong style="color: ${sisaDada > 0 ? '#10b981' : 'var(--text-main)'};">${sisaDada} pcs</strong></span>
                     </div>
                 </div>
@@ -237,11 +237,11 @@ window.loadDashboard = async function() {
                 <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 700; font-size: 0.88rem;">Paha Atas</span>
-                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">2 pcs/kntg</span>
+                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">2 pcs/kantong</span>
                     </div>
                     <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">${countPahaAtas} <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.73rem; color: var(--text-muted); margin-top: 6px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaAtas} kntg</strong></span>
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaAtas} kantong</strong></span>
                         <span>Sisa: <strong style="color: ${sisaPahaAtas > 0 ? '#10b981' : 'var(--text-main)'};">${sisaPahaAtas} pcs</strong></span>
                     </div>
                 </div>
@@ -249,11 +249,11 @@ window.loadDashboard = async function() {
                 <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 700; font-size: 0.88rem;">Paha Bawah</span>
-                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">2 pcs/kntg</span>
+                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">2 pcs/kantong</span>
                     </div>
                     <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">${countPahaBawah} <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.73rem; color: var(--text-muted); margin-top: 6px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaBawah} kntg</strong></span>
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqPahaBawah} kantong</strong></span>
                         <span>Sisa: <strong style="color: ${sisaPahaBawah > 0 ? '#10b981' : 'var(--text-main)'};">${sisaPahaBawah} pcs</strong></span>
                     </div>
                 </div>
@@ -261,11 +261,11 @@ window.loadDashboard = async function() {
                 <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 700; font-size: 0.88rem;">Sayap</span>
-                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">2 pcs/kntg</span>
+                        <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px;">2 pcs/kantong</span>
                     </div>
                     <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">${countSayap} <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">terjual</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.73rem; color: var(--text-muted); margin-top: 6px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
-                        <span>Butuh: <strong style="color: var(--text-main);">${reqSayap} kntg</strong></span>
+                        <span>Butuh: <strong style="color: var(--text-main);">${reqSayap} kantong</strong></span>
                         <span>Sisa: <strong style="color: ${sisaSayap > 0 ? '#10b981' : 'var(--text-main)'};">${sisaSayap} pcs</strong></span>
                     </div>
                 </div>
@@ -318,7 +318,7 @@ window.loadDashboard = async function() {
                             <div style="font-weight: 700; font-size: 0.82rem;">${boxM_OriPahaAtas}</div>
                         </div>
                         <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
-                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Bwh</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Bawah</div>
                             <div style="font-weight: 700; font-size: 0.82rem;">${boxM_OriPahaBawah}</div>
                         </div>
                         <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
@@ -337,7 +337,7 @@ window.loadDashboard = async function() {
                             <div style="font-weight: 700; font-size: 0.82rem;">${boxM_GeprekPahaAtas}</div>
                         </div>
                         <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
-                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Bwh</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Bawah</div>
                             <div style="font-weight: 700; font-size: 0.82rem;">${boxM_GeprekPahaBawah}</div>
                         </div>
                         <div style="background: rgba(245, 158, 11, 0.08); padding: 4px; border-radius: 4px;">
@@ -363,7 +363,7 @@ window.loadDashboard = async function() {
                             <div style="font-weight: 700; font-size: 0.82rem;">${boxXS_GeprekPahaAtas}</div>
                         </div>
                         <div style="background: rgba(139, 92, 246, 0.08); padding: 4px; border-radius: 4px;">
-                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Bwh</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Paha Bawah</div>
                             <div style="font-weight: 700; font-size: 0.82rem;">${boxXS_GeprekPahaBawah}</div>
                         </div>
                         <div style="background: rgba(139, 92, 246, 0.08); padding: 4px; border-radius: 4px;">
@@ -386,13 +386,14 @@ window.loadDashboard = async function() {
 
     const { data: costsData } = await supabase
         .from('operational_costs')
-        .select('cost_date, total_amount')
+        .select('cost_date, total_amount, payment_method')
         .eq('outlet_id', activeOutletId)
         .gte('cost_date', startDate.value)
         .lte('cost_date', endDate.value);
         
     const expensesByDate = {};
     const operationalExpensesByDate = {};
+    const operationalCashExpensesByDate = {};
     const stockExpensesByDate = {};
     const allDatesSet = new Set(dailyData.map(d => d.date));
     let totalOperationalExpenseAmt = 0;
@@ -404,6 +405,9 @@ window.loadDashboard = async function() {
             allDatesSet.add(c.cost_date);
             const amt = Number(c.total_amount) || 0;
             operationalExpensesByDate[c.cost_date] = (operationalExpensesByDate[c.cost_date] || 0) + amt;
+            if (!c.payment_method || c.payment_method === 'Tunai') {
+                operationalCashExpensesByDate[c.cost_date] = (operationalCashExpensesByDate[c.cost_date] || 0) + amt;
+            }
             expensesByDate[c.cost_date] = (expensesByDate[c.cost_date] || 0) + amt;
             totalOperationalExpenseAmt += amt;
             totalExpenseAmt += amt;
@@ -589,10 +593,10 @@ window.loadDashboard = async function() {
         return Math.round(rev - fees - expense);
     });
 
-    // Net Revenue Cash = Cash Revenue - Operational Expenses (per day)
+    // Net Revenue Cash = Cash Revenue - Operational Expenses (Tunai only, per day)
     const netCashRevenueData = compDates.map(d => {
         const cash = salesByDate[d] ? salesByDate[d].cash : 0;
-        const expense = operationalExpensesByDate[d] || 0;
+        const expense = operationalCashExpensesByDate[d] || 0;
         return Math.round(cash - expense);
     });
 
