@@ -6,6 +6,13 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
 ### 2026-07-31
+- **Separate Operational and Stock Expenses & Isolate Net Cash Revenue (`js/dashboard.js`, `index.html`, `sw.js`)**:
+  - Replaced the single "Total Pengeluaran" summary card in `pos/index.html` with two distinct cards: `"Pengeluaran Operasional"` (from `operational_costs`) and `"Pengeluaran Stock"` (from `inventory_postings` where `type = 'in'`).
+  - Updated Chart 1 (`#revenueChart`) in `pos/js/dashboard.js` to display separate bars for `Pengeluaran Operasional (Rp)` and `Pengeluaran Stock (Rp)` alongside `Pendapatan (Rp)`.
+  - Strictly isolated `Omset Bersih Cash (Rp)` in Chart 2 (`#depositComparisonChart`) so it is calculated as `Omset Tunai - Pengeluaran Operasional` only, ensuring deposit comparisons (`Selisih`) are unaffected by backend stock purchasing.
+  - Itemized `Pengeluaran Operasional` and `Pengeluaran Stock` separately in `#net-profit-card` and in Sheet 1 of the Excel Export (`exportDashboardExcel`).
+  - Bumped PWA Service Worker cache version in `pos/sw.js` to `pos-cache-v82` per **Rule 3**.
+
 - **Exclude Stock Expenses from Net Cash Revenue & Add Packaging Box Estimation Card (`js/dashboard.js`, `index.html`, `sw.js`)**:
   - Updated `loadDashboard()` in `pos/js/dashboard.js` to inspect `operational_cost_items` and exclude items categorized as Stock (`Bahan Tambahan`, `Stok`, etc.) from `cashExpensesByDate`. This ensures Net Cash Revenue (`Omset Bersih Cash`) in deposit comparison charts only subtracts non-stock operational cash expenses.
   - Redesigned and shrunken `#chicken-bag-card` into a compact layout to fit side-by-side with `#packaging-box-card`.

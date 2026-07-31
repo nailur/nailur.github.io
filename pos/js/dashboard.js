@@ -386,59 +386,31 @@ window.loadDashboard = async function() {
 
     const { data: costsData } = await supabase
         .from('operational_costs')
-        .select(`
-            cost_date,
-            total_amount,
-            notes,
-            operational_cost_items (
-                subtotal,
-                expense_items (
-                    name,
-                    category
-                )
-            )
-        `)
+        .select('cost_date, total_amount')
         .eq('outlet_id', activeOutletId)
         .gte('cost_date', startDate.value)
         .lte('cost_date', endDate.value);
         
     const expensesByDate = {};
-    const cashExpensesByDate = {};
+    const operationalExpensesByDate = {};
+    const stockExpensesByDate = {};
     const allDatesSet = new Set(dailyData.map(d => d.date));
+    let totalOperationalExpenseAmt = 0;
+    let totalStockExpenseAmt = 0;
     let totalExpenseAmt = 0;
     
     if (costsData) {
         costsData.forEach(c => {
             allDatesSet.add(c.cost_date);
             const amt = Number(c.total_amount) || 0;
+            operationalExpensesByDate[c.cost_date] = (operationalExpensesByDate[c.cost_date] || 0) + amt;
             expensesByDate[c.cost_date] = (expensesByDate[c.cost_date] || 0) + amt;
-
-            // Exclude stock expenses from cashExpensesByDate so Net Cash Revenue is not reduced by stock purchasing
-            let nonStockAmt = 0;
-            if (c.operational_cost_items && c.operational_cost_items.length > 0) {
-                c.operational_cost_items.forEach(item => {
-                    const sub = Number(item.subtotal) || 0;
-                    const cat = (item.expense_items?.category || '').toLowerCase();
-                    const name = (item.expense_items?.name || '').toLowerCase();
-                    const isStock = cat.includes('bahan') || cat.includes('stok') || cat.includes('stock') ||
-                                    name.includes('stok') || name.includes('stock') || name.includes('bahan') || name.includes('ayam');
-                    if (!isStock) {
-                        nonStockAmt += sub;
-                    }
-                });
-            } else {
-                const notes = (c.notes || '').toLowerCase();
-                const isStock = notes.includes('stok') || notes.includes('stock') || notes.includes('bahan') || notes.includes('ayam');
-                if (!isStock) {
-                    nonStockAmt = amt;
-                }
-            }
-            cashExpensesByDate[c.cost_date] = (cashExpensesByDate[c.cost_date] || 0) + nonStockAmt;
+            totalOperationalExpenseAmt += amt;
             totalExpenseAmt += amt;
         });
     }
 
-    // Include stock addition costs (inventory_postings type = 'in') as expenses
+    // Include stock addition costs (inventory_postings type = 'in') as separate Stock Expenses
     try {
         const { data: stockInPostings, error: stockInErr } = await supabase
             .from('inventory_postings')
@@ -457,7 +429,9 @@ window.loadDashboard = async function() {
                 const itemsCost = (p.inventory_posting_items || []).reduce((sum, item) => sum + (Number(item.price) || 0), 0);
                 if (itemsCost > 0) {
                     allDatesSet.add(p.posting_date);
+                    stockExpensesByDate[p.posting_date] = (stockExpensesByDate[p.posting_date] || 0) + itemsCost;
                     expensesByDate[p.posting_date] = (expensesByDate[p.posting_date] || 0) + itemsCost;
+                    totalStockExpenseAmt += itemsCost;
                     totalExpenseAmt += itemsCost;
                 }
             });
@@ -466,8 +440,11 @@ window.loadDashboard = async function() {
         console.warn('Could not load stock posting costs for dashboard:', e);
     }
 
-    const dashExpenseEl = document.getElementById('dash-total-expense');
-    if (dashExpenseEl) dashExpenseEl.textContent = `Rp ${totalExpenseAmt.toLocaleString('id-ID')}`;
+    const dashOpExpenseEl = document.getElementById('dash-operational-expense');
+    if (dashOpExpenseEl) dashOpExpenseEl.textContent = `Rp ${totalOperationalExpenseAmt.toLocaleString('id-ID')}`;
+
+    const dashStockExpenseEl = document.getElementById('dash-stock-expense');
+    if (dashStockExpenseEl) dashStockExpenseEl.textContent = `Rp ${totalStockExpenseAmt.toLocaleString('id-ID')}`;
     
     const allDates = Array.from(allDatesSet).sort();
     const chartLabels = allDates.map(d => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month:'short'}));
@@ -477,7 +454,8 @@ window.loadDashboard = async function() {
         return found ? found.revenue : 0;
     });
     
-    const expData = allDates.map(d => expensesByDate[d] || 0);
+    const opExpData = allDates.map(d => operationalExpensesByDate[d] || 0);
+    const stockExpData = allDates.map(d => stockExpensesByDate[d] || 0);
 
     // Shared datalabel options (white text for readability)
     const whiteLabelOpts = {
@@ -502,9 +480,16 @@ window.loadDashboard = async function() {
                     datalabels: whiteLabelOpts
                 },
                 {
-                    label: 'Pengeluaran (Rp)',
-                    data: expData,
+                    label: 'Pengeluaran Operasional (Rp)',
+                    data: opExpData,
                     backgroundColor: '#ef4444',
+                    borderRadius: 4,
+                    datalabels: whiteLabelOpts
+                },
+                {
+                    label: 'Pengeluaran Stock (Rp)',
+                    data: stockExpData,
+                    backgroundColor: '#f59e0b',
                     borderRadius: 4,
                     datalabels: whiteLabelOpts
                 }
@@ -604,10 +589,10 @@ window.loadDashboard = async function() {
         return Math.round(rev - fees - expense);
     });
 
-    // Net Revenue Cash = Cash Revenue - Operational Cash Expenses (per day)
+    // Net Revenue Cash = Cash Revenue - Operational Expenses (per day)
     const netCashRevenueData = compDates.map(d => {
         const cash = salesByDate[d] ? salesByDate[d].cash : 0;
-        const expense = cashExpensesByDate[d] || 0;
+        const expense = operationalExpensesByDate[d] || 0;
         return Math.round(cash - expense);
     });
 
@@ -841,8 +826,9 @@ window.loadDashboard = async function() {
     if (netProfitCard) {
         const totalGrossRevenue = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.total) || 0), 0);
         const totalFeesMDR = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.fees) || 0), 0);
-        const totalOperationalExpenses = Object.values(expensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
-        const totalNetProfit = Math.round(totalGrossRevenue - totalFeesMDR - totalOperationalExpenses);
+        const totalOpExp = Object.values(operationalExpensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
+        const totalStockExp = Object.values(stockExpensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
+        const totalNetProfit = Math.round(totalGrossRevenue - totalFeesMDR - totalOpExp - totalStockExp);
 
         netProfitCard.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 12px; height: 100%; justify-content: center;">
@@ -855,8 +841,12 @@ window.loadDashboard = async function() {
                     <span style="font-weight: 600; color: var(--danger);">- Rp ${totalFeesMDR.toLocaleString('id-ID')}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
-                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran (Operasional & Stok)</span>
-                    <span style="font-weight: 600; color: var(--danger);">- Rp ${totalOperationalExpenses.toLocaleString('id-ID')}</span>
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Operasional</span>
+                    <span style="font-weight: 600; color: var(--danger);">- Rp ${totalOpExp.toLocaleString('id-ID')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Stock</span>
+                    <span style="font-weight: 600; color: #f59e0b;">- Rp ${totalStockExp.toLocaleString('id-ID')}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 10px 12px; border-radius: 6px; margin-top: 4px;">
                     <div>
@@ -885,6 +875,8 @@ window.loadDashboard = async function() {
         compDates: compDates,
         salesByDate: salesByDate,
         expensesByDate: expensesByDate,
+        operationalExpensesByDate: operationalExpensesByDate,
+        stockExpensesByDate: stockExpensesByDate,
         netTotalRevenueData: netTotalRevenueData,
         ALL_PAYMENT_METHODS: ALL_PAYMENT_METHODS
     };
@@ -978,6 +970,8 @@ window.exportDashboardExcel = async function() {
         compDates,
         salesByDate,
         expensesByDate,
+        operationalExpensesByDate = {},
+        stockExpensesByDate = {},
         ALL_PAYMENT_METHODS
     } = window._lastDashboardData;
 
@@ -997,31 +991,41 @@ window.exportDashboardExcel = async function() {
     // Sheet 1: Gross Revenue and Expense Data
     const sheet1Rows = [];
     let totalGross = 0;
+    let totalOpExp = 0;
+    let totalStockExp = 0;
     let totalExp = 0;
     let totalNet = 0;
 
     compDates.forEach(d => {
         const gross = salesByDate[d] ? Number(salesByDate[d].total || 0) : 0;
+        const opExp = Number(operationalExpensesByDate[d] || 0);
+        const stockExp = Number(stockExpensesByDate[d] || 0);
         const exp = Number(expensesByDate[d] || 0);
         const net = gross - exp;
 
         totalGross += gross;
+        totalOpExp += opExp;
+        totalStockExp += stockExp;
         totalExp += exp;
         totalNet += net;
 
         sheet1Rows.push({
             "Tanggal": d,
             "Pendapatan Kotor (Rp)": gross,
-            "Pengeluaran (Operasional & Stok) (Rp)": exp,
-            "Net (Pendapatan - Pengeluaran) (Rp)": net
+            "Pengeluaran Operasional (Rp)": opExp,
+            "Pengeluaran Stock (Rp)": stockExp,
+            "Total Pengeluaran (Rp)": exp,
+            "Net (Pendapatan - Total Pengeluaran) (Rp)": net
         });
     });
 
     sheet1Rows.push({
         "Tanggal": "TOTAL",
         "Pendapatan Kotor (Rp)": totalGross,
-        "Pengeluaran (Operasional & Stok) (Rp)": totalExp,
-        "Net (Pendapatan - Pengeluaran) (Rp)": totalNet
+        "Pengeluaran Operasional (Rp)": totalOpExp,
+        "Pengeluaran Stock (Rp)": totalStockExp,
+        "Total Pengeluaran (Rp)": totalExp,
+        "Net (Pendapatan - Total Pengeluaran) (Rp)": totalNet
     });
 
     // Sheet 2: Net Revenue breakdown by Payment Method
