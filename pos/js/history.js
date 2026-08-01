@@ -581,20 +581,30 @@ window.openEditPaymentMethodModal = async function(trxId) {
 
     const selectEl = document.getElementById('edit-pm-select');
     const currentMethod = trx.payment_method || 'Tunai';
-    const lockedMethods = ['QRIS', 'Shopee Food', 'Grab Food', 'Go Food'];
+    const totalAmount = Number(trx.total_amount || 0);
+    const onlineMethods = ['Shopee Food', 'Grab Food', 'Go Food'];
+    const isQrisLocked = (currentMethod === 'QRIS' && totalAmount <= 500000);
 
     if (selectEl) {
-        if (lockedMethods.includes(currentMethod)) {
+        if (onlineMethods.includes(currentMethod) || isQrisLocked) {
             selectEl.innerHTML = `<option value="${currentMethod}">${currentMethod} (Tidak dapat diganti)</option>`;
             selectEl.value = currentMethod;
             selectEl.disabled = true;
         } else {
-            selectEl.innerHTML = `
-                <option value="Tunai">Tunai</option>
-                <option value="QRIS">QRIS</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-            `;
-            selectEl.value = currentMethod;
+            if (totalAmount > 500000) {
+                selectEl.innerHTML = `
+                    <option value="Tunai">Tunai</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                `;
+                selectEl.value = currentMethod === 'QRIS' ? 'Bank Transfer' : currentMethod;
+            } else {
+                selectEl.innerHTML = `
+                    <option value="Tunai">Tunai</option>
+                    <option value="QRIS">QRIS</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                `;
+                selectEl.value = currentMethod;
+            }
             selectEl.disabled = false;
         }
     }
@@ -628,15 +638,23 @@ async function handleSaveEditPaymentMethod(e) {
     if (!trxId || !newMethod) return;
 
     const currentTrx = (window.historyTransactionsList || []).find(t => String(t.id) === String(trxId));
-    const lockedMethods = ['QRIS', 'Shopee Food', 'Grab Food', 'Go Food'];
     const currentMethod = currentTrx?.payment_method || newMethod;
+    const onlineMethods = ['Shopee Food', 'Grab Food', 'Go Food'];
 
-    if (lockedMethods.includes(currentMethod) && newMethod !== currentMethod) {
+    if (onlineMethods.includes(currentMethod) && newMethod !== currentMethod) {
         showToast(`Metode pembayaran ${currentMethod} tidak dapat diganti`, 'error');
         return;
     }
-    if (['Tunai', 'Bank Transfer'].includes(currentMethod) && !['Tunai', 'QRIS', 'Bank Transfer'].includes(newMethod)) {
-        showToast('Metode pembayaran Tunai/Bank Transfer hanya bisa diganti ke Tunai, QRIS, atau Bank Transfer', 'error');
+    if (currentMethod === 'QRIS' && totalAmount <= 500000 && newMethod !== 'QRIS') {
+        showToast('Metode pembayaran QRIS (<= Rp 500.000) tidak dapat diganti', 'error');
+        return;
+    }
+    if (totalAmount > 500000 && newMethod === 'QRIS') {
+        showToast('Transaksi di atas Rp 500.000 tidak dapat menggunakan QRIS', 'error');
+        return;
+    }
+    if (['Tunai', 'Bank Transfer', 'QRIS'].includes(currentMethod) && !['Tunai', 'QRIS', 'Bank Transfer'].includes(newMethod)) {
+        showToast('Metode pembayaran hanya bisa diganti ke Tunai, QRIS, atau Bank Transfer', 'error');
         return;
     }
 
