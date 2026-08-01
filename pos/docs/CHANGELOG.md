@@ -40,8 +40,8 @@ All changes to the codebase and project structure must be documented here to mai
   - Upgraded `#modal-edit-payment-method` in `index.html` to allow editing **Customer Name** (`#edit-pm-customer-name`) in addition to the payment method for completed transactions.
   - Updated `openEditPaymentMethodModal()` and `handleSaveEditPaymentMethod()` in `js/history.js` to select and update `customer_name` in Supabase (`transactions`).
   - Stored loaded transactions array in `window.historyTransactionsList` and updated `openEditPaymentMethodModal()` to immediately check and populate `customer_name` from local table data (fallback to DB query) so existing names like "A hamdan" are always pre-filled reliably.
-  - Implemented strict payment method editing rules in `js/history.js`: online delivery platforms (`Shopee Food`, `Grab Food`, `Go Food`) cannot have their payment method changed; transactions with `QRIS` are locked if `<= Rp 500.000` but allowed to be changed to `Tunai` or `Bank Transfer` if `> Rp 500.000`; transactions with `Tunai` or `Bank Transfer` can only be changed to `Tunai`, `QRIS` (only if `<= Rp 500.000`), or `Bank Transfer`.
-  - Bumped PWA cache version to `pos-cache-v93` in `sw.js`.
+  - Simplified payment method editing rules in `js/history.js`: only transactions with payment method `Tunai` can have their payment method changed (can be changed to `Tunai`, `QRIS`, or `Bank Transfer`); any non-Tunai payment method is locked from editing. Customer Name remains editable for all transactions.
+  - Bumped PWA cache version to `pos-cache-v94` in `sw.js`.
 - **Operational Expenses Multi-Sheet Detail Excel Export (`Biaya Operasional`)**:
   - Enhanced `exportExpensesToExcel()` in `js/expenses.js` to fetch `operational_cost_items` alongside `operational_costs` and export a 2-sheet workbook (`Laporan_Biaya_Operasional_YYYY-MM-DD.xlsx`).
   - Sheet 1 (**`Ringkasan Biaya`**): Includes a new **Rincian Item Pengeluaran** column displaying an itemized summary string for each document (e.g. `Gas Elpiji (1x @Rp 22.000 = Rp 22.000); Es Batu (2x @Rp 10.000 = Rp 20.000)`).
