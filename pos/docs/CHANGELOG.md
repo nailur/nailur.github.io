@@ -13,7 +13,7 @@ All changes to the codebase and project structure must be documented here to mai
   - Added "Tarik dari Sistem (DB)" feature (`pullHPPCostsFromDatabase`) to fetch latest ingredient prices from `inventory_postings` and monthly OPEX from `operational_costs`.
   - Added `#modal-hpp-calculator` with 3 tabbed views (`Tabel Analisis Margin`, `Harga Bahan Baku`, `Biaya Operasional & Listrik`), "Kalkulator HPP" button in dashboard filter bar, and `#hpp-summary-card` on the dashboard (`index.html`).
   - Refined HPP Margin Table into a clean 6-column spreadsheet format (`Menu`, `Harga Jual`, `HPP Bahan`, `HPP Final (+ Operasional)`, `Laba Bersih`, `Margin Laba`) with interactive Offline/Online mode toggle and dedicated Excel export button (`exportHPPMarginTableExcel`).
-  - Updated `js/app.js` to import `hpp.js`, called `renderHPPSummaryCard()` in `js/dashboard.js`, and bumped PWA cache to `pos-cache-v97` in `sw.js`.
+  - Fixed modal visibility bug in `js/hpp.js` by removing `.hidden` class on `openHPPCalculatorModal()` (which previously conflicted with CSS `display: none !important`), added "Lihat Tabel HPP & Laba per Produk" button on `#hpp-summary-card`, and bumped PWA cache to `pos-cache-v98` in `sw.js`.
 - **Operational Expense Payment Method Option (`Tunai` / `Non-Tunai`)**:
   - Added payment method selection (`Tunai` vs `Non-Tunai`) in `#modal-expense` form and `#expenses-table` column in `index.html`.
   - Updated `js/app.js` and `js/expenses.js` to set default `'Tunai'`, load `payment_method` on edit, render payment method badges, and save `payment_method` to `operational_costs`.

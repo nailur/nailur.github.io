@@ -284,6 +284,10 @@ function renderHPPSummaryCard() {
             <span>Ayam (1 Kantong / 9 pcs): <strong>Rp ${Number(settings.price_ayam_kantong).toLocaleString('id-ID')}</strong></span>
             <span>Beras 5Kg: <strong>Rp ${Number(settings.price_beras_5kg).toLocaleString('id-ID')}</strong></span>
         </div>
+
+        <button type="button" class="btn btn-primary" onclick="openHPPCalculatorModal()" style="width: 100%; padding: 8px; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px;">
+            <i class="ph ph-table"></i> Lihat Tabel HPP & Laba per Produk
+        </button>
     `;
 }
 
@@ -296,33 +300,37 @@ function openHPPCalculatorModal() {
 
     const settings = HPPSettingsManager.loadSettings();
 
-    // Populate inputs
-    document.getElementById('hpp-input-ayam').value = settings.price_ayam_kantong;
-    document.getElementById('hpp-input-saos').value = settings.price_saos_pack;
-    document.getElementById('hpp-input-minyak').value = settings.price_minyak_15kg;
-    document.getElementById('hpp-input-tepung-biang').value = settings.price_tepung_biang_kg;
-    document.getElementById('hpp-input-tepung-serbaguna').value = settings.price_tepung_serbaguna_kg;
-    document.getElementById('hpp-input-beras').value = settings.price_beras_5kg;
-    document.getElementById('hpp-input-sambal').value = settings.price_sambal_porsi;
-    document.getElementById('hpp-input-box-m').value = settings.price_box_m;
-    document.getElementById('hpp-input-box-xs').value = settings.price_box_xs;
-    document.getElementById('hpp-input-kertas-nasi').value = settings.price_kertas_nasi;
-    document.getElementById('hpp-input-kertas-bungkus').value = settings.price_kertas_pembungkus;
-    document.getElementById('hpp-input-plastik-kecil').value = settings.price_plastik_kecil;
-    document.getElementById('hpp-input-plastik-besar').value = settings.price_plastik_besar;
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    };
 
-    document.getElementById('hpp-input-kwh-rate').value = settings.kwh_rate;
-    document.getElementById('hpp-input-opex-gas').value = settings.opex_gas_monthly;
-    document.getElementById('hpp-input-opex-trash').value = settings.opex_trash_bag;
-    document.getElementById('hpp-input-opex-sarung').value = settings.opex_sarung_tangan;
-    document.getElementById('hpp-input-opex-masker').value = settings.opex_masker;
-    document.getElementById('hpp-input-opex-lain').value = settings.opex_consumables_lain;
-    document.getElementById('hpp-input-daily-vol').value = settings.target_daily_volume;
+    setVal('hpp-input-ayam', settings.price_ayam_kantong);
+    setVal('hpp-input-saos', settings.price_saos_pack);
+    setVal('hpp-input-minyak', settings.price_minyak_15kg);
+    setVal('hpp-input-tepung-biang', settings.price_tepung_biang_kg);
+    setVal('hpp-input-tepung-serbaguna', settings.price_tepung_serbaguna_kg);
+    setVal('hpp-input-beras', settings.price_beras_5kg);
+    setVal('hpp-input-sambal', settings.price_sambal_porsi);
+    setVal('hpp-input-box-m', settings.price_box_m);
+    setVal('hpp-input-box-xs', settings.price_box_xs);
+    setVal('hpp-input-kertas-nasi', settings.price_kertas_nasi);
+    setVal('hpp-input-kertas-bungkus', settings.price_kertas_pembungkus);
+    setVal('hpp-input-plastik-kecil', settings.price_plastik_kecil);
+    setVal('hpp-input-plastik-besar', settings.price_plastik_besar);
+
+    setVal('hpp-input-kwh-rate', settings.kwh_rate);
+    setVal('hpp-input-opex-gas', settings.opex_gas_monthly);
+    setVal('hpp-input-opex-trash', settings.opex_trash_bag);
+    setVal('hpp-input-opex-sarung', settings.opex_sarung_tangan);
+    setVal('hpp-input-opex-masker', settings.opex_masker);
+    setVal('hpp-input-opex-lain', settings.opex_consumables_lain);
+    setVal('hpp-input-daily-vol', settings.target_daily_volume);
 
     renderHPPCalculatorTable(settings);
     switchHPPTab('margin-table');
 
-    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
 }
 
 /**
@@ -330,7 +338,7 @@ function openHPPCalculatorModal() {
  */
 function closeHPPCalculatorModal() {
     const modal = document.getElementById('modal-hpp-calculator');
-    if (modal) modal.style.display = 'none';
+    if (modal) modal.classList.add('hidden');
 }
 
 /**
