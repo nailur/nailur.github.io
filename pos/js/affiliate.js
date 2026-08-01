@@ -26,6 +26,8 @@ let selectedTransactionIds = new Set();
 let editingAffiliatePostingId = null;
 let currentUnclaimedPage = 1;
 const UNCLAIMED_PAGE_SIZE = 15;
+let selectedUnpaidPostingIds = new Set();
+let currentPayingPostingIds = [];
 
 /**
  * Check if current user is superadmin
@@ -636,8 +638,16 @@ export function renderAffiliatePostings() {
     const tbody = document.getElementById('affiliate-postings-table')?.querySelector('tbody');
     if (!tbody) return;
 
+    const existingUnpaidIds = new Set(
+        affiliatePostingsList.filter(p => p.status === 'Unpaid').map(p => p.id)
+    );
+    Array.from(selectedUnpaidPostingIds).forEach(id => {
+        if (!existingUnpaidIds.has(id)) selectedUnpaidPostingIds.delete(id);
+    });
+    updateSelectedUnpaidBar();
+
     if (affiliatePostingsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Belum ada postingan komisi Affiliate</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Belum ada postingan komisi Affiliate</td></tr>';
         return;
     }
 
@@ -649,6 +659,11 @@ export function renderAffiliatePostings() {
 
         return `
             <tr>
+                <td style="text-align:center; width:40px;">
+                    ${!isPaid && isSuperAdmin() ? `
+                        <input type="checkbox" class="unpaid-posting-checkbox" value="${post.id}" ${selectedUnpaidPostingIds.has(post.id) ? 'checked' : ''} onchange="window.onSelectUnpaidPostingChange(this)">
+                    ` : ''}
+                </td>
                 <td><strong>${escapeHtml(post.document_number)}</strong></td>
                 <td>${dateFormatted}</td>
                 <td><strong>${escapeHtml(post.affiliator_name)}</strong></td>
@@ -683,6 +698,68 @@ export function renderAffiliatePostings() {
             </tr>
         `;
     }).join('');
+}
+
+/**
+ * Toggle select all unpaid postings
+ */
+window.toggleAllUnpaidPostings = function(masterCheckbox) {
+    const checkboxes = document.querySelectorAll('.unpaid-posting-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = masterCheckbox.checked;
+        if (masterCheckbox.checked) {
+            selectedUnpaidPostingIds.add(cb.value);
+        } else {
+            selectedUnpaidPostingIds.delete(cb.value);
+        }
+    });
+    updateSelectedUnpaidBar();
+};
+
+/**
+ * Handle individual unpaid posting checkbox toggle
+ */
+window.onSelectUnpaidPostingChange = function(checkbox) {
+    if (checkbox) {
+        if (checkbox.checked) {
+            selectedUnpaidPostingIds.add(checkbox.value);
+        } else {
+            selectedUnpaidPostingIds.delete(checkbox.value);
+        }
+    }
+    updateSelectedUnpaidBar();
+};
+
+/**
+ * Update the accumulated pay bar button above the table
+ */
+function updateSelectedUnpaidBar() {
+    const btnPaySelected = document.getElementById('btn-pay-selected-affiliate');
+    const countEl = document.getElementById('count-selected-unpaid');
+    const checkAllEl = document.getElementById('check-all-unpaid-postings');
+
+    const unpaidCount = affiliatePostingsList.filter(p => p.status === 'Unpaid').length;
+    if (checkAllEl) {
+        checkAllEl.checked = unpaidCount > 0 && selectedUnpaidPostingIds.size === unpaidCount;
+    }
+
+    if (!btnPaySelected) return;
+
+    const selectedCount = selectedUnpaidPostingIds.size;
+    if (selectedCount > 0 && isSuperAdmin()) {
+        let totalAcc = 0;
+        affiliatePostingsList.forEach(p => {
+            if (selectedUnpaidPostingIds.has(p.id)) {
+                totalAcc += Number(p.total_amount || 0);
+            }
+        });
+        if (countEl) countEl.textContent = `${selectedCount} | Rp ${totalAcc.toLocaleString('id-ID')}`;
+        btnPaySelected.style.display = 'inline-block';
+        btnPaySelected.classList.remove('hidden');
+    } else {
+        btnPaySelected.style.display = 'none';
+        btnPaySelected.classList.add('hidden');
+    }
 }
 
 /**
@@ -732,13 +809,37 @@ export async function openCreateAffiliateModal(editPostingId = null) {
     document.getElementById('affiliate-calculation-preview').innerHTML = '<tr><td colspan="4" style="text-align:center;">Pilih minimal 1 transaksi penjualan untuk menghitung komisi</td></tr>';
     document.getElementById('affiliate-posting-total-display').textContent = 'Rp 0';
 
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const dateFilterEl = document.getElementById('affiliate-unclaimed-date-filter');
+    if (dateFilterEl) dateFilterEl.value = todayStr;
+
     modal.classList.remove('hidden');
+
+    await window.loadUnclaimedTransactions(todayStr);
+
+    if (editingAffiliatePostingId && selectedTransactionIds.size > 0) {
+        await window.onSelectAffiliateTransactions(null, true);
+    }
+}
+
+/**
+ * Load unclaimed transactions filtered by date (for resource optimization)
+ */
+window.loadUnclaimedTransactions = async function(dateStr) {
+    const outletId = window.activeOutletId;
+    if (!outletId) return;
+
+    const tbody = document.getElementById('affiliate-unclaimed-transactions-table')?.querySelector('tbody');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat data transaksi...</td></tr>';
+    }
 
     // 1. Fetch transaction IDs that have already been claimed
     const { data: claimedData, error: claimedError } = await supabase
         .from('affiliate_posting_transactions')
         .select('transaction_id, posting_id')
-        .limit(2000);
+        .limit(5000);
 
     const claimedIdsByOthers = new Set();
     const myTrxIds = new Set();
@@ -752,16 +853,25 @@ export async function openCreateAffiliateModal(editPostingId = null) {
 
     myTrxIds.forEach(id => selectedTransactionIds.add(id));
 
-    // 2. Fetch completed transactions for active outlet & exclude voided/cancelled ones
-    const { data: trxs, error: trxError } = await supabase
+    // 2. Build query for completed transactions
+    let query = supabase
         .from('transactions')
         .select('id, receipt_no, created_at, customer_name, total_amount, status')
         .eq('outlet_id', outletId)
         .eq('status', 'completed')
         .neq('status', 'voided')
         .neq('status', 'cancelled')
-        .order('created_at', { ascending: false })
-        .limit(5000);
+        .order('created_at', { ascending: false });
+
+    if (dateStr) {
+        const startOfDay = new Date(`${dateStr}T00:00:00`).toISOString();
+        const endOfDay = new Date(`${dateStr}T23:59:59.999`).toISOString();
+        query = query.gte('created_at', startOfDay).lte('created_at', endOfDay).limit(1000);
+    } else {
+        query = query.limit(1000);
+    }
+
+    const { data: trxs, error: trxError } = await query;
 
     if (trxError) {
         console.error('Error load unclaimed transactions:', trxError);
@@ -779,10 +889,11 @@ export async function openCreateAffiliateModal(editPostingId = null) {
         return true;
     });
 
-    // Ensure transactions already checked in edit mode are present in the list
-    if (myTrxIds.size > 0) {
+    // Ensure transactions already checked (in edit mode or previously checked) are present in the list
+    const allCheckedIds = Array.from(selectedTransactionIds);
+    if (allCheckedIds.length > 0) {
         const existingIds = new Set(unclaimedTransactionsList.map(t => t.id));
-        const missingIds = Array.from(myTrxIds).filter(id => !existingIds.has(id));
+        const missingIds = allCheckedIds.filter(id => !existingIds.has(id));
         if (missingIds.length > 0) {
             const { data: missingTrxs } = await supabase
                 .from('transactions')
@@ -796,11 +907,16 @@ export async function openCreateAffiliateModal(editPostingId = null) {
 
     currentUnclaimedPage = 1;
     renderUnclaimedTransactionsTable();
+};
 
-    if (editingAffiliatePostingId && selectedTransactionIds.size > 0) {
-        await window.onSelectAffiliateTransactions(null, true);
-    }
-}
+/**
+ * Handle date filter change in unclaimed transactions table
+ */
+window.onAffiliateUnclaimedDateChange = async function() {
+    const dateFilterEl = document.getElementById('affiliate-unclaimed-date-filter');
+    const dateStr = dateFilterEl ? dateFilterEl.value : '';
+    await window.loadUnclaimedTransactions(dateStr);
+};
 
 /**
  * Render list of unclaimed transactions with Checkbox & Pagination
@@ -1208,6 +1324,7 @@ window.openPayAffiliateModal = function(postingId) {
     const modal = document.getElementById('modal-pay-affiliate');
     if (!modal) return;
 
+    currentPayingPostingIds = [post.id];
     document.getElementById('pay-affiliate-posting-id').value = post.id;
     document.getElementById('pay-affiliate-doc-number').textContent = post.document_number;
     document.getElementById('pay-affiliate-name').textContent = post.affiliator_name;
@@ -1221,15 +1338,67 @@ window.openPayAffiliateModal = function(postingId) {
 };
 
 /**
- * Save payment status (Paid) and upload image transfer proof
+ * Open payment and transfer proof upload modal for Selected Unpaid postings (Accumulated)
+ */
+window.openPaySelectedAffiliateModal = function() {
+    if (!isSuperAdmin()) return;
+    const selectedIds = Array.from(selectedUnpaidPostingIds);
+    if (selectedIds.length === 0) {
+        showToast('Pilih minimal 1 postingan unpaid', 'error');
+        return;
+    }
+
+    const modal = document.getElementById('modal-pay-affiliate');
+    if (!modal) return;
+
+    const selectedPosts = affiliatePostingsList.filter(p => selectedIds.includes(p.id));
+    if (selectedPosts.length === 0) return;
+
+    currentPayingPostingIds = selectedIds;
+    document.getElementById('pay-affiliate-posting-id').value = selectedIds.join(',');
+
+    const docNumbers = selectedPosts.map(p => p.document_number).join(', ');
+    const totalAcc = selectedPosts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+    const uniqueNames = [...new Set(selectedPosts.map(p => p.affiliator_name))];
+
+    document.getElementById('pay-affiliate-doc-number').textContent = selectedPosts.length === 1 
+        ? docNumbers 
+        : `${selectedPosts.length} Postings Akumulasi (${docNumbers})`;
+
+    document.getElementById('pay-affiliate-name').textContent = uniqueNames.length === 1 
+        ? `${uniqueNames[0]} (${selectedPosts.length} posting)` 
+        : `Multi Afiliator: ${uniqueNames.join(', ')}`;
+
+    document.getElementById('pay-affiliate-amount').textContent = `Rp ${Number(totalAcc).toLocaleString('id-ID')}`;
+
+    const fileInput = document.getElementById('pay-affiliate-file');
+    if (fileInput) fileInput.value = '';
+
+    modal.classList.remove('hidden');
+};
+
+/**
+ * Save payment status (Paid) and upload image transfer proof (Single or Multi/Accumulated)
  */
 export async function handleSaveAffiliatePayment(event) {
     event.preventDefault();
     if (!isSuperAdmin()) return;
 
-    const postingId = document.getElementById('pay-affiliate-posting-id')?.value;
+    let targetIds = [];
+    if (currentPayingPostingIds && currentPayingPostingIds.length > 0) {
+        targetIds = currentPayingPostingIds;
+    } else {
+        const rawId = document.getElementById('pay-affiliate-posting-id')?.value;
+        if (rawId) {
+            targetIds = rawId.split(',').map(s => s.trim()).filter(Boolean);
+        }
+    }
+    if (targetIds.length === 0) {
+        showToast('Tidak ada data posting yang akan dibayar', 'error');
+        return;
+    }
+
     const fileInput = document.getElementById('pay-affiliate-file');
-    if (!postingId) return;
 
     const btnSubmit = document.getElementById('btn-submit-pay-affiliate');
     if (btnSubmit) {
@@ -1293,7 +1462,7 @@ export async function handleSaveAffiliatePayment(event) {
     const { error: upErr } = await supabase
         .from('affiliate_postings')
         .update(updatePayload)
-        .eq('id', postingId);
+        .in('id', targetIds);
 
     if (btnSubmit) {
         btnSubmit.disabled = false;
@@ -1304,7 +1473,13 @@ export async function handleSaveAffiliatePayment(event) {
         console.error('Update posting status error:', upErr);
         showToast('Gagal mengubah status pembayaran', 'error');
     } else {
-        showToast('Pembayaran komisi Affiliate berhasil dicatat', 'success');
+        const msg = targetIds.length > 1 
+            ? `Pembayaran akumulasi (${targetIds.length} posting) berhasil dicatat` 
+            : 'Pembayaran komisi Affiliate berhasil dicatat';
+        showToast(msg, 'success');
+        selectedUnpaidPostingIds.clear();
+        currentPayingPostingIds = [];
+        updateSelectedUnpaidBar();
         document.getElementById('modal-pay-affiliate')?.classList.add('hidden');
         loadAffiliatePostings();
     }

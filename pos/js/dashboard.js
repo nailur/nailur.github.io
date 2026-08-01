@@ -533,7 +533,7 @@ window.loadDashboard = async function() {
     // Fetch raw sales for Cash vs Total revenue calculation
     const { data: salesData } = await supabase
         .from('transactions')
-        .select('created_at, total_amount, payment_method, status')
+        .select('created_at, total_amount, discount_amount, tax_amount, payment_method, status')
         .eq('outlet_id', activeOutletId)
         .gte('created_at', startOfDay)
         .lte('created_at', endOfDay)
@@ -547,10 +547,13 @@ window.loadDashboard = async function() {
             const localDate = dateStr.toISOString().split('T')[0];
             
             if (!salesByDate[localDate]) {
-                salesByDate[localDate] = { total: 0, cash: 0, fees: 0, methodNet: {} };
+                salesByDate[localDate] = { count: 0, total: 0, discount: 0, tax: 0, cash: 0, fees: 0, methodNet: {} };
             }
-            const amt = Number(s.total_amount);
+            const amt = Number(s.total_amount) || 0;
+            salesByDate[localDate].count += 1;
             salesByDate[localDate].total += amt;
+            salesByDate[localDate].discount += Number(s.discount_amount) || 0;
+            salesByDate[localDate].tax += Number(s.tax_amount) || 0;
             if (s.payment_method === 'Tunai') {
                 salesByDate[localDate].cash += amt;
             }
@@ -697,19 +700,20 @@ window.loadDashboard = async function() {
         });
     }
 
+    const hourlyCounts = new Array(24).fill(0);
+    const hourlyRevenues = new Array(24).fill(0);
+    if (salesData) {
+        salesData.forEach(s => {
+            const dt = new Date(s.created_at);
+            const hour = dt.getHours();
+            hourlyCounts[hour] += 1;
+            hourlyRevenues[hour] += (Number(s.total_amount) || 0);
+        });
+    }
+
     // ── Chart: Transaction Peak Hours (00:00 - 23:00) ────────
     const peakCtx = document.getElementById('peakHoursChart');
     if (peakCtx) {
-        const hourlyCounts = new Array(24).fill(0);
-        const hourlyRevenues = new Array(24).fill(0);
-        if (salesData) {
-            salesData.forEach(s => {
-                const dt = new Date(s.created_at);
-                const hour = dt.getHours();
-                hourlyCounts[hour] += 1;
-                hourlyRevenues[hour] += (Number(s.total_amount) || 0);
-            });
-        }
         const hourLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
         if (window.peakHoursChartInst) window.peakHoursChartInst.destroy();
@@ -825,15 +829,15 @@ window.loadDashboard = async function() {
         }
     });
 
+    const totalGrossRevenue = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+    const totalFeesMDR = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.fees) || 0), 0);
+    const totalOpExp = Object.values(operationalExpensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
+    const totalStockExp = Object.values(stockExpensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
+    const totalNetProfit = Math.round(totalGrossRevenue - totalFeesMDR - totalOpExp - totalStockExp);
+
     // Render Estimasi Laba Bersih Card
     const netProfitCard = document.getElementById('net-profit-card');
     if (netProfitCard) {
-        const totalGrossRevenue = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.total) || 0), 0);
-        const totalFeesMDR = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.fees) || 0), 0);
-        const totalOpExp = Object.values(operationalExpensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
-        const totalStockExp = Object.values(stockExpensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
-        const totalNetProfit = Math.round(totalGrossRevenue - totalFeesMDR - totalOpExp - totalStockExp);
-
         netProfitCard.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 12px; height: 100%; justify-content: center;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
@@ -880,9 +884,45 @@ window.loadDashboard = async function() {
         salesByDate: salesByDate,
         expensesByDate: expensesByDate,
         operationalExpensesByDate: operationalExpensesByDate,
+        operationalCashExpensesByDate: operationalCashExpensesByDate,
         stockExpensesByDate: stockExpensesByDate,
         netTotalRevenueData: netTotalRevenueData,
-        ALL_PAYMENT_METHODS: ALL_PAYMENT_METHODS
+        netCashRevenueData: netCashRevenueData,
+        depositData: depositData,
+        selisihData: selisihData,
+        depositsByDate: depositsByDate,
+        ALL_PAYMENT_METHODS: ALL_PAYMENT_METHODS,
+        summaryCards: {
+            totalRevenue: totalGrossRevenue,
+            totalTrx,
+            totalDiscount,
+            totalTax,
+            totalVoidAmt,
+            totalVoidTrx,
+            totalOpExp,
+            totalStockExp,
+            totalFeesMDR,
+            totalNetProfit,
+            ownerShare: Math.round(ownerShare),
+            investorShare: Math.round(investorShare)
+        },
+        methodSummary: methodSummary,
+        productData: productData,
+        chickenBagStats: {
+            countDada, countPahaAtas, countPahaBawah, countSayap, countLainnya,
+            reqDada, reqPahaAtas, reqPahaBawah, reqSayap,
+            totalBagsOpened,
+            sisaDada, sisaPahaAtas, sisaPahaBawah, sisaSayap,
+            totalPieces
+        },
+        packagingBoxStats: {
+            boxM_OriDada, boxM_OriPahaAtas, boxM_OriPahaBawah, boxM_OriSayap,
+            boxM_GeprekDada, boxM_GeprekPahaAtas, boxM_GeprekPahaBawah, boxM_GeprekSayap,
+            boxXS_GeprekDada, boxXS_GeprekPahaAtas, boxXS_GeprekPahaBawah, boxXS_GeprekSayap,
+            countBoxM, countBoxXS
+        },
+        hourlyCounts: hourlyCounts,
+        hourlyRevenues: hourlyRevenues
     };
 };
 
@@ -971,12 +1011,23 @@ window.exportDashboardExcel = async function() {
     const {
         startDate,
         endDate,
-        compDates,
-        salesByDate,
-        expensesByDate,
+        compDates = [],
+        salesByDate = {},
+        expensesByDate = {},
         operationalExpensesByDate = {},
+        operationalCashExpensesByDate = {},
         stockExpensesByDate = {},
-        ALL_PAYMENT_METHODS
+        netCashRevenueData = [],
+        depositData = [],
+        selisihData = [],
+        ALL_PAYMENT_METHODS = ['Tunai', 'QRIS', 'Bank Transfer', 'Go Food', 'Grab Food', 'Shopee Food'],
+        summaryCards = {},
+        methodSummary = {},
+        productData = [],
+        chickenBagStats = {},
+        packagingBoxStats = {},
+        hourlyCounts = [],
+        hourlyRevenues = []
     } = window._lastDashboardData;
 
     if (!window.XLSX) {
@@ -992,110 +1043,352 @@ window.exportDashboardExcel = async function() {
         return window.showToast('Library XLSX gagal dimuat', 'error');
     }
 
-    // Sheet 1: Gross Revenue and Expense Data
-    const sheet1Rows = [];
-    let totalGross = 0;
-    let totalOpExp = 0;
-    let totalStockExp = 0;
-    let totalExp = 0;
-    let totalNet = 0;
+    const applyRpFormat = (ws, colLetters, skipRowIndices = []) => {
+        for (let cell in ws) {
+            if (cell[0] === '!') continue;
+            const col = cell.replace(/[0-9]/g, '');
+            const row = parseInt(cell.replace(/\D/g, ''), 10);
+            if (colLetters.includes(col) && row > 1 && !skipRowIndices.includes(row)) {
+                ws[cell].z = '"Rp "#,##0;-"Rp "#,##0;"Rp "0';
+            }
+        }
+    };
 
+    // Sheet 1: Ringkasan Total & Laba (Summary Cards + Estimasi Laba Bersih & Bagi Hasil)
+    const sheet1Rows = [
+        { "Keterangan": "Total Pendapatan Kotor", "Nilai": Number(summaryCards.totalRevenue || 0) },
+        { "Keterangan": "Total Transaksi", "Nilai": Number(summaryCards.totalTrx || 0) },
+        { "Keterangan": "Total Diskon", "Nilai": Number(summaryCards.totalDiscount || 0) },
+        { "Keterangan": "Total Pajak", "Nilai": Number(summaryCards.totalTax || 0) },
+        { "Keterangan": "Total Batal (Rp)", "Nilai": Number(summaryCards.totalVoidAmt || 0) },
+        { "Keterangan": "Jumlah Transaksi Batal", "Nilai": Number(summaryCards.totalVoidTrx || 0) },
+        { "Keterangan": "Potongan MDR / Fee", "Nilai": Number(summaryCards.totalFeesMDR || 0) },
+        { "Keterangan": "Pengeluaran Operasional", "Nilai": Number(summaryCards.totalOpExp || 0) },
+        { "Keterangan": "Pengeluaran Stock", "Nilai": Number(summaryCards.totalStockExp || 0) },
+        { "Keterangan": "ESTIMASI LABA BERSIH", "Nilai": Number(summaryCards.totalNetProfit || 0) },
+        { "Keterangan": "Bagi Hasil - Bisnis Owner", "Nilai": Number(summaryCards.ownerShare || 0) },
+        { "Keterangan": "Bagi Hasil - Investor", "Nilai": Number(summaryCards.investorShare || 0) }
+    ];
+
+    // Sheet 2: Arus Kas & Setoran (Omset Bersih Tunai vs Setoran chart per day)
+    const sheet2Rows = [];
+    let totCashRev2 = 0, totOpCashExp2 = 0, totNetCash2 = 0, totDeposit2 = 0, totSelisih2 = 0;
+    compDates.forEach((d, i) => {
+        const cashRev = salesByDate[d] ? Number(salesByDate[d].cash || 0) : 0;
+        const opCashExp = Number(operationalCashExpensesByDate[d] || 0);
+        const netCash = Number(netCashRevenueData[i] || 0);
+        const dep = Number(depositData[i] || 0);
+        const selisih = Number(selisihData[i] || 0);
+
+        totCashRev2 += cashRev;
+        totOpCashExp2 += opCashExp;
+        totNetCash2 += netCash;
+        totDeposit2 += dep;
+        totSelisih2 += selisih;
+
+        let status = "Sesuai";
+        if (selisih < 0) status = "Kurang Setor";
+        else if (selisih > 0) status = "Lebih Setor";
+
+        sheet2Rows.push({
+            "Tanggal": d,
+            "Pendapatan Tunai (Rp)": cashRev,
+            "Pengeluaran Operasional Tunai (Rp)": opCashExp,
+            "Omset Bersih Cash (Rp)": netCash,
+            "Setoran Kasir (Rp)": dep,
+            "Selisih (Setoran - Omset Bersih) (Rp)": selisih,
+            "Status": status
+        });
+    });
+    let statusTot2 = "Sesuai";
+    if (totSelisih2 < 0) statusTot2 = "Kurang Setor";
+    else if (totSelisih2 > 0) statusTot2 = "Lebih Setor";
+    sheet2Rows.push({
+        "Tanggal": "TOTAL",
+        "Pendapatan Tunai (Rp)": totCashRev2,
+        "Pengeluaran Operasional Tunai (Rp)": totOpCashExp2,
+        "Omset Bersih Cash (Rp)": totNetCash2,
+        "Setoran Kasir (Rp)": totDeposit2,
+        "Selisih (Setoran - Omset Bersih) (Rp)": totSelisih2,
+        "Status": statusTot2
+    });
+
+    // Sheet 3: Pendapatan & Pengeluaran (Daily breakdown of Revenue vs Expenses chart & cards)
+    const sheet3Rows = [];
+    let totTrx3 = 0, totGross3 = 0, totDisc3 = 0, totTax3 = 0, totVoidAmt3 = 0, totOpExp3 = 0, totStockExp3 = 0, totExp3 = 0, totNet3 = 0;
     compDates.forEach(d => {
-        const gross = salesByDate[d] ? Number(salesByDate[d].total || 0) : 0;
+        const s = salesByDate[d] || {};
+        const trx = Number(s.count || 0);
+        const gross = Number(s.total || 0);
+        const disc = Number(s.discount || 0);
+        const tax = Number(s.tax || 0);
+        const voidAmt = Number(s.voidAmount || 0);
         const opExp = Number(operationalExpensesByDate[d] || 0);
         const stockExp = Number(stockExpensesByDate[d] || 0);
         const exp = Number(expensesByDate[d] || 0);
         const net = gross - exp;
 
-        totalGross += gross;
-        totalOpExp += opExp;
-        totalStockExp += stockExp;
-        totalExp += exp;
-        totalNet += net;
+        totTrx3 += trx;
+        totGross3 += gross;
+        totDisc3 += disc;
+        totTax3 += tax;
+        totVoidAmt3 += voidAmt;
+        totOpExp3 += opExp;
+        totStockExp3 += stockExp;
+        totExp3 += exp;
+        totNet3 += net;
 
-        sheet1Rows.push({
+        sheet3Rows.push({
             "Tanggal": d,
+            "Jumlah Transaksi": trx,
             "Pendapatan Kotor (Rp)": gross,
+            "Diskon (Rp)": disc,
+            "Pajak (Rp)": tax,
+            "Batal / Void (Rp)": voidAmt,
             "Pengeluaran Operasional (Rp)": opExp,
             "Pengeluaran Stock (Rp)": stockExp,
             "Total Pengeluaran (Rp)": exp,
             "Net (Pendapatan - Total Pengeluaran) (Rp)": net
         });
     });
-
-    sheet1Rows.push({
+    sheet3Rows.push({
         "Tanggal": "TOTAL",
-        "Pendapatan Kotor (Rp)": totalGross,
-        "Pengeluaran Operasional (Rp)": totalOpExp,
-        "Pengeluaran Stock (Rp)": totalStockExp,
-        "Total Pengeluaran (Rp)": totalExp,
-        "Net (Pendapatan - Total Pengeluaran) (Rp)": totalNet
+        "Jumlah Transaksi": totTrx3,
+        "Pendapatan Kotor (Rp)": totGross3,
+        "Diskon (Rp)": totDisc3,
+        "Pajak (Rp)": totTax3,
+        "Batal / Void (Rp)": totVoidAmt3,
+        "Pengeluaran Operasional (Rp)": totOpExp3,
+        "Pengeluaran Stock (Rp)": totStockExp3,
+        "Total Pengeluaran (Rp)": totExp3,
+        "Net (Pendapatan - Total Pengeluaran) (Rp)": totNet3
     });
 
-    // Sheet 2: Net Revenue breakdown by Payment Method
-    const sheet2Rows = [];
-    const methodTotals = {};
-    ALL_PAYMENT_METHODS.forEach(m => methodTotals[m] = 0);
-    let totalAllMethodsSum = 0;
+    // Sheet 4: Metode Pembayaran (Table #dashboard-method-table)
+    const sheet4Rows = [];
+    let totMethodCount = 0, totMethodGross = 0, totMethodFee = 0, totMethodNet = 0;
+    const activeOutletObj = window.posOutletsList?.find(o => o.id === window.activeOutletId);
+
+    Object.entries(methodSummary)
+        .sort((a, b) => b[1].total - a[1].total)
+        .forEach(([method, stats]) => {
+            let methodFee = 0;
+            if (method !== 'Tunai' && activeOutletObj && activeOutletObj.mdr_fees && activeOutletObj.mdr_fees[method]) {
+                const feeCfg = activeOutletObj.mdr_fees[method];
+                if (feeCfg.type === 'percent') {
+                    methodFee = stats.total * (Number(feeCfg.value) / 100);
+                } else if (feeCfg.type === 'fixed') {
+                    methodFee = stats.count * Number(feeCfg.value);
+                }
+            }
+            const netAmount = Math.round(stats.total - methodFee);
+
+            totMethodCount += Number(stats.count || 0);
+            totMethodGross += Number(stats.total || 0);
+            totMethodFee += Math.round(methodFee);
+            totMethodNet += netAmount;
+
+            sheet4Rows.push({
+                "Metode Pembayaran": method,
+                "Jumlah Transaksi (Trx)": Number(stats.count || 0),
+                "Omset Kotor (Rp)": Number(stats.total || 0),
+                "Potongan MDR / Fee (Rp)": Math.round(methodFee),
+                "Omset Bersih (Rp)": netAmount
+            });
+        });
+
+    sheet4Rows.push({
+        "Metode Pembayaran": "TOTAL",
+        "Jumlah Transaksi (Trx)": totMethodCount,
+        "Omset Kotor (Rp)": totMethodGross,
+        "Potongan MDR / Fee (Rp)": totMethodFee,
+        "Omset Bersih (Rp)": totMethodNet
+    });
+
+    // Sheet 5: Omset Bersih Per Metode (Daily breakdown of #methodNetChart)
+    const sheet5Rows = [];
+    const methodTotals5 = {};
+    ALL_PAYMENT_METHODS.forEach(m => methodTotals5[m] = 0);
+    let totalAllMethodsSum5 = 0;
 
     compDates.forEach(d => {
         const row = { "Tanggal": d };
         let daySum = 0;
         ALL_PAYMENT_METHODS.forEach(m => {
-            const val = salesByDate[d] && salesByDate[d].methodNet[m] ? Math.round(salesByDate[d].methodNet[m]) : 0;
+            const val = salesByDate[d] && salesByDate[d].methodNet && salesByDate[d].methodNet[m] ? Math.round(salesByDate[d].methodNet[m]) : 0;
             row[`Omset Bersih ${m} (Rp)`] = val;
-            methodTotals[m] += val;
+            methodTotals5[m] += val;
             daySum += val;
         });
         row["Total Omset Bersih Hari Ini (Rp)"] = daySum;
-        totalAllMethodsSum += daySum;
-        sheet2Rows.push(row);
+        totalAllMethodsSum5 += daySum;
+        sheet5Rows.push(row);
     });
 
-    const totalRow2 = { "Tanggal": "TOTAL" };
+    const totalRow5 = { "Tanggal": "TOTAL" };
     ALL_PAYMENT_METHODS.forEach(m => {
-        totalRow2[`Omset Bersih ${m} (Rp)`] = methodTotals[m];
+        totalRow5[`Omset Bersih ${m} (Rp)`] = methodTotals5[m];
     });
-    totalRow2["Total Omset Bersih Hari Ini (Rp)"] = totalAllMethodsSum;
-    sheet2Rows.push(totalRow2);
+    totalRow5["Total Omset Bersih Hari Ini (Rp)"] = totalAllMethodsSum5;
+    sheet5Rows.push(totalRow5);
 
-    // Create workbook and append sheets
+    // Sheet 6: Produk Terjual (Table #dashboard-product-table)
+    const sheet6Rows = [];
+    let totProdQty = 0, totProdRev = 0;
+    productData.forEach(p => {
+        const qty = Number(p.qty || 0);
+        const rev = Number(p.revenue || 0);
+        totProdQty += qty;
+        totProdRev += rev;
+        sheet6Rows.push({
+            "Nama Produk": p.name || "-",
+            "Qty Terjual": qty,
+            "Total Omset (Rp)": rev
+        });
+    });
+    sheet6Rows.push({
+        "Nama Produk": "TOTAL",
+        "Qty Terjual": totProdQty,
+        "Total Omset (Rp)": totProdRev
+    });
+
+    // Sheet 7: Estimasi Kantong Ayam (Card #chicken-bag-card)
+    const sheet7Rows = [
+        {
+            "Bagian Ayam": "Dada",
+            "Qty Terjual (Potong)": chickenBagStats.countDada || 0,
+            "Kapasitas / Kantong": "3 Potong / Kantong",
+            "Kebutuhan Kantong": chickenBagStats.reqDada || 0,
+            "Estimasi Sisa Potong": chickenBagStats.sisaDada || 0
+        },
+        {
+            "Bagian Ayam": "Paha Atas",
+            "Qty Terjual (Potong)": chickenBagStats.countPahaAtas || 0,
+            "Kapasitas / Kantong": "2 Potong / Kantong",
+            "Kebutuhan Kantong": chickenBagStats.reqPahaAtas || 0,
+            "Estimasi Sisa Potong": chickenBagStats.sisaPahaAtas || 0
+        },
+        {
+            "Bagian Ayam": "Paha Bawah",
+            "Qty Terjual (Potong)": chickenBagStats.countPahaBawah || 0,
+            "Kapasitas / Kantong": "2 Potong / Kantong",
+            "Kebutuhan Kantong": chickenBagStats.reqPahaBawah || 0,
+            "Estimasi Sisa Potong": chickenBagStats.sisaPahaBawah || 0
+        },
+        {
+            "Bagian Ayam": "Sayap",
+            "Qty Terjual (Potong)": chickenBagStats.countSayap || 0,
+            "Kapasitas / Kantong": "2 Potong / Kantong",
+            "Kebutuhan Kantong": chickenBagStats.reqSayap || 0,
+            "Estimasi Sisa Potong": chickenBagStats.sisaSayap || 0
+        },
+        {
+            "Bagian Ayam": "Lainnya (Ayam Non-Spesifik)",
+            "Qty Terjual (Potong)": chickenBagStats.countLainnya || 0,
+            "Kapasitas / Kantong": "-",
+            "Kebutuhan Kantong": 0,
+            "Estimasi Sisa Potong": 0
+        },
+        {
+            "Bagian Ayam": "TOTAL POTONG AYAM",
+            "Qty Terjual (Potong)": chickenBagStats.totalPieces || 0,
+            "Kapasitas / Kantong": "TOTAL KANTONG DIBUKA",
+            "Kebutuhan Kantong": chickenBagStats.totalBagsOpened || 0,
+            "Estimasi Sisa Potong": "-"
+        }
+    ];
+
+    // Sheet 8: Estimasi Packaging Box (Card #packaging-box-card)
+    const sheet8Rows = [
+        { "Kategori Box": "Box Ukuran M (Paket Original)", "Bagian Ayam": "Dada", "Qty Box Terpakai": packagingBoxStats.boxM_OriDada || 0 },
+        { "Kategori Box": "Box Ukuran M (Paket Original)", "Bagian Ayam": "Paha Atas", "Qty Box Terpakai": packagingBoxStats.boxM_OriPahaAtas || 0 },
+        { "Kategori Box": "Box Ukuran M (Paket Original)", "Bagian Ayam": "Paha Bawah", "Qty Box Terpakai": packagingBoxStats.boxM_OriPahaBawah || 0 },
+        { "Kategori Box": "Box Ukuran M (Paket Original)", "Bagian Ayam": "Sayap", "Qty Box Terpakai": packagingBoxStats.boxM_OriSayap || 0 },
+        { "Kategori Box": "TOTAL BOX UKURAN M (ORIGINAL)", "Bagian Ayam": "-", "Qty Box Terpakai": (packagingBoxStats.boxM_OriDada||0)+(packagingBoxStats.boxM_OriPahaAtas||0)+(packagingBoxStats.boxM_OriPahaBawah||0)+(packagingBoxStats.boxM_OriSayap||0) },
+        { "Kategori Box": "Box Ukuran M (Paket Geprek)", "Bagian Ayam": "Dada", "Qty Box Terpakai": packagingBoxStats.boxM_GeprekDada || 0 },
+        { "Kategori Box": "Box Ukuran M (Paket Geprek)", "Bagian Ayam": "Paha Atas", "Qty Box Terpakai": packagingBoxStats.boxM_GeprekPahaAtas || 0 },
+        { "Kategori Box": "Box Ukuran M (Paket Geprek)", "Bagian Ayam": "Paha Bawah", "Qty Box Terpakai": packagingBoxStats.boxM_GeprekPahaBawah || 0 },
+        { "Kategori Box": "Box Ukuran M (Paket Geprek)", "Bagian Ayam": "Sayap", "Qty Box Terpakai": packagingBoxStats.boxM_GeprekSayap || 0 },
+        { "Kategori Box": "TOTAL BOX UKURAN M (GEPREK)", "Bagian Ayam": "-", "Qty Box Terpakai": (packagingBoxStats.boxM_GeprekDada||0)+(packagingBoxStats.boxM_GeprekPahaAtas||0)+(packagingBoxStats.boxM_GeprekPahaBawah||0)+(packagingBoxStats.boxM_GeprekSayap||0) },
+        { "Kategori Box": "TOTAL KESELURUHAN BOX UKURAN M", "Bagian Ayam": "Paket Ori + Geprek", "Qty Box Terpakai": packagingBoxStats.countBoxM || 0 },
+        { "Kategori Box": "Box Ukuran XS (Geprek Satuan)", "Bagian Ayam": "Dada", "Qty Box Terpakai": packagingBoxStats.boxXS_GeprekDada || 0 },
+        { "Kategori Box": "Box Ukuran XS (Geprek Satuan)", "Bagian Ayam": "Paha Atas", "Qty Box Terpakai": packagingBoxStats.boxXS_GeprekPahaAtas || 0 },
+        { "Kategori Box": "Box Ukuran XS (Geprek Satuan)", "Bagian Ayam": "Paha Bawah", "Qty Box Terpakai": packagingBoxStats.boxXS_GeprekPahaBawah || 0 },
+        { "Kategori Box": "Box Ukuran XS (Geprek Satuan)", "Bagian Ayam": "Sayap", "Qty Box Terpakai": packagingBoxStats.boxXS_GeprekSayap || 0 },
+        { "Kategori Box": "TOTAL BOX UKURAN XS (GEPREK SATUAN)", "Bagian Ayam": "Geprek Satuan", "Qty Box Terpakai": packagingBoxStats.countBoxXS || 0 }
+    ];
+
+    // Sheet 9: Jam Sibuk (Chart #peakHoursChart)
+    const sheet9Rows = [];
+    let totHCount = 0, totHRev = 0;
+    for (let i = 0; i < 24; i++) {
+        const hourLabel = `${String(i).padStart(2, '0')}:00 - ${String(i).padStart(2, '0')}:59`;
+        const c = Number(hourlyCounts[i] || 0);
+        const r = Number(hourlyRevenues[i] || 0);
+        totHCount += c;
+        totHRev += r;
+        sheet9Rows.push({
+            "Jam / Waktu": hourLabel,
+            "Jumlah Transaksi": c,
+            "Omset / Pendapatan (Rp)": r
+        });
+    }
+    sheet9Rows.push({
+        "Jam / Waktu": "TOTAL",
+        "Jumlah Transaksi": totHCount,
+        "Omset / Pendapatan (Rp)": totHRev
+    });
+
+    // Create Worksheets
     const ws1 = window.XLSX.utils.json_to_sheet(sheet1Rows);
     const ws2 = window.XLSX.utils.json_to_sheet(sheet2Rows);
+    const ws3 = window.XLSX.utils.json_to_sheet(sheet3Rows);
+    const ws4 = window.XLSX.utils.json_to_sheet(sheet4Rows);
+    const ws5 = window.XLSX.utils.json_to_sheet(sheet5Rows);
+    const ws6 = window.XLSX.utils.json_to_sheet(sheet6Rows);
+    const ws7 = window.XLSX.utils.json_to_sheet(sheet7Rows);
+    const ws8 = window.XLSX.utils.json_to_sheet(sheet8Rows);
+    const ws9 = window.XLSX.utils.json_to_sheet(sheet9Rows);
 
-    // Format nominal currency columns (Rp currency) for Sheet 1
-    for (let cell in ws1) {
-        if (cell[0] === '!') continue;
-        const col = cell.replace(/[0-9]/g, '');
-        const row = parseInt(cell.replace(/\D/g, ''), 10);
-        if (['B', 'C', 'D'].includes(col) && row > 1) {
-            ws1[cell].z = '"Rp "#,##0;-"Rp "#,##0;"Rp "0';
-        }
-    }
-    ws1['!cols'] = [{ wch: 15 }, { wch: 26 }, { wch: 30 }, { wch: 38 }];
+    // Apply currency formatting
+    applyRpFormat(ws1, ['B'], [2, 6]); // row 1 is header, row 2 is Total Transaksi, row 6 is Jumlah Transaksi Batal
+    applyRpFormat(ws2, ['B', 'C', 'D', 'E', 'F']);
+    applyRpFormat(ws3, ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']);
+    applyRpFormat(ws4, ['C', 'D', 'E']);
+    applyRpFormat(ws5, ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']);
+    applyRpFormat(ws6, ['C']);
+    applyRpFormat(ws9, ['C']);
 
-    // Format nominal currency columns (Rp currency) for Sheet 2
-    for (let cell in ws2) {
-        if (cell[0] === '!') continue;
-        const col = cell.replace(/[0-9]/g, '');
-        const row = parseInt(cell.replace(/\D/g, ''), 10);
-        if (col !== 'A' && row > 1) {
-            ws2[cell].z = '"Rp "#,##0;-"Rp "#,##0;"Rp "0';
-        }
-    }
-    const ws2Cols = [{ wch: 15 }];
+    // Column widths
+    ws1['!cols'] = [{ wch: 30 }, { wch: 24 }];
+    ws2['!cols'] = [{ wch: 15 }, { wch: 24 }, { wch: 32 }, { wch: 24 }, { wch: 20 }, { wch: 35 }, { wch: 18 }];
+    ws3['!cols'] = [{ wch: 15 }, { wch: 18 }, { wch: 24 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 26 }, { wch: 24 }, { wch: 24 }, { wch: 36 }];
+    ws4['!cols'] = [{ wch: 22 }, { wch: 22 }, { wch: 24 }, { wch: 24 }, { wch: 24 }];
+    const ws5Cols = [{ wch: 15 }];
     for (let i = 0; i <= ALL_PAYMENT_METHODS.length; i++) {
-        ws2Cols.push({ wch: 30 });
+        ws5Cols.push({ wch: 28 });
     }
-    ws2['!cols'] = ws2Cols;
+    ws5['!cols'] = ws5Cols;
+    ws6['!cols'] = [{ wch: 35 }, { wch: 18 }, { wch: 24 }];
+    ws7['!cols'] = [{ wch: 28 }, { wch: 22 }, { wch: 25 }, { wch: 22 }, { wch: 22 }];
+    ws8['!cols'] = [{ wch: 34 }, { wch: 20 }, { wch: 20 }];
+    ws9['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 26 }];
 
+    // Create Workbook
     const wb = window.XLSX.utils.book_new();
-    window.XLSX.utils.book_append_sheet(wb, ws1, "Pendapatan & Pengeluaran");
-    window.XLSX.utils.book_append_sheet(wb, ws2, "Omset Bersih Payment Method");
+    window.XLSX.utils.book_append_sheet(wb, ws1, "Ringkasan Total & Laba");
+    window.XLSX.utils.book_append_sheet(wb, ws2, "Arus Kas & Setoran");
+    window.XLSX.utils.book_append_sheet(wb, ws3, "Pendapatan & Pengeluaran");
+    window.XLSX.utils.book_append_sheet(wb, ws4, "Metode Pembayaran");
+    window.XLSX.utils.book_append_sheet(wb, ws5, "Omset Bersih Per Metode");
+    window.XLSX.utils.book_append_sheet(wb, ws6, "Produk Terjual");
+    window.XLSX.utils.book_append_sheet(wb, ws7, "Estimasi Kantong Ayam");
+    window.XLSX.utils.book_append_sheet(wb, ws8, "Estimasi Packaging Box");
+    window.XLSX.utils.book_append_sheet(wb, ws9, "Jam Sibuk (Peak Hours)");
 
     const filenameDate = startDate === endDate ? startDate : `${startDate}_sd_${endDate}`;
     window.XLSX.writeFile(wb, `Laporan_Dashboard_${filenameDate}.xlsx`);
-    if (typeof window.showToast === 'function') window.showToast('Laporan Excel berhasil diunduh', 'success');
+    if (typeof window.showToast === 'function') window.showToast('Laporan Excel berhasil diunduh (9 Sheet Lengkap)', 'success');
 };
 
 function bindDashboardButtons() {

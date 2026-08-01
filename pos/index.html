@@ -1238,7 +1238,10 @@
                 <div id="subtab-expenses-list" class="subtab-pane active">
                     <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                         <h3>Biaya Operasional</h3>
-                        <div class="filter-group">
+                        <div class="filter-group" style="display: flex; gap: 10px; align-items: center;">
+                            <button class="btn btn-secondary" id="btn-export-expenses-excel" style="display: flex; align-items: center; gap: 5px;">
+                                <i class="ph ph-file-xls"></i> Export Excel
+                            </button>
                             <button class="btn btn-primary" id="btn-add-expense">
                                 <i class="ph ph-plus"></i> Catat Pengeluaran
                             </button>
@@ -1332,6 +1335,9 @@
                     <div class="action-bar" style="flex-wrap: wrap; gap: 10px;">
                         <h3>Rekap Komisi Affiliate</h3>
                         <div class="filter-group">
+                            <button class="btn btn-success hidden" id="btn-pay-selected-affiliate" onclick="window.openPaySelectedAffiliateModal()" style="display: none;">
+                                <i class="ph ph-money"></i> Bayar Terpilih (<span id="count-selected-unpaid">0</span>)
+                            </button>
                             <button class="btn btn-primary" id="btn-add-affiliate-posting">
                                 <i class="ph ph-plus"></i> Catat Affiliate
                             </button>
@@ -1341,6 +1347,7 @@
                         <table class="data-table" id="affiliate-postings-table">
                             <thead>
                                 <tr>
+                                    <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-unpaid-postings" onchange="window.toggleAllUnpaidPostings(this)" title="Pilih Semua Unpaid"></th>
                                     <th>No. Dokumen</th>
                                     <th>Tgl Posting</th>
                                     <th>Nama Afiliator</th>
@@ -1813,6 +1820,49 @@
                 <button type="button" class="btn btn-secondary" data-close="modal-transaction-details">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btn-reprint-trx">Cetak Ulang</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Payment Method (Riwayat Transaksi) -->
+    <div id="modal-edit-payment-method" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3>Edit Metode Pembayaran</h3>
+                <button class="btn-close" data-close="modal-edit-payment-method"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-edit-payment-method" style="display:flex; flex-direction:column; gap:14px; margin-top:10px;">
+                <input type="hidden" id="edit-pm-trx-id">
+                <div>
+                    <div style="font-size:0.85rem; color:var(--text-muted);">No. Struk</div>
+                    <strong id="edit-pm-receipt-no" style="font-size:1.05rem;">-</strong>
+                </div>
+                <div>
+                    <div style="font-size:0.85rem; color:var(--text-muted);">Total Transaksi</div>
+                    <strong id="edit-pm-total-amount" style="font-size:1.05rem; color:var(--primary);">Rp 0</strong>
+                </div>
+                <div class="input-group">
+                    <label for="edit-pm-select">Metode Pembayaran Baru</label>
+                    <select id="edit-pm-select" required style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                        <option value="Tunai">Tunai</option>
+                        <option value="QRIS">QRIS</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Go Food">Go Food</option>
+                        <option value="Grab Food">Grab Food</option>
+                        <option value="Shopee Food">Shopee Food</option>
+                    </select>
+                </div>
+                <div id="edit-pm-cash-wrapper" class="input-group" style="display:none;">
+                    <label for="edit-pm-cash-received">Tunai Diterima (Rp)</label>
+                    <input type="number" id="edit-pm-cash-received" min="0" placeholder="0" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="font-size:0.85rem; margin-top:6px; color:var(--text-muted);">
+                        Kembalian: <strong id="edit-pm-change-display" style="color:var(--text-main);">Rp 0</strong>
+                    </div>
+                </div>
+                <div class="modal-actions" style="justify-content: flex-end; gap: 8px; margin-top: 10px;">
+                    <button type="button" class="btn btn-secondary" data-close="modal-edit-payment-method">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-edit-pm">Simpan Perubahan</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -2672,7 +2722,13 @@
                 </div>
 
                 <div style="margin-bottom: 20px;">
-                    <label style="font-weight: 600; display:block; margin-bottom: 8px;">Pilih Transaksi Penjualan Belum Diklaim:</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px;">
+                        <label style="font-weight: 600; margin: 0;">Pilih Transaksi Penjualan Belum Diklaim:</label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <label for="affiliate-unclaimed-date-filter" style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Filter Tanggal:</label>
+                            <input type="date" id="affiliate-unclaimed-date-filter" class="input-sm" style="padding: 4px 8px; font-size: 0.85rem;" onchange="window.onAffiliateUnclaimedDateChange && window.onAffiliateUnclaimedDateChange()">
+                        </div>
+                    </div>
                     <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
                         <table class="data-table" id="affiliate-unclaimed-transactions-table" style="margin: 0;">
                             <thead style="position: sticky; top: 0; background: var(--surface); z-index: 1;">

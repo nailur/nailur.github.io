@@ -22,7 +22,7 @@ import {
 } from './state.js';
 import { checkActiveShift, handleOpenShift, handleCloseShift } from './shift.js';
 import { loadInventory, handleSaveInventory, loadStockPostings } from './inventory.js';
-import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMaster, openAddExpenseMaster } from './expenses.js';
+import { loadExpenses, loadExpenseMaster, handleSaveExpense, handleSaveExpenseMaster, openAddExpenseMaster, exportExpensesToExcel } from './expenses.js';
 import { loadDeposits, handleSaveDeposit } from './deposits.js';
 import { loadShifts, handleSaveShift, openShiftModal } from './shift-master.js';
 import { loadDiscounts, setupDiscountForm } from './discounts.js';
@@ -543,6 +543,7 @@ function setupEventListeners() {
     document.getElementById('btn-add-inventory')?.addEventListener('click', () => window.editInventory(null));
     document.getElementById('form-inventory')?.addEventListener('submit', handleSaveInventory);
 
+    document.getElementById('btn-export-expenses-excel')?.addEventListener('click', exportExpensesToExcel);
     document.getElementById('btn-add-expense')?.addEventListener('click', () => {
         const form = document.getElementById('form-expense');
         if(form) form.reset();

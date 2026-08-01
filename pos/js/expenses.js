@@ -389,3 +389,116 @@ export async function deleteExpenseMaster(id) {
 window.deleteExpense = deleteExpense;
 window.deleteExpenseMaster = deleteExpenseMaster;
 window.editExpenseMaster = editExpenseMaster;
+
+export async function exportExpensesToExcel() {
+    if (!getActiveOutletId()) return showToast('Pilih outlet terlebih dahulu', 'error');
+
+    // Lazy load SheetJS library if not yet loaded
+    if (!window.XLSX) {
+        try {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = './assets/lib/xlsx.full.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        } catch (e) {
+            return showToast('Gagal memuat library Excel', 'error');
+        }
+    }
+
+    const btn = document.getElementById('btn-export-expenses-excel');
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengekspor...';
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('operational_costs')
+            .select('document_number, cost_date, total_amount, payment_method, notes, profiles:created_by (name)')
+            .eq('outlet_id', getActiveOutletId())
+            .order('cost_date', { ascending: false })
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            showToast('Tidak ada data Biaya Operasional untuk diekspor', 'error');
+            return;
+        }
+
+        const rows = [
+            ['Laporan Biaya Operasional'],
+            [`Tanggal Ekspor: ${new Date().toLocaleDateString('id-ID')}`],
+            [],
+            ['No. Dokumen', 'Tanggal Biaya', 'Total (Rp)', 'Metode Pembayaran', 'Keterangan / Catatan', 'Dicatat Oleh (Kasir)']
+        ];
+
+        let totalSum = 0;
+        let totalTunai = 0;
+        let totalNonTunai = 0;
+
+        data.forEach(exp => {
+            const docNo = exp.document_number || '-';
+            const dateStr = exp.cost_date ? new Date(exp.cost_date).toLocaleDateString('id-ID') : '-';
+            const amount = Number(exp.total_amount || 0);
+            const method = exp.payment_method || 'Tunai';
+            const notes = exp.notes || '-';
+            const cashier = exp.profiles?.name || '-';
+
+            totalSum += amount;
+            if (method === 'Non-Tunai') {
+                totalNonTunai += amount;
+            } else {
+                totalTunai += amount;
+            }
+
+            rows.push([docNo, dateStr, amount, method, notes, cashier]);
+        });
+
+        rows.push([]);
+        rows.push(['TOTAL KESELURUHAN', '', totalSum, '', '', '']);
+        rows.push(['TOTAL TUNAI', '', totalTunai, '', '', '']);
+        rows.push(['TOTAL NON-TUNAI', '', totalNonTunai, '', '', '']);
+
+        const ws = window.XLSX.utils.aoa_to_sheet(rows);
+
+        ws['!cols'] = [
+            { wch: 18 }, // No. Dokumen
+            { wch: 14 }, // Tanggal Biaya
+            { wch: 18 }, // Total (Rp)
+            { wch: 18 }, // Metode Pembayaran
+            { wch: 35 }, // Keterangan
+            { wch: 22 }  // Dicatat Oleh
+        ];
+
+        const range = window.XLSX.utils.decode_range(ws['!ref']);
+        const z = '"Rp "#,##0;-"Rp "#,##0;"Rp "0';
+        for (let R = 4; R <= range.e.r; R++) {
+            const cellRef = window.XLSX.utils.encode_cell({ r: R, c: 2 });
+            if (ws[cellRef] && typeof ws[cellRef].v === 'number') {
+                ws[cellRef].z = z;
+            }
+        }
+
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, 'Biaya Operasional');
+
+        const filenameDate = new Date().toISOString().slice(0, 10);
+        window.XLSX.writeFile(wb, `Laporan_Biaya_Operasional_${filenameDate}.xlsx`);
+        showToast('Berhasil mengunduh Laporan Biaya Operasional', 'success');
+    } catch (err) {
+        console.error('Export Excel error:', err);
+        showToast('Gagal mengekspor data ke Excel', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    }
+}
+
+window.exportExpensesToExcel = exportExpensesToExcel;

@@ -4,6 +4,12 @@ import { showToast } from './utils.js';
 import { activeOutletId } from './state.js';
 import { printReceipt, printReceiptBluetooth } from './cart.js';
 import { isPrinterConnected } from './printer.js';
+import { getCurrentProfile } from './auth.js';
+
+function canEditPaymentMethod() {
+    const profile = getCurrentProfile();
+    return profile && (profile.role === 'superadmin' || profile.role === 'owner');
+}
 
 export const HISTORY_PAGE_SIZE = 25;
 export let historyPage = 0;
@@ -219,7 +225,10 @@ export async function loadHistory(resetPage = true) {
                 <td>${trx.payment_method}</td>
                 <td style="white-space: nowrap;">
                     <button class="btn btn-icon" style="color:var(--primary); margin-right: 4px;" onclick="viewTransactionDetails('${trx.id}')" title="Detail Transaksi"><i class="ph ph-eye"></i></button>
-                    <button class="btn btn-icon" style="color:var(--primary);" onclick="reprintTransactionById('${trx.id}')" title="Cetak Ulang Struk"><i class="ph ph-printer"></i></button>
+                    <button class="btn btn-icon" style="color:var(--primary); margin-right: 4px;" onclick="reprintTransactionById('${trx.id}')" title="Cetak Ulang Struk"><i class="ph ph-printer"></i></button>
+                    ${!isVoid && canEditPaymentMethod() ? `
+                        <button class="btn btn-icon" style="color:var(--warning);" onclick="window.openEditPaymentMethodModal('${trx.id}')" title="Edit Metode Pembayaran"><i class="ph ph-pencil-simple"></i></button>
+                    ` : ''}
                 </td>
             </tr>
         `;
@@ -489,4 +498,138 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    const pmSelect = document.getElementById('edit-pm-select');
+    const cashWrapper = document.getElementById('edit-pm-cash-wrapper');
+    const cashInput = document.getElementById('edit-pm-cash-received');
+    const changeDisplay = document.getElementById('edit-pm-change-display');
+    const totalEl = document.getElementById('edit-pm-total-amount');
+
+    function updateChangeDisplay() {
+        const total = Number(totalEl?.dataset?.amount || 0);
+        const cash = Number(cashInput?.value || 0);
+        const change = Math.max(0, cash - total);
+        if (changeDisplay) changeDisplay.textContent = `Rp ${change.toLocaleString('id-ID')}`;
+    }
+
+    if (pmSelect) {
+        pmSelect.addEventListener('change', () => {
+            if (pmSelect.value === 'Tunai') {
+                if (cashWrapper) cashWrapper.style.display = 'block';
+                const total = Number(totalEl?.dataset?.amount || 0);
+                if (!cashInput.value || Number(cashInput.value) < total) {
+                    if (cashInput) cashInput.value = total;
+                }
+                updateChangeDisplay();
+            } else {
+                if (cashWrapper) cashWrapper.style.display = 'none';
+            }
+        });
+    }
+
+    if (cashInput) {
+        cashInput.addEventListener('input', updateChangeDisplay);
+    }
+
+    const formEditPm = document.getElementById('form-edit-payment-method');
+    if (formEditPm) {
+        formEditPm.addEventListener('submit', handleSaveEditPaymentMethod);
+    }
 });
+
+window.openEditPaymentMethodModal = async function(trxId) {
+    if (!canEditPaymentMethod() || !trxId) return;
+
+    const modal = document.getElementById('modal-edit-payment-method');
+    if (!modal) return;
+
+    const { data: trx, error } = await supabase.from('transactions')
+        .select('id, receipt_no, total_amount, payment_method, cash_received, change_amount')
+        .eq('id', trxId)
+        .single();
+
+    if (error || !trx) {
+        showToast('Gagal memuat data transaksi', 'error');
+        return;
+    }
+
+    const receiptNo = trx.receipt_no || trx.id.substring(0, 8).toUpperCase();
+    document.getElementById('edit-pm-trx-id').value = trx.id;
+    document.getElementById('edit-pm-receipt-no').textContent = receiptNo;
+    
+    const totalEl = document.getElementById('edit-pm-total-amount');
+    if (totalEl) {
+        totalEl.textContent = `Rp ${Number(trx.total_amount || 0).toLocaleString('id-ID')}`;
+        totalEl.dataset.amount = trx.total_amount || 0;
+    }
+
+    const selectEl = document.getElementById('edit-pm-select');
+    if (selectEl) {
+        selectEl.value = trx.payment_method || 'Tunai';
+    }
+
+    const cashWrapper = document.getElementById('edit-pm-cash-wrapper');
+    const cashInput = document.getElementById('edit-pm-cash-received');
+    const changeDisplay = document.getElementById('edit-pm-change-display');
+
+    if (trx.payment_method === 'Tunai') {
+        if (cashWrapper) cashWrapper.style.display = 'block';
+        if (cashInput) cashInput.value = trx.cash_received || trx.total_amount || 0;
+        const change = Math.max(0, Number(trx.cash_received || trx.total_amount || 0) - Number(trx.total_amount || 0));
+        if (changeDisplay) changeDisplay.textContent = `Rp ${change.toLocaleString('id-ID')}`;
+    } else {
+        if (cashWrapper) cashWrapper.style.display = 'none';
+        if (cashInput) cashInput.value = trx.total_amount || 0;
+        if (changeDisplay) changeDisplay.textContent = 'Rp 0';
+    }
+
+    modal.classList.remove('hidden');
+};
+
+async function handleSaveEditPaymentMethod(e) {
+    e.preventDefault();
+    if (!canEditPaymentMethod()) return;
+
+    const trxId = document.getElementById('edit-pm-trx-id')?.value;
+    const newMethod = document.getElementById('edit-pm-select')?.value;
+    const totalAmount = Number(document.getElementById('edit-pm-total-amount')?.dataset?.amount || 0);
+    if (!trxId || !newMethod) return;
+
+    const btnSubmit = document.getElementById('btn-save-edit-pm');
+    if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Memproses...';
+    }
+
+    let cashReceived = totalAmount;
+    let changeAmount = 0;
+
+    if (newMethod === 'Tunai') {
+        const inputCash = Number(document.getElementById('edit-pm-cash-received')?.value || 0);
+        cashReceived = Math.max(inputCash, totalAmount);
+        changeAmount = Math.max(0, cashReceived - totalAmount);
+    }
+
+    const { error } = await supabase.from('transactions')
+        .update({
+            payment_method: newMethod,
+            cash_received: cashReceived,
+            change_amount: changeAmount
+        })
+        .eq('id', trxId);
+
+    if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = 'Simpan Perubahan';
+    }
+
+    if (error) {
+        console.error('Edit payment method error:', error);
+        showToast('Gagal mengubah metode pembayaran', 'error');
+    } else {
+        showToast('Metode pembayaran berhasil diubah', 'success');
+        document.getElementById('modal-edit-payment-method')?.classList.add('hidden');
+        loadHistory(false);
+        if (typeof window.loadDashboard === 'function') window.loadDashboard();
+    }
+}
