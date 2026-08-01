@@ -36,6 +36,10 @@ All changes to the codebase and project structure must be documented here to mai
   - Implemented `exportExpensesToExcel()` in `js/expenses.js` to generate and download a formatted spreadsheet (`Laporan_Biaya_Operasional_YYYY-MM-DD.xlsx`) containing all operational expenses for the active outlet, including columns for Document Number, Date, Total Amount, Payment Method (`Tunai` vs `Non-Tunai`), Notes, and Cashier Name.
   - Added automatic Rupiah formatting (`'"Rp "#,##0;-"Rp "#,##0;"Rp "0'`) and summary rows (`TOTAL KESELURUHAN`, `TOTAL TUNAI`, and `TOTAL NON-TUNAI`).
   - Bumped PWA cache version to `pos-cache-v88` in `sw.js`.
+- **Transaction Customer Name & Payment Method Editing (`Riwayat Transaksi`)**:
+  - Upgraded `#modal-edit-payment-method` in `index.html` to allow editing **Customer Name** (`#edit-pm-customer-name`) in addition to the payment method for completed transactions.
+  - Updated `openEditPaymentMethodModal()` and `handleSaveEditPaymentMethod()` in `js/history.js` to select and update `customer_name` in Supabase (`transactions`).
+  - Bumped PWA cache version to `pos-cache-v89` in `sw.js`.
 - **Changelog Reset & Documentation Synchronization (`docs/*.md`)**:
   - Synchronized and updated all documentation markdown files in `pos/docs/` (`PRD.md`, `TechStack.md`, `Database_ERD.md`, `DOM_Modal_Map.md`, `Business_Rules_Formulas.md`, `RPC_Functions.md`) to reflect the latest NTPOS architecture and expense separation logic in English per **Rule 8**.
   - Reset historical changelog entries per user request.

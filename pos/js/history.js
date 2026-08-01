@@ -227,7 +227,7 @@ export async function loadHistory(resetPage = true) {
                     <button class="btn btn-icon" style="color:var(--primary); margin-right: 4px;" onclick="viewTransactionDetails('${trx.id}')" title="Detail Transaksi"><i class="ph ph-eye"></i></button>
                     <button class="btn btn-icon" style="color:var(--primary); margin-right: 4px;" onclick="reprintTransactionById('${trx.id}')" title="Cetak Ulang Struk"><i class="ph ph-printer"></i></button>
                     ${!isVoid && canEditPaymentMethod() ? `
-                        <button class="btn btn-icon" style="color:var(--warning);" onclick="window.openEditPaymentMethodModal('${trx.id}')" title="Edit Metode Pembayaran"><i class="ph ph-pencil-simple"></i></button>
+                        <button class="btn btn-icon" style="color:var(--warning);" onclick="window.openEditPaymentMethodModal('${trx.id}')" title="Edit Metode Pembayaran & Customer"><i class="ph ph-pencil-simple"></i></button>
                     ` : ''}
                 </td>
             </tr>
@@ -544,7 +544,7 @@ window.openEditPaymentMethodModal = async function(trxId) {
     if (!modal) return;
 
     const { data: trx, error } = await supabase.from('transactions')
-        .select('id, receipt_no, total_amount, payment_method, cash_received, change_amount')
+        .select('id, receipt_no, total_amount, payment_method, cash_received, change_amount, customer_name')
         .eq('id', trxId)
         .single();
 
@@ -561,6 +561,11 @@ window.openEditPaymentMethodModal = async function(trxId) {
     if (totalEl) {
         totalEl.textContent = `Rp ${Number(trx.total_amount || 0).toLocaleString('id-ID')}`;
         totalEl.dataset.amount = trx.total_amount || 0;
+    }
+
+    const customerEl = document.getElementById('edit-pm-customer-name');
+    if (customerEl) {
+        customerEl.value = trx.customer_name || '';
     }
 
     const selectEl = document.getElementById('edit-pm-select');
@@ -592,6 +597,7 @@ async function handleSaveEditPaymentMethod(e) {
 
     const trxId = document.getElementById('edit-pm-trx-id')?.value;
     const newMethod = document.getElementById('edit-pm-select')?.value;
+    const customerName = document.getElementById('edit-pm-customer-name')?.value?.trim() || null;
     const totalAmount = Number(document.getElementById('edit-pm-total-amount')?.dataset?.amount || 0);
     if (!trxId || !newMethod) return;
 
@@ -614,7 +620,8 @@ async function handleSaveEditPaymentMethod(e) {
         .update({
             payment_method: newMethod,
             cash_received: cashReceived,
-            change_amount: changeAmount
+            change_amount: changeAmount,
+            customer_name: customerName
         })
         .eq('id', trxId);
 
@@ -625,9 +632,9 @@ async function handleSaveEditPaymentMethod(e) {
 
     if (error) {
         console.error('Edit payment method error:', error);
-        showToast('Gagal mengubah metode pembayaran', 'error');
+        showToast('Gagal mengubah data transaksi', 'error');
     } else {
-        showToast('Metode pembayaran berhasil diubah', 'success');
+        showToast('Data transaksi berhasil diubah', 'success');
         document.getElementById('modal-edit-payment-method')?.classList.add('hidden');
         loadHistory(false);
         if (typeof window.loadDashboard === 'function') window.loadDashboard();

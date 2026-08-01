@@ -1827,7 +1827,7 @@
     <div id="modal-edit-payment-method" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 420px;">
             <div class="modal-header">
-                <h3>Edit Metode Pembayaran</h3>
+                <h3>Edit Transaksi</h3>
                 <button class="btn-close" data-close="modal-edit-payment-method"><i class="ph ph-x"></i></button>
             </div>
             <form id="form-edit-payment-method" style="display:flex; flex-direction:column; gap:14px; margin-top:10px;">
@@ -1839,6 +1839,10 @@
                 <div>
                     <div style="font-size:0.85rem; color:var(--text-muted);">Total Transaksi</div>
                     <strong id="edit-pm-total-amount" style="font-size:1.05rem; color:var(--primary);">Rp 0</strong>
+                </div>
+                <div class="input-group">
+                    <label for="edit-pm-customer-name">Nama Customer</label>
+                    <input type="text" id="edit-pm-customer-name" placeholder="Nama Customer / -" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
                 </div>
                 <div class="input-group">
                     <label for="edit-pm-select">Metode Pembayaran Baru</label>
