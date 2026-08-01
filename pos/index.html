@@ -993,7 +993,7 @@
                         <span>-</span>
                         <input type="date" id="dashboard-date-end" class="input-sm">
                         <button class="btn btn-secondary" id="btn-open-mdr-settings" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-gear"></i> Potongan MDR</button>
-                        <button class="btn btn-secondary" id="btn-open-hpp-calculator" onclick="openHPPCalculatorModal()" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-calculator"></i> Kalkulator HPP</button>
+                        <button class="btn btn-secondary" id="btn-open-hpp-calculator" onclick="openHPPCalculatorModal('margin-table')" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-calculator"></i> Kalkulator HPP</button>
                         <button class="btn btn-success" id="btn-export-dashboard-excel" style="padding: 5px 10px; font-size: 0.85rem;" onclick="window.exportDashboardExcel && window.exportDashboardExcel()"><i class="ph ph-file-xls"></i> Export Excel</button>
                     </div>
                 </div>
@@ -2579,7 +2579,7 @@
     <!-- ======================================= -->
     <!-- MODAL HPP & PROFITABILITY CALCULATOR    -->
     <!-- ======================================= -->
-    <div id="modal-hpp-calculator" class="modal-overlay hidden" data-close="modal-hpp-calculator">
+    <div id="modal-hpp-calculator" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 900px; width: 96%; max-height: 90vh; display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
                 <div>

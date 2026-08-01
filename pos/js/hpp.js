@@ -259,7 +259,7 @@ function renderHPPSummaryCard() {
                 </h3>
                 <span style="font-size: 0.72rem; color: var(--text-muted);">Analisis HPP Bahan Baku & Overhead Operasional per Porsi</span>
             </div>
-            <button class="btn btn-secondary" onclick="openHPPCalculatorModal()" style="padding: 4px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+            <button class="btn btn-secondary" onclick="openHPPCalculatorModal('bahan-baku')" style="padding: 4px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="Atur Harga Bahan Baku & Biaya Operasional">
                 <i class="ph ph-gear"></i> Kelola HPP
             </button>
         </div>
@@ -285,7 +285,7 @@ function renderHPPSummaryCard() {
             <span>Beras 5Kg: <strong>Rp ${Number(settings.price_beras_5kg).toLocaleString('id-ID')}</strong></span>
         </div>
 
-        <button type="button" class="btn btn-primary" onclick="openHPPCalculatorModal()" style="width: 100%; padding: 8px; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px;">
+        <button type="button" class="btn btn-primary" onclick="openHPPCalculatorModal('margin-table')" style="width: 100%; padding: 8px; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px;">
             <i class="ph ph-table"></i> Lihat Tabel HPP & Laba per Produk
         </button>
     `;
@@ -294,9 +294,15 @@ function renderHPPSummaryCard() {
 /**
  * Opens HPP Calculator Modal and initializes form controls
  */
-function openHPPCalculatorModal() {
+function openHPPCalculatorModal(initialTab = 'margin-table') {
     const modal = document.getElementById('modal-hpp-calculator');
     if (!modal) return;
+
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            closeHPPCalculatorModal();
+        }
+    };
 
     const settings = HPPSettingsManager.loadSettings();
 
@@ -328,7 +334,7 @@ function openHPPCalculatorModal() {
     setVal('hpp-input-daily-vol', settings.target_daily_volume);
 
     renderHPPCalculatorTable(settings);
-    switchHPPTab('margin-table');
+    switchHPPTab(initialTab);
 
     modal.classList.remove('hidden');
 }
@@ -459,10 +465,20 @@ function renderHPPCalculatorTable(settings) {
 /**
  * Exports the HPP Margin Table to Excel (.xlsx)
  */
-function exportHPPMarginTableExcel() {
-    if (typeof XLSX === 'undefined') {
-        if (typeof showToast === 'function') showToast('Library Excel tidak tersedia.', 'error');
-        return;
+async function exportHPPMarginTableExcel() {
+    if (!window.XLSX) {
+        try {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = './assets/lib/xlsx.full.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        } catch (e) {
+            if (typeof showToast === 'function') showToast('Library Excel tidak tersedia.', 'error');
+            return;
+        }
     }
 
     const settings = HPPSettingsManager.loadSettings();
@@ -487,10 +503,10 @@ function exportHPPMarginTableExcel() {
         });
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'HPP & Margin NTPOS');
-    XLSX.writeFile(workbook, `Laporan_HPP_Profitabilitas_NTPOS_${currentPriceMode.toUpperCase()}.xlsx`);
+    const worksheet = window.XLSX.utils.json_to_sheet(rows);
+    const workbook = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(workbook, worksheet, 'HPP & Margin NTPOS');
+    window.XLSX.writeFile(workbook, `Laporan_HPP_Profitabilitas_NTPOS_${currentPriceMode.toUpperCase()}.xlsx`);
 
     if (typeof showToast === 'function') {
         showToast('Laporan HPP berhasil diexport ke Excel!', 'success');
