@@ -17,6 +17,7 @@ All changes to the codebase and project structure must be documented here to mai
   - Fixed unclickable buttons inside HPP modal by removing `data-close` from `.modal-overlay` container (preventing click events from bubbling up and closing the modal) and implemented safe backdrop click check (`if (e.target === modal) closeHPPCalculatorModal()`).
   - Updated `exportHPPMarginTableExcel()` in `js/hpp.js` to automatically lazy-load SheetJS (`xlsx.full.min.js`) when exporting HPP margin reports.
   - Differentiated modal opening targets: "Kelola HPP" button now opens directly to `Harga Bahan Baku` tab (`openHPPCalculatorModal('bahan-baku')`), while "Kalkulator HPP" and "Lihat Tabel HPP & Laba per Produk" open the 6-column `Tabel Analisis Margin` tab (`openHPPCalculatorModal('margin-table')`).
+  - Fixed Packaging Box estimation in `js/dashboard.js` by matching Paket Ori products (`Paket Dada`, `Paket P.Atas`, `Paket P.bawah`, `Paket Sayap`) without requiring the word 'ori' in the name (`isOriPaket = isPaket && !isGeprek`) and adding support for abbreviated parts (`p.atas`, `p.bawah`), bumped PWA cache to `pos-cache-v100` in `sw.js`.
 - **Operational Expense Payment Method Option (`Tunai` / `Non-Tunai`)**:
   - Added payment method selection (`Tunai` vs `Non-Tunai`) in `#modal-expense` form and `#expenses-table` column in `index.html`.
   - Updated `js/app.js` and `js/expenses.js` to set default `'Tunai'`, load `payment_method` on edit, render payment method badges, and save `payment_method` to `operational_costs`.

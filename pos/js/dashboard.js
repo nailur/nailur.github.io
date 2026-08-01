@@ -147,11 +147,11 @@ window.loadDashboard = async function() {
             countDada += qty;
             matchedPart = true;
         }
-        if (name.includes('paha atas')) {
+        if (name.includes('paha atas') || name.includes('p.atas')) {
             countPahaAtas += qty;
             matchedPart = true;
         }
-        if (name.includes('paha bawah') || (name.includes('paha') && !name.includes('paha atas'))) {
+        if (name.includes('paha bawah') || name.includes('p.bawah') || (name.includes('paha') && !name.includes('paha atas') && !name.includes('p.atas'))) {
             countPahaBawah += qty;
             matchedPart = true;
         }
@@ -165,23 +165,23 @@ window.loadDashboard = async function() {
 
         // Packaging Box Categorization (Box Ukuran M vs Box Ukuran XS)
         const isPaket = name.includes('paket');
-        const isOri = name.includes('ori') || name.includes('original');
         const isGeprek = name.includes('geprek');
+        const isOriPaket = isPaket && !isGeprek;
 
-        if (isPaket && isOri) {
+        if (isOriPaket) {
             if (name.includes('dada')) { boxM_OriDada += qty; countBoxM += qty; }
-            else if (name.includes('paha atas')) { boxM_OriPahaAtas += qty; countBoxM += qty; }
-            else if (name.includes('paha bawah') || name.includes('paha')) { boxM_OriPahaBawah += qty; countBoxM += qty; }
+            else if (name.includes('paha atas') || name.includes('p.atas')) { boxM_OriPahaAtas += qty; countBoxM += qty; }
+            else if (name.includes('paha bawah') || name.includes('p.bawah') || name.includes('paha')) { boxM_OriPahaBawah += qty; countBoxM += qty; }
             else if (name.includes('sayap') || name.includes('wing')) { boxM_OriSayap += qty; countBoxM += qty; }
         } else if (isPaket && isGeprek) {
             if (name.includes('dada')) { boxM_GeprekDada += qty; countBoxM += qty; }
-            else if (name.includes('paha atas')) { boxM_GeprekPahaAtas += qty; countBoxM += qty; }
-            else if (name.includes('paha bawah') || name.includes('paha')) { boxM_GeprekPahaBawah += qty; countBoxM += qty; }
+            else if (name.includes('paha atas') || name.includes('p.atas')) { boxM_GeprekPahaAtas += qty; countBoxM += qty; }
+            else if (name.includes('paha bawah') || name.includes('p.bawah') || name.includes('paha')) { boxM_GeprekPahaBawah += qty; countBoxM += qty; }
             else if (name.includes('sayap') || name.includes('wing')) { boxM_GeprekSayap += qty; countBoxM += qty; }
         } else if (!isPaket && isGeprek) {
             if (name.includes('dada')) { boxXS_GeprekDada += qty; countBoxXS += qty; }
-            else if (name.includes('paha atas')) { boxXS_GeprekPahaAtas += qty; countBoxXS += qty; }
-            else if (name.includes('paha bawah') || name.includes('paha')) { boxXS_GeprekPahaBawah += qty; countBoxXS += qty; }
+            else if (name.includes('paha atas') || name.includes('p.atas')) { boxXS_GeprekPahaAtas += qty; countBoxXS += qty; }
+            else if (name.includes('paha bawah') || name.includes('p.bawah') || name.includes('paha')) { boxXS_GeprekPahaBawah += qty; countBoxXS += qty; }
             else if (name.includes('sayap') || name.includes('wing')) { boxXS_GeprekSayap += qty; countBoxXS += qty; }
         }
     });
