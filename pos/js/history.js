@@ -204,6 +204,8 @@ export async function loadHistory(resetPage = true) {
         return;
     }
 
+    window.historyTransactionsList = data;
+
     const rowsHTML = data.map(trx => {
         const receiptNo = trx.receipt_no || trx.id.substring(0, 8).toUpperCase();
         const isVoid = trx.status === 'voided';
@@ -543,14 +545,22 @@ window.openEditPaymentMethodModal = async function(trxId) {
     const modal = document.getElementById('modal-edit-payment-method');
     if (!modal) return;
 
-    const { data: trx, error } = await supabase.from('transactions')
-        .select('id, receipt_no, total_amount, payment_method, cash_received, change_amount, customer_name')
-        .eq('id', trxId)
-        .single();
+    let trx = (window.historyTransactionsList || []).find(t => String(t.id) === String(trxId));
 
-    if (error || !trx) {
-        showToast('Gagal memuat data transaksi', 'error');
-        return;
+    if (!trx || !trx.customer_name) {
+        const { data: dbTrx, error } = await supabase.from('transactions')
+            .select('id, receipt_no, total_amount, payment_method, cash_received, change_amount, customer_name')
+            .eq('id', trxId)
+            .single();
+
+        if (error || !dbTrx) {
+            if (!trx) {
+                showToast('Gagal memuat data transaksi', 'error');
+                return;
+            }
+        } else {
+            trx = { ...trx, ...dbTrx };
+        }
     }
 
     const receiptNo = trx.receipt_no || trx.id.substring(0, 8).toUpperCase();
@@ -565,19 +575,35 @@ window.openEditPaymentMethodModal = async function(trxId) {
 
     const customerEl = document.getElementById('edit-pm-customer-name');
     if (customerEl) {
-        customerEl.value = trx.customer_name || '';
+        const cName = (trx.customer_name && trx.customer_name !== '-') ? trx.customer_name : '';
+        customerEl.value = cName;
     }
 
     const selectEl = document.getElementById('edit-pm-select');
+    const currentMethod = trx.payment_method || 'Tunai';
+    const lockedMethods = ['QRIS', 'Shopee Food', 'Grab Food', 'Go Food'];
+
     if (selectEl) {
-        selectEl.value = trx.payment_method || 'Tunai';
+        if (lockedMethods.includes(currentMethod)) {
+            selectEl.innerHTML = `<option value="${currentMethod}">${currentMethod} (Tidak dapat diganti)</option>`;
+            selectEl.value = currentMethod;
+            selectEl.disabled = true;
+        } else {
+            selectEl.innerHTML = `
+                <option value="Tunai">Tunai</option>
+                <option value="QRIS">QRIS</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+            `;
+            selectEl.value = currentMethod;
+            selectEl.disabled = false;
+        }
     }
 
     const cashWrapper = document.getElementById('edit-pm-cash-wrapper');
     const cashInput = document.getElementById('edit-pm-cash-received');
     const changeDisplay = document.getElementById('edit-pm-change-display');
 
-    if (trx.payment_method === 'Tunai') {
+    if (currentMethod === 'Tunai') {
         if (cashWrapper) cashWrapper.style.display = 'block';
         if (cashInput) cashInput.value = trx.cash_received || trx.total_amount || 0;
         const change = Math.max(0, Number(trx.cash_received || trx.total_amount || 0) - Number(trx.total_amount || 0));
@@ -600,6 +626,19 @@ async function handleSaveEditPaymentMethod(e) {
     const customerName = document.getElementById('edit-pm-customer-name')?.value?.trim() || null;
     const totalAmount = Number(document.getElementById('edit-pm-total-amount')?.dataset?.amount || 0);
     if (!trxId || !newMethod) return;
+
+    const currentTrx = (window.historyTransactionsList || []).find(t => String(t.id) === String(trxId));
+    const lockedMethods = ['QRIS', 'Shopee Food', 'Grab Food', 'Go Food'];
+    const currentMethod = currentTrx?.payment_method || newMethod;
+
+    if (lockedMethods.includes(currentMethod) && newMethod !== currentMethod) {
+        showToast(`Metode pembayaran ${currentMethod} tidak dapat diganti`, 'error');
+        return;
+    }
+    if (['Tunai', 'Bank Transfer'].includes(currentMethod) && !['Tunai', 'QRIS', 'Bank Transfer'].includes(newMethod)) {
+        showToast('Metode pembayaran Tunai/Bank Transfer hanya bisa diganti ke Tunai, QRIS, atau Bank Transfer', 'error');
+        return;
+    }
 
     const btnSubmit = document.getElementById('btn-save-edit-pm');
     if (btnSubmit) {

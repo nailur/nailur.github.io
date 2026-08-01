@@ -416,32 +416,49 @@ export async function exportExpensesToExcel() {
     }
 
     try {
-        const { data, error } = await supabase
+        const { data: costsData, error: costsError } = await supabase
             .from('operational_costs')
-            .select('document_number, cost_date, total_amount, payment_method, notes, profiles:created_by (name)')
+            .select('id, document_number, cost_date, total_amount, payment_method, notes, profiles:created_by (name)')
             .eq('outlet_id', getActiveOutletId())
             .order('cost_date', { ascending: false })
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (costsError) throw costsError;
 
-        if (!data || data.length === 0) {
+        if (!costsData || costsData.length === 0) {
             showToast('Tidak ada data Biaya Operasional untuk diekspor', 'error');
             return;
         }
 
-        const rows = [
-            ['Laporan Biaya Operasional'],
+        const costIds = costsData.map(c => c.id);
+        const { data: itemsData, error: itemsError } = await supabase
+            .from('operational_cost_items')
+            .select('operational_cost_id, quantity, price, subtotal, expense_items (name)')
+            .in('operational_cost_id', costIds);
+
+        if (itemsError) throw itemsError;
+
+        const itemsByCostId = {};
+        (itemsData || []).forEach(item => {
+            if (!itemsByCostId[item.operational_cost_id]) {
+                itemsByCostId[item.operational_cost_id] = [];
+            }
+            itemsByCostId[item.operational_cost_id].push(item);
+        });
+
+        // --- SHEET 1: Ringkasan Biaya Operasional ---
+        const rowsSummary = [
+            ['Laporan Ringkasan Biaya Operasional'],
             [`Tanggal Ekspor: ${new Date().toLocaleDateString('id-ID')}`],
             [],
-            ['No. Dokumen', 'Tanggal Biaya', 'Total (Rp)', 'Metode Pembayaran', 'Keterangan / Catatan', 'Dicatat Oleh (Kasir)']
+            ['No. Dokumen', 'Tanggal Biaya', 'Total (Rp)', 'Metode Pembayaran', 'Rincian Item Pengeluaran', 'Keterangan / Catatan', 'Dicatat Oleh (Kasir)']
         ];
 
         let totalSum = 0;
         let totalTunai = 0;
         let totalNonTunai = 0;
 
-        data.forEach(exp => {
+        costsData.forEach(exp => {
             const docNo = exp.document_number || '-';
             const dateStr = exp.cost_date ? new Date(exp.cost_date).toLocaleDateString('id-ID') : '-';
             const amount = Number(exp.total_amount || 0);
@@ -456,36 +473,117 @@ export async function exportExpensesToExcel() {
                 totalTunai += amount;
             }
 
-            rows.push([docNo, dateStr, amount, method, notes, cashier]);
+            const items = itemsByCostId[exp.id] || [];
+            const detailStr = items.map(it => {
+                const catName = it.expense_items?.name || 'Item';
+                const qty = it.quantity || 1;
+                const price = Number(it.price || 0).toLocaleString('id-ID');
+                const sub = Number(it.subtotal || 0).toLocaleString('id-ID');
+                return `${catName} (${qty}x @Rp ${price} = Rp ${sub})`;
+            }).join('; ');
+
+            rowsSummary.push([docNo, dateStr, amount, method, detailStr || '-', notes, cashier]);
         });
 
-        rows.push([]);
-        rows.push(['TOTAL KESELURUHAN', '', totalSum, '', '', '']);
-        rows.push(['TOTAL TUNAI', '', totalTunai, '', '', '']);
-        rows.push(['TOTAL NON-TUNAI', '', totalNonTunai, '', '', '']);
+        rowsSummary.push([]);
+        rowsSummary.push(['TOTAL KESELURUHAN', '', totalSum, '', '', '', '']);
+        rowsSummary.push(['TOTAL TUNAI', '', totalTunai, '', '', '', '']);
+        rowsSummary.push(['TOTAL NON-TUNAI', '', totalNonTunai, '', '', '', '']);
 
-        const ws = window.XLSX.utils.aoa_to_sheet(rows);
-
-        ws['!cols'] = [
+        const wsSummary = window.XLSX.utils.aoa_to_sheet(rowsSummary);
+        wsSummary['!cols'] = [
             { wch: 18 }, // No. Dokumen
             { wch: 14 }, // Tanggal Biaya
             { wch: 18 }, // Total (Rp)
             { wch: 18 }, // Metode Pembayaran
+            { wch: 48 }, // Rincian Item Pengeluaran
             { wch: 35 }, // Keterangan
             { wch: 22 }  // Dicatat Oleh
         ];
 
-        const range = window.XLSX.utils.decode_range(ws['!ref']);
         const z = '"Rp "#,##0;-"Rp "#,##0;"Rp "0';
-        for (let R = 4; R <= range.e.r; R++) {
+        const rangeSummary = window.XLSX.utils.decode_range(wsSummary['!ref']);
+        for (let R = 4; R <= rangeSummary.e.r; R++) {
             const cellRef = window.XLSX.utils.encode_cell({ r: R, c: 2 });
-            if (ws[cellRef] && typeof ws[cellRef].v === 'number') {
-                ws[cellRef].z = z;
+            if (wsSummary[cellRef] && typeof wsSummary[cellRef].v === 'number') {
+                wsSummary[cellRef].z = z;
             }
         }
 
+        // --- SHEET 2: Detail Item Biaya Operasional ---
+        const rowsDetail = [
+            ['Laporan Detail Item Biaya Operasional (Analisis)'],
+            [`Tanggal Ekspor: ${new Date().toLocaleDateString('id-ID')}`],
+            [],
+            ['No. Dokumen', 'Tanggal Biaya', 'Kategori Biaya', 'Qty', 'Harga Satuan (Rp)', 'Subtotal (Rp)', 'Metode Pembayaran', 'Keterangan Dokumen', 'Dicatat Oleh (Kasir)']
+        ];
+
+        let detailTotalSum = 0;
+        let detailTotalTunai = 0;
+        let detailTotalNonTunai = 0;
+
+        costsData.forEach(exp => {
+            const docNo = exp.document_number || '-';
+            const dateStr = exp.cost_date ? new Date(exp.cost_date).toLocaleDateString('id-ID') : '-';
+            const method = exp.payment_method || 'Tunai';
+            const notes = exp.notes || '-';
+            const cashier = exp.profiles?.name || '-';
+
+            const items = itemsByCostId[exp.id] || [];
+            if (items.length === 0) {
+                const amount = Number(exp.total_amount || 0);
+                detailTotalSum += amount;
+                if (method === 'Non-Tunai') detailTotalNonTunai += amount;
+                else detailTotalTunai += amount;
+                rowsDetail.push([docNo, dateStr, 'Pengeluaran Umum', 1, amount, amount, method, notes, cashier]);
+            } else {
+                items.forEach(it => {
+                    const catName = it.expense_items?.name || 'Item';
+                    const qty = Number(it.quantity || 1);
+                    const price = Number(it.price || 0);
+                    const subtotal = Number(it.subtotal || 0);
+
+                    detailTotalSum += subtotal;
+                    if (method === 'Non-Tunai') detailTotalNonTunai += subtotal;
+                    else detailTotalTunai += subtotal;
+
+                    rowsDetail.push([docNo, dateStr, catName, qty, price, subtotal, method, notes, cashier]);
+                });
+            }
+        });
+
+        rowsDetail.push([]);
+        rowsDetail.push(['TOTAL KESELURUHAN', '', '', '', '', detailTotalSum, '', '', '']);
+        rowsDetail.push(['TOTAL TUNAI', '', '', '', '', detailTotalTunai, '', '', '']);
+        rowsDetail.push(['TOTAL NON-TUNAI', '', '', '', '', detailTotalNonTunai, '', '', '']);
+
+        const wsDetail = window.XLSX.utils.aoa_to_sheet(rowsDetail);
+        wsDetail['!cols'] = [
+            { wch: 18 }, // No. Dokumen
+            { wch: 14 }, // Tanggal Biaya
+            { wch: 28 }, // Kategori Biaya
+            { wch: 10 }, // Qty
+            { wch: 18 }, // Harga Satuan
+            { wch: 18 }, // Subtotal
+            { wch: 18 }, // Metode Pembayaran
+            { wch: 35 }, // Keterangan Dokumen
+            { wch: 22 }  // Dicatat Oleh
+        ];
+
+        const rangeDetail = window.XLSX.utils.decode_range(wsDetail['!ref']);
+        for (let R = 4; R <= rangeDetail.e.r; R++) {
+            ['E', 'F'].forEach(col => {
+                const cIdx = col === 'E' ? 4 : 5;
+                const cellRef = window.XLSX.utils.encode_cell({ r: R, c: cIdx });
+                if (wsDetail[cellRef] && typeof wsDetail[cellRef].v === 'number') {
+                    wsDetail[cellRef].z = z;
+                }
+            });
+        }
+
         const wb = window.XLSX.utils.book_new();
-        window.XLSX.utils.book_append_sheet(wb, ws, 'Biaya Operasional');
+        window.XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan Biaya');
+        window.XLSX.utils.book_append_sheet(wb, wsDetail, 'Detail Per Item');
 
         const filenameDate = new Date().toISOString().slice(0, 10);
         window.XLSX.writeFile(wb, `Laporan_Biaya_Operasional_${filenameDate}.xlsx`);
