@@ -376,6 +376,10 @@ window.loadDashboard = async function() {
         `;
     }
 
+    if (typeof window.renderHPPSummaryCard === 'function') {
+        window.renderHPPSummaryCard();
+    }
+
     // Render Charts
     // Audit Fix #4: dailyData is already filtered by p_end_date in database.
     // Client-side filtering is no longer needed.

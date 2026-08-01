@@ -993,6 +993,7 @@
                         <span>-</span>
                         <input type="date" id="dashboard-date-end" class="input-sm">
                         <button class="btn btn-secondary" id="btn-open-mdr-settings" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-gear"></i> Potongan MDR</button>
+                        <button class="btn btn-secondary" id="btn-open-hpp-calculator" onclick="openHPPCalculatorModal()" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-calculator"></i> Kalkulator HPP</button>
                         <button class="btn btn-success" id="btn-export-dashboard-excel" style="padding: 5px 10px; font-size: 0.85rem;" onclick="window.exportDashboardExcel && window.exportDashboardExcel()"><i class="ph ph-file-xls"></i> Export Excel</button>
                     </div>
                 </div>
@@ -1097,6 +1098,10 @@
                     <div class="glass-panel" id="packaging-box-card"
                         style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
                         <!-- Injected dynamically in dashboard.js -->
+                    </div>
+                    <div class="glass-panel" id="hpp-summary-card"
+                        style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+                        <!-- Injected dynamically in hpp.js -->
                     </div>
                 </div>
 
@@ -2568,6 +2573,192 @@
                     <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ======================================= -->
+    <!-- MODAL HPP & PROFITABILITY CALCULATOR    -->
+    <!-- ======================================= -->
+    <div id="modal-hpp-calculator" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 900px; width: 96%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                <div>
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.15rem; color: var(--primary);">
+                        <i class="ph-fill ph-calculator"></i> Kalkulator HPP & Profit margin (NTPOS)
+                    </h3>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">Perhitungan otomatis margin Offline & Online dengan absorpsi biaya operasional (OPEX)</span>
+                </div>
+                <button class="btn btn-icon" onclick="closeHPPCalculatorModal()"><i class="ph ph-x"></i></button>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                <button type="button" class="btn hpp-tab-btn active" data-hpp-tab="margin-table" onclick="switchHPPTab('margin-table')" style="padding: 6px 14px; font-size: 0.85rem; border: 1px solid var(--primary); color: var(--primary); background: rgba(59, 130, 246, 0.1);">
+                    <i class="ph ph-table"></i> Tabel Analisis Margin
+                </button>
+                <button type="button" class="btn hpp-tab-btn" data-hpp-tab="bahan-baku" onclick="switchHPPTab('bahan-baku')" style="padding: 6px 14px; font-size: 0.85rem;">
+                    <i class="ph ph-cooking-pot"></i> Harga Bahan Baku
+                </button>
+                <button type="button" class="btn hpp-tab-btn" data-hpp-tab="opex" onclick="switchHPPTab('opex')" style="padding: 6px 14px; font-size: 0.85rem;">
+                    <i class="ph ph-lightning"></i> Biaya Operasional & Listrik
+                </button>
+            </div>
+
+            <!-- Tab 1: Tabel Analisis Margin -->
+            <div id="hpp-tab-margin-table" class="hpp-tab-content" style="flex: 1; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.82rem; color: var(--text-secondary); background: rgba(59, 130, 246, 0.08); padding: 8px 12px; border-radius: 6px;">
+                    <span><i class="ph ph-info"></i> Harga Jual Online +Rp 4.000 dengan perhitungan potongan aplikasi sebesar 20%.</span>
+                    <span>HPP Ayam: <strong>Rata per Potong</strong> | Absorpsi OPEX: <strong>Volume Harian</strong></span>
+                </div>
+                <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                        <thead>
+                            <tr style="background: var(--bg-card); border-bottom: 2px solid var(--border-color); text-align: left;">
+                                <th style="padding: 10px 12px;">Menu</th>
+                                <th style="padding: 10px 12px; text-align: right;">HPP Bahan (Rp)</th>
+                                <th style="padding: 10px 12px; text-align: right;">OPEX / Porsi (Rp)</th>
+                                <th style="padding: 10px 12px; text-align: right;">Total HPP (Rp)</th>
+                                <th style="padding: 10px 12px; text-align: right;">Harga Offline</th>
+                                <th style="padding: 10px 12px; text-align: right;">Laba Offline</th>
+                                <th style="padding: 10px 12px; text-align: right;">Harga Online</th>
+                                <th style="padding: 10px 12px; text-align: right;">Laba Online</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hpp-table-body">
+                            <!-- Injected dynamically in hpp.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 2: Harga Bahan Baku -->
+            <div id="hpp-tab-bahan-baku" class="hpp-tab-content" style="display: none; flex: 1; overflow-y: auto; padding: 5px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span style="font-size: 0.82rem; color: var(--text-secondary);">Atur harga beli bahan baku & kemasan agar perhitungan HPP akurat:</span>
+                    <button type="button" class="btn btn-secondary" id="btn-pull-db-costs" onclick="pullHPPCostsFromDatabase()" style="padding: 5px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-database"></i> Tarik dari Sistem (DB)
+                    </button>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Ayam per Kantong (9 potong) (Rp):</label>
+                        <input type="number" id="hpp-input-ayam" class="input" value="36000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">1 Kantong = 9 potong (3 Dada, 2 PA, 2 PB, 2 Sayap)</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Saos per Pack (24 bgs) (Rp):</label>
+                        <input type="number" id="hpp-input-saos" class="input" value="24000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Dada/PA = 2 bgs | PB/Sayap = 1 bgs</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Minyak Beku (1 Box / 15 Kg) (Rp):</label>
+                        <input type="number" id="hpp-input-minyak" class="input" value="270000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">200g konsumsi + 42.8g ganti / 9 potong</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Tepung Biang / Kg (Rp):</label>
+                        <input type="number" id="hpp-input-tepung-biang" class="input" value="25000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">100g biang per 1 Kg serbaguna</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Tepung Serbaguna / Kg (Rp):</label>
+                        <input type="number" id="hpp-input-tepung-serbaguna" class="input" value="12000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">10 Kg campuran untuk 27 kantong (243 pcs)</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Beras 5 Kg (Rp):</label>
+                        <input type="number" id="hpp-input-beras" class="input" value="72000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">5 Kg = 72 porsi @ 170g</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Estimasi Sambal Geprek / Porsi (Rp):</label>
+                        <input type="number" id="hpp-input-sambal" class="input" value="1200" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Cabai, bawang, gula, garam, sasa</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Karton Box Custom M / XS (Rp/pc):</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="hpp-input-box-m" class="input" value="1036" placeholder="Box M" onchange="handleHPPInputChange()">
+                            <input type="number" id="hpp-input-box-xs" class="input" value="1036" placeholder="Box XS" onchange="handleHPPInputChange()">
+                        </div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Rp 2.072.800 / 2000 pcs = Rp 1.036,4/pc</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Kertas Nasi & Kertas Pembungkus (Rp/pc):</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="hpp-input-kertas-nasi" class="input" value="500" placeholder="Nasi" onchange="handleHPPInputChange()">
+                            <input type="number" id="hpp-input-kertas-bungkus" class="input" value="270" placeholder="Bungkus" onchange="handleHPPInputChange()">
+                        </div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Kertas Nasi Rp 500/pc | Bungkus Rp 270/pc</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Plastik Kecil & Besar (Rp/pc):</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="hpp-input-plastik-kecil" class="input" value="150" placeholder="Kecil" onchange="handleHPPInputChange()">
+                            <input type="number" id="hpp-input-plastik-besar" class="input" value="300" placeholder="Besar" onchange="handleHPPInputChange()">
+                        </div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Plastik Kecil (1 pcs) | Besar (2-3 pcs / paket)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Biaya Operasional & Listrik -->
+            <div id="hpp-tab-opex" class="hpp-tab-content" style="display: none; flex: 1; overflow-y: auto; padding: 5px;">
+                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.8rem;">
+                    <strong><i class="ph ph-lightning"></i> Estimasi Konsumsi Listrik Bulanan:</strong>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin-top: 6px; color: var(--text-main);">
+                        <span>Freezer: 90W x 24h x 31d = <strong>66.96 kWh</strong></span>
+                        <span>Warmer: 150W x 12h x 30d = <strong>54.00 kWh</strong></span>
+                        <span>Kipas: 70W x 3h x 30d = <strong>6.30 kWh</strong></span>
+                        <span>Printer: 5W x 12h x 30d = <strong>1.80 kWh</strong></span>
+                        <span>Charger Tab: 18W x 1h x 30d = <strong>0.50 kWh</strong></span>
+                        <span>Magic Com Masak: 350W x 1h x 30d = <strong>10.50 kWh</strong></span>
+                        <span>Magic Com Warm: 70W x 11h x 30d = <strong>23.10 kWh</strong></span>
+                        <span><strong>Total: 163.16 kWh</strong> x Rp 1.444,7 = <strong>Rp 235.717/bulan</strong></span>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Tarif Listrik per kWh (Rp):</label>
+                        <input type="number" id="hpp-input-kwh-rate" class="input" value="1444.7" step="0.1" onchange="handleHPPInputChange()">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Biaya Gas 3Kg Bulanan (Rp):</label>
+                        <input type="number" id="hpp-input-opex-gas" class="input" value="330000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">3 Tabung (Fryer, Rice Cooker, Sambal) x frekuensi</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Biaya Trash Bag Bulanan (Rp):</label>
+                        <input type="number" id="hpp-input-opex-trash" class="input" value="45968" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Rp 22.984 / 15 lembar (~30 lembar/bln)</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Sarung Tangan Latex Bulanan (Rp):</label>
+                        <input type="number" id="hpp-input-opex-sarung" class="input" value="55521" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Rp 55.521 / 100 pcs</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Masker Masak Bulanan (Rp):</label>
+                        <input type="number" id="hpp-input-opex-masker" class="input" value="15378" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Rp 76.889 / 300 pcs (~60 pcs/bln)</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Consumables Lainnya / Bulan (Rp):</label>
+                        <input type="number" id="hpp-input-opex-lain" class="input" value="100000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Tissue, Solatip Online, Kertas Thermal</span>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Target / Asumsi Penjualan Harian (Porsi):</label>
+                        <input type="number" id="hpp-input-daily-vol" class="input" value="100" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Total OPEX dibagi (Volume Harian x 30 Hari)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+                <button type="button" class="btn" onclick="closeHPPCalculatorModal()">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="saveHPPSettingsFromForm()"><i class="ph ph-check"></i> Simpan Pengaturan</button>
+            </div>
         </div>
     </div>
 

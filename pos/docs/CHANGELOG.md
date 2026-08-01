@@ -6,6 +6,13 @@ All changes to the codebase and project structure must be documented here to mai
 *Note: Every time a new feature or task is completed, AI agents must append their changes under the current date.*
 
 ### 2026-08-01
+- **HPP & Profitability Calculator (`js/hpp.js`)**:
+  - Implemented comprehensive HPP and profit margin calculator for all 36 NTPOS menu items in `js/hpp.js`.
+  - Added Equal Chicken Cost Allocation (`Price per Kantong / 9`), Sauce Allocation (`2 pcs for Dada/PA, 1 pc for PB/Sayap`), Solid Oil absorption (`(200g + 42.8g)/9`), Seasoned Flour (`100g biang + 1kg serbaguna`), and configurable packaging costs (`Box M`, `Box XS`, `Kertas Nasi`, `Kertas Bungkus`, `Plastik`).
+  - Added OPEX & Electricity absorption calculation with default monthly electricity breakdown (7 equipment items totaling ~Rp 235,717/month) and OPEX per portion based on target daily sales volume.
+  - Added "Tarik dari Sistem (DB)" feature (`pullHPPCostsFromDatabase`) to fetch latest ingredient prices from `inventory_postings` and monthly OPEX from `operational_costs`.
+  - Added `#modal-hpp-calculator` with 3 tabbed views (`Tabel Analisis Margin`, `Harga Bahan Baku`, `Biaya Operasional & Listrik`), "Kalkulator HPP" button in dashboard filter bar, and `#hpp-summary-card` on the dashboard (`index.html`).
+  - Updated `js/app.js` to import `hpp.js`, called `renderHPPSummaryCard()` in `js/dashboard.js`, and bumped PWA cache to `pos-cache-v96` in `sw.js`.
 - **Operational Expense Payment Method Option (`Tunai` / `Non-Tunai`)**:
   - Added payment method selection (`Tunai` vs `Non-Tunai`) in `#modal-expense` form and `#expenses-table` column in `index.html`.
   - Updated `js/app.js` and `js/expenses.js` to set default `'Tunai'`, load `payment_method` on edit, render payment method badges, and save `payment_method` to `operational_costs`.

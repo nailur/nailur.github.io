@@ -17,6 +17,7 @@ This document maps Modal IDs, Form IDs, Trigger Buttons, and associated JS handl
 | **Record Expense** | `#modal-expense-posting` | `#expense-posting-form` | `openExpensePostingModal()` | `saveExpensePosting(e)` | `js/expenses.js` |
 | **Cashier Deposit** | `#modal-deposit` | `#deposit-form` | `openDepositModal()` | `saveDeposit(e)` | `js/app.js` |
 | **MDR Fee Settings** | `#modal-mdr` | `#form-mdr-settings` | Click handler on `#btn-open-mdr-settings` | Click handler on save button | `js/dashboard.js` |
+| **HPP & Profitability Calculator** | `#modal-hpp-calculator` | `#hpp-tab-margin-table`, `#hpp-tab-bahan-baku`, `#hpp-tab-opex` | `openHPPCalculatorModal()` | `saveHPPSettingsFromForm()` | `js/hpp.js` |
 | **Affiliate Period** | `#modal-affiliate-period` | `#modal-affiliate-period-form` | `openCreatePeriodModal(id)` | `handleSavePeriod(e)` | `js/affiliate.js` |
 | **Affiliate Product Commission** | `#modal-affiliate-setting` | `#affiliate-setting-form` | `openCommissionSettingModal()` | `saveCommissionSetting(e)` | `js/affiliate.js` |
 | **Affiliate Claim / Posting**| `#modal-affiliate-posting` | `#affiliate-posting-form` | `openCreateAffiliateModal(id)`| `handleSaveAffiliatePosting(e)`| `js/affiliate.js` |

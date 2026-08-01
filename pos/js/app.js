@@ -9,6 +9,7 @@ import { products, loadProducts, renderProducts, handleSaveProduct, editProduct,
 import { cart, addToCart, addToCartWithModifiers, updateQty, emptyCart, renderCart } from './cart.js';
 import { openCheckoutModal, finalizeCheckout, calculateChange, printReceipt, printReceiptBluetooth } from './checkout.js';
 import './modifiers.js';
+import './hpp.js';
 import { loadHistory, exportToExcel, changeHistoryPage, viewTransactionDetails, reprintTransactionById } from './history.js';
 import { 
     initManagement, loadBranches, loadOutlets, loadUsers, 

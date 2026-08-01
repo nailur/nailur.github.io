@@ -58,6 +58,7 @@ Vanilla modular structure for clean codebase organization:
 │   ├── cart.js                  # Shopping cart logic, total calculation, checkout execution
 │   ├── history.js               # Transaction history list and Excel export
 │   ├── dashboard.js             # Analytics dashboards (Chart.js), separate Operational vs Stock expenses, revenue reports
+│   ├── hpp.js                   # HPP & Profitability Calculator (raw materials, OPEX absorption, online/offline margins)
 │   ├── shift.js                 # Cash drawer opening/closing logic
 │   ├── shift-master.js          # Shift master data management
 │   ├── shift-sessions.js        # Active shift session tracking

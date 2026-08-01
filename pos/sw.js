@@ -1,6 +1,6 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'pos-cache-v95';
+const CACHE_NAME = 'pos-cache-v96';
 const urlsToCache = [
   './',
   './index.html',
@@ -18,6 +18,7 @@ const urlsToCache = [
   './js/products.js',
   './js/shift.js',
   './js/modifiers.js',
+  './js/hpp.js',
   './js/discounts.js',
   './js/offline.js',
   // --- Offline required modules (Audit Fix #1) ---

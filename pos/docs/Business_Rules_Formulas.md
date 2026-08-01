@@ -85,3 +85,29 @@ This document summarizes the core business rules, calculation logic, and formula
   - **Box Ukuran M**: Assigned to all sold `Paket Ayam Ori` and `Paket Ayam Geprek` variants (`Dada`, `Paha Atas`, `Paha Bawah`, `Sayap`).
   - **Box Ukuran XS**: Assigned to all sold `Ayam Geprek` (non-paket) variants (`Dada`, `Paha Atas`, `Paha Bawah`, `Sayap`).
 
+---
+
+## 7. HPP & Profitability Calculator Formulas (`js/hpp.js`)
+- **Equal Chicken Cost Allocation**:
+  - 1 bag (`kantong`) = 9 pieces (`3 Dada, 2 Paha Atas, 2 Paha Bawah, 2 Sayap`).
+  - `HPP per piece = Price per Kantong / 9`.
+- **Sauce Allocation (`Saos`)**:
+  - 1 pack = 24 sachets.
+  - `Dada` & `Paha Atas` = 2 sachets per piece.
+  - `Paha Bawah` & `Sayap` = 1 sachet per piece.
+- **Deep Fryer Solid Oil (`Minyak Beku 15Kg`)**:
+  - Consumption: `200 gr` per bag (9 pcs) + replacement `15,000 gr / 350 bags = ~42.86 gr/bag`.
+  - Total oil cost per piece = `((200 + 42.86) / 9) * Price per gram`.
+- **Seasoned Flour (`Tepung Bumbu`)**:
+  - Mix ratio: `100 gr` premix (`Tepung Biang`) + `1,000 gr` all-purpose flour (`Tepung Serbaguna`).
+  - `10 kg` mix covers 27 bags (243 pieces).
+- **OPEX Absorption per Portion**:
+  - Aggregated monthly overhead = Electricity (`163.16 kWh * Rate`) + Gas 3Kg + Trash Bags + Latex Gloves + Cooking Masks + Consumables.
+  - `OPEX per Portion = Total Monthly OPEX / (Target Daily Volume * 30 Days)`.
+- **Offline vs Online Margin Formula**:
+  - `Offline Profit (Rp) = Offline Selling Price - (Raw COGS + OPEX per Portion)`.
+  - `Online Selling Price = Offline Selling Price + Rp 4,000`.
+  - `Online Net Revenue = Online Selling Price * (1 - 0.20)` (20% platform commission fee).
+  - `Online Profit (Rp) = Online Net Revenue - (Raw COGS + OPEX per Portion)`.
+
+
