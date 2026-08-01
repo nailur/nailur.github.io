@@ -47,7 +47,9 @@ All changes to the codebase and project structure must be documented here to mai
   - Sheet 1 (**`Ringkasan Biaya`**): Includes a new **Rincian Item Pengeluaran** column displaying an itemized summary string for each document (e.g. `Gas Elpiji (1x @Rp 22.000 = Rp 22.000); Es Batu (2x @Rp 10.000 = Rp 20.000)`).
   - Sheet 2 (**`Detail Per Item`**): Dedicated analytical sheet where each individual expense item is listed on its own row with columns for `Kategori Biaya`, `Qty`, `Harga Satuan (Rp)`, and `Subtotal (Rp)`, enabling Excel filtering, sorting, and pivot table analysis by expense category.
   - Added automatic Rupiah formatting and summary rows (`TOTAL KESELURUHAN`, `TOTAL TUNAI`, `TOTAL NON-TUNAI`) across both sheets.
-  - Bumped PWA cache version to `pos-cache-v90` in `sw.js`.
+  - Formatted table Keterangan column in `js/expenses.js` (`#expenses-table`) with a compact `max-width: 160px` and text ellipsis truncation (`...`) so long notes do not stretch the table, while keeping full text accessible via hover tooltip and Edit modal.
+  - Upgraded `#expense-notes` input in `index.html` (`#modal-expense`) to a `<textarea>` with multi-line support (`newline`/Enter).
+  - Bumped PWA cache version to `pos-cache-v95` in `sw.js`.
 - **Changelog Reset & Documentation Synchronization (`docs/*.md`)**:
   - Synchronized and updated all documentation markdown files in `pos/docs/` (`PRD.md`, `TechStack.md`, `Database_ERD.md`, `DOM_Modal_Map.md`, `Business_Rules_Formulas.md`, `RPC_Functions.md`) to reflect the latest NTPOS architecture and expense separation logic in English per **Rule 8**.
   - Reset historical changelog entries per user request.

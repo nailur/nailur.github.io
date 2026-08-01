@@ -90,7 +90,7 @@ export function renderExpenses() {
             <td>${new Date(exp.cost_date).toLocaleDateString('id-ID')}</td>
             <td>Rp ${exp.total_amount.toLocaleString('id-ID')}</td>
             <td>${methodBadge}</td>
-            <td>${escapeHtml(exp.notes || '-')}</td>
+            <td style="max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(exp.notes || '-')}">${escapeHtml(exp.notes || '-')}</td>
             <td>${escapeHtml(exp.profiles?.name || '-')}</td>
             <td>
                 ${canEdit ? `<button class="btn btn-icon btn-secondary" onclick="window.editExpense('${exp.id}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>` : ''}
