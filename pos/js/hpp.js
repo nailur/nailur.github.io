@@ -359,12 +359,56 @@ function switchHPPTab(tabName) {
     });
 }
 
+let currentPriceMode = 'offline';
+
 /**
- * Renders interactive HPP Margin Table inside Modal
+ * Switches between Offline and Online price modes in the HPP table
+ */
+function switchHPPPriceMode(mode) {
+    currentPriceMode = mode;
+    const btnOffline = document.getElementById('btn-hpp-mode-offline');
+    const btnOnline = document.getElementById('btn-hpp-mode-online');
+    if (btnOffline && btnOnline) {
+        if (mode === 'offline') {
+            btnOffline.classList.add('active');
+            btnOffline.style.background = 'var(--primary)';
+            btnOffline.style.color = '#fff';
+            btnOnline.classList.remove('active');
+            btnOnline.style.background = 'transparent';
+            btnOnline.style.color = 'var(--text-main)';
+        } else {
+            btnOnline.classList.add('active');
+            btnOnline.style.background = 'var(--primary)';
+            btnOnline.style.color = '#fff';
+            btnOffline.classList.remove('active');
+            btnOffline.style.background = 'transparent';
+            btnOffline.style.color = 'var(--text-main)';
+        }
+    }
+    const settings = HPPSettingsManager.loadSettings();
+    renderHPPCalculatorTable(settings);
+}
+
+/**
+ * Renders interactive HPP Margin Table inside Modal matching 6-column spreadsheet layout
  */
 function renderHPPCalculatorTable(settings) {
     const tbody = document.getElementById('hpp-table-body');
     if (!tbody) return;
+
+    const totalElectricityKwh = Number(settings.kwh_freezer) + Number(settings.kwh_warmer) +
+        Number(settings.kwh_kipas) + Number(settings.kwh_printer) + Number(settings.kwh_charger) +
+        Number(settings.kwh_magic_cook) + Number(settings.kwh_magic_warm);
+    const totalElectricityRp = totalElectricityKwh * Number(settings.kwh_rate);
+    const totalMonthlyOpexRp = totalElectricityRp + Number(settings.opex_gas_monthly) +
+        Number(settings.opex_trash_bag) + Number(settings.opex_sarung_tangan) +
+        Number(settings.opex_masker) + Number(settings.opex_consumables_lain);
+    const opexPerPortion = Math.round(totalMonthlyOpexRp / (Math.max(1, Number(settings.target_daily_volume)) * 30));
+
+    const lblOpex = document.getElementById('lbl-hpp-opex-portion');
+    if (lblOpex) {
+        lblOpex.textContent = `Rp ${opexPerPortion.toLocaleString('id-ID')}`;
+    }
 
     let html = '';
     let currentCategory = '';
@@ -373,8 +417,8 @@ function renderHPPCalculatorTable(settings) {
         if (item.category !== currentCategory) {
             currentCategory = item.category;
             html += `
-                <tr style="background: rgba(59, 130, 246, 0.15); font-weight: 700; color: var(--primary);">
-                    <td colspan="8" style="padding: 10px 12px; font-size: 0.95rem;">
+                <tr style="background: rgba(59, 130, 246, 0.12); font-weight: 700; color: var(--primary);">
+                    <td colspan="6" style="padding: 8px 12px; font-size: 0.9rem;">
                         <i class="ph ph-squares-four"></i> ${currentCategory}
                     </td>
                 </tr>
@@ -382,30 +426,67 @@ function renderHPPCalculatorTable(settings) {
         }
 
         const res = calculateMenuItemHPP(item, settings);
-        const offMarginColor = res.offlineMarginPct >= 30 ? '#10b981' : (res.offlineMarginPct >= 15 ? '#f59e0b' : '#ef4444');
-        const onMarginColor = res.onlineMarginPct >= 30 ? '#10b981' : (res.onlineMarginPct >= 15 ? '#f59e0b' : '#ef4444');
+        const hargaJual = currentPriceMode === 'offline' ? item.offline : item.online;
+        const labaBersih = currentPriceMode === 'offline' ? res.offlineMarginRp : res.onlineMarginRp;
+        const marginPct = currentPriceMode === 'offline' ? res.offlineMarginPct : res.onlineMarginPct;
+
+        const marginColor = marginPct >= 30 ? '#10b981' : (marginPct >= 15 ? '#f59e0b' : '#ef4444');
+        const labaColor = labaBersih >= 0 ? '#10b981' : '#ef4444';
 
         html += `
             <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;">
                 <td style="padding: 10px 12px; font-weight: 600;">${item.name}</td>
-                <td style="padding: 10px 12px; text-align: right;">Rp ${Math.round(res.rawCOGS).toLocaleString('id-ID')}</td>
-                <td style="padding: 10px 12px; text-align: right; color: #f59e0b;">Rp ${Math.round(res.opexPerPortion).toLocaleString('id-ID')}</td>
-                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: var(--text-main);">Rp ${Math.round(res.totalHPP).toLocaleString('id-ID')}</td>
-                <td style="padding: 10px 12px; text-align: right;">Rp ${item.offline.toLocaleString('id-ID')}</td>
-                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: ${offMarginColor};">
-                    Rp ${Math.round(res.offlineMarginRp).toLocaleString('id-ID')}<br>
-                    <span style="font-size: 0.72rem; opacity: 0.9;">(${res.offlineMarginPct.toFixed(1)}%)</span>
-                </td>
-                <td style="padding: 10px 12px; text-align: right;">Rp ${item.online.toLocaleString('id-ID')}</td>
-                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: ${onMarginColor};">
-                    Rp ${Math.round(res.onlineMarginRp).toLocaleString('id-ID')}<br>
-                    <span style="font-size: 0.72rem; opacity: 0.9;">(${res.onlineMarginPct.toFixed(1)}%)</span>
-                </td>
+                <td style="padding: 10px 12px; text-align: right;">Rp${hargaJual.toLocaleString('id-ID')}</td>
+                <td style="padding: 10px 12px; text-align: right; color: var(--text-secondary);">Rp${Math.round(res.rawCOGS).toLocaleString('id-ID')}</td>
+                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: var(--text-main);">Rp${Math.round(res.totalHPP).toLocaleString('id-ID')}</td>
+                <td style="padding: 10px 12px; text-align: right; font-weight: 600; color: ${labaColor};">Rp${Math.round(labaBersih).toLocaleString('id-ID')}</td>
+                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: ${marginColor};">${marginPct.toFixed(1).replace('.', ',')}%</td>
             </tr>
         `;
     });
 
     tbody.innerHTML = html;
+}
+
+/**
+ * Exports the HPP Margin Table to Excel (.xlsx)
+ */
+function exportHPPMarginTableExcel() {
+    if (typeof XLSX === 'undefined') {
+        if (typeof showToast === 'function') showToast('Library Excel tidak tersedia.', 'error');
+        return;
+    }
+
+    const settings = HPPSettingsManager.loadSettings();
+    const rows = [];
+
+    HPP_MENU_CATALOG.forEach(item => {
+        const res = calculateMenuItemHPP(item, settings);
+        const hargaJual = currentPriceMode === 'offline' ? item.offline : item.online;
+        const labaBersih = currentPriceMode === 'offline' ? res.offlineMarginRp : res.onlineMarginRp;
+        const marginPct = currentPriceMode === 'offline' ? res.offlineMarginPct : res.onlineMarginPct;
+
+        rows.push({
+            'Menu (Ala Carte)': item.name,
+            'Kategori': item.category,
+            'Mode Harga': currentPriceMode === 'offline' ? 'Offline (Toko)' : 'Online (Ojol - Potongan 20% + Rp 4.000)',
+            'Harga Jual': hargaJual,
+            'HPP Bahan': Math.round(res.rawCOGS),
+            'OPEX / Porsi': Math.round(res.opexPerPortion),
+            'HPP Final (+ Operasional)': Math.round(res.totalHPP),
+            'Laba Bersih': Math.round(labaBersih),
+            'Margin Laba (%)': Number(marginPct.toFixed(1))
+        });
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'HPP & Margin NTPOS');
+    XLSX.writeFile(workbook, `Laporan_HPP_Profitabilitas_NTPOS_${currentPriceMode.toUpperCase()}.xlsx`);
+
+    if (typeof showToast === 'function') {
+        showToast('Laporan HPP berhasil diexport ke Excel!', 'success');
+    }
 }
 
 /**
@@ -578,3 +659,5 @@ window.handleHPPInputChange = handleHPPInputChange;
 window.saveHPPSettingsFromForm = saveHPPSettingsFromForm;
 window.pullHPPCostsFromDatabase = pullHPPCostsFromDatabase;
 window.renderHPPSummaryCard = renderHPPSummaryCard;
+window.switchHPPPriceMode = switchHPPPriceMode;
+window.exportHPPMarginTableExcel = exportHPPMarginTableExcel;

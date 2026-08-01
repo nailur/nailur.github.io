@@ -2606,22 +2606,32 @@
 
             <!-- Tab 1: Tabel Analisis Margin -->
             <div id="hpp-tab-margin-table" class="hpp-tab-content" style="flex: 1; overflow-y: auto;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.82rem; color: var(--text-secondary); background: rgba(59, 130, 246, 0.08); padding: 8px 12px; border-radius: 6px;">
-                    <span><i class="ph ph-info"></i> Harga Jual Online +Rp 4.000 dengan perhitungan potongan aplikasi sebesar 20%.</span>
-                    <span>HPP Ayam: <strong>Rata per Potong</strong> | Absorpsi OPEX: <strong>Volume Harian</strong></span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; gap: 8px; align-items: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 4px;">
+                        <button type="button" class="btn hpp-mode-btn active" id="btn-hpp-mode-offline" onclick="switchHPPPriceMode('offline')" style="padding: 5px 12px; font-size: 0.78rem; border-radius: 6px; border: none; background: var(--primary); color: #fff;">
+                            <i class="ph ph-storefront"></i> Offline (Toko)
+                        </button>
+                        <button type="button" class="btn hpp-mode-btn" id="btn-hpp-mode-online" onclick="switchHPPPriceMode('online')" style="padding: 5px 12px; font-size: 0.78rem; border-radius: 6px; border: none; background: transparent; color: var(--text-main);">
+                            <i class="ph ph-scooter"></i> Online (+Rp 4.000 / Potongan 20%)
+                        </button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 0.78rem; color: var(--text-secondary);"><i class="ph ph-info"></i> OPEX/Porsi: <strong id="lbl-hpp-opex-portion" style="color: var(--primary);">Rp 0</strong></span>
+                        <button type="button" class="btn btn-success" onclick="exportHPPMarginTableExcel()" style="padding: 5px 12px; font-size: 0.78rem; display: flex; align-items: center; gap: 5px;">
+                            <i class="ph ph-file-xls"></i> Export Excel
+                        </button>
+                    </div>
                 </div>
                 <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 8px;">
-                    <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                    <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
                         <thead>
                             <tr style="background: var(--bg-card); border-bottom: 2px solid var(--border-color); text-align: left;">
-                                <th style="padding: 10px 12px;">Menu</th>
-                                <th style="padding: 10px 12px; text-align: right;">HPP Bahan (Rp)</th>
-                                <th style="padding: 10px 12px; text-align: right;">OPEX / Porsi (Rp)</th>
-                                <th style="padding: 10px 12px; text-align: right;">Total HPP (Rp)</th>
-                                <th style="padding: 10px 12px; text-align: right;">Harga Offline</th>
-                                <th style="padding: 10px 12px; text-align: right;">Laba Offline</th>
-                                <th style="padding: 10px 12px; text-align: right;">Harga Online</th>
-                                <th style="padding: 10px 12px; text-align: right;">Laba Online</th>
+                                <th style="padding: 10px 12px;">Menu (Ala Carte)</th>
+                                <th style="padding: 10px 12px; text-align: right;">Harga Jual</th>
+                                <th style="padding: 10px 12px; text-align: right;">HPP Bahan</th>
+                                <th style="padding: 10px 12px; text-align: right;">HPP Final (+ Operasional)</th>
+                                <th style="padding: 10px 12px; text-align: right;">Laba Bersih</th>
+                                <th style="padding: 10px 12px; text-align: right;">Margin Laba</th>
                             </tr>
                         </thead>
                         <tbody id="hpp-table-body">
