@@ -4,6 +4,10 @@
  * and pulling real average cost data from Supabase DB (inventory_postings & operational_costs).
  */
 
+import { supabase } from './supabase.js';
+import { getActiveOutletId } from './state.js';
+import { showToast } from './utils.js';
+
 const HPPSettingsManager = {
     STORAGE_KEY: 'ntpos_hpp_settings_v1',
 
@@ -35,13 +39,13 @@ const HPPSettingsManager = {
             kwh_magic_cook: 10.50,          // 350W * 1h * 30d
             kwh_magic_warm: 23.10,          // 70W * 11h * 30d
 
-            opex_gas_monthly: 330000,       // 3 tabung * 15 kali * Rp 22,000
+            opex_gas_monthly: 330000,       // 3 tabung * 15 times * Rp 22,000
             opex_trash_bag: 45968,          // Rp 22,984 / 15 * 30
             opex_sarung_tangan: 55521,      // 100 pcs
-            opex_masker: 15378,             // 60 pcs / bulan
+            opex_masker: 15378,             // 60 pcs / month
             opex_consumables_lain: 100000,  // Tissue, solatip, thermal
 
-            target_daily_volume: 100        // Asumsi rata-rata porsi terjual harian
+            target_daily_volume: 100        // Assumed average portions sold per day
         };
     },
 
@@ -122,7 +126,7 @@ function calculateMenuItemHPP(item, settings) {
         const saosQty = (item.part === 'dada' || item.part === 'paha_atas') ? 2 : 1;
         const saosCost = saosQty * saosPerBungkus;
         rawCOGS += saosCost;
-        breakdown.push({ label: `Saos (${saosQty} bgs)`, amount: saosCost });
+        breakdown.push({ label: `Saos (${saosQty} pcs)`, amount: saosCost });
 
         // 3. Minyak Beku cost (200 gr per 9 pcs + 42.86 gr replacement per 9 pcs = ~26.98 gr/piece)
         const minyaksPerGr = Number(settings.price_minyak_15kg) / 15000;
@@ -590,8 +594,8 @@ async function pullHPPCostsFromDatabase() {
     }
 
     try {
-        const outletId = typeof getActiveOutletId === 'function' ? getActiveOutletId() : null;
-        if (!outletId || typeof supabase === 'undefined') {
+        const outletId = getActiveOutletId();
+        if (!outletId || !supabase) {
             throw new Error('Supabase client atau outlet aktif tidak terdeteksi.');
         }
 
@@ -600,35 +604,45 @@ async function pullHPPCostsFromDatabase() {
             .from('inventory_posting_items')
             .select(`
                 price,
-                inventory_items (name, unit_large)
+                inventory_items (name, unit_large, outlet_id)
             `)
             .gt('price', 0)
             .order('id', { ascending: false })
             .limit(100);
 
         let pulledCount = 0;
+        let pulledAyam = false;
+        let pulledSaos = false;
+        let pulledBeras = false;
+
         if (!postingErr && postingItems) {
             postingItems.forEach(pi => {
+                // Ignore items belonging to a different outlet if outlet_id is present
+                if (pi.inventory_items && pi.inventory_items.outlet_id && pi.inventory_items.outlet_id !== outletId) {
+                    return;
+                }
                 const name = (pi.inventory_items?.name || '').toLowerCase();
                 const price = Number(pi.price) || 0;
                 if (price > 0) {
-                    if (name.includes('ayam') && !pulledCount) {
-                        // If price per kg/package is stored
+                    if (name.includes('ayam') && !pulledAyam) {
                         const inputEl = document.getElementById('hpp-input-ayam');
                         if (inputEl) {
                             inputEl.value = Math.round(price);
+                            pulledAyam = true;
                             pulledCount++;
                         }
-                    } else if (name.includes('saos') || name.includes('saus')) {
+                    } else if ((name.includes('saos') || name.includes('saus')) && !pulledSaos) {
                         const inputEl = document.getElementById('hpp-input-saos');
                         if (inputEl) {
                             inputEl.value = Math.round(price);
+                            pulledSaos = true;
                             pulledCount++;
                         }
-                    } else if (name.includes('beras')) {
+                    } else if (name.includes('beras') && !pulledBeras) {
                         const inputEl = document.getElementById('hpp-input-beras');
                         if (inputEl) {
                             inputEl.value = Math.round(price);
+                            pulledBeras = true;
                             pulledCount++;
                         }
                     }
@@ -658,14 +672,14 @@ async function pullHPPCostsFromDatabase() {
         }
 
         handleHPPInputChange();
-        if (typeof showToast === 'function') {
+        if (pulledCount > 0) {
             showToast(`Berhasil menarik ${pulledCount} referensi biaya dari sistem DB!`, 'success');
+        } else {
+            showToast('Tidak ada data referensi biaya baru yang ditemukan di DB.', 'info');
         }
     } catch (e) {
         console.warn('Could not pull HPP costs from DB:', e);
-        if (typeof showToast === 'function') {
-            showToast('Gagal menarik data dari DB. Periksa koneksi Supabase Anda.', 'error');
-        }
+        showToast('Gagal menarik data dari DB. Periksa koneksi Supabase Anda.', 'error');
     } finally {
         if (btn) {
             btn.disabled = false;

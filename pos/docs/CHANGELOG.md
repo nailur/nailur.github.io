@@ -5,6 +5,12 @@ All changes to the codebase and project structure must be documented here to mai
 ## [Unreleased]
 *Note: Every time a new feature or task is completed, AI agents must append their changes under the current date.*
 
+### 2026-08-02
+- **HPP & Profitability Calculator (`js/hpp.js`)**:
+  - Fixed ES module scope issue where `pullHPPCostsFromDatabase()` threw `'Supabase client atau outlet aktif tidak terdeteksi'` by importing `supabase` from `./supabase.js`, `getActiveOutletId` from `./state.js`, and `showToast` from `./utils.js`.
+  - Fixed ingredient price pulling logic (`inventory_posting_items`) by separating boolean flags (`pulledAyam`, `pulledSaos`, `pulledBeras`) so each item is checked independently without being blocked by earlier matches, and filtering stock postings by the active `outlet_id`.
+  - Bumped PWA cache version to `pos-cache-v101` in `sw.js`.
+
 ### 2026-08-01
 - **HPP & Profitability Calculator (`js/hpp.js`)**:
   - Implemented comprehensive HPP and profit margin calculator for all 36 NTPOS menu items in `js/hpp.js`.
