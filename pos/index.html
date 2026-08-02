@@ -993,7 +993,6 @@
                         <span>-</span>
                         <input type="date" id="dashboard-date-end" class="input-sm">
                         <button class="btn btn-secondary" id="btn-open-mdr-settings" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-gear"></i> Potongan MDR</button>
-                        <button class="btn btn-secondary" id="btn-open-hpp-calculator" onclick="openHPPCalculatorModal('margin-table')" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-calculator"></i> Kalkulator HPP</button>
                         <button class="btn btn-success" id="btn-export-dashboard-excel" style="padding: 5px 10px; font-size: 0.85rem;" onclick="window.exportDashboardExcel && window.exportDashboardExcel()"><i class="ph ph-file-xls"></i> Export Excel</button>
                     </div>
                 </div>
@@ -2584,9 +2583,9 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
                 <div>
                     <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.15rem; color: var(--primary);">
-                        <i class="ph-fill ph-calculator"></i> Kalkulator HPP & Profit margin (NTPOS)
+                        <i class="ph-fill ph-calculator"></i> Kalkulator HPP & Profit margin
                     </h3>
-                    <span style="font-size: 0.78rem; color: var(--text-muted);">Perhitungan otomatis margin Offline & Online dengan absorpsi biaya operasional (OPEX)</span>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">Perhitungan otomatis margin penjualan dengan absorpsi biaya operasional (OPEX)</span>
                 </div>
                 <button class="btn btn-icon" onclick="closeHPPCalculatorModal()"><i class="ph ph-x"></i></button>
             </div>
@@ -2609,10 +2608,10 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                     <div style="display: flex; gap: 8px; align-items: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 4px;">
                         <button type="button" class="btn hpp-mode-btn active" id="btn-hpp-mode-offline" onclick="switchHPPPriceMode('offline')" style="padding: 5px 12px; font-size: 0.78rem; border-radius: 6px; border: none; background: var(--primary); color: #fff;">
-                            <i class="ph ph-storefront"></i> Offline (Toko)
+                            <i class="ph ph-storefront"></i> Offline
                         </button>
                         <button type="button" class="btn hpp-mode-btn" id="btn-hpp-mode-online" onclick="switchHPPPriceMode('online')" style="padding: 5px 12px; font-size: 0.78rem; border-radius: 6px; border: none; background: transparent; color: var(--text-main);">
-                            <i class="ph ph-scooter"></i> Online (+Rp 4.000 / Potongan 20%)
+                            <i class="ph ph-scooter"></i> Online
                         </button>
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px;">
@@ -2626,7 +2625,7 @@
                     <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
                         <thead>
                             <tr style="background: var(--bg-card); border-bottom: 2px solid var(--border-color); text-align: left;">
-                                <th style="padding: 10px 12px;">Menu (Ala Carte)</th>
+                                <th style="padding: 10px 12px;">Menu</th>
                                 <th style="padding: 10px 12px; text-align: right;">Harga Jual</th>
                                 <th style="padding: 10px 12px; text-align: right;">HPP Bahan</th>
                                 <th style="padding: 10px 12px; text-align: right;">HPP Final (+ Operasional)</th>
@@ -2656,9 +2655,9 @@
                         <span style="font-size: 0.7rem; color: var(--text-muted);">1 Kantong = 9 potong (3 Dada, 2 PA, 2 PB, 2 Sayap)</span>
                     </div>
                     <div>
-                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Saos per Pack (24 bgs) (Rp):</label>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Saos per Pack (24 pcs) (Rp):</label>
                         <input type="number" id="hpp-input-saos" class="input" value="24000" onchange="handleHPPInputChange()">
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">Dada/PA = 2 bgs | PB/Sayap = 1 bgs</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Dada/PA = 2 pcs | PB/Sayap = 1 pcs</span>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Minyak Beku (1 Box / 15 Kg) (Rp):</label>

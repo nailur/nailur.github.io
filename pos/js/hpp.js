@@ -497,7 +497,7 @@ async function exportHPPMarginTableExcel() {
         rows.push({
             'Menu (Ala Carte)': item.name,
             'Kategori': item.category,
-            'Mode Harga': currentPriceMode === 'offline' ? 'Offline (Toko)' : 'Online (Ojol - Potongan 20% + Rp 4.000)',
+            'Mode Harga': currentPriceMode === 'offline' ? 'Offlin' : 'Online',
             'Harga Jual': hargaJual,
             'HPP Bahan': Math.round(res.rawCOGS),
             'OPEX / Porsi': Math.round(res.opexPerPortion),
@@ -509,8 +509,8 @@ async function exportHPPMarginTableExcel() {
 
     const worksheet = window.XLSX.utils.json_to_sheet(rows);
     const workbook = window.XLSX.utils.book_new();
-    window.XLSX.utils.book_append_sheet(workbook, worksheet, 'HPP & Margin NTPOS');
-    window.XLSX.writeFile(workbook, `Laporan_HPP_Profitabilitas_NTPOS_${currentPriceMode.toUpperCase()}.xlsx`);
+    window.XLSX.utils.book_append_sheet(workbook, worksheet, 'HPP & Margin');
+    window.XLSX.writeFile(workbook, `Laporan_HPP_Profitabilitas_${currentPriceMode.toUpperCase()}.xlsx`);
 
     if (typeof showToast === 'function') {
         showToast('Laporan HPP berhasil diexport ke Excel!', 'success');
