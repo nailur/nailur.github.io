@@ -14,21 +14,35 @@ const HPPSettingsManager = {
     getDefaultSettings() {
         return {
             // Raw material prices (Rp)
-            price_ayam_kantong: 36000,      // 1 kantong = 9 potong (Rp 4,000 / potong)
-            price_saos_pack: 24000,         // 1 pack = 24 bungkus (Rp 1,000 / bungkus)
-            price_minyak_15kg: 270000,      // 1 box 15kg = Rp 18 / gr
+            price_ayam_kantong: 36000,      // 1 kantong = 9 potong
+            price_saos_pack: 24000,         // 1 pack = 24 bungkus
+            price_minyak_15kg: 270000,      // 1 box 15kg
             price_tepung_biang_kg: 25000,   // Rp 25,000 / kg
             price_tepung_serbaguna_kg: 12000, // Rp 12,000 / kg
-            price_beras_5kg: 72000,         // 5kg = 72 porsi (Rp 1,000 / porsi)
-            price_sambal_porsi: 1200,       // Rp 1,200 / porsi default
-            price_box_m: 1036,              // Rp 1,036.4 / pc (Paket variants)
-            price_box_xs: 1036,             // Rp 1,036.4 / pc (Geprek variants)
-            price_kertas_nasi: 500,         // Rp 500 / pc
-            price_kertas_pembungkus: 270,   // Rp 270 / pc
-            price_plastik_kecil: 150,       // Rp 150 / pc (1 potong)
-            price_plastik_besar: 300,       // Rp 300 / pc (2-3 potong)
-            price_estee_porsi: 1500,        // Rp 1,500 / porsi
-
+            
+            // Extra ingredients
+            price_beras_1_liter: 14400,     // 1 Liter = 10 porsi
+            
+            // Sambal ingredients
+            price_cabe_merah_kg: 60000,
+            price_cabe_hijau_kg: 40000,
+            price_bawang_kg: 40000,
+            price_minyak_cair_liter: 16000,
+            price_kaldu_pack: 500,          // Misal sachet kaldu
+            price_garam_pack: 3000,         // Misal pack garam 250g
+            price_gula_kg: 18000,
+            price_sasa_pack: 5000,          // Misal sachet sasa 250g
+            price_kencur_kg: 30000,
+            
+            // Packaging
+            price_box_m: 1036,
+            price_box_xs: 1036,
+            price_kertas_nasi: 500,
+            price_kertas_pembungkus: 270,
+            price_plastik_kecil: 150,
+            price_plastik_besar: 300,
+            price_estee_porsi: 1500,
+            
             // Saus Tambahan
             price_saus_gourmet_1kg: 15000,
             price_saus_bbq_250g: 9500,
@@ -38,22 +52,17 @@ const HPPSettingsManager = {
             price_cup_saus_30: 5100,
 
             // Monthly OPEX & Electricity
+            opex_listrik_kwh_bulanan: 163, // Total estimate kWh
             kwh_rate: 1444.7,
-            kwh_freezer: 66.96,             // 90W * 24h * 31d
-            kwh_warmer: 54.00,              // 150W * 12h * 30d
-            kwh_kipas: 6.30,                // 70W * 3h * 30d
-            kwh_printer: 1.80,              // 5W * 12h * 30d
-            kwh_charger: 0.50,              // 18W * 1h * 30d
-            kwh_magic_cook: 10.50,          // 350W * 1h * 30d
-            kwh_magic_warm: 23.10,          // 70W * 11h * 30d
+            opex_gas_monthly: 330000,      // 3 tabung * frekuensi
+            opex_trash_bag: 45000,
+            opex_sarung_tangan: 55000,     // 1 box isi 100
+            opex_masker: 20000,            // 1 box isi 50
+            opex_tissue: 30000,            // 10 pcs
+            opex_solatip: 3000,            // 1 pcs
+            opex_thermal: 5000,            // 1 roll
 
-            opex_gas_monthly: 330000,       // 3 tabung * 15 times * Rp 22,000
-            opex_trash_bag: 45968,          // Rp 22,984 / 15 * 30
-            opex_sarung_tangan: 55521,      // 100 pcs
-            opex_masker: 15378,             // 60 pcs / month
-            opex_consumables_lain: 100000,  // Tissue, solatip, thermal
-
-            target_daily_volume: 100        // Assumed average portions sold per day
+            target_daily_volume: 100
         };
     },
 
@@ -153,9 +162,9 @@ function calculateMenuItemHPP(item, settings) {
         breakdown.push({ label: 'Tepung Bumbu (~41g)', amount: tepungCostPerPiece });
     }
 
-    // 5. Nasi cost (Beras 5kg = 72 porsi)
+    // 5. Nasi cost (Beras 1 Liter = 10 porsi)
     if (item.isPaket || item.isNasiOnly) {
-        const nasiCost = Number(settings.price_beras_5kg) / 72;
+        const nasiCost = Number(settings.price_beras_1_liter) / 10;
         rawCOGS += nasiCost;
         breakdown.push({ label: 'Nasi (170g)', amount: nasiCost });
         if (item.isPaket) {
@@ -166,9 +175,32 @@ function calculateMenuItemHPP(item, settings) {
 
     // 6. Sambal Geprek cost
     if (item.isGeprek || item.isSambalOnly) {
-        const sambalCost = Number(settings.price_sambal_porsi);
+        const cabeWeight = (item.part === 'dada' || item.part === 'paha_atas') ? 20 : ((item.part === 'paha_bawah' || item.part === 'sayap') ? 15 : 20);
+        let sambalCost = 0;
+        const garamPerGr = Number(settings.price_garam_pack) / 250;
+        const sasaPerGr = Number(settings.price_sasa_pack) / 250;
+        const kalduPerGr = Number(settings.price_kaldu_pack) / 10;
+        
+        if (item.name.includes('Hijau')) {
+            sambalCost += (cabeWeight / 1000) * Number(settings.price_cabe_hijau_kg);
+            sambalCost += (4 / 1000) * Number(settings.price_bawang_kg);
+            sambalCost += (30 / 1000) * Number(settings.price_gula_kg); // 2 sendok gula
+            sambalCost += (2 / 1000) * Number(settings.price_kencur_kg);
+            sambalCost += 2 * sasaPerGr; // micin 2g
+            sambalCost += 2 * garamPerGr; // garam 2g
+            sambalCost += (30 / 1000) * Number(settings.price_minyak_cair_liter); // 2 sendok minyak (30ml)
+        } else {
+            // Merah (default for Ayam Geprek)
+            sambalCost += (cabeWeight / 1000) * Number(settings.price_cabe_merah_kg);
+            sambalCost += (4 / 1000) * Number(settings.price_bawang_kg);
+            sambalCost += 10 * kalduPerGr; // kaldu 1 sendok (10g)
+            sambalCost += 5 * garamPerGr;  // garam 5g
+            sambalCost += 2 * sasaPerGr;   // penyedap 2g
+            sambalCost += (30 / 1000) * Number(settings.price_minyak_cair_liter);
+        }
+        
         rawCOGS += sambalCost;
-        breakdown.push({ label: 'Sambal Geprek', amount: sambalCost });
+        breakdown.push({ label: `Sambal Geprek (~${cabeWeight}g cabe)`, amount: sambalCost });
     }
 
     // 7. Drink cost
@@ -214,13 +246,12 @@ function calculateMenuItemHPP(item, settings) {
     }
 
     // OPEX Absorption calculation
-    const totalElectricityKwh = Number(settings.kwh_freezer) + Number(settings.kwh_warmer) +
-        Number(settings.kwh_kipas) + Number(settings.kwh_printer) + Number(settings.kwh_charger) +
-        Number(settings.kwh_magic_cook) + Number(settings.kwh_magic_warm);
+    const totalElectricityKwh = Number(settings.opex_listrik_kwh_bulanan) || 0;
     const totalElectricityRp = totalElectricityKwh * Number(settings.kwh_rate);
     const totalMonthlyOpexRp = totalElectricityRp + Number(settings.opex_gas_monthly) +
         Number(settings.opex_trash_bag) + Number(settings.opex_sarung_tangan) +
-        Number(settings.opex_masker) + Number(settings.opex_consumables_lain);
+        Number(settings.opex_masker) + Number(settings.opex_tissue) +
+        Number(settings.opex_solatip) + Number(settings.opex_thermal);
 
     const dailyVol = Math.max(1, Number(settings.target_daily_volume) || 100);
     const monthlyVol = dailyVol * 30;
@@ -334,8 +365,16 @@ function openHPPCalculatorModal(initialTab = 'margin-table') {
     setVal('hpp-input-minyak', settings.price_minyak_15kg);
     setVal('hpp-input-tepung-biang', settings.price_tepung_biang_kg);
     setVal('hpp-input-tepung-serbaguna', settings.price_tepung_serbaguna_kg);
-    setVal('hpp-input-beras', settings.price_beras_5kg);
-    setVal('hpp-input-sambal', settings.price_sambal_porsi);
+    setVal('hpp-input-beras', settings.price_beras_1_liter);
+    setVal('hpp-input-cabe-merah', settings.price_cabe_merah_kg);
+    setVal('hpp-input-cabe-hijau', settings.price_cabe_hijau_kg);
+    setVal('hpp-input-bawang', settings.price_bawang_kg);
+    setVal('hpp-input-minyak-cair', settings.price_minyak_cair_liter);
+    setVal('hpp-input-kaldu', settings.price_kaldu_pack);
+    setVal('hpp-input-garam', settings.price_garam_pack);
+    setVal('hpp-input-gula', settings.price_gula_kg);
+    setVal('hpp-input-sasa', settings.price_sasa_pack);
+    setVal('hpp-input-kencur', settings.price_kencur_kg);
     setVal('hpp-input-box-m', settings.price_box_m);
     setVal('hpp-input-box-xs', settings.price_box_xs);
     setVal('hpp-input-kertas-nasi', settings.price_kertas_nasi);
@@ -350,12 +389,15 @@ function openHPPCalculatorModal(initialTab = 'margin-table') {
     setVal('hpp-input-saus-keju', settings.price_saus_keju_500g);
     setVal('hpp-input-cup-saus', settings.price_cup_saus_30);
 
+    setVal('hpp-input-kwh-total', settings.opex_listrik_kwh_bulanan);
     setVal('hpp-input-kwh-rate', settings.kwh_rate);
     setVal('hpp-input-opex-gas', settings.opex_gas_monthly);
     setVal('hpp-input-opex-trash', settings.opex_trash_bag);
     setVal('hpp-input-opex-sarung', settings.opex_sarung_tangan);
     setVal('hpp-input-opex-masker', settings.opex_masker);
-    setVal('hpp-input-opex-lain', settings.opex_consumables_lain);
+    setVal('hpp-input-tissue', settings.opex_tissue);
+    setVal('hpp-input-solatip', settings.opex_solatip);
+    setVal('hpp-input-thermal', settings.opex_thermal);
     setVal('hpp-input-daily-vol', settings.target_daily_volume);
 
     renderHPPCalculatorTable(settings);
@@ -406,13 +448,12 @@ function renderHPPCalculatorTable(settings) {
     const tbody = document.getElementById('hpp-table-body');
     if (!tbody) return;
 
-    const totalElectricityKwh = Number(settings.kwh_freezer) + Number(settings.kwh_warmer) +
-        Number(settings.kwh_kipas) + Number(settings.kwh_printer) + Number(settings.kwh_charger) +
-        Number(settings.kwh_magic_cook) + Number(settings.kwh_magic_warm);
+    const totalElectricityKwh = Number(settings.opex_listrik_kwh_bulanan) || 0;
     const totalElectricityRp = totalElectricityKwh * Number(settings.kwh_rate);
     const totalMonthlyOpexRp = totalElectricityRp + Number(settings.opex_gas_monthly) +
         Number(settings.opex_trash_bag) + Number(settings.opex_sarung_tangan) +
-        Number(settings.opex_masker) + Number(settings.opex_consumables_lain);
+        Number(settings.opex_masker) + Number(settings.opex_tissue) +
+        Number(settings.opex_solatip) + Number(settings.opex_thermal);
     const opexPerPortion = Math.round(totalMonthlyOpexRp / (Math.max(1, Number(settings.target_daily_volume)) * 30));
 
     const lblOpex = document.getElementById('lbl-hpp-opex-portion');
@@ -519,8 +560,16 @@ function handleHPPInputChange() {
         price_minyak_15kg: Number(document.getElementById('hpp-input-minyak')?.value || 270000),
         price_tepung_biang_kg: Number(document.getElementById('hpp-input-tepung-biang')?.value || 25000),
         price_tepung_serbaguna_kg: Number(document.getElementById('hpp-input-tepung-serbaguna')?.value || 12000),
-        price_beras_5kg: Number(document.getElementById('hpp-input-beras')?.value || 72000),
-        price_sambal_porsi: Number(document.getElementById('hpp-input-sambal')?.value || 1200),
+        price_beras_1_liter: Number(document.getElementById('hpp-input-beras')?.value || 14400),
+        price_cabe_merah_kg: Number(document.getElementById('hpp-input-cabe-merah')?.value || 60000),
+        price_cabe_hijau_kg: Number(document.getElementById('hpp-input-cabe-hijau')?.value || 40000),
+        price_bawang_kg: Number(document.getElementById('hpp-input-bawang')?.value || 40000),
+        price_minyak_cair_liter: Number(document.getElementById('hpp-input-minyak-cair')?.value || 16000),
+        price_kaldu_pack: Number(document.getElementById('hpp-input-kaldu')?.value || 500),
+        price_garam_pack: Number(document.getElementById('hpp-input-garam')?.value || 3000),
+        price_gula_kg: Number(document.getElementById('hpp-input-gula')?.value || 18000),
+        price_sasa_pack: Number(document.getElementById('hpp-input-sasa')?.value || 5000),
+        price_kencur_kg: Number(document.getElementById('hpp-input-kencur')?.value || 30000),
         price_box_m: Number(document.getElementById('hpp-input-box-m')?.value || 1036),
         price_box_xs: Number(document.getElementById('hpp-input-box-xs')?.value || 1036),
         price_kertas_nasi: Number(document.getElementById('hpp-input-kertas-nasi')?.value || 500),
@@ -535,12 +584,15 @@ function handleHPPInputChange() {
         price_saus_keju_500g: Number(document.getElementById('hpp-input-saus-keju')?.value || 27000),
         price_cup_saus_30: Number(document.getElementById('hpp-input-cup-saus')?.value || 5100),
 
+        opex_listrik_kwh_bulanan: Number(document.getElementById('hpp-input-kwh-total')?.value || 163),
         kwh_rate: Number(document.getElementById('hpp-input-kwh-rate')?.value || 1444.7),
         opex_gas_monthly: Number(document.getElementById('hpp-input-opex-gas')?.value || 330000),
-        opex_trash_bag: Number(document.getElementById('hpp-input-opex-trash')?.value || 45968),
-        opex_sarung_tangan: Number(document.getElementById('hpp-input-opex-sarung')?.value || 55521),
-        opex_masker: Number(document.getElementById('hpp-input-opex-masker')?.value || 15378),
-        opex_consumables_lain: Number(document.getElementById('hpp-input-opex-lain')?.value || 100000),
+        opex_trash_bag: Number(document.getElementById('hpp-input-opex-trash')?.value || 45000),
+        opex_sarung_tangan: Number(document.getElementById('hpp-input-opex-sarung')?.value || 55000),
+        opex_masker: Number(document.getElementById('hpp-input-opex-masker')?.value || 20000),
+        opex_tissue: Number(document.getElementById('hpp-input-tissue')?.value || 30000),
+        opex_solatip: Number(document.getElementById('hpp-input-solatip')?.value || 3000),
+        opex_thermal: Number(document.getElementById('hpp-input-thermal')?.value || 5000),
         target_daily_volume: Number(document.getElementById('hpp-input-daily-vol')?.value || 100)
     };
 
