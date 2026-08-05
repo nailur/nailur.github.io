@@ -7,6 +7,7 @@ All changes to the codebase and project structure must be documented here to mai
 
 ### 2026-08-05
 - **HPP & Profitability Calculator (`js/hpp.js`, `index.html`)**:
+  - Fixed a bug in `saveHPPSettingsFromForm()` where new detailed variables (Kiloan, Cabe, dll.) were not being saved correctly to local storage due to mismatched object keys.
   - Restructured HPP Calculator modal into 4 distinct tabs: Margin Table, Bahan Ayam & Box, Bahan Extra & Saus, and Operasional Bulanan.
   - Granularized ingredient inputs for Sambal Geprek into specific raw materials (Cabe Merah, Cabe Hijau, Bawang, Minyak Cair, Kaldu Kiloan, Garam Kiloan, Gula Kiloan, Sasa Kiloan, Kencur) to allow highly accurate costing based on specific recipes and portions.
   - Added formula explanation texts (`<span class="text-muted">`) under all input fields to clarify yield assumptions directly on the UI.
@@ -15,7 +16,7 @@ All changes to the codebase and project structure must be documented here to mai
   - Detailed monthly operational costs (OPEX) inputs, replacing generic fields with specific consumable fields (Masker, Latex, Trash Bag, Tissue, Solatip, Thermal) and direct KWh inputs.
   - Removed Offline vs Online price mode separation in HPP calculations, simplifying it to a single base price calculation (HPP and margins are now unified).
   - Added "Saus Kocak" and "Saus Keju" Extra items to the menu catalog with automatic calculations for material costs (ingredients, cups, and yields).
-  - Updated PWA cache to `pos-cache-v106` in `sw.js`.
+  - Updated PWA cache to `pos-cache-v107` in `sw.js`.
 
 ### 2026-08-02
 - **HPP & Profitability Calculator (`js/hpp.js`)**:
