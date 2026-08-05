@@ -2642,10 +2642,12 @@
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Ayam per Kantong (isi 9) (Rp):</label>
                         <input type="number" id="hpp-input-ayam" class="input" value="36000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">1 Kantong dibagi rata 9 potong</span>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Minyak Beku per 1 Dus 15Kg (Rp):</label>
                         <input type="number" id="hpp-input-minyak" class="input" value="270000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Pemakaian 200g per 1 kantong goreng</span>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Tepung Biang (Rp/Kg):</label>
@@ -2654,13 +2656,15 @@
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Tepung Serbaguna (Rp/Kg):</label>
                         <input type="number" id="hpp-input-tepung-serbaguna" class="input" value="12000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Formula 10kg + 1kg biang (untuk 25-27 kantong)</span>
                     </div>
                     <div>
-                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Saos Bawaan per Pack (khusus ori) (Rp):</label>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Saos per Pack (Rp):</label>
                         <input type="number" id="hpp-input-saos" class="input" value="24000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Dada/P.Atas = 2pcs, PB/Sayap = 1pcs</span>
                     </div>
                     <div>
-                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Karton Box M / XS (selain ayam ori non paket):</label>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Karton Box M / XS:</label>
                         <div style="display: flex; gap: 8px;">
                             <input type="number" id="hpp-input-box-m" class="input" value="1036" placeholder="Box M" onchange="handleHPPInputChange()">
                             <input type="number" id="hpp-input-box-xs" class="input" value="1036" placeholder="Box XS" onchange="handleHPPInputChange()">
@@ -2675,6 +2679,7 @@
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Beras per 1 Liter (Rp):</label>
                         <input type="number" id="hpp-input-beras" class="input" value="14400" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Asumsi: 1.5L = 15 porsi (1L = 10 porsi @170g)</span>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Kertas Nasi & Pembungkus (Rp/pc):</label>
@@ -2696,36 +2701,43 @@
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Cabe Merah per Kg (Rp):</label>
                         <input type="number" id="hpp-input-cabe-merah" class="input" value="60000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">P.Atas/Dada=20g, PB/Sayap=15g</span>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Cabe Hijau per Kg (Rp):</label>
                         <input type="number" id="hpp-input-cabe-hijau" class="input" value="40000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">P.Atas/Dada=20g, PB/Sayap=15g</span>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Bawang Putih per Kg (Rp):</label>
                         <input type="number" id="hpp-input-bawang" class="input" value="40000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Pemakaian 4g per porsi</span>
                     </div>
                     <div>
-                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Minyak Goreng Cair per Liter (Rp):</label>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Minyak Goreng per Liter (Rp):</label>
                         <input type="number" id="hpp-input-minyak-cair" class="input" value="16000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Pemakaian 2 sendok (~30ml) per porsi</span>
                     </div>
                     <div>
-                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Kaldu Bubuk & Garam (Rp):</label>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Kaldu Bubuk & Garam (Kiloan):</label>
                         <div style="display: flex; gap: 8px;">
-                            <input type="number" id="hpp-input-kaldu" class="input" value="500" placeholder="Kaldu Sachet" onchange="handleHPPInputChange()">
-                            <input type="number" id="hpp-input-garam" class="input" value="3000" placeholder="Garam Pack" onchange="handleHPPInputChange()">
+                            <input type="number" id="hpp-input-kaldu" class="input" value="50000" placeholder="Kaldu (Kg)" onchange="handleHPPInputChange()">
+                            <input type="number" id="hpp-input-garam" class="input" value="12000" placeholder="Garam (Kg)" onchange="handleHPPInputChange()">
                         </div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Kaldu 1 sendok (10g) | Garam (2g/5g)</span>
                     </div>
                     <div>
-                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Gula & Penyedap/Sasa (Rp):</label>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Gula & Penyedap/Sasa (Kiloan):</label>
                         <div style="display: flex; gap: 8px;">
-                            <input type="number" id="hpp-input-gula" class="input" value="18000" placeholder="Gula / Kg" onchange="handleHPPInputChange()">
-                            <input type="number" id="hpp-input-sasa" class="input" value="5000" placeholder="Sasa Pack" onchange="handleHPPInputChange()">
+                            <input type="number" id="hpp-input-gula" class="input" value="18000" placeholder="Gula (Kg)" onchange="handleHPPInputChange()">
+                            <input type="number" id="hpp-input-sasa" class="input" value="40000" placeholder="Sasa (Kg)" onchange="handleHPPInputChange()">
                         </div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Gula 2 sendok (30g) | Sasa (2g)</span>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Kencur per Kg (Rp):</label>
                         <input type="number" id="hpp-input-kencur" class="input" value="30000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Khusus Sambal Ijo (2g/porsi)</span>
                     </div>
                     <div style="grid-column: 1 / -1; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color);">
                         <strong style="font-size: 0.8rem; color: var(--primary);">Bahan Saus Keju & Kocak</strong>
@@ -2749,8 +2761,18 @@
                 </div>
             </div>
 
-            <!-- Tab 4: Biaya Operasional & Listrik -->
+            <!-- Tab 4: Biaya Operasional Bulanan -->
             <div id="hpp-tab-opex" class="hpp-tab-content" style="display: none; flex: 1; overflow-y: auto; padding: 5px;">
+                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.8rem;">
+                    <strong><i class="ph ph-lightning"></i> Info Estimasi KWh Sebelumnya:</strong>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin-top: 6px; color: var(--text-main);">
+                        <span>Freezer: 90W x 24h x 31d = <strong>66.96 kWh</strong></span>
+                        <span>Warmer: 150W x 12h x 30d = <strong>54.00 kWh</strong></span>
+                        <span>Kipas: 70W x 3h x 30d = <strong>6.30 kWh</strong></span>
+                        <span>Magic Com Masak/Warm = <strong>33.60 kWh</strong></span>
+                        <span style="grid-column: 1 / -1; color: var(--text-secondary); margin-top: 4px;">Anda dapat menggunakan referensi angka diatas untuk diisikan di bawah.</span>
+                    </div>
+                </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Total Pemakaian Listrik per Bulan (kWh):</label>
@@ -2767,17 +2789,19 @@
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Sarung Tangan Latex (Rp/Box isi 100):</label>
                         <input type="number" id="hpp-input-opex-sarung" class="input" value="55000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Asumsi: 1 sarung untuk 2 hari (~15 box / bulan)</span>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Masker Masak (Rp/Box isi 50):</label>
                         <input type="number" id="hpp-input-opex-masker" class="input" value="20000" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Asumsi: 1 masker 1-4 hari (~15 masker / bulan)</span>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Trash Bag Bulanan (Rp):</label>
                         <input type="number" id="hpp-input-opex-trash" class="input" value="45000" onchange="handleHPPInputChange()">
                     </div>
                     <div style="grid-column: 1 / -1; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color);">
-                        <strong style="font-size: 0.8rem; color: var(--primary);">Consumables & Target Penjualan</strong>
+                        <strong style="font-size: 0.8rem; color: var(--primary);">Consumables (Per Satuan/Box) & Target Penjualan</strong>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Tissue (Rp/10 pcs):</label>
@@ -2794,6 +2818,7 @@
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Target Penjualan Harian (Porsi):</label>
                         <input type="number" id="hpp-input-daily-vol" class="input" value="100" onchange="handleHPPInputChange()">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Membagi Biaya Bulanan menjadi Beban Per Porsi</span>
                     </div>
                 </div>
             </div>

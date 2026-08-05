@@ -28,10 +28,10 @@ const HPPSettingsManager = {
             price_cabe_hijau_kg: 40000,
             price_bawang_kg: 40000,
             price_minyak_cair_liter: 16000,
-            price_kaldu_pack: 500,          // Misal sachet kaldu
-            price_garam_pack: 3000,         // Misal pack garam 250g
+            price_kaldu_kg: 50000,          // Kiloan kaldu
+            price_garam_kg: 12000,          // Kiloan garam
             price_gula_kg: 18000,
-            price_sasa_pack: 5000,          // Misal sachet sasa 250g
+            price_sasa_kg: 40000,           // Kiloan sasa
             price_kencur_kg: 30000,
             
             // Packaging
@@ -177,9 +177,9 @@ function calculateMenuItemHPP(item, settings) {
     if (item.isGeprek || item.isSambalOnly) {
         const cabeWeight = (item.part === 'dada' || item.part === 'paha_atas') ? 20 : ((item.part === 'paha_bawah' || item.part === 'sayap') ? 15 : 20);
         let sambalCost = 0;
-        const garamPerGr = Number(settings.price_garam_pack) / 250;
-        const sasaPerGr = Number(settings.price_sasa_pack) / 250;
-        const kalduPerGr = Number(settings.price_kaldu_pack) / 10;
+        const garamPerGr = Number(settings.price_garam_kg) / 1000;
+        const sasaPerGr = Number(settings.price_sasa_kg) / 1000;
+        const kalduPerGr = Number(settings.price_kaldu_kg) / 1000;
         
         if (item.name.includes('Hijau')) {
             sambalCost += (cabeWeight / 1000) * Number(settings.price_cabe_hijau_kg);
@@ -370,10 +370,10 @@ function openHPPCalculatorModal(initialTab = 'margin-table') {
     setVal('hpp-input-cabe-hijau', settings.price_cabe_hijau_kg);
     setVal('hpp-input-bawang', settings.price_bawang_kg);
     setVal('hpp-input-minyak-cair', settings.price_minyak_cair_liter);
-    setVal('hpp-input-kaldu', settings.price_kaldu_pack);
-    setVal('hpp-input-garam', settings.price_garam_pack);
+    setVal('hpp-input-kaldu', settings.price_kaldu_kg);
+    setVal('hpp-input-garam', settings.price_garam_kg);
     setVal('hpp-input-gula', settings.price_gula_kg);
-    setVal('hpp-input-sasa', settings.price_sasa_pack);
+    setVal('hpp-input-sasa', settings.price_sasa_kg);
     setVal('hpp-input-kencur', settings.price_kencur_kg);
     setVal('hpp-input-box-m', settings.price_box_m);
     setVal('hpp-input-box-xs', settings.price_box_xs);
@@ -565,10 +565,10 @@ function handleHPPInputChange() {
         price_cabe_hijau_kg: Number(document.getElementById('hpp-input-cabe-hijau')?.value || 40000),
         price_bawang_kg: Number(document.getElementById('hpp-input-bawang')?.value || 40000),
         price_minyak_cair_liter: Number(document.getElementById('hpp-input-minyak-cair')?.value || 16000),
-        price_kaldu_pack: Number(document.getElementById('hpp-input-kaldu')?.value || 500),
-        price_garam_pack: Number(document.getElementById('hpp-input-garam')?.value || 3000),
+        price_kaldu_kg: Number(document.getElementById('hpp-input-kaldu')?.value || 50000),
+        price_garam_kg: Number(document.getElementById('hpp-input-garam')?.value || 12000),
         price_gula_kg: Number(document.getElementById('hpp-input-gula')?.value || 18000),
-        price_sasa_pack: Number(document.getElementById('hpp-input-sasa')?.value || 5000),
+        price_sasa_kg: Number(document.getElementById('hpp-input-sasa')?.value || 40000),
         price_kencur_kg: Number(document.getElementById('hpp-input-kencur')?.value || 30000),
         price_box_m: Number(document.getElementById('hpp-input-box-m')?.value || 1036),
         price_box_xs: Number(document.getElementById('hpp-input-box-xs')?.value || 1036),
