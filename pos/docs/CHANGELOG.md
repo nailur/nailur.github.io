@@ -7,8 +7,9 @@ All changes to the codebase and project structure must be documented here to mai
 
 ### 2026-08-05
 - **HPP & Profitability Calculator (`js/hpp.js`, `index.html`)**:
-  - Fixed a bug in `saveHPPSettingsFromForm()` where new detailed variables (Kiloan, Cabe, dll.) were not being saved correctly to local storage due to mismatched object keys.
-  - Restructured HPP Calculator modal into 4 distinct tabs: Margin Table, Bahan Ayam & Box, Bahan Extra & Saus, and Operasional Bulanan.
+  - Migrated HPP Settings storage from `localStorage` to Supabase database (`hpp_settings` table) to ensure central synchronization across all devices at the same outlet.
+  - Refactored `HPPSettingsManager` to fetch settings asynchronously on load (`fetchSettingsFromDB`) and upsert to database on save, with `localStorage` serving as a fallback cache.
+  - Added loading indicator states for both the HPP Calculator Modal and the HPP Summary Card to improve UX during DB data retrieval.
   - Granularized ingredient inputs for Sambal Geprek into specific raw materials (Cabe Merah, Cabe Hijau, Bawang, Minyak Cair, Kaldu Kiloan, Garam Kiloan, Gula Kiloan, Sasa Kiloan, Kencur) to allow highly accurate costing based on specific recipes and portions.
   - Added formula explanation texts (`<span class="text-muted">`) under all input fields to clarify yield assumptions directly on the UI.
   - Restored the monthly kWh estimation helper box in the Operasional Bulanan tab, and added similar formula info boxes for the Bahan Ayam & Box and Bahan Extra & Saus tabs.

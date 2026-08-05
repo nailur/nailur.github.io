@@ -10,6 +10,7 @@ import { showToast } from './utils.js';
 
 const HPPSettingsManager = {
     STORAGE_KEY: 'ntpos_hpp_settings_v1',
+    _cachedSettings: null,
 
     getDefaultSettings() {
         return {
@@ -67,6 +68,7 @@ const HPPSettingsManager = {
     },
 
     loadSettings() {
+        if (this._cachedSettings) return this._cachedSettings;
         try {
             const saved = localStorage.getItem(this.STORAGE_KEY);
             if (saved) {
@@ -79,16 +81,61 @@ const HPPSettingsManager = {
         return this.getDefaultSettings();
     },
 
-    saveSettings(settings) {
+    async fetchSettingsFromDB() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(settings));
-            if (typeof showToast === 'function') {
-                showToast('Pengaturan HPP & Margin berhasil disimpan!', 'success');
+            const outletId = getActiveOutletId();
+            if (!outletId || !supabase) return this.loadSettings();
+
+            const { data, error } = await supabase
+                .from('hpp_settings')
+                .select('settings')
+                .eq('outlet_id', outletId)
+                .maybeSingle();
+
+            if (error && error.code !== 'PGRST116') {
+                console.warn('Error fetching HPP settings from DB:', error);
+                return this.loadSettings();
+            }
+
+            if (data && data.settings) {
+                const newSettings = { ...this.getDefaultSettings(), ...data.settings };
+                this._cachedSettings = newSettings;
+                localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newSettings));
+                return newSettings;
             }
         } catch (e) {
-            console.warn('Could not save HPP settings to localStorage:', e);
+            console.warn('Exception fetching HPP settings from DB:', e);
+        }
+        return this.loadSettings();
+    },
+
+    async saveSettings(settings) {
+        try {
+            // Update local memory and storage immediately for snappy UI
+            this._cachedSettings = { ...this.getDefaultSettings(), ...settings };
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this._cachedSettings));
+
+            // Sync to Supabase DB
+            const outletId = getActiveOutletId();
+            if (outletId && supabase) {
+                const { error } = await supabase
+                    .from('hpp_settings')
+                    .upsert({
+                        outlet_id: outletId,
+                        settings: this._cachedSettings,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'outlet_id' });
+                
+                if (error) throw error;
+            }
+
             if (typeof showToast === 'function') {
-                showToast('Gagal menyimpan pengaturan HPP ke peramban.', 'error');
+                showToast('Pengaturan HPP berhasil disimpan ke Database!', 'success');
+            }
+        } catch (e) {
+            console.warn('Could not save HPP settings to DB:', e);
+            if (typeof showToast === 'function') {
+                showToast('Tersimpan di perangkat, tapi gagal sinkron ke Database.', 'warning');
             }
         }
     }
@@ -277,11 +324,15 @@ function calculateMenuItemHPP(item, settings) {
 /**
  * Renders HPP Calculator Summary Card inside Dashboard tab (#hpp-summary-card)
  */
-function renderHPPSummaryCard() {
+async function renderHPPSummaryCard() {
     const cardEl = document.getElementById('hpp-summary-card');
     if (!cardEl) return;
 
-    const settings = HPPSettingsManager.loadSettings();
+    if (!cardEl.innerHTML.trim() || !cardEl.innerHTML.includes('Rata-rata Profit')) {
+        cardEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-muted);"><i class="ph ph-spinner ph-spin" style="font-size: 1.5rem; margin-bottom: 8px;"></i><br>Memuat Data HPP dari Database...</div>`;
+    }
+
+    const settings = await HPPSettingsManager.fetchSettingsFromDB();
 
     // Calculate average margins across all catalog items
     let sumMarginPct = 0;
@@ -342,7 +393,7 @@ function renderHPPSummaryCard() {
 /**
  * Opens HPP Calculator Modal and initializes form controls
  */
-function openHPPCalculatorModal(initialTab = 'margin-table') {
+async function openHPPCalculatorModal(initialTab = 'margin-table') {
     const modal = document.getElementById('modal-hpp-calculator');
     if (!modal) return;
 
@@ -352,7 +403,7 @@ function openHPPCalculatorModal(initialTab = 'margin-table') {
         }
     };
 
-    const settings = HPPSettingsManager.loadSettings();
+    const settings = await HPPSettingsManager.fetchSettingsFromDB();
 
     const setVal = (id, val) => {
         const el = document.getElementById(id);
@@ -601,7 +652,14 @@ function handleHPPInputChange() {
 /**
  * Saves current HPP form settings to localStorage
  */
-function saveHPPSettingsFromForm() {
+async function saveHPPSettingsFromForm() {
+    const btn = document.querySelector('#modal-hpp-calculator .btn-primary');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Menyimpan...';
+    }
+
     const updatedSettings = {
         ...HPPSettingsManager.getDefaultSettings(),
         price_ayam_kantong: Number(document.getElementById('hpp-input-ayam')?.value || 36000),
@@ -645,9 +703,14 @@ function saveHPPSettingsFromForm() {
         target_daily_volume: Number(document.getElementById('hpp-input-daily-vol')?.value || 100)
     };
 
-    HPPSettingsManager.saveSettings(updatedSettings);
+    await HPPSettingsManager.saveSettings(updatedSettings);
     renderHPPSummaryCard();
     closeHPPCalculatorModal();
+
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
 }
 
 /**

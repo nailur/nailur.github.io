@@ -17,9 +17,10 @@ erDiagram
     PROFILES ||--o{ SHIFT_SESSIONS : "opens/closes"
     
     TRANSACTIONS ||--|{ TRANSACTION_ITEMS : "contains"
-    PRODUCTS ||--o{ TRANSACTION_ITEMS : "sold as"
+    PRODUCTS ||--|{ TRANSACTION_ITEMS : "sold in"
+    OUTLETS ||--o{ HPP_SETTINGS : "has HPP config"
     
-    PRODUCTS ||--o{ PRODUCT_MODIFIER_GROUPS : "has"
+    OUTLETS ||--o{ SHIFT_SESSIONS : "operates"
     PRODUCT_MODIFIER_GROUPS ||--|{ PRODUCT_MODIFIERS : "contains options"
     
     OUTLETS ||--o{ INVENTORY_ITEMS : "stores"
@@ -316,6 +317,18 @@ Sistem mengimplementasikan RLS secara ekstensif dan granular. Berikut adalah daf
 - **Superadmin / Owner**: `Allow all outlets for superadmin`, `Superadmin ALL outlets`, `Owner ALL outlets` (Manajemen penuh atas seluruh outlet).
 - **Staff / Employees**: `Employees READ outlets`, `Allow read outlets for authenticated` (Hanya bisa melihat detail outlet).
 - **Admin Ops**: `restricted_delete_outlet`, `restricted_update_outlet`.
+
+### Table `hpp_settings`
+| Name | Type | Constraints |
+|------|------|-------------|
+| `outlet_id` | `uuid` | Primary Key, References `outlets(id)` |
+| `settings` | `jsonb` | Stores serialized HPP parameters |
+| `updated_at` | `timestamptz` | Default `now()` |
+
+## 3. Relationships
+
+- **Branches & Outlets**: One `branch` can have multiple `outlets`.
+- **Profiles**: Belongs to one `branch` or `outlet` based on `role`.
 
 ### `products`, `product_modifier_groups`, & `product_modifiers`
 - **Modifiers**: `Enable ALL for authenticated` (Staf bisa mengonfigurasi variasi/opsi tambahan).
