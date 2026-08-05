@@ -29,6 +29,14 @@ const HPPSettingsManager = {
             price_plastik_besar: 300,       // Rp 300 / pc (2-3 potong)
             price_estee_porsi: 1500,        // Rp 1,500 / porsi
 
+            // Saus Tambahan
+            price_saus_gourmet_1kg: 15000,
+            price_saus_bbq_250g: 9500,
+            price_saus_tomat_250g: 12500,
+            price_wijen: 11500,
+            price_saus_keju_500g: 27000,
+            price_cup_saus_30: 5100,
+
             // Monthly OPEX & Electricity
             kwh_rate: 1444.7,
             kwh_freezer: 66.96,             // 90W * 24h * 31d
@@ -78,34 +86,36 @@ const HPPSettingsManager = {
 };
 
 /**
- * Menu Catalog Definition with Offline and Online base prices
+ * Menu Catalog Definition
  */
 const HPP_MENU_CATALOG = [
     // Ala Carte
-    { category: 'Ala Carte', name: 'Ayam Dada', offline: 12000, online: 16000, part: 'dada', isGeprek: false, isPaket: false },
-    { category: 'Ala Carte', name: 'Ayam Paha Atas', offline: 12000, online: 16000, part: 'paha_atas', isGeprek: false, isPaket: false },
-    { category: 'Ala Carte', name: 'Ayam Paha Bawah', offline: 9000, online: 13000, part: 'paha_bawah', isGeprek: false, isPaket: false },
-    { category: 'Ala Carte', name: 'Ayam Sayap', offline: 8000, online: 12000, part: 'sayap', isGeprek: false, isPaket: false },
-    { category: 'Ala Carte', name: 'Ayam Geprek Dada', offline: 15000, online: 19000, part: 'dada', isGeprek: true, isPaket: false },
-    { category: 'Ala Carte', name: 'Ayam Geprek Paha Atas', offline: 15000, online: 19000, part: 'paha_atas', isGeprek: true, isPaket: false },
-    { category: 'Ala Carte', name: 'Ayam Geprek Paha Bawah', offline: 12000, online: 16000, part: 'paha_bawah', isGeprek: true, isPaket: false },
-    { category: 'Ala Carte', name: 'Ayam Geprek Sayap', offline: 11000, online: 15000, part: 'sayap', isGeprek: true, isPaket: false },
+    { category: 'Ala Carte', name: 'Ayam Dada', price: 12000, part: 'dada', isGeprek: false, isPaket: false },
+    { category: 'Ala Carte', name: 'Ayam Paha Atas', price: 12000, part: 'paha_atas', isGeprek: false, isPaket: false },
+    { category: 'Ala Carte', name: 'Ayam Paha Bawah', price: 9000, part: 'paha_bawah', isGeprek: false, isPaket: false },
+    { category: 'Ala Carte', name: 'Ayam Sayap', price: 8000, part: 'sayap', isGeprek: false, isPaket: false },
+    { category: 'Ala Carte', name: 'Ayam Geprek Dada', price: 15000, part: 'dada', isGeprek: true, isPaket: false },
+    { category: 'Ala Carte', name: 'Ayam Geprek Paha Atas', price: 15000, part: 'paha_atas', isGeprek: true, isPaket: false },
+    { category: 'Ala Carte', name: 'Ayam Geprek Paha Bawah', price: 12000, part: 'paha_bawah', isGeprek: true, isPaket: false },
+    { category: 'Ala Carte', name: 'Ayam Geprek Sayap', price: 11000, part: 'sayap', isGeprek: true, isPaket: false },
 
     // Paket Ayam + Nasi
-    { category: 'Paket Ayam + Nasi', name: 'Paket Dada', offline: 15000, online: 19000, part: 'dada', isGeprek: false, isPaket: true },
-    { category: 'Paket Ayam + Nasi', name: 'Paket P.Atas', offline: 15000, online: 19000, part: 'paha_atas', isGeprek: false, isPaket: true },
-    { category: 'Paket Ayam + Nasi', name: 'Paket P.bawah', offline: 13000, online: 17000, part: 'paha_bawah', isGeprek: false, isPaket: true },
-    { category: 'Paket Ayam + Nasi', name: 'Paket Sayap', offline: 12000, online: 16000, part: 'sayap', isGeprek: false, isPaket: true },
-    { category: 'Paket Ayam + Nasi', name: 'Paket Geprek Dada', offline: 18000, online: 22000, part: 'dada', isGeprek: true, isPaket: true },
-    { category: 'Paket Ayam + Nasi', name: 'Paket Geprek P.atas', offline: 18000, online: 22000, part: 'paha_atas', isGeprek: true, isPaket: true },
-    { category: 'Paket Ayam + Nasi', name: 'Paket Geprek P.bawah', offline: 16000, online: 20000, part: 'paha_bawah', isGeprek: true, isPaket: true },
-    { category: 'Paket Ayam + Nasi', name: 'Paket Geprek Sayap', offline: 15000, online: 19000, part: 'sayap', isGeprek: true, isPaket: true },
+    { category: 'Paket Ayam + Nasi', name: 'Paket Dada', price: 15000, part: 'dada', isGeprek: false, isPaket: true },
+    { category: 'Paket Ayam + Nasi', name: 'Paket P.Atas', price: 15000, part: 'paha_atas', isGeprek: false, isPaket: true },
+    { category: 'Paket Ayam + Nasi', name: 'Paket P.bawah', price: 13000, part: 'paha_bawah', isGeprek: false, isPaket: true },
+    { category: 'Paket Ayam + Nasi', name: 'Paket Sayap', price: 12000, part: 'sayap', isGeprek: false, isPaket: true },
+    { category: 'Paket Ayam + Nasi', name: 'Paket Geprek Dada', price: 18000, part: 'dada', isGeprek: true, isPaket: true },
+    { category: 'Paket Ayam + Nasi', name: 'Paket Geprek P.atas', price: 18000, part: 'paha_atas', isGeprek: true, isPaket: true },
+    { category: 'Paket Ayam + Nasi', name: 'Paket Geprek P.bawah', price: 16000, part: 'paha_bawah', isGeprek: true, isPaket: true },
+    { category: 'Paket Ayam + Nasi', name: 'Paket Geprek Sayap', price: 15000, part: 'sayap', isGeprek: true, isPaket: true },
 
     // Extra
-    { category: 'Extra', name: 'Nasi', offline: 4000, online: 8000, part: null, isGeprek: false, isPaket: false, isNasiOnly: true },
-    { category: 'Extra', name: 'Sambel Geprek Merah', offline: 4000, online: 8000, part: null, isGeprek: true, isPaket: false, isSambalOnly: true },
-    { category: 'Extra', name: 'Sambel Geprek Hijau', offline: 4000, online: 8000, part: null, isGeprek: true, isPaket: false, isSambalOnly: true },
-    { category: 'Extra', name: 'Estee', offline: 3000, online: 7000, part: null, isGeprek: false, isPaket: false, isDrink: true }
+    { category: 'Extra', name: 'Nasi', price: 4000, part: null, isGeprek: false, isPaket: false, isNasiOnly: true },
+    { category: 'Extra', name: 'Sambel Geprek Merah', price: 4000, part: null, isGeprek: true, isPaket: false, isSambalOnly: true },
+    { category: 'Extra', name: 'Sambel Geprek Hijau', price: 4000, part: null, isGeprek: true, isPaket: false, isSambalOnly: true },
+    { category: 'Extra', name: 'Saus Kocak', price: 4000, part: null, isGeprek: false, isPaket: false, isSausKocak: true },
+    { category: 'Extra', name: 'Saus Keju', price: 4000, part: null, isGeprek: false, isPaket: false, isSausKeju: true },
+    { category: 'Extra', name: 'Estee', price: 3000, part: null, isGeprek: false, isPaket: false, isDrink: true }
 ];
 
 /**
@@ -167,7 +177,26 @@ function calculateMenuItemHPP(item, settings) {
         breakdown.push({ label: 'Bahan Estee & Cup', amount: Number(settings.price_estee_porsi) });
     }
 
-    // 8. Packaging Box & Bags
+    // 8. Saus Tambahan (Kocak & Keju)
+    if (item.isSausKocak) {
+        const totalBahanKocak = Number(settings.price_saus_gourmet_1kg) + 
+                                Number(settings.price_saus_bbq_250g) + 
+                                Number(settings.price_saus_tomat_250g) + 
+                                Number(settings.price_wijen);
+        const kocakCost = totalBahanKocak / 30; // 30 porsi
+        rawCOGS += kocakCost;
+        breakdown.push({ label: 'Bahan Saus Kocak (1 Porsi)', amount: kocakCost });
+    }
+
+    if (item.isSausKeju) {
+        const sausKejuCost = (Number(settings.price_saus_keju_500g) / 500) * 35; // 35gr per porsi
+        const cupCost = Number(settings.price_cup_saus_30) / 30; // 30 cup
+        rawCOGS += sausKejuCost + cupCost;
+        breakdown.push({ label: 'Saus Keju (35gr)', amount: sausKejuCost });
+        breakdown.push({ label: 'Cup Saus', amount: cupCost });
+    }
+
+    // 9. Packaging Box & Bags
     if (item.isPaket) {
         rawCOGS += Number(settings.price_box_m);
         rawCOGS += Number(settings.price_plastik_besar);
@@ -201,23 +230,15 @@ function calculateMenuItemHPP(item, settings) {
     const totalHPP = rawCOGS + opexPerPortion;
 
     // Margins
-    const offlineMarginRp = item.offline - totalHPP;
-    const offlineMarginPct = item.offline > 0 ? (offlineMarginRp / item.offline) * 100 : 0;
-
-    // Online: Harga online +4rb, potongan aplikasi 20%
-    const onlineNetRevenue = item.online * 0.80;
-    const onlineMarginRp = onlineNetRevenue - totalHPP;
-    const onlineMarginPct = item.online > 0 ? (onlineMarginRp / item.online) * 100 : 0;
+    const marginRp = item.price - totalHPP;
+    const marginPct = item.price > 0 ? (marginRp / item.price) * 100 : 0;
 
     return {
         rawCOGS,
         opexPerPortion,
         totalHPP,
-        offlineMarginRp,
-        offlineMarginPct,
-        onlineNetRevenue,
-        onlineMarginRp,
-        onlineMarginPct,
+        marginRp,
+        marginPct,
         breakdown
     };
 }
@@ -232,19 +253,16 @@ function renderHPPSummaryCard() {
     const settings = HPPSettingsManager.loadSettings();
 
     // Calculate average margins across all catalog items
-    let sumOfflinePct = 0;
-    let sumOnlinePct = 0;
+    let sumMarginPct = 0;
     let count = 0;
 
     HPP_MENU_CATALOG.forEach(item => {
         const res = calculateMenuItemHPP(item, settings);
-        sumOfflinePct += res.offlineMarginPct;
-        sumOnlinePct += res.onlineMarginPct;
+        sumMarginPct += res.marginPct;
         count++;
     });
 
-    const avgOfflinePct = count > 0 ? (sumOfflinePct / count).toFixed(1) : '0';
-    const avgOnlinePct = count > 0 ? (sumOnlinePct / count).toFixed(1) : '0';
+    const avgMarginPct = count > 0 ? (sumMarginPct / count).toFixed(1) : '0';
 
     const totalElectricityKwh = Number(settings.kwh_freezer) + Number(settings.kwh_warmer) +
         Number(settings.kwh_kipas) + Number(settings.kwh_printer) + Number(settings.kwh_charger) +
@@ -268,14 +286,10 @@ function renderHPPSummaryCard() {
             </button>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
             <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 10px; text-align: center;">
-                <div style="font-size: 0.68rem; color: #10b981; font-weight: 700; text-transform: uppercase;">Margin Offline (Rata-rata)</div>
-                <div style="font-size: 1.3rem; font-weight: 800; color: #10b981;">${avgOfflinePct}%</div>
-            </div>
-            <div style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 10px; text-align: center;">
-                <div style="font-size: 0.68rem; color: var(--primary); font-weight: 700; text-transform: uppercase;">Margin Online (-20% MDR)</div>
-                <div style="font-size: 1.3rem; font-weight: 800; color: var(--primary);">${avgOnlinePct}%</div>
+                <div style="font-size: 0.68rem; color: #10b981; font-weight: 700; text-transform: uppercase;">Rata-rata Margin Laba</div>
+                <div style="font-size: 1.3rem; font-weight: 800; color: #10b981;">${avgMarginPct}%</div>
             </div>
         </div>
 
@@ -329,6 +343,13 @@ function openHPPCalculatorModal(initialTab = 'margin-table') {
     setVal('hpp-input-plastik-kecil', settings.price_plastik_kecil);
     setVal('hpp-input-plastik-besar', settings.price_plastik_besar);
 
+    setVal('hpp-input-saus-gourmet', settings.price_saus_gourmet_1kg);
+    setVal('hpp-input-saus-bbq', settings.price_saus_bbq_250g);
+    setVal('hpp-input-saus-tomat', settings.price_saus_tomat_250g);
+    setVal('hpp-input-wijen', settings.price_wijen);
+    setVal('hpp-input-saus-keju', settings.price_saus_keju_500g);
+    setVal('hpp-input-cup-saus', settings.price_cup_saus_30);
+
     setVal('hpp-input-kwh-rate', settings.kwh_rate);
     setVal('hpp-input-opex-gas', settings.opex_gas_monthly);
     setVal('hpp-input-opex-trash', settings.opex_trash_bag);
@@ -377,35 +398,6 @@ function switchHPPTab(tabName) {
     });
 }
 
-let currentPriceMode = 'offline';
-
-/**
- * Switches between Offline and Online price modes in the HPP table
- */
-function switchHPPPriceMode(mode) {
-    currentPriceMode = mode;
-    const btnOffline = document.getElementById('btn-hpp-mode-offline');
-    const btnOnline = document.getElementById('btn-hpp-mode-online');
-    if (btnOffline && btnOnline) {
-        if (mode === 'offline') {
-            btnOffline.classList.add('active');
-            btnOffline.style.background = 'var(--primary)';
-            btnOffline.style.color = '#fff';
-            btnOnline.classList.remove('active');
-            btnOnline.style.background = 'transparent';
-            btnOnline.style.color = 'var(--text-main)';
-        } else {
-            btnOnline.classList.add('active');
-            btnOnline.style.background = 'var(--primary)';
-            btnOnline.style.color = '#fff';
-            btnOffline.classList.remove('active');
-            btnOffline.style.background = 'transparent';
-            btnOffline.style.color = 'var(--text-main)';
-        }
-    }
-    const settings = HPPSettingsManager.loadSettings();
-    renderHPPCalculatorTable(settings);
-}
 
 /**
  * Renders interactive HPP Margin Table inside Modal matching 6-column spreadsheet layout
@@ -444,9 +436,9 @@ function renderHPPCalculatorTable(settings) {
         }
 
         const res = calculateMenuItemHPP(item, settings);
-        const hargaJual = currentPriceMode === 'offline' ? item.offline : item.online;
-        const labaBersih = currentPriceMode === 'offline' ? res.offlineMarginRp : res.onlineMarginRp;
-        const marginPct = currentPriceMode === 'offline' ? res.offlineMarginPct : res.onlineMarginPct;
+        const hargaJual = item.price;
+        const labaBersih = res.marginRp;
+        const marginPct = res.marginPct;
 
         const marginColor = marginPct >= 30 ? '#10b981' : (marginPct >= 15 ? '#f59e0b' : '#ef4444');
         const labaColor = labaBersih >= 0 ? '#10b981' : '#ef4444';
@@ -490,14 +482,13 @@ async function exportHPPMarginTableExcel() {
 
     HPP_MENU_CATALOG.forEach(item => {
         const res = calculateMenuItemHPP(item, settings);
-        const hargaJual = currentPriceMode === 'offline' ? item.offline : item.online;
-        const labaBersih = currentPriceMode === 'offline' ? res.offlineMarginRp : res.onlineMarginRp;
-        const marginPct = currentPriceMode === 'offline' ? res.offlineMarginPct : res.onlineMarginPct;
+        const hargaJual = item.price;
+        const labaBersih = res.marginRp;
+        const marginPct = res.marginPct;
 
         rows.push({
             'Menu (Ala Carte)': item.name,
             'Kategori': item.category,
-            'Mode Harga': currentPriceMode === 'offline' ? 'Offlin' : 'Online',
             'Harga Jual': hargaJual,
             'HPP Bahan': Math.round(res.rawCOGS),
             'OPEX / Porsi': Math.round(res.opexPerPortion),
@@ -510,7 +501,7 @@ async function exportHPPMarginTableExcel() {
     const worksheet = window.XLSX.utils.json_to_sheet(rows);
     const workbook = window.XLSX.utils.book_new();
     window.XLSX.utils.book_append_sheet(workbook, worksheet, 'HPP & Margin');
-    window.XLSX.writeFile(workbook, `Laporan_HPP_Profitabilitas_${currentPriceMode.toUpperCase()}.xlsx`);
+    window.XLSX.writeFile(workbook, `Laporan_HPP_Profitabilitas.xlsx`);
 
     if (typeof showToast === 'function') {
         showToast('Laporan HPP berhasil diexport ke Excel!', 'success');
@@ -536,6 +527,13 @@ function handleHPPInputChange() {
         price_kertas_pembungkus: Number(document.getElementById('hpp-input-kertas-bungkus')?.value || 270),
         price_plastik_kecil: Number(document.getElementById('hpp-input-plastik-kecil')?.value || 150),
         price_plastik_besar: Number(document.getElementById('hpp-input-plastik-besar')?.value || 300),
+
+        price_saus_gourmet_1kg: Number(document.getElementById('hpp-input-saus-gourmet')?.value || 15000),
+        price_saus_bbq_250g: Number(document.getElementById('hpp-input-saus-bbq')?.value || 9500),
+        price_saus_tomat_250g: Number(document.getElementById('hpp-input-saus-tomat')?.value || 12500),
+        price_wijen: Number(document.getElementById('hpp-input-wijen')?.value || 11500),
+        price_saus_keju_500g: Number(document.getElementById('hpp-input-saus-keju')?.value || 27000),
+        price_cup_saus_30: Number(document.getElementById('hpp-input-cup-saus')?.value || 5100),
 
         kwh_rate: Number(document.getElementById('hpp-input-kwh-rate')?.value || 1444.7),
         opex_gas_monthly: Number(document.getElementById('hpp-input-opex-gas')?.value || 330000),
@@ -568,6 +566,13 @@ function saveHPPSettingsFromForm() {
         price_kertas_pembungkus: Number(document.getElementById('hpp-input-kertas-bungkus')?.value || 270),
         price_plastik_kecil: Number(document.getElementById('hpp-input-plastik-kecil')?.value || 150),
         price_plastik_besar: Number(document.getElementById('hpp-input-plastik-besar')?.value || 300),
+
+        price_saus_gourmet_1kg: Number(document.getElementById('hpp-input-saus-gourmet')?.value || 15000),
+        price_saus_bbq_250g: Number(document.getElementById('hpp-input-saus-bbq')?.value || 9500),
+        price_saus_tomat_250g: Number(document.getElementById('hpp-input-saus-tomat')?.value || 12500),
+        price_wijen: Number(document.getElementById('hpp-input-wijen')?.value || 11500),
+        price_saus_keju_500g: Number(document.getElementById('hpp-input-saus-keju')?.value || 27000),
+        price_cup_saus_30: Number(document.getElementById('hpp-input-cup-saus')?.value || 5100),
 
         kwh_rate: Number(document.getElementById('hpp-input-kwh-rate')?.value || 1444.7),
         opex_gas_monthly: Number(document.getElementById('hpp-input-opex-gas')?.value || 330000),
@@ -697,5 +702,4 @@ window.handleHPPInputChange = handleHPPInputChange;
 window.saveHPPSettingsFromForm = saveHPPSettingsFromForm;
 window.pullHPPCostsFromDatabase = pullHPPCostsFromDatabase;
 window.renderHPPSummaryCard = renderHPPSummaryCard;
-window.switchHPPPriceMode = switchHPPPriceMode;
 window.exportHPPMarginTableExcel = exportHPPMarginTableExcel;

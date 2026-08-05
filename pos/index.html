@@ -2606,14 +2606,7 @@
             <!-- Tab 1: Tabel Analisis Margin -->
             <div id="hpp-tab-margin-table" class="hpp-tab-content" style="flex: 1; overflow-y: auto;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-                    <div style="display: flex; gap: 8px; align-items: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 4px;">
-                        <button type="button" class="btn hpp-mode-btn active" id="btn-hpp-mode-offline" onclick="switchHPPPriceMode('offline')" style="padding: 5px 12px; font-size: 0.78rem; border-radius: 6px; border: none; background: var(--primary); color: #fff;">
-                            <i class="ph ph-storefront"></i> Offline
-                        </button>
-                        <button type="button" class="btn hpp-mode-btn" id="btn-hpp-mode-online" onclick="switchHPPPriceMode('online')" style="padding: 5px 12px; font-size: 0.78rem; border-radius: 6px; border: none; background: transparent; color: var(--text-main);">
-                            <i class="ph ph-scooter"></i> Online
-                        </button>
-                    </div>
+                    <div></div>
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <span style="font-size: 0.78rem; color: var(--text-secondary);"><i class="ph ph-info"></i> OPEX/Porsi: <strong id="lbl-hpp-opex-portion" style="color: var(--primary);">Rp 0</strong></span>
                         <button type="button" class="btn btn-success" onclick="exportHPPMarginTableExcel()" style="padding: 5px 12px; font-size: 0.78rem; display: flex; align-items: center; gap: 5px;">
@@ -2644,15 +2637,15 @@
             <div id="hpp-tab-bahan-baku" class="hpp-tab-content" style="display: none; flex: 1; overflow-y: auto; padding: 5px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <span style="font-size: 0.82rem; color: var(--text-secondary);">Atur harga beli bahan baku & kemasan agar perhitungan HPP akurat:</span>
-                    <button type="button" class="btn btn-secondary" id="btn-pull-db-costs" onclick="pullHPPCostsFromDatabase()" style="padding: 5px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
+                    <!-- <button type="button" class="btn btn-secondary" id="btn-pull-db-costs" onclick="pullHPPCostsFromDatabase()" style="padding: 5px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
                         <i class="ph ph-database"></i> Tarik dari Sistem (DB)
-                    </button>
+                    </button> -->
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Ayam per Kantong (9 potong) (Rp):</label>
                         <input type="number" id="hpp-input-ayam" class="input" value="36000" onchange="handleHPPInputChange()">
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">1 Kantong = 9 potong (3 Dada, 2 PA, 2 PB, 2 Sayap)</span>
+                        <!-- <span style="font-size: 0.7rem; color: var(--text-muted);">1 Kantong = 9 potong (3 Dada, 2 PA, 2 PB, 2 Sayap)</span> -->
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Saos per Pack (24 pcs) (Rp):</label>
@@ -2660,19 +2653,19 @@
                         <span style="font-size: 0.7rem; color: var(--text-muted);">Dada/PA = 2 pcs | PB/Sayap = 1 pcs</span>
                     </div>
                     <div>
-                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Minyak Beku (1 Box / 15 Kg) (Rp):</label>
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Minyak Beku (Rp):</label>
                         <input type="number" id="hpp-input-minyak" class="input" value="270000" onchange="handleHPPInputChange()">
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">200g konsumsi + 42.8g ganti / 9 potong</span>
+                        <!-- <span style="font-size: 0.7rem; color: var(--text-muted);">200g konsumsi + 42.8g ganti / 9 potong</span> -->
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Tepung Biang / Kg (Rp):</label>
                         <input type="number" id="hpp-input-tepung-biang" class="input" value="25000" onchange="handleHPPInputChange()">
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">100g biang per 1 Kg serbaguna</span>
+                        <!-- <span style="font-size: 0.7rem; color: var(--text-muted);">100g biang per 1 Kg serbaguna</span> -->
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Tepung Serbaguna / Kg (Rp):</label>
                         <input type="number" id="hpp-input-tepung-serbaguna" class="input" value="12000" onchange="handleHPPInputChange()">
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">10 Kg campuran untuk 27 kantong (243 pcs)</span>
+                        <!-- <span style="font-size: 0.7rem; color: var(--text-muted);">10 Kg campuran untuk 27 kantong (243 pcs)</span> -->
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Harga Beras 5 Kg (Rp):</label>
@@ -2690,7 +2683,7 @@
                             <input type="number" id="hpp-input-box-m" class="input" value="1036" placeholder="Box M" onchange="handleHPPInputChange()">
                             <input type="number" id="hpp-input-box-xs" class="input" value="1036" placeholder="Box XS" onchange="handleHPPInputChange()">
                         </div>
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">Rp 2.072.800 / 2000 pcs = Rp 1.036,4/pc</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Box Ukuran M | Box Ukuran XS</span>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Kertas Nasi & Kertas Pembungkus (Rp/pc):</label>
@@ -2698,7 +2691,7 @@
                             <input type="number" id="hpp-input-kertas-nasi" class="input" value="500" placeholder="Nasi" onchange="handleHPPInputChange()">
                             <input type="number" id="hpp-input-kertas-bungkus" class="input" value="270" placeholder="Bungkus" onchange="handleHPPInputChange()">
                         </div>
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">Kertas Nasi Rp 500/pc | Bungkus Rp 270/pc</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Kertas Nasi | Kertas Bungkusan</span>
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Plastik Kecil & Besar (Rp/pc):</label>
@@ -2706,7 +2699,7 @@
                             <input type="number" id="hpp-input-plastik-kecil" class="input" value="150" placeholder="Kecil" onchange="handleHPPInputChange()">
                             <input type="number" id="hpp-input-plastik-besar" class="input" value="300" placeholder="Besar" onchange="handleHPPInputChange()">
                         </div>
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">Plastik Kecil (1 pcs) | Besar (2-3 pcs / paket)</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Plastik Kecil (1 pcs ayam) | Besar (2-3 pcs ayam / paket)</span>
                     </div>
                 </div>
             </div>
@@ -2734,22 +2727,22 @@
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Biaya Gas 3Kg Bulanan (Rp):</label>
                         <input type="number" id="hpp-input-opex-gas" class="input" value="330000" onchange="handleHPPInputChange()">
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">3 Tabung (Fryer, Rice Cooker, Sambal) x frekuensi</span>
+                        <!-- <span style="font-size: 0.7rem; color: var(--text-muted);">3 Tabung (Fryer, Rice Cooker, Sambal) x frekuensi</span> -->
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Biaya Trash Bag Bulanan (Rp):</label>
                         <input type="number" id="hpp-input-opex-trash" class="input" value="45968" onchange="handleHPPInputChange()">
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">Rp 22.984 / 15 lembar (~30 lembar/bln)</span>
+                        <!-- <span style="font-size: 0.7rem; color: var(--text-muted);">Rp 22.984 / 15 lembar (~30 lembar/bln)</span> -->
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Sarung Tangan Latex Bulanan (Rp):</label>
                         <input type="number" id="hpp-input-opex-sarung" class="input" value="55521" onchange="handleHPPInputChange()">
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">Rp 55.521 / 100 pcs</span>
+                        <!-- <span style="font-size: 0.7rem; color: var(--text-muted);">Rp 55.521 / 100 pcs</span> -->
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Masker Masak Bulanan (Rp):</label>
                         <input type="number" id="hpp-input-opex-masker" class="input" value="15378" onchange="handleHPPInputChange()">
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">Rp 76.889 / 300 pcs (~60 pcs/bln)</span>
+                        <!-- <span style="font-size: 0.7rem; color: var(--text-muted);">Rp 76.889 / 100 pcs (~60 pcs/bln)</span> -->
                     </div>
                     <div>
                         <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 4px;">Consumables Lainnya / Bulan (Rp):</label>
