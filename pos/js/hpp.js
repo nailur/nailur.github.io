@@ -295,13 +295,12 @@ function renderHPPSummaryCard() {
 
     const avgMarginPct = count > 0 ? (sumMarginPct / count).toFixed(1) : '0';
 
-    const totalElectricityKwh = Number(settings.kwh_freezer) + Number(settings.kwh_warmer) +
-        Number(settings.kwh_kipas) + Number(settings.kwh_printer) + Number(settings.kwh_charger) +
-        Number(settings.kwh_magic_cook) + Number(settings.kwh_magic_warm);
+    const totalElectricityKwh = Number(settings.opex_listrik_kwh_bulanan) || 0;
     const totalElectricityRp = totalElectricityKwh * Number(settings.kwh_rate);
     const totalMonthlyOpexRp = totalElectricityRp + Number(settings.opex_gas_monthly) +
         Number(settings.opex_trash_bag) + Number(settings.opex_sarung_tangan) +
-        Number(settings.opex_masker) + Number(settings.opex_consumables_lain);
+        Number(settings.opex_masker) + Number(settings.opex_tissue) +
+        Number(settings.opex_solatip) + Number(settings.opex_thermal);
     const opexPerPortion = Math.round(totalMonthlyOpexRp / (Math.max(1, Number(settings.target_daily_volume)) * 30));
 
     cardEl.innerHTML = `
@@ -331,7 +330,7 @@ function renderHPPSummaryCard() {
 
         <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between;">
             <span>Ayam (1 Kantong / 9 pcs): <strong>Rp ${Number(settings.price_ayam_kantong).toLocaleString('id-ID')}</strong></span>
-            <span>Beras 5Kg: <strong>Rp ${Number(settings.price_beras_5kg).toLocaleString('id-ID')}</strong></span>
+            <span>Beras 1 Liter: <strong>Rp ${Number(settings.price_beras_1_liter).toLocaleString('id-ID')}</strong></span>
         </div>
 
         <button type="button" class="btn btn-primary" onclick="openHPPCalculatorModal('margin-table')" style="width: 100%; padding: 8px; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px;">
