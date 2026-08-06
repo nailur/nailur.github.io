@@ -8,6 +8,10 @@ All changes to the codebase and project structure must be documented here to mai
 ### 2026-08-06
 - **Database & Security Documentation (`pos/docs/Database_ERD.md`)**:
   - Updated the documented `process_checkout` Supabase RPC function to increase the maximum allowed discount from 50% to 75% (`P0003` error code). This reflects the new business rule allowing cashiers to apply discounts up to 75% of the transaction subtotal.
+- **Sales Deposits Input Modal (`pos/index.html`, `pos/js/deposits.js`)**:
+  - Added a `Tanggal Setoran` input field to the Add and Edit Deposit modal.
+  - Updated the save logic to use the inputted date instead of hardcoding today's date, and configured the edit modal to pre-fill the saved deposit date.
+  - Bumped PWA cache to `pos-cache-v110` in `sw.js`.
 
 ### 2026-08-05
 - **HPP & Profitability Calculator (`js/hpp.js`, `index.html`)**:

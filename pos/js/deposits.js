@@ -91,6 +91,7 @@ export async function handleSaveDeposit(e) {
     const amount = parseFloat(document.getElementById('deposit-amount').value);
     const account_type = document.getElementById('deposit-type').value;
     const notes = document.getElementById('deposit-notes').value;
+    const deposit_date = document.getElementById('deposit-date').value || getLocalToday();
     const fileInput = document.getElementById('deposit-attachment');
     let attachment_url = null;
     
@@ -136,6 +137,7 @@ export async function handleSaveDeposit(e) {
             amount,
             account_type,
             notes,
+            deposit_date
         };
         
         if (attachment_url) {
@@ -149,7 +151,6 @@ export async function handleSaveDeposit(e) {
         } else {
             const docNumber = generateRandomDocNumber('ST');
             payload.document_number = docNumber;
-            payload.deposit_date = getLocalToday();
             payload.created_by = getCurrentProfile().id;
             payload.status = 'Diposting';
             const { error } = await supabase.from('sales_deposits').insert([payload]);
@@ -182,6 +183,7 @@ window.editDeposit = function(id) {
     const deposit = depositsList.find(d => d.id === id);
     if (!deposit) return;
     document.getElementById('deposit-id').value = deposit.id;
+    document.getElementById('deposit-date').value = deposit.deposit_date ? deposit.deposit_date.split('T')[0] : getLocalToday();
     document.getElementById('deposit-amount').value = deposit.amount;
     if (deposit.account_type) {
         document.getElementById('deposit-type').value = deposit.account_type;
@@ -220,6 +222,7 @@ window.openAddDeposit = function() {
     const form = document.getElementById('form-deposit');
     if(form) form.reset();
     document.getElementById('deposit-id').value = '';
+    document.getElementById('deposit-date').value = getLocalToday();
     document.getElementById('deposit-attachment-preview-container').classList.add('hidden');
     document.getElementById('deposit-attachment-preview').src = '';
     document.getElementById('modal-deposit').classList.remove('hidden');

@@ -362,9 +362,6 @@ async function renderHPPSummaryCard() {
                 </h3>
                 <span style="font-size: 0.72rem; color: var(--text-muted);">Analisis HPP Bahan Baku & Overhead Operasional per Porsi</span>
             </div>
-            <button class="btn btn-secondary" onclick="openHPPCalculatorModal('bahan-baku')" style="padding: 4px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="Atur Harga Bahan Baku & Biaya Operasional">
-                <i class="ph ph-gear"></i> Kelola HPP
-            </button>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
