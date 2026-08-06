@@ -597,6 +597,11 @@ BEGIN
     RAISE EXCEPTION 'Total amount must be greater than 0';
   END IF;
 
+  -- [P0003] Security Check: Max discount is 75% of subtotal
+  IF p_discount_amount > (p_subtotal_amount * 0.75) THEN
+    RAISE EXCEPTION '[P0003] Security: Discount amount (%) exceeds 75%% of subtotal (%). Possible discount tampering.', p_discount_amount, p_subtotal_amount;
+  END IF;
+
   INSERT INTO public.transactions (
     id, outlet_id, cashier_id,
     subtotal_amount, discount_amount, tax_amount, total_amount,

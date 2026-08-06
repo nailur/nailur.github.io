@@ -5,6 +5,10 @@ All changes to the codebase and project structure must be documented here to mai
 ## [Unreleased]
 *Note: Every time a new feature or task is completed, AI agents must append their changes under the current date.*
 
+### 2026-08-06
+- **Database & Security Documentation (`pos/docs/Database_ERD.md`)**:
+  - Updated the documented `process_checkout` Supabase RPC function to increase the maximum allowed discount from 50% to 75% (`P0003` error code). This reflects the new business rule allowing cashiers to apply discounts up to 75% of the transaction subtotal.
+
 ### 2026-08-05
 - **HPP & Profitability Calculator (`js/hpp.js`, `index.html`)**:
   - Migrated HPP Settings storage from `localStorage` to Supabase database (`hpp_settings` table) to ensure central synchronization across all devices at the same outlet.
