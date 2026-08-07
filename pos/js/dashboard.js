@@ -566,7 +566,7 @@ window.loadDashboard = async function() {
             
             let methodFee = 0;
             if (s.payment_method !== 'Tunai') {
-                if (s.mdr_fee_amount != null) {
+                if (s.mdr_fee_amount != null && Number(s.mdr_fee_amount) !== 0) {
                     // Use historical MDR fee recorded at transaction time
                     methodFee = Number(s.mdr_fee_amount);
                 } else {
