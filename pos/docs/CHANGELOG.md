@@ -5,6 +5,13 @@ All changes to the codebase and project structure must be documented here to mai
 ## [Unreleased]
 *Note: Every time a new feature or task is completed, AI agents must append their changes under the current date.*
 
+### 2026-08-07
+- **Operational Expenses Input Modal (`pos/index.html`, `pos/js/app.js`, `pos/js/expenses.js`)**:
+  - Added a `Tanggal Pengeluaran` input field to the Add and Edit Operational Expenses modal.
+  - Updated the save logic to use the inputted date and pre-fill the edit modal with the saved expense date.
+  - Verified that the MDR Deduction Settings modal correctly saves data to the `mdr_fees` column in the `outlets` table.
+  - Bumped PWA cache to `pos-cache-v111` in `sw.js`.
+
 ### 2026-08-06
 - **Database & Security Documentation (`pos/docs/Database_ERD.md`)**:
   - Updated the documented `process_checkout` Supabase RPC function to increase the maximum allowed discount from 50% to 75% (`P0003` error code). This reflects the new business rule allowing cashiers to apply discounts up to 75% of the transaction subtotal.

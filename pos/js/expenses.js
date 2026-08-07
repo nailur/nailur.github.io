@@ -257,6 +257,8 @@ export async function editExpense(id) {
     window.expenseCurrentItems = [];
     
     document.getElementById('expense-id').value = exp.id;
+    const dateInput = document.getElementById('expense-date');
+    if(dateInput) dateInput.value = exp.cost_date || getLocalToday();
     document.getElementById('expense-notes').value = exp.notes || '';
     const methodSelect = document.getElementById('expense-payment-method');
     if (methodSelect) methodSelect.value = exp.payment_method || 'Tunai';
@@ -312,7 +314,9 @@ export async function handleSaveExpense(e) {
     
     try {
         if (expenseId) {
+            const costDate = document.getElementById('expense-date')?.value || getLocalToday();
             const { error: err1 } = await supabase.from('operational_costs').update({
+                cost_date: costDate,
                 total_amount: total,
                 notes: notes,
                 payment_method: paymentMethod
@@ -334,12 +338,13 @@ export async function handleSaveExpense(e) {
         } else {
             const docNumber = generateRandomDocNumber('B');
             const profileId = getCurrentProfile().id;
+            const costDate = document.getElementById('expense-date')?.value || getLocalToday();
             
             const { data, error } = await supabase.from('operational_costs').insert([{
                 outlet_id: getActiveOutletId(),
                 shift_session_id: sessionId,
                 document_number: docNumber,
-                cost_date: getLocalToday(),
+                cost_date: costDate,
                 total_amount: total,
                 notes,
                 payment_method: paymentMethod,

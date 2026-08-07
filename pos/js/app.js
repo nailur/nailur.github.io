@@ -553,6 +553,8 @@ function setupEventListeners() {
         document.getElementById('expense-id').value = '';
         const methodSelect = document.getElementById('expense-payment-method');
         if(methodSelect) methodSelect.value = 'Tunai';
+        const dateInput = document.getElementById('expense-date');
+        if(dateInput) dateInput.value = getLocalToday();
         const modal = document.getElementById('modal-expense');
         const title = modal?.querySelector('h2');
         if(title) title.textContent = 'Catat Pengeluaran';
