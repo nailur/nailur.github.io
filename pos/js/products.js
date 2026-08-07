@@ -341,7 +341,7 @@ export async function exportProductsToExcel() {
         const outletName = activeOutletObj ? activeOutletObj.name.replace(/[^a-zA-Z0-9]/g, '_') : 'Outlet';
         const dateStr = new Date().toISOString().split('T')[0];
         
-        XLSX.writeFile(wb, \Data_Harga_Produk_\_\.xlsx\);
+        XLSX.writeFile(wb, `Data_Harga_Produk_${outletName}_${dateStr}.xlsx`);
         showToast('Berhasil mengekspor harga produk', 'success');
         
     } catch (err) {
