@@ -6,6 +6,12 @@ All changes to the codebase and project structure must be documented here to mai
 *Note: Every time a new feature or task is completed, AI agents must append their changes under the current date.*
 
 ### 2026-08-07
+- **Historical MDR Calculation Fix (`pos/js/cart.js`, `pos/js/dashboard.js`, `pos/js/offline.js`, `pos/docs/Database_ERD.md`)**:
+  - Addressed an issue where modifying the MDR percentage recalculated all past dashboard reports.
+  - Implemented `p_mdr_fee_amount` in `cart.js` checkout (online and offline sync) to snapshot the fee at the time of transaction.
+  - Updated `dashboard.js` to read historical `mdr_fee_amount` if available, falling back to dynamic calculation for older transactions.
+  - Updated Database ERD to include `mdr_fee_amount` in the `transactions` table.
+  - Bumped PWA cache to `pos-cache-v113` in `sw.js`.
 - **Product Export (`pos/index.html`, `pos/js/app.js`, `pos/js/products.js`)**:
   - Added "Export Harga Produk" button next to "Tutup Shift".
   - Implemented Excel export functionality for product prices (offline, GoFood, GrabFood, ShopeeFood) using SheetJS.

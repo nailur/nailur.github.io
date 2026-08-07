@@ -89,6 +89,8 @@ window.loadDashboard = async function() {
         const key = m.method || 'Tunai';
         methodSummary[key] = { count: Number(m.count), total: Number(m.total) };
     });
+    window.lastMethodSummary = methodSummary;
+    window.clientMethodFees = {}; // Reset for new date range
 
     const activeOutletObj = window.posOutletsList?.find(o => o.id === activeOutletId);
     const tbodyMethod = document.querySelector('#dashboard-method-table tbody');
@@ -537,7 +539,7 @@ window.loadDashboard = async function() {
     // Fetch raw sales for Cash vs Total revenue calculation
     const { data: salesData } = await supabase
         .from('transactions')
-        .select('created_at, total_amount, discount_amount, tax_amount, payment_method, status')
+        .select('created_at, total_amount, discount_amount, tax_amount, payment_method, status, mdr_fee_amount')
         .eq('outlet_id', activeOutletId)
         .gte('created_at', startOfDay)
         .lte('created_at', endOfDay)
@@ -564,14 +566,19 @@ window.loadDashboard = async function() {
             
             let methodFee = 0;
             if (s.payment_method !== 'Tunai') {
-                // Calculate MDR fee deduction
-                const activeOutletObj = window.posOutletsList?.find(o => o.id === activeOutletId);
-                if (activeOutletObj && activeOutletObj.mdr_fees && activeOutletObj.mdr_fees[s.payment_method]) {
-                    const feeCfg = activeOutletObj.mdr_fees[s.payment_method];
-                    if (feeCfg.type === 'percent') {
-                        methodFee = amt * (Number(feeCfg.value) / 100);
-                    } else if (feeCfg.type === 'fixed') {
-                        methodFee = Number(feeCfg.value);
+                if (s.mdr_fee_amount != null) {
+                    // Use historical MDR fee recorded at transaction time
+                    methodFee = Number(s.mdr_fee_amount);
+                } else {
+                    // Fallback for old transactions without mdr_fee_amount
+                    const activeOutletObj = window.posOutletsList?.find(o => o.id === activeOutletId);
+                    if (activeOutletObj && activeOutletObj.mdr_fees && activeOutletObj.mdr_fees[s.payment_method]) {
+                        const feeCfg = activeOutletObj.mdr_fees[s.payment_method];
+                        if (feeCfg.type === 'percent') {
+                            methodFee = amt * (Number(feeCfg.value) / 100);
+                        } else if (feeCfg.type === 'fixed') {
+                            methodFee = Number(feeCfg.value);
+                        }
                     }
                 }
             }
@@ -582,7 +589,30 @@ window.loadDashboard = async function() {
                 salesByDate[localDate].methodNet[s.payment_method] = 0;
             }
             salesByDate[localDate].methodNet[s.payment_method] += netForThisTx;
+            
+            // Accumulate method fees globally for later use in table and excel
+            window.clientMethodFees = window.clientMethodFees || {};
+            window.clientMethodFees[s.payment_method] = (window.clientMethodFees[s.payment_method] || 0) + methodFee;
         });
+        
+        // Re-render method table with accurate historical fees
+        const tbodyMethod = document.querySelector('#dashboard-method-table tbody');
+        if (tbodyMethod && window.lastMethodSummary) {
+            tbodyMethod.innerHTML = Object.entries(window.lastMethodSummary)
+                .sort((a,b) => b[1].total - a[1].total)
+                .map(([method, stats]) => {
+                    const exactMethodFee = window.clientMethodFees[method] || 0;
+                    const netAmount = Math.round(stats.total - exactMethodFee);
+                    return `
+                    <tr>
+                        <td>${window.escapeHtml(method)}</td>
+                        <td style="text-align: right;">${stats.count}</td>
+                        <td style="text-align: right;">Rp ${stats.total.toLocaleString('id-ID')}</td>
+                        <td style="text-align: right; color: #10b981; font-weight: 600;">Rp ${netAmount.toLocaleString('id-ID')}</td>
+                    </tr>
+                    `;
+                }).join('');
+        }
     }
 
     // Merge dates for a unified x-axis
@@ -1171,20 +1201,11 @@ window.exportDashboardExcel = async function() {
     // Sheet 4: Metode Pembayaran (Table #dashboard-method-table)
     const sheet4Rows = [];
     let totMethodCount = 0, totMethodGross = 0, totMethodFee = 0, totMethodNet = 0;
-    const activeOutletObj = window.posOutletsList?.find(o => o.id === window.activeOutletId);
 
     Object.entries(methodSummary)
         .sort((a, b) => b[1].total - a[1].total)
         .forEach(([method, stats]) => {
-            let methodFee = 0;
-            if (method !== 'Tunai' && activeOutletObj && activeOutletObj.mdr_fees && activeOutletObj.mdr_fees[method]) {
-                const feeCfg = activeOutletObj.mdr_fees[method];
-                if (feeCfg.type === 'percent') {
-                    methodFee = stats.total * (Number(feeCfg.value) / 100);
-                } else if (feeCfg.type === 'fixed') {
-                    methodFee = stats.count * Number(feeCfg.value);
-                }
-            }
+            const methodFee = window.clientMethodFees ? (window.clientMethodFees[method] || 0) : 0;
             const netAmount = Math.round(stats.total - methodFee);
 
             totMethodCount += Number(stats.count || 0);

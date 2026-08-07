@@ -379,6 +379,15 @@ async function _finalizeCheckout() {
     const kodeOutlet = currOutlet.code ? currOutlet.code.toUpperCase() : (currOutlet.name ? currOutlet.name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() : 'DOC');
     
     let receiptNo = null;
+    let mdrFeeAmount = 0;
+    if (method !== 'Tunai' && currOutlet.mdr_fees && currOutlet.mdr_fees[method]) {
+        const feeCfg = currOutlet.mdr_fees[method];
+        if (feeCfg.type === 'percent') {
+            mdrFeeAmount = totals.total * (feeCfg.value / 100);
+        } else if (feeCfg.type === 'fixed') {
+            mdrFeeAmount = feeCfg.value;
+        }
+    }
     
     if (!isOffline) {
         try {
@@ -394,7 +403,8 @@ async function _finalizeCheckout() {
                 p_customer_name: customer_name,
                 p_items: itemsPayload,
                 p_cash_received: received,
-                p_change_amount: received - totals.total
+                p_change_amount: received - totals.total,
+                p_mdr_fee_amount: mdrFeeAmount
             });
 
             if (rpcError) {
@@ -458,6 +468,7 @@ async function _finalizeCheckout() {
             notes: transaction_notes,
             cash_received: received,
             change_amount: received - totals.total,
+            mdr_fee_amount: mdrFeeAmount,
             items: itemsPayload,
             created_at: trxData.created_at,
             receipt_no: receiptNo

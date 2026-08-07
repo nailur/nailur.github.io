@@ -109,6 +109,7 @@ erDiagram
 | `void_reason` | `text` |  Nullable |
 | `voided_by` | `uuid` |  Nullable |
 | `notes` | `text` |  Nullable |
+| `mdr_fee_amount` | `numeric` |  Nullable |
 
 ### Table `transaction_items`
 | Name | Type | Constraints |
@@ -605,12 +606,14 @@ BEGIN
   INSERT INTO public.transactions (
     id, outlet_id, cashier_id,
     subtotal_amount, discount_amount, tax_amount, total_amount,
-    payment_method, customer_name, cash_received, change_amount
+    payment_method, customer_name, cash_received, change_amount,
+    mdr_fee_amount
   ) VALUES (
     COALESCE(p_id, gen_random_uuid()),
     p_outlet_id, p_cashier_id,
     p_subtotal_amount, p_discount_amount, p_tax_amount, p_total_amount,
-    p_payment_method, p_customer_name, p_cash_received, p_change_amount
+    p_payment_method, p_customer_name, p_cash_received, p_change_amount,
+    p_mdr_fee_amount
   ) RETURNING id, receipt_no INTO v_transaction_id, v_receipt_no;
 
   FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
