@@ -6,6 +6,12 @@ All changes to the codebase and project structure must be documented here to mai
 *Note: Every time a new feature or task is completed, AI agents must append their changes under the current date.*
 
 ### 2026-08-07
+- **Product Export (`pos/index.html`, `pos/js/app.js`, `pos/js/products.js`)**:
+  - Added "Export Harga Produk" button next to "Tutup Shift".
+  - Implemented Excel export functionality for product prices (offline, GoFood, GrabFood, ShopeeFood) using SheetJS.
+  - Button visibility is restricted to roles with product management access (Kepala Toko, Kepala Cabang, Owner, Superadmin).
+  - Bumped PWA cache to `pos-cache-v112` in `sw.js`.
+
 - **Operational Expenses Input Modal (`pos/index.html`, `pos/js/app.js`, `pos/js/expenses.js`)**:
   - Added a `Tanggal Pengeluaran` input field to the Add and Edit Operational Expenses modal.
   - Updated the save logic to use the inputted date and pre-fill the edit modal with the saved expense date.

@@ -277,3 +277,82 @@ export function openProductModal() {
     document.getElementById('modal-product').classList.remove('hidden');
 }
 window.openProductModal = openProductModal;
+
+export async function exportProductsToExcel() {
+    if (!activeOutletId) return showToast('Pilih outlet terlebih dahulu', 'error');
+
+    if (!window.XLSX) {
+        try {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = './assets/lib/xlsx.full.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        } catch (e) {
+            return showToast('Gagal memuat library Excel', 'error');
+        }
+    }
+
+    const btn = document.getElementById('btn-export-products-excel');
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Mengekspor...';
+    }
+
+    try {
+        if (!products || products.length === 0) {
+            showToast('Tidak ada data produk untuk diekspor', 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+            return;
+        }
+
+        const exportData = products.map((p, index) => ({
+            'No': index + 1,
+            'Nama Produk': p.name || '-',
+            'Harga Offline (Rp)': p.price || 0,
+            'Harga GoFood (Rp)': p.price_gofood || 0,
+            'Harga GrabFood (Rp)': p.price_grabfood || 0,
+            'Harga ShopeeFood (Rp)': p.price_shopeefood || 0
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        
+        // Auto-width for columns
+        const wscols = [
+            {wch: 5},  // No
+            {wch: 30}, // Nama
+            {wch: 20}, // Harga Offline
+            {wch: 20}, // Harga GoFood
+            {wch: 20}, // Harga GrabFood
+            {wch: 20}  // Harga ShopeeFood
+        ];
+        ws['!cols'] = wscols;
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Harga Produk');
+
+        const activeOutletObj = window.posOutletsList?.find(o => o.id === activeOutletId);
+        const outletName = activeOutletObj ? activeOutletObj.name.replace(/[^a-zA-Z0-9]/g, '_') : 'Outlet';
+        const dateStr = new Date().toISOString().split('T')[0];
+        
+        XLSX.writeFile(wb, \Data_Harga_Produk_\_\.xlsx\);
+        showToast('Berhasil mengekspor harga produk', 'success');
+        
+    } catch (err) {
+        console.error(err);
+        showToast('Gagal mengekspor data: ' + err.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    }
+}
+window.exportProductsToExcel = exportProductsToExcel;
+

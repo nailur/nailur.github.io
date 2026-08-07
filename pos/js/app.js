@@ -235,8 +235,10 @@ async function routeUser(profile) {
         document.getElementById('mobile-pos-outlet-name').textContent = profile.outlets?.name || 'Toko';
         if (profile.role === 'kepala_toko') {
             document.getElementById('btn-add-product').classList.remove('hidden');
+            document.getElementById('btn-export-products-excel')?.classList.remove('hidden');
         } else {
             document.getElementById('btn-add-product').classList.add('hidden');
+            document.getElementById('btn-export-products-excel')?.classList.add('hidden');
         }
         initPos();
     } else {
@@ -284,6 +286,7 @@ async function routeUser(profile) {
 
 async function initPosMultiOutlet(profile) {
     document.getElementById('btn-add-product').classList.remove('hidden');
+    document.getElementById('btn-export-products-excel')?.classList.remove('hidden');
     
     // Load accessible outlets
     let query = supabase.from('outlets').select('id, name, code, branch_id, address, phone, tax_rate_percent, mdr_fees').order('name');
@@ -545,6 +548,9 @@ function setupEventListeners() {
     document.getElementById('form-inventory')?.addEventListener('submit', handleSaveInventory);
 
     document.getElementById('btn-export-expenses-excel')?.addEventListener('click', exportExpensesToExcel);
+    document.getElementById('btn-export-products-excel')?.addEventListener('click', () => {
+        if(window.exportProductsToExcel) window.exportProductsToExcel();
+    });
     document.getElementById('btn-add-expense')?.addEventListener('click', () => {
         const form = document.getElementById('form-expense');
         if(form) form.reset();
