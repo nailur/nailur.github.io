@@ -8,8 +8,8 @@ import { syncOfflineTransactions, initDB } from './offline.js';
 import { products, loadProducts, renderProducts, handleSaveProduct, editProduct, deleteProduct, showAllProducts, openProductModal } from './products.js';
 import { cart, addToCart, addToCartWithModifiers, updateQty, emptyCart, renderCart } from './cart.js';
 import { openCheckoutModal, finalizeCheckout, calculateChange, printReceipt, printReceiptBluetooth } from './checkout.js';
-import './modifiers.js';
-import './hpp.js';
+import './modifiers.js?v=117';
+import './hpp.js?v=117';
 import { loadHistory, exportToExcel, changeHistoryPage, viewTransactionDetails, reprintTransactionById } from './history.js';
 import { 
     initManagement, loadBranches, loadOutlets, loadUsers, 
