@@ -520,9 +520,16 @@ function renderHPPCalculatorTable(settings) {
     let html = '';
     let currentCategory = '';
 
-    const mdrGoFood = Number(window.hppMdrFeesCache?.['Go Food'] || 21.09);
-    const mdrGrabFood = Number(window.hppMdrFeesCache?.['Grab Food'] || 20);
-    const mdrShopeeFood = Number(window.hppMdrFeesCache?.['Shopee Food'] || 25);
+    const getMdrFee = (method, defaultPct) => {
+        const cfg = window.hppMdrFeesCache?.[method];
+        if (!cfg) return { type: 'percent', value: defaultPct };
+        if (typeof cfg === 'object' && cfg !== null) return cfg;
+        return { type: 'percent', value: Number(cfg) || defaultPct };
+    };
+
+    const mdrGoFood = getMdrFee('Go Food', 21.09);
+    const mdrGrabFood = getMdrFee('Grab Food', 20);
+    const mdrShopeeFood = getMdrFee('Shopee Food', 25);
     const hppProductsCache = window.hppProductsCache || [];
 
     HPP_MENU_CATALOG.forEach(item => {
@@ -552,15 +559,25 @@ function renderHPPCalculatorTable(settings) {
         const priceGrabFood = prod?.price_grabfood || hargaJual;
         const priceShopeeFood = prod?.price_shopeefood || hargaJual;
 
-        const labaGoFood = (priceGoFood * (1 - (mdrGoFood/100))) - hppTotal;
+        const calcOnlineLaba = (price, mdrCfg, hpp) => {
+            let fee = 0;
+            if (mdrCfg.type === 'percent') {
+                fee = price * (Number(mdrCfg.value) / 100);
+            } else if (mdrCfg.type === 'fixed') {
+                fee = Number(mdrCfg.value);
+            }
+            return price - fee - hpp;
+        };
+
+        const labaGoFood = calcOnlineLaba(priceGoFood, mdrGoFood, hppTotal);
         const marginGoFood = priceGoFood > 0 ? (labaGoFood / priceGoFood) * 100 : 0;
         const colorGoFood = marginGoFood >= 30 ? '#10b981' : (marginGoFood >= 15 ? '#f59e0b' : '#ef4444');
 
-        const labaGrabFood = (priceGrabFood * (1 - (mdrGrabFood/100))) - hppTotal;
+        const labaGrabFood = calcOnlineLaba(priceGrabFood, mdrGrabFood, hppTotal);
         const marginGrabFood = priceGrabFood > 0 ? (labaGrabFood / priceGrabFood) * 100 : 0;
         const colorGrabFood = marginGrabFood >= 30 ? '#10b981' : (marginGrabFood >= 15 ? '#f59e0b' : '#ef4444');
 
-        const labaShopeeFood = (priceShopeeFood * (1 - (mdrShopeeFood/100))) - hppTotal;
+        const labaShopeeFood = calcOnlineLaba(priceShopeeFood, mdrShopeeFood, hppTotal);
         const marginShopeeFood = priceShopeeFood > 0 ? (labaShopeeFood / priceShopeeFood) * 100 : 0;
         const colorShopeeFood = marginShopeeFood >= 30 ? '#10b981' : (marginShopeeFood >= 15 ? '#f59e0b' : '#ef4444');
 

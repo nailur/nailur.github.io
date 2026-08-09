@@ -13,7 +13,10 @@ All changes to the codebase and project structure must be documented here to mai
   - The HPP Calculator now dynamically fetches online prices from the `products` table and applies MDR fee deductions (dynamically fetched from the `outlets` table) to accurately calculate online profitability per item.
   - Bumped PWA cache to `pos-cache-v115` in `sw.js`.
 
-### 2026-08-07
+### 2026-08-09
+- **HPP Calculator Bug Fix (`pos/js/hpp.js`)**:
+  - Fixed an issue where online margin calculations displayed `NaN` due to incorrect parsing of the new MDR fee configuration object format.
+  - Bumped PWA cache to `pos-cache-v116` in `sw.js`.
 - **Historical MDR Calculation Fix (`pos/js/cart.js`, `pos/js/dashboard.js`, `pos/js/offline.js`, `pos/docs/Database_ERD.md`)**:
   - Addressed an issue where modifying the MDR percentage recalculated all past dashboard reports.
   - Implemented `p_mdr_fee_amount` in `cart.js` checkout (online and offline sync) to snapshot the fee at the time of transaction.
