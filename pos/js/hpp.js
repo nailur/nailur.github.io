@@ -400,6 +400,15 @@ async function openHPPCalculatorModal(initialTab = 'margin-table') {
         }
     };
 
+    // Load products and outlet MDR
+    const outletId = window.activeOutletId || (window.getCurrentProfile && window.getCurrentProfile()?.outlet_id);
+    if (outletId) {
+        const { data: outletData } = await supabase.from('outlets').select('mdr_fees').eq('id', outletId).single();
+        window.hppMdrFeesCache = outletData?.mdr_fees || null;
+        const { data: prodData } = await supabase.from('products').select('name, price_gofood, price_grabfood, price_shopeefood').eq('outlet_id', outletId);
+        window.hppProductsCache = prodData || [];
+    }
+
     const settings = await HPPSettingsManager.fetchSettingsFromDB();
 
     const setVal = (id, val) => {
@@ -511,12 +520,17 @@ function renderHPPCalculatorTable(settings) {
     let html = '';
     let currentCategory = '';
 
+    const mdrGoFood = Number(window.hppMdrFeesCache?.['Go Food'] || 21.09);
+    const mdrGrabFood = Number(window.hppMdrFeesCache?.['Grab Food'] || 20);
+    const mdrShopeeFood = Number(window.hppMdrFeesCache?.['Shopee Food'] || 25);
+    const hppProductsCache = window.hppProductsCache || [];
+
     HPP_MENU_CATALOG.forEach(item => {
         if (item.category !== currentCategory) {
             currentCategory = item.category;
             html += `
                 <tr style="background: rgba(59, 130, 246, 0.12); font-weight: 700; color: var(--primary);">
-                    <td colspan="6" style="padding: 8px 12px; font-size: 0.9rem;">
+                    <td colspan="7" style="padding: 8px 12px; font-size: 0.9rem;">
                         <i class="ph ph-squares-four"></i> ${currentCategory}
                     </td>
                 </tr>
@@ -525,20 +539,52 @@ function renderHPPCalculatorTable(settings) {
 
         const res = calculateMenuItemHPP(item, settings);
         const hargaJual = item.price;
-        const labaBersih = res.marginRp;
-        const marginPct = res.marginPct;
+        const hppTotal = res.totalHPP;
+        const labaBersihOffline = res.marginRp;
+        const marginPctOffline = res.marginPct;
 
-        const marginColor = marginPct >= 30 ? '#10b981' : (marginPct >= 15 ? '#f59e0b' : '#ef4444');
-        const labaColor = labaBersih >= 0 ? '#10b981' : '#ef4444';
+        const marginColorOff = marginPctOffline >= 30 ? '#10b981' : (marginPctOffline >= 15 ? '#f59e0b' : '#ef4444');
+        const labaColorOff = labaBersihOffline >= 0 ? '#10b981' : '#ef4444';
+
+        // Online pricing
+        const prod = hppProductsCache.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+        const priceGoFood = prod?.price_gofood || hargaJual;
+        const priceGrabFood = prod?.price_grabfood || hargaJual;
+        const priceShopeeFood = prod?.price_shopeefood || hargaJual;
+
+        const labaGoFood = (priceGoFood * (1 - (mdrGoFood/100))) - hppTotal;
+        const marginGoFood = priceGoFood > 0 ? (labaGoFood / priceGoFood) * 100 : 0;
+        const colorGoFood = marginGoFood >= 30 ? '#10b981' : (marginGoFood >= 15 ? '#f59e0b' : '#ef4444');
+
+        const labaGrabFood = (priceGrabFood * (1 - (mdrGrabFood/100))) - hppTotal;
+        const marginGrabFood = priceGrabFood > 0 ? (labaGrabFood / priceGrabFood) * 100 : 0;
+        const colorGrabFood = marginGrabFood >= 30 ? '#10b981' : (marginGrabFood >= 15 ? '#f59e0b' : '#ef4444');
+
+        const labaShopeeFood = (priceShopeeFood * (1 - (mdrShopeeFood/100))) - hppTotal;
+        const marginShopeeFood = priceShopeeFood > 0 ? (labaShopeeFood / priceShopeeFood) * 100 : 0;
+        const colorShopeeFood = marginShopeeFood >= 30 ? '#10b981' : (marginShopeeFood >= 15 ? '#f59e0b' : '#ef4444');
 
         html += `
             <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;">
                 <td style="padding: 10px 12px; font-weight: 600;">${item.name}</td>
-                <td style="padding: 10px 12px; text-align: right;">Rp${hargaJual.toLocaleString('id-ID')}</td>
                 <td style="padding: 10px 12px; text-align: right; color: var(--text-secondary);">Rp${Math.round(res.rawCOGS).toLocaleString('id-ID')}</td>
-                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: var(--text-main);">Rp${Math.round(res.totalHPP).toLocaleString('id-ID')}</td>
-                <td style="padding: 10px 12px; text-align: right; font-weight: 600; color: ${labaColor};">Rp${Math.round(labaBersih).toLocaleString('id-ID')}</td>
-                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: ${marginColor};">${marginPct.toFixed(1).replace('.', ',')}%</td>
+                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: var(--text-main);">Rp${Math.round(hppTotal).toLocaleString('id-ID')}</td>
+                <td style="padding: 10px 12px; text-align: right;">
+                    <div style="font-weight:600; color:${labaColorOff}">Rp${Math.round(labaBersihOffline).toLocaleString('id-ID')}</div>
+                    <div style="font-size:0.75rem; font-weight:700; color:${marginColorOff}">${marginPctOffline.toFixed(1).replace('.', ',')}%</div>
+                </td>
+                <td style="padding: 10px 12px; text-align: right;">
+                    <div style="font-weight:600; color:${labaGrabFood >= 0 ? '#10b981' : '#ef4444'}">Rp${Math.round(labaGrabFood).toLocaleString('id-ID')}</div>
+                    <div style="font-size:0.75rem; font-weight:700; color:${colorGrabFood}">${marginGrabFood.toFixed(1).replace('.', ',')}%</div>
+                </td>
+                <td style="padding: 10px 12px; text-align: right;">
+                    <div style="font-weight:600; color:${labaGoFood >= 0 ? '#10b981' : '#ef4444'}">Rp${Math.round(labaGoFood).toLocaleString('id-ID')}</div>
+                    <div style="font-size:0.75rem; font-weight:700; color:${colorGoFood}">${marginGoFood.toFixed(1).replace('.', ',')}%</div>
+                </td>
+                <td style="padding: 10px 12px; text-align: right;">
+                    <div style="font-weight:600; color:${labaShopeeFood >= 0 ? '#10b981' : '#ef4444'}">Rp${Math.round(labaShopeeFood).toLocaleString('id-ID')}</div>
+                    <div style="font-size:0.75rem; font-weight:700; color:${colorShopeeFood}">${marginShopeeFood.toFixed(1).replace('.', ',')}%</div>
+                </td>
             </tr>
         `;
     });

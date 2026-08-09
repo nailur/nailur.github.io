@@ -5,6 +5,14 @@ All changes to the codebase and project structure must be documented here to mai
 ## [Unreleased]
 *Note: Every time a new feature or task is completed, AI agents must append their changes under the current date.*
 
+### 2026-08-08
+- **Affiliate & HPP Enhancements (`pos/index.html`, `pos/js/affiliate.js`, `pos/js/hpp.js`)**:
+  - Added "Metode Bayar" column to the Affiliate Unclaimed Transactions table and the Affiliate Details Modal to display the payment method of each claimed transaction.
+  - Disabled the "Hapus" (Delete) button for Affiliate Postings that have already been marked as `Paid`.
+  - Expanded the HPP Calculator Margin Table to calculate and display separate margins for Offline, GoFood, GrabFood, and ShopeeFood.
+  - The HPP Calculator now dynamically fetches online prices from the `products` table and applies MDR fee deductions (dynamically fetched from the `outlets` table) to accurately calculate online profitability per item.
+  - Bumped PWA cache to `pos-cache-v115` in `sw.js`.
+
 ### 2026-08-07
 - **Historical MDR Calculation Fix (`pos/js/cart.js`, `pos/js/dashboard.js`, `pos/js/offline.js`, `pos/docs/Database_ERD.md`)**:
   - Addressed an issue where modifying the MDR percentage recalculated all past dashboard reports.

@@ -689,7 +689,7 @@ export function renderAffiliatePostings() {
                     <button class="btn btn-icon btn-secondary" onclick="window.viewAffiliateDetails('${post.id}')" title="Lihat Detail">
                         <i class="ph ph-eye"></i>
                     </button>
-                    ${isSuperAdmin() ? `
+                    ${!isPaid && isSuperAdmin() ? `
                     <button class="btn btn-icon btn-danger" onclick="window.deleteAffiliatePosting('${post.id}')" title="Hapus">
                         <i class="ph ph-trash"></i>
                     </button>
@@ -856,7 +856,7 @@ window.loadUnclaimedTransactions = async function(dateStr) {
     // 2. Build query for completed transactions
     let query = supabase
         .from('transactions')
-        .select('id, receipt_no, created_at, customer_name, total_amount, status')
+        .select('id, receipt_no, created_at, customer_name, total_amount, status, payment_method')
         .eq('outlet_id', outletId)
         .eq('status', 'completed')
         .neq('status', 'voided')
@@ -897,7 +897,7 @@ window.loadUnclaimedTransactions = async function(dateStr) {
         if (missingIds.length > 0) {
             const { data: missingTrxs } = await supabase
                 .from('transactions')
-                .select('id, receipt_no, created_at, customer_name, total_amount, status')
+                .select('id, receipt_no, created_at, customer_name, total_amount, status, payment_method')
                 .in('id', missingIds);
             if (missingTrxs && missingTrxs.length > 0) {
                 unclaimedTransactionsList.unshift(...missingTrxs);
@@ -965,6 +965,7 @@ function renderUnclaimedTransactionsTable() {
                 <td><strong>#${escapeHtml(receiptNo)}</strong></td>
                 <td>${tDate}</td>
                 <td>${escapeHtml(trx.customer_name || '-')}</td>
+                <td><span class="badge badge-secondary">${escapeHtml(trx.payment_method || '-')}</span></td>
                 <td>Rp ${Number(trx.total_amount).toLocaleString('id-ID')}</td>
             </tr>
         `;
@@ -1537,7 +1538,7 @@ window.viewAffiliateDetails = async function(postingId) {
     // 1. Fetch claimed product items & transaction links in parallel (responsive performance)
     const [ { data: itemsData }, { data: trxLinks } ] = await Promise.all([
         supabase.from('affiliate_posting_items').select('*').eq('posting_id', postingId),
-        supabase.from('affiliate_posting_transactions').select('transaction_id, transactions(receipt_no, created_at, customer_name, total_amount)').eq('posting_id', postingId)
+        supabase.from('affiliate_posting_transactions').select('transaction_id, transactions(receipt_no, created_at, customer_name, total_amount, payment_method)').eq('posting_id', postingId)
     ]);
 
     const itemsTbody = document.getElementById('detail-affiliate-items-tbody');
@@ -1570,6 +1571,7 @@ window.viewAffiliateDetails = async function(postingId) {
                         <td><strong>#${escapeHtml(recNo)}</strong></td>
                         <td>${txDate}</td>
                         <td>${escapeHtml(tx.customer_name || '-')}</td>
+                        <td><span class="badge badge-secondary">${escapeHtml(tx.payment_method || '-')}</span></td>
                         <td style="text-align:right;">Rp ${Number(tx.total_amount || 0).toLocaleString('id-ID')}</td>
                     </tr>
                 `;
