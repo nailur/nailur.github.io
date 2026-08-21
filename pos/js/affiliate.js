@@ -836,17 +836,27 @@ window.loadUnclaimedTransactions = async function(dateStr) {
     }
 
     // 1. Fetch transaction IDs that have already been claimed
+    //    Join to affiliate_postings so we can check posting status.
+    //    Transactions tied to a Paid posting must ALWAYS be excluded.
+    //    Transactions tied to an Unpaid posting by another affiliator are also excluded.
     const { data: claimedData, error: claimedError } = await supabase
         .from('affiliate_posting_transactions')
-        .select('transaction_id, posting_id')
+        .select('transaction_id, posting_id, affiliate_postings!inner(id, status, outlet_id)')
+        .eq('affiliate_postings.outlet_id', outletId)
         .limit(5000);
 
     const claimedIdsByOthers = new Set();
     const myTrxIds = new Set();
     (claimedData || []).forEach(row => {
-        if (editingAffiliatePostingId && String(row.posting_id) === String(editingAffiliatePostingId)) {
+        const postingStatus = row.affiliate_postings?.status || '';
+        const isPaid = postingStatus === 'Paid';
+        const isMyPosting = editingAffiliatePostingId && String(row.posting_id) === String(editingAffiliatePostingId);
+
+        if (isMyPosting && !isPaid) {
+            // Edit mode: include own posting's transactions as pre-selected (only if still Unpaid)
             myTrxIds.add(row.transaction_id);
         } else {
+            // All other claimed transactions (including Paid postings) → exclude from list
             claimedIdsByOthers.add(row.transaction_id);
         }
     });
