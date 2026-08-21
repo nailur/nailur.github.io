@@ -889,14 +889,11 @@ window.loadUnclaimedTransactions = async function(dateStr) {
         return;
     }
 
-    // Double-check in JavaScript: ensure transaction not claimed by others and not void/cancel
+    // Whitelist filter: only transactions with status exactly 'completed' are allowed.
+    // Using whitelist (not blacklist) to ensure cancelled/void/cancel variants are all excluded.
     unclaimedTransactionsList = (trxs || []).filter(t => {
         if (claimedIdsByOthers.has(t.id)) return false;
-        const st = String(t.status || '').toLowerCase();
-        if (st === 'voided' || st === 'void' || st === 'cancelled' || st === 'cancel' || st === 'batal') {
-            return false;
-        }
-        return true;
+        return String(t.status || '').toLowerCase() === 'completed';
     });
 
     // Ensure transactions already checked (in edit mode or previously checked) are present in the list
@@ -908,7 +905,8 @@ window.loadUnclaimedTransactions = async function(dateStr) {
             const { data: missingTrxs } = await supabase
                 .from('transactions')
                 .select('id, receipt_no, created_at, customer_name, total_amount, status, payment_method')
-                .in('id', missingIds);
+                .in('id', missingIds)
+                .eq('status', 'completed'); // Only fetch completed transactions — no cancelled/void
             if (missingTrxs && missingTrxs.length > 0) {
                 unclaimedTransactionsList.unshift(...missingTrxs);
             }
