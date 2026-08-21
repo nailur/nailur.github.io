@@ -863,7 +863,18 @@ window.loadUnclaimedTransactions = async function(dateStr) {
 
     myTrxIds.forEach(id => selectedTransactionIds.add(id));
 
-    // 2. Build query for completed transactions
+    // 2. Build query for completed transactions — date filter is ALWAYS required.
+    //    If dateStr is empty (user cleared the input), fall back to today.
+    const now = new Date();
+    const fallbackDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const effectiveDateStr = dateStr || fallbackDate;
+
+    // Sync the date input to reflect the actual date being used
+    const dateFilterEl = document.getElementById('affiliate-unclaimed-date-filter');
+    if (dateFilterEl && dateFilterEl.value !== effectiveDateStr) {
+        dateFilterEl.value = effectiveDateStr;
+    }
+
     let query = supabase
         .from('transactions')
         .select('id, receipt_no, created_at, customer_name, total_amount, status, payment_method')
@@ -873,13 +884,9 @@ window.loadUnclaimedTransactions = async function(dateStr) {
         .neq('status', 'cancelled')
         .order('created_at', { ascending: false });
 
-    if (dateStr) {
-        const startOfDay = new Date(`${dateStr}T00:00:00`).toISOString();
-        const endOfDay = new Date(`${dateStr}T23:59:59.999`).toISOString();
-        query = query.gte('created_at', startOfDay).lte('created_at', endOfDay).limit(1000);
-    } else {
-        query = query.limit(1000);
-    }
+    const startOfDay = new Date(`${effectiveDateStr}T00:00:00`).toISOString();
+    const endOfDay   = new Date(`${effectiveDateStr}T23:59:59.999`).toISOString();
+    query = query.gte('created_at', startOfDay).lte('created_at', endOfDay).limit(1000);
 
     const { data: trxs, error: trxError } = await query;
 
@@ -922,7 +929,13 @@ window.loadUnclaimedTransactions = async function(dateStr) {
  */
 window.onAffiliateUnclaimedDateChange = async function() {
     const dateFilterEl = document.getElementById('affiliate-unclaimed-date-filter');
-    const dateStr = dateFilterEl ? dateFilterEl.value : '';
+    let dateStr = dateFilterEl ? dateFilterEl.value : '';
+    // If user cleared the date input, reset to today
+    if (!dateStr) {
+        const now = new Date();
+        dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+        if (dateFilterEl) dateFilterEl.value = dateStr;
+    }
     await window.loadUnclaimedTransactions(dateStr);
 };
 
