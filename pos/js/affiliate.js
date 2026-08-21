@@ -965,7 +965,7 @@ function renderUnclaimedTransactionsTable() {
     if (nextBtn) nextBtn.disabled = (currentUnclaimedPage >= totalPages);
 
     if (totalTrx === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada transaksi penjualan yang belum diklaim</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tidak ada transaksi penjualan yang belum diklaim</td></tr>';
         updateSelectedCountDisplay();
         return;
     }
@@ -978,6 +978,12 @@ function renderUnclaimedTransactionsTable() {
         const receiptNo = trx.receipt_no || trx.id.substring(0, 8).toUpperCase();
         const tDate = new Date(trx.created_at).toLocaleString('id-ID');
         const isChecked = selectedTransactionIds.has(trx.id);
+        const st = String(trx.status || '').toLowerCase();
+        const statusBadge = st === 'completed'
+            ? '<span class="badge badge-success">Sukses</span>'
+            : st === 'cancelled' || st === 'cancel' || st === 'voided' || st === 'void'
+                ? '<span class="badge badge-danger">Batal</span>'
+                : `<span class="badge badge-secondary">${escapeHtml(trx.status || '-')}</span>`;
         return `
             <tr>
                 <td style="text-align:center; width:40px;">
@@ -987,6 +993,7 @@ function renderUnclaimedTransactionsTable() {
                 <td>${tDate}</td>
                 <td>${escapeHtml(trx.customer_name || '-')}</td>
                 <td><span class="badge badge-secondary">${escapeHtml(trx.payment_method || '-')}</span></td>
+                <td>${statusBadge}</td>
                 <td>Rp ${Number(trx.total_amount).toLocaleString('id-ID')}</td>
             </tr>
         `;
@@ -1559,7 +1566,7 @@ window.viewAffiliateDetails = async function(postingId) {
     // 1. Fetch claimed product items & transaction links in parallel (responsive performance)
     const [ { data: itemsData }, { data: trxLinks } ] = await Promise.all([
         supabase.from('affiliate_posting_items').select('*').eq('posting_id', postingId),
-        supabase.from('affiliate_posting_transactions').select('transaction_id, transactions(receipt_no, created_at, customer_name, total_amount, payment_method)').eq('posting_id', postingId)
+        supabase.from('affiliate_posting_transactions').select('transaction_id, transactions(receipt_no, created_at, customer_name, total_amount, payment_method, status)').eq('posting_id', postingId)
     ]);
 
     const itemsTbody = document.getElementById('detail-affiliate-items-tbody');
@@ -1581,18 +1588,25 @@ window.viewAffiliateDetails = async function(postingId) {
     const trxTbody = document.getElementById('detail-affiliate-trx-tbody');
     if (trxTbody) {
         if (!trxLinks || trxLinks.length === 0) {
-            trxTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Tidak ada transaksi tertaut</td></tr>';
+            trxTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tidak ada transaksi tertaut</td></tr>';
         } else {
             trxTbody.innerHTML = trxLinks.map(t => {
                 const tx = t.transactions || {};
                 const recNo = tx.receipt_no || t.transaction_id?.substring(0, 8).toUpperCase() || '-';
                 const txDate = tx.created_at ? new Date(tx.created_at).toLocaleString('id-ID') : '-';
+                const st = String(tx.status || '').toLowerCase();
+                const statusBadge = st === 'completed'
+                    ? '<span class="badge badge-success">Sukses</span>'
+                    : st === 'cancelled' || st === 'cancel' || st === 'voided' || st === 'void'
+                        ? '<span class="badge badge-danger">Batal</span>'
+                        : `<span class="badge badge-secondary">${escapeHtml(tx.status || '-')}</span>`;
                 return `
                     <tr>
                         <td><strong>#${escapeHtml(recNo)}</strong></td>
                         <td>${txDate}</td>
                         <td>${escapeHtml(tx.customer_name || '-')}</td>
                         <td><span class="badge badge-secondary">${escapeHtml(tx.payment_method || '-')}</span></td>
+                        <td>${statusBadge}</td>
                         <td style="text-align:right;">Rp ${Number(tx.total_amount || 0).toLocaleString('id-ID')}</td>
                     </tr>
                 `;
