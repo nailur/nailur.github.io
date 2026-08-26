@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Dompetku | Catatan Keuangan & Pengeluaran Modern</title>
+
+    <!-- HTTPS Enforcement -->
+    <script>
+        if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            location.replace(location.href.replace('http:', 'https:'));
+        }
+    </script>
+
+    <!-- PWA Settings -->
+    <meta name="theme-color" content="#10B981">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dompetku">
+    <link rel="manifest" href="./manifest.json">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Chart.js & SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../pos/assets/lib/xlsx.full.min.js"></script>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="./css/style.css?v=1">
+    <link rel="stylesheet" href="./css/modals.css?v=1">
+</head>
+
+<body>
+    <!-- Global Progress Loader -->
+    <div id="global-loader" class="global-loader"></div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ==========================================
+         AUTH SCREEN (LOGIN / REGISTER)
+         ========================================== -->
+    <div id="auth-container" class="auth-wrapper hidden">
+        <div class="auth-card glass-panel">
+            <div class="auth-header">
+                <div class="brand-logo mx-auto">
+                    <i class="ph-bold ph-wallet"></i>
+                </div>
+                <h1 class="brand-name mt-2">Dompetku</h1>
+                <p class="text-sm text-muted mt-1">Kelola keuangan pribadi & pantau pengeluaran cerdas</p>
+            </div>
+
+            <form id="auth-form" class="mt-4">
+                <input type="hidden" id="auth-mode-input" value="login">
+
+                <div id="auth-name-group" class="form-group" style="display: none;">
+                    <label class="form-label">Nama Lengkap</label>
+                    <input type="text" id="auth-name" class="form-control" placeholder="Nama Anda">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="auth-email" class="form-control" placeholder="nama@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="auth-password" class="form-control" placeholder="Minimal 6 karakter" required minlength="6">
+                </div>
+
+                <button type="submit" id="auth-submit-btn" class="btn btn-primary w-full mt-3">
+                    Masuk ke Dompetku
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <span id="auth-switch-text" class="text-sm text-muted">
+                    Belum punya akun? <a href="javascript:void(0)" onclick="window.setAuthMode('register')">Daftar sekarang</a>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MAIN APP CONTAINER
+         ========================================== -->
+    <div id="app-container" class="app-wrapper hidden">
+        <!-- Desktop Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-logo">
+                    <i class="ph-bold ph-wallet"></i>
+                </div>
+                <span class="brand-name">Dompetku</span>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li>
+                    <a class="sidebar-link active" data-view="dashboard" onclick="window.switchView('dashboard')">
+                        <i class="ph-bold ph-squares-four"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="sidebar-link" data-view="transactions" onclick="window.switchView('transactions')">
+                        <i class="ph-bold ph-receipt"></i>
+                        <span>Transaksi</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="sidebar-link" data-view="wallets" onclick="window.switchView('wallets')">
+                        <i class="ph-bold ph-wallet"></i>
+                        <span>Dompet & Rekening</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="sidebar-link" data-view="budgets" onclick="window.switchView('budgets')">
+                        <i class="ph-bold ph-chart-pie-slice"></i>
+                        <span>Anggaran</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="sidebar-link" data-view="categories" onclick="window.switchView('categories')">
+                        <i class="ph-bold ph-tag"></i>
+                        <span>Kategori</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="sidebar-link" data-view="reports" onclick="window.switchView('reports')">
+                        <i class="ph-bold ph-chart-line-up"></i>
+                        <span>Laporan & Ekspor</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="sidebar-link" data-view="settings" onclick="window.switchView('settings')">
+                        <i class="ph-bold ph-gear"></i>
+                        <span>Bot & Pengaturan</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <button id="theme-toggle-btn" class="btn-icon" onclick="window.toggleTheme()" title="Ganti Tema">
+                    <i class="ph-bold ph-sun"></i>
+                </button>
+                <button class="btn-icon hover-danger" onclick="window.handleLogout()" title="Keluar">
+                    <i class="ph-bold ph-sign-out"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Mobile Topbar -->
+            <header class="topbar">
+                <div class="topbar-brand">
+                    <div class="brand-logo" style="width: 32px; height: 32px; font-size: 1.1rem;">
+                        <i class="ph-bold ph-wallet"></i>
+                    </div>
+                    <span class="brand-name" style="font-size: 1.1rem;">Dompetku</span>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn-icon" onclick="window.toggleTheme()" title="Ganti Tema">
+                        <i class="ph-bold ph-sun"></i>
+                    </button>
+                    <button class="btn-icon hover-danger" onclick="window.handleLogout()" title="Keluar">
+                        <i class="ph-bold ph-sign-out"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-container">
+                <!-- ==========================================
+                     VIEW: DASHBOARD
+                     ========================================== -->
+                <section id="view-dashboard" class="view-panel active">
+                    <!-- Summary Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">
+                                <i class="ph-bold ph-wallet text-primary"></i> Total Saldo Keuangan
+                            </div>
+                            <div id="dash-total-balance" class="stat-value text-primary">Rp 0</div>
+                            <div class="stat-subtext">Akumulasi seluruh dompet & rekening</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-label">
+                                <i class="ph-bold ph-arrow-down-left text-success"></i> Pemasukan Bulan Ini
+                            </div>
+                            <div id="dash-month-income" class="stat-value text-success">Rp 0</div>
+                            <div class="stat-subtext">Total pendapatan tercatat</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-label">
+                                <i class="ph-bold ph-arrow-up-right text-danger"></i> Pengeluaran Bulan Ini
+                            </div>
+                            <div id="dash-month-expense" class="stat-value text-danger">Rp 0</div>
+                            <div class="stat-subtext">Total biaya & belanja</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-label">
+                                <i class="ph-bold ph-scales"></i> Arus Kas Bersih (Net)
+                            </div>
+                            <div id="dash-net-cashflow" class="stat-value">Rp 0</div>
+                            <div class="stat-subtext">Selisih pemasukan vs pengeluaran</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="flex gap-2 mb-4 flex-wrap">
+                        <button class="btn btn-primary" onclick="window.openTransactionModal('expense')">
+                            <i class="ph-bold ph-minus-circle"></i> Catat Pengeluaran
+                        </button>
+                        <button class="btn btn-secondary" onclick="window.openTransactionModal('income')">
+                            <i class="ph-bold ph-plus-circle"></i> Catat Pemasukan
+                        </button>
+                        <button class="btn btn-outline" onclick="window.openTransactionModal('transfer')">
+                            <i class="ph-bold ph-arrows-left-right"></i> Transfer Saldo
+                        </button>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                        <div class="glass-panel">
+                            <div class="font-semibold mb-3 flex items-center justify-between">
+                                <span>Distribusi Pengeluaran</span>
+                                <i class="ph-bold ph-chart-donut text-muted"></i>
+                            </div>
+                            <div style="height: 240px; position: relative;">
+                                <canvas id="chart-expense-breakdown"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel">
+                            <div class="font-semibold mb-3 flex items-center justify-between">
+                                <span>Tren Arus Kas (6 Bulan)</span>
+                                <i class="ph-bold ph-chart-bar text-muted"></i>
+                            </div>
+                            <div style="height: 240px; position: relative;">
+                                <canvas id="chart-cashflow-trend"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wallets Quick View -->
+                    <div class="glass-panel mb-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="font-semibold">Dompet & Rekening Anda</span>
+                            <button class="btn btn-sm btn-outline" onclick="window.openCreateWalletModal()">
+                                <i class="ph-bold ph-plus"></i> Tambah
+                            </button>
+                        </div>
+                        <div id="dash-wallets-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <div class="glass-panel">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="font-semibold">Transaksi Terbaru</span>
+                            <button class="btn btn-sm btn-outline" onclick="window.switchView('transactions')">
+                                Lihat Semua
+                            </button>
+                        </div>
+                        <div id="dash-recent-transactions">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==========================================
+                     VIEW: TRANSACTIONS
+                     ========================================== -->
+                <section id="view-transactions" class="view-panel">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <div>
+                            <h2 class="font-bold" style="font-size: 1.4rem;">Riwayat Transaksi</h2>
+                            <p class="text-xs text-muted">Filter, cari, dan kelola seluruh transaksi keuangan Anda</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="window.openTransactionModal('expense')">
+                            <i class="ph-bold ph-plus"></i> Transaksi Baru
+                        </button>
+                    </div>
+
+                    <!-- Filters Bar -->
+                    <div class="glass-panel mb-4">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem;">
+                            <div>
+                                <label class="text-xs text-muted font-medium mb-1 block">Tipe</label>
+                                <select id="tx-filter-type" class="form-control" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+                                    <option value="all">Semua Tipe</option>
+                                    <option value="expense">Pengeluaran</option>
+                                    <option value="income">Pemasukan</option>
+                                    <option value="transfer">Transfer</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-muted font-medium mb-1 block">Dompet</label>
+                                <select id="tx-filter-wallet" class="form-control" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+                                    <option value="all">Semua Dompet</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-muted font-medium mb-1 block">Kategori</label>
+                                <select id="tx-filter-category" class="form-control" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+                                    <option value="all">Semua Kategori</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-muted font-medium mb-1 block">Cari Keterangan</label>
+                                <input type="text" id="tx-search-input" class="form-control" placeholder="Cari..." style="padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transactions List -->
+                    <div id="transactions-list-container">
+                        <!-- Populated dynamically -->
+                    </div>
+                </section>
+
+                <!-- ==========================================
+                     VIEW: WALLETS
+                     ========================================== -->
+                <section id="view-wallets" class="view-panel">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <div>
+                            <h2 class="font-bold" style="font-size: 1.4rem;">Dompet & Rekening</h2>
+                            <p class="text-xs text-muted">Kelola akun uang tunai, bank, e-wallet, dan saldo Anda</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="window.openCreateWalletModal()">
+                            <i class="ph-bold ph-plus"></i> Tambah Dompet
+                        </button>
+                    </div>
+
+                    <div class="wallets-grid" id="wallets-grid-container">
+                        <!-- Populated dynamically -->
+                    </div>
+                </section>
+
+                <!-- ==========================================
+                     VIEW: BUDGETS
+                     ========================================== -->
+                <section id="view-budgets" class="view-panel">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <div>
+                            <h2 class="font-bold" style="font-size: 1.4rem;">Batas Anggaran Bulanan</h2>
+                            <p class="text-xs text-muted">Kendalikan pengeluaran per kategori agar tidak melebihi rencana</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="window.openBudgetModal()">
+                            <i class="ph-bold ph-plus"></i> Atur Anggaran
+                        </button>
+                    </div>
+
+                    <div id="budgets-list-container">
+                        <!-- Populated dynamically -->
+                    </div>
+                </section>
+
+                <!-- ==========================================
+                     VIEW: CATEGORIES
+                     ========================================== -->
+                <section id="view-categories" class="view-panel">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <div>
+                            <h2 class="font-bold" style="font-size: 1.4rem;">Master Kategori</h2>
+                            <p class="text-xs text-muted">Kategori transaksi untuk pengelompokan laporan dan bot Telegram</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="window.openCreateCategoryModal('expense')">
+                            <i class="ph-bold ph-plus"></i> Tambah Kategori
+                        </button>
+                    </div>
+
+                    <div class="mb-4">
+                        <h3 class="font-semibold text-sm text-danger mb-2">Kategori Pengeluaran (Expense)</h3>
+                        <div id="categories-expense-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.6rem;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold text-sm text-success mb-2">Kategori Pemasukan (Income)</h3>
+                        <div id="categories-income-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.6rem;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==========================================
+                     VIEW: REPORTS
+                     ========================================== -->
+                <section id="view-reports" class="view-panel">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <div>
+                            <h2 class="font-bold" style="font-size: 1.4rem;">Laporan & Rekap Keuangan</h2>
+                            <p class="text-xs text-muted">Analisis keuangan mendalam dan ekspor laporan ke Excel</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="window.handleExportExcel()">
+                            <i class="ph-bold ph-file-xls"></i> Unduh Excel (.xlsx)
+                        </button>
+                    </div>
+
+                    <!-- Period Selector -->
+                    <div class="glass-panel mb-4">
+                        <div class="flex gap-3 items-center flex-wrap">
+                            <div>
+                                <label class="text-xs text-muted font-medium mb-1 block">Bulan</label>
+                                <select id="report-month-select" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;" onchange="window.switchView('reports')">
+                                    <option value="0">Januari</option>
+                                    <option value="1">Februari</option>
+                                    <option value="2">Maret</option>
+                                    <option value="3">April</option>
+                                    <option value="4">Mei</option>
+                                    <option value="5">Juni</option>
+                                    <option value="6">Juli</option>
+                                    <option value="7" selected>Agustus</option>
+                                    <option value="8">September</option>
+                                    <option value="9">Oktober</option>
+                                    <option value="10">November</option>
+                                    <option value="11">Desember</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-muted font-medium mb-1 block">Tahun</label>
+                                <select id="report-year-select" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;" onchange="window.switchView('reports')">
+                                    <option value="2025">2025</option>
+                                    <option value="2026" selected>2026</option>
+                                    <option value="2027">2027</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Report Summary Stats -->
+                    <div class="stats-grid mb-4">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Pemasukan</div>
+                            <div id="rep-total-income" class="stat-value text-success">Rp 0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Pengeluaran</div>
+                            <div id="rep-total-expense" class="stat-value text-danger">Rp 0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Tabungan Bersih</div>
+                            <div id="rep-net-savings" class="stat-value">Rp 0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Rasio Tabungan</div>
+                            <div id="rep-savings-rate" class="stat-value text-primary">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Category Breakdown Table -->
+                    <div class="glass-panel mb-4">
+                        <h3 class="font-semibold mb-3">Rincian Pengeluaran per Kategori</h3>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Kategori</th>
+                                        <th class="text-right">Total Nominal</th>
+                                        <th class="text-right" style="width: 140px;">Porsi</th>
+                                        <th class="text-center">Frekuensi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-category-tbody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Transactions Table -->
+                    <div class="glass-panel">
+                        <h3 class="font-semibold mb-3">Daftar Transaksi Periode Ini</h3>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Keterangan</th>
+                                        <th>Kategori</th>
+                                        <th>Dompet</th>
+                                        <th class="text-right">Nominal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-transactions-tbody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==========================================
+                     VIEW: SETTINGS & TELEGRAM BOT
+                     ========================================== -->
+                <section id="view-settings" class="view-panel">
+                    <h2 class="font-bold mb-4" style="font-size: 1.4rem;">Pengaturan & Integrasi Bot</h2>
+
+                    <!-- Telegram Bot Integration Box -->
+                    <div class="glass-panel mb-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="ph-bold ph-telegram-logo text-primary" style="font-size: 1.5rem;"></i>
+                            <h3 class="font-semibold">Integrasi Bot Telegram Pintar</h3>
+                        </div>
+                        <p class="text-sm text-muted mb-4">
+                            Hubungkan akun Telegram Anda untuk mencatat pengeluaran via chat secara natural (misal: <em>"beli kopi 15rb"</em>) dan mengecek target tabungan emas NTGold (misal: <em>"berapa lagi target untuk Dana Pensiun"</em>).
+                        </p>
+                        <div id="telegram-status-container">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Profile Settings -->
+                    <div class="glass-panel">
+                        <h3 class="font-semibold mb-3">Profil Pengguna</h3>
+                        <form id="form-profile">
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" id="profile-email-input" class="form-control" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Nama Lengkap</label>
+                                <input type="text" id="profile-name-input" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                Simpan Perubahan
+                            </button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Mobile Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a class="nav-item active" data-view="dashboard" onclick="window.switchView('dashboard')">
+                <i class="ph-bold ph-squares-four"></i>
+                <span>Home</span>
+            </a>
+            <a class="nav-item" data-view="transactions" onclick="window.switchView('transactions')">
+                <i class="ph-bold ph-receipt"></i>
+                <span>Transaksi</span>
+            </a>
+            <a class="nav-item" data-view="wallets" onclick="window.switchView('wallets')">
+                <i class="ph-bold ph-wallet"></i>
+                <span>Dompet</span>
+            </a>
+            <a class="nav-item" data-view="budgets" onclick="window.switchView('budgets')">
+                <i class="ph-bold ph-chart-pie-slice"></i>
+                <span>Anggaran</span>
+            </a>
+            <a class="nav-item" data-view="reports" onclick="window.switchView('reports')">
+                <i class="ph-bold ph-chart-line-up"></i>
+                <span>Laporan</span>
+            </a>
+        </nav>
+
+        <!-- Floating Action Button for Quick Add -->
+        <button class="fab-quick-add" onclick="window.openTransactionModal('expense')" title="Catat Pengeluaran / Pemasukan">
+            <i class="ph-bold ph-plus"></i>
+        </button>
+    </div>
+
+    <!-- ==========================================
+         MODALS & BOTTOM SHEETS
+         ========================================== -->
+
+    <!-- Modal: Quick Add / Edit Transaction -->
+    <div id="modal-transaction" class="modal-overlay">
+        <div class="modal-content">
+            <div class="bottom-sheet-drag-handle"></div>
+            <div class="modal-header">
+                <h3 class="modal-title">Catat Transaksi</h3>
+                <button class="modal-close" onclick="window.closeModal('modal-transaction')">&times;</button>
+            </div>
+            <form id="form-transaction">
+                <div class="modal-body">
+                    <input type="hidden" id="tx-type-input" value="expense">
+
+                    <div class="tab-type-switcher">
+                        <button type="button" class="tab-btn-type active" data-type="expense" onclick="window.setTransactionTypeTab('expense')">Pengeluaran</button>
+                        <button type="button" class="tab-btn-type" data-type="income" onclick="window.setTransactionTypeTab('income')">Pemasukan</button>
+                        <button type="button" class="tab-btn-type" data-type="transfer" onclick="window.setTransactionTypeTab('transfer')">Transfer</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nominal (Rp)</label>
+                        <input type="text" id="tx-amount-input" class="form-control input-rupiah font-bold text-lg" placeholder="0" required autofocus>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Keterangan</label>
+                        <input type="text" id="tx-desc-input" class="form-control" placeholder="Contoh: Beli Kopi Kenangan, Bensin, Gaji" required>
+                    </div>
+
+                    <div class="form-group" id="tx-category-group">
+                        <label class="form-label">Kategori</label>
+                        <select id="tx-category-select" class="form-control">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Dompet / Rekening Asal</label>
+                        <select id="tx-wallet-select" class="form-control" required>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="tx-to-wallet-group" style="display: none;">
+                        <label class="form-label">Dompet Tujuan (Transfer)</label>
+                        <select id="tx-to-wallet-select" class="form-control">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Tanggal & Waktu</label>
+                        <input type="datetime-local" id="tx-date-input" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Catatan Tambahan (Opsional)</label>
+                        <input type="text" id="tx-notes-input" class="form-control" placeholder="Catatan kecil...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="window.closeModal('modal-transaction')">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Simpan Transaksi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Create / Edit Wallet -->
+    <div id="modal-wallet" class="modal-overlay">
+        <div class="modal-content">
+            <div class="bottom-sheet-drag-handle"></div>
+            <div class="modal-header">
+                <h3 id="wallet-modal-title" class="modal-title">Tambah Dompet Baru</h3>
+                <button class="modal-close" onclick="window.closeModal('modal-wallet')">&times;</button>
+            </div>
+            <form id="form-wallet">
+                <div class="modal-body">
+                    <input type="hidden" id="wallet-id-input" value="">
+
+                    <div class="form-group">
+                        <label class="form-label">Nama Dompet / Rekening</label>
+                        <input type="text" id="wallet-name-input" class="form-control" placeholder="Contoh: BCA, Dompet Cash, GoPay" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Tipe Akun</label>
+                        <select id="wallet-type-select" class="form-control" required>
+                            <option value="cash">Uang Tunai / Cash</option>
+                            <option value="bank">Rekening Bank</option>
+                            <option value="ewallet">E-Wallet (GoPay, OVO, ShopeePay)</option>
+                            <option value="savings">Tabungan / Investasi</option>
+                            <option value="credit">Kartu Kredit</option>
+                        </select>
+                    </div>
+
+                    <div id="wallet-balance-group" class="form-group">
+                        <label class="form-label">Saldo Awal (Rp)</label>
+                        <input type="text" id="wallet-balance-input" class="form-control input-rupiah" placeholder="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pilih Ikon</label>
+                        <input type="hidden" id="wallet-icon-input" value="ph-wallet">
+                        <div id="wallet-icon-picker" class="picker-grid-icons">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Warna Tema</label>
+                        <input type="hidden" id="wallet-color-input" value="#10B981">
+                        <div id="wallet-color-picker" class="picker-grid-colors">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="wallet-default-check">
+                            <span>Jadikan Dompet Utama (Default)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="window.closeModal('modal-wallet')">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Simpan Dompet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Adjust Balance -->
+    <div id="modal-adjust-balance" class="modal-overlay">
+        <div class="modal-content">
+            <div class="bottom-sheet-drag-handle"></div>
+            <div class="modal-header">
+                <h3 class="modal-title">Sesuaikan Saldo Real</h3>
+                <button class="modal-close" onclick="window.closeModal('modal-adjust-balance')">&times;</button>
+            </div>
+            <form id="form-adjust-balance">
+                <div class="modal-body">
+                    <input type="hidden" id="adjust-wallet-id" value="">
+                    <p class="text-sm text-muted mb-3">
+                        Dompet: <strong id="adjust-wallet-name" class="text-main"></strong><br>
+                        Saldo Tercatat Sekarang: <strong id="adjust-current-balance" class="text-primary"></strong>
+                    </p>
+                    <div class="form-group">
+                        <label class="form-label">Saldo Riil Sebenarnya (Rp)</label>
+                        <input type="text" id="adjust-new-balance-input" class="form-control input-rupiah font-bold text-lg" placeholder="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Alasan Penyesuaian</label>
+                        <input type="text" id="adjust-reason-input" class="form-control" placeholder="Contoh: Koreksi hitungan fisik">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="window.closeModal('modal-adjust-balance')">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Simpan Koreksi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Create / Edit Category -->
+    <div id="modal-category" class="modal-overlay">
+        <div class="modal-content">
+            <div class="bottom-sheet-drag-handle"></div>
+            <div class="modal-header">
+                <h3 id="category-modal-title" class="modal-title">Tambah Kategori Baru</h3>
+                <button class="modal-close" onclick="window.closeModal('modal-category')">&times;</button>
+            </div>
+            <form id="form-category">
+                <div class="modal-body">
+                    <input type="hidden" id="category-id-input" value="">
+
+                    <div class="form-group">
+                        <label class="form-label">Nama Kategori</label>
+                        <input type="text" id="category-name-input" class="form-control" placeholder="Contoh: Skincare, Gym, Asuransi" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Jenis</label>
+                        <select id="category-type-select" class="form-control" required>
+                            <option value="expense">Pengeluaran (Expense)</option>
+                            <option value="income">Pemasukan (Income)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pilih Ikon</label>
+                        <input type="hidden" id="category-icon-input" value="ph-tag">
+                        <div id="category-icon-picker" class="picker-grid-icons">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pilih Warna</label>
+                        <input type="hidden" id="category-color-input" value="#6366F1">
+                        <div id="category-color-picker" class="picker-grid-colors">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="window.closeModal('modal-category')">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Simpan Kategori</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Set Budget -->
+    <div id="modal-budget" class="modal-overlay">
+        <div class="modal-content">
+            <div class="bottom-sheet-drag-handle"></div>
+            <div class="modal-header">
+                <h3 class="modal-title">Atur Batas Anggaran Bulanan</h3>
+                <button class="modal-close" onclick="window.closeModal('modal-budget')">&times;</button>
+            </div>
+            <form id="form-budget">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Kategori Pengeluaran</label>
+                        <select id="budget-category-select" class="form-control" required>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Batas Anggaran Maksimal (Rp)</label>
+                        <input type="text" id="budget-amount-input" class="form-control input-rupiah font-bold text-lg" placeholder="0" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="window.closeModal('modal-budget')">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Simpan Anggaran</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main ES Module Script -->
+    <script type="module" src="./js/app.js"></script>
+</body>
+
+</html>
+

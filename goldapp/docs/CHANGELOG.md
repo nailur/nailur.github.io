@@ -6,11 +6,6 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
 ### 2026-08-26
-- **Removed Vault PIN Prompt & Direct Database Reads (`goldapp/res/js/main.js`, `goldapp/sw.js`, `goldapp/index.html`)**:
-  - Removed `prompt("Enter your Vault PIN...")` and `getSecretKey()` logic.
-  - `saveInventory()` now directly stores plain numerical and date values to `tblinventory`.
-  - `fetchGoals()` and `fetchPortfolio()` now read database values directly without prompting the user.
-  - Bumped script version to `main.js?v=6` and SW cache to `goldapp-v7`.
 - **PWA Icons & Manifest Fix (`goldapp/manifest.json`, `goldapp/index.html`, `goldapp/sw.js`, `goldapp/res/img/apple-touch-icon.png`)**:
   - Separated `any` and `maskable` icon definitions in `manifest.json` so Android WebAPK/PWA generator can reliably load the icon.
   - Added square 180x180 `apple-touch-icon.png` and updated favicon/apple-touch-icon links in `index.html` (which previously linked to non-square 760x597 `icon.png`, causing missing logos on home screens).

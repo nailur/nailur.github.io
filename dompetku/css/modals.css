@@ -1,0 +1,254 @@
+/* ==============================================================================
+   DOMPETKU MODALS & BOTTOM SHEETS
+   ============================================================================== */
+
+body.modal-open {
+    overflow: hidden;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+@media (min-width: 640px) {
+    .modal-overlay {
+        align-items: center;
+        padding: 1.5rem;
+    }
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    overflow: hidden;
+}
+
+@media (min-width: 640px) {
+    .modal-content {
+        border-radius: var(--radius-lg);
+        transform: scale(0.95) translateY(0);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+}
+
+.modal-overlay.active .modal-content {
+    transform: translateY(0);
+}
+
+@media (min-width: 640px) {
+    .modal-overlay.active .modal-content {
+        transform: scale(1) translateY(0);
+    }
+}
+
+.bottom-sheet-drag-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--border-light);
+    border-radius: var(--radius-full);
+    margin: 10px auto 4px;
+}
+
+@media (min-width: 640px) {
+    .bottom-sheet-drag-handle {
+        display: none;
+    }
+}
+
+.modal-header {
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.25rem;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    background: var(--surface-hover);
+    color: var(--text-main);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    background: var(--surface);
+}
+
+/* ==============================================================================
+   TRANSACTION TYPE TABS
+   ============================================================================== */
+
+.tab-type-switcher {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    background: var(--bg-color);
+    padding: 4px;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.25rem;
+}
+
+.tab-btn-type {
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn-type.active {
+    background: var(--surface);
+    color: var(--text-main);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tab-btn-type[data-type="expense"].active {
+    color: var(--danger);
+}
+
+.tab-btn-type[data-type="income"].active {
+    color: var(--success);
+}
+
+.tab-btn-type[data-type="transfer"].active {
+    color: var(--info);
+}
+
+/* ==============================================================================
+   PICKERS (ICONS & COLORS)
+   ============================================================================== */
+
+.picker-grid-icons {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+    gap: 8px;
+    max-height: 140px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.picker-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-md);
+    background: var(--bg-color);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.picker-icon:hover {
+    border-color: var(--primary);
+    color: var(--text-main);
+}
+
+.picker-icon.selected {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.picker-grid-colors {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 4px;
+}
+
+.picker-color {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.picker-color:hover {
+    transform: scale(1.15);
+}
+
+.picker-color.selected {
+    transform: scale(1.15);
+    border-color: #ffffff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Checkbox Custom */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    user-select: none;
+}
+
