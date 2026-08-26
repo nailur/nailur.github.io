@@ -54,7 +54,7 @@ async function handleTelegramMessage(msg) {
             await handleLinkAccount(chatId, parts[1].trim(), msg.from?.username);
             return;
         }
-        await sendTelegramMessage(chatId, `👋 *Halo! Selamat datang di Bot Asisten Keuangan NTWallet & NTGold.*\n\nUntuk memulai, tautkan akun Anda dengan perintah:\n• \`/link <KODE_PAIRING>\` (Dapatkan di menu Pengaturan NTWallet)\n• Atau ketik \`/login email@domain.com password\`\n\n*Fitur Utama:*\n💵 Catat pengeluaran: _"beli kopi 15rb"_\n📈 Cek target tabungan emas: _"berapa lagi target untuk Dana Pensiun"_\n🪙 Cek harga emas: _"harga emas antam hari ini"_\n💎 Cek total kekayaan: _"rekap kekayaan saya"_`, { parse_mode: 'Markdown' });
+        await sendTelegramMessage(chatId, `👋 *Halo! Selamat datang di Bot NTWallet & NTGold.*\n\n⚠️ *Perhatian:* Integrasi Bot Telegram adalah fitur eksklusif untuk pengguna *NTWallet PRO* 👑.\n\nUntuk memulai, tautkan akun PRO Anda dengan perintah:\n• \`/link <KODE_PAIRING>\` (Dapatkan di menu Pengaturan NTWallet)\n• Atau ketik \`/login email@domain.com password\`\n\n*Fitur PRO:*\n💵 Catat pengeluaran: _"beli kopi 15rb"_\n📈 Cek target tabungan emas: _"berapa lagi target untuk Dana Pensiun"_\n🪙 Cek harga emas: _"harga emas antam hari ini"_\n💎 Cek total kekayaan: _"rekap kekayaan saya"_`, { parse_mode: 'Markdown' });
         return;
     }
 
@@ -94,7 +94,13 @@ async function handleTelegramMessage(msg) {
         .maybeSingle();
 
     if (!profile) {
-        await sendTelegramMessage(chatId, `🔒 *Akun Belum Terhubung*\n\nSilakan tautkan akun NTWallet Anda:\n• Ketik \`/link <KODE_PAIRING>\`\n• Atau ketik \`/login email password\``, { parse_mode: 'Markdown' });
+        await sendTelegramMessage(chatId, `🔒 *Akun Belum Terhubung*\n\nSilakan tautkan akun NTWallet PRO Anda:\n• Ketik \`/link <KODE_PAIRING>\`\n• Atau ketik \`/login email password\``, { parse_mode: 'Markdown' });
+        return;
+    }
+
+    // STRICT CHECK: PRO TIER ONLY
+    if (profile.tier !== 'pro') {
+        await sendTelegramMessage(chatId, `🔒 *Fitur Khusus NTWallet PRO*\n\nAkun Anda (*${profile.email}*) berstatus *Free Tier*.\n\nIntegrasi Bot Telegram hanya dapat digunakan oleh pengguna *NTWallet PRO* 👑. Silakan buka aplikasi NTWallet Web untuk mengaktifkan status PRO.`, { parse_mode: 'Markdown' });
         return;
     }
 
@@ -177,13 +183,12 @@ async function handleNTWalletTransaction(chatId, profile, text) {
         return;
     }
 
-    const tierBadge = profile.tier === 'pro' ? '👑 PRO' : 'FREE';
     const typeEmoji = parsed.type === 'expense' ? '🔴' : '🟢';
     const typeLabel = parsed.type === 'expense' ? 'Pengeluaran' : 'Pemasukan';
     const formattedAmount = formatCurrency(parsed.amount);
     const formattedBal = formatCurrency(newBal);
 
-    const responseMsg = `✅ *${typeLabel} Berhasil Dicatat!* [${tierBadge}]
+    const responseMsg = `✅ *${typeLabel} Berhasil Dicatat!* [👑 PRO]
 ━━━━━━━━━━━━━━━━━━━━━━
 📝 *Keterangan* : ${parsed.description}
 💰 *Nominal*    : ${typeEmoji} ${formattedAmount}
@@ -295,9 +300,7 @@ async function handleNetWorthQuery(chatId, userId) {
         return;
     }
 
-    const tierBadge = data.tier === 'pro' ? '👑 PRO' : 'FREE';
-
-    const reply = `👑 *Rekap Kekayaan Bersih (Net Worth)* [${tierBadge}]
+    const reply = `👑 *Rekap Kekayaan Bersih (Net Worth)* [👑 PRO]
 ━━━━━━━━━━━━━━━━━━━━━━
 💵 *Saldo Uang Tunai / Bank* : ${formatCurrency(data.total_cash)}
 🪙 *Total Emas Dimiliki*     : ${Number(data.total_gold_grams).toFixed(2)} gr
@@ -333,12 +336,24 @@ async function handleTelegramCallback(callbackQuery) {
 }
 
 // ==========================================
-// DIRECT LOGIN & PAIRING HELPERS
+// DIRECT LOGIN & PAIRING (STRICT PRO CHECK)
 // ==========================================
 async function handleDirectLogin(chatId, email, password, username) {
     const { data, error } = await supabaseAdmin.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
         await sendTelegramMessage(chatId, `❌ Login gagal: ${error?.message || 'Email atau password salah'}`);
+        return;
+    }
+
+    // Check Profile & Tier
+    const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+    if (!profile || profile.tier !== 'pro') {
+        await sendTelegramMessage(chatId, `🔒 *Akses Ditolak: Khusus NTWallet PRO*\n\nAkun Anda (*${data.user.email}*) berstatus *Free Tier*.\n\nIntegrasi Bot Telegram adalah fitur eksklusif untuk pelanggan *NTWallet PRO* 👑.\nSilakan upgrade akun Anda di NTWallet Web untuk menikmati fitur asisten bot via chat.`, { parse_mode: 'Markdown' });
         return;
     }
 
@@ -349,7 +364,7 @@ async function handleDirectLogin(chatId, email, password, username) {
         telegram_username: username || null
     });
 
-    await sendTelegramMessage(chatId, `🎉 *Login Berhasil!*\n\nSelamat datang di NTWallet, *${data.user.email}*! Akun NTWallet & NTGold Anda kini terhubung.\n\nAnda sekarang bisa langsung mencatat pengeluaran atau bertanya target tabungan emas di sini.`, { parse_mode: 'Markdown' });
+    await sendTelegramMessage(chatId, `🎉 *Login Berhasil!*\n\nSelamat datang di NTWallet PRO 👑, *${data.user.email}*! Akun NTWallet & NTGold Anda kini terhubung.\n\nAnda sekarang bisa langsung mencatat pengeluaran atau bertanya target tabungan emas di sini.`, { parse_mode: 'Markdown' });
 }
 
 async function handleLinkAccount(chatId, code, username) {
@@ -364,6 +379,11 @@ async function handleLinkAccount(chatId, code, username) {
         return;
     }
 
+    if (profile.tier !== 'pro') {
+        await sendTelegramMessage(chatId, `🔒 *Akses Ditolak: Khusus NTWallet PRO*\n\nAkun Anda (*${profile.email}*) berstatus *Free Tier*.\n\nIntegrasi Bot Telegram adalah fitur eksklusif untuk pelanggan *NTWallet PRO* 👑.\nSilakan upgrade akun Anda di NTWallet Web untuk mengaktifkan bot.`, { parse_mode: 'Markdown' });
+        return;
+    }
+
     await supabaseAdmin
         .from('profiles')
         .update({
@@ -372,7 +392,7 @@ async function handleLinkAccount(chatId, code, username) {
         })
         .eq('id', profile.id);
 
-    await sendTelegramMessage(chatId, `🎉 *Akun Berhasil Dihubungkan!*\n\nHalo *${profile.full_name || profile.email}*, bot NTWallet siap mencatat pengeluaran Anda dan menginfokan progres tabungan emas NTGold.`, { parse_mode: 'Markdown' });
+    await sendTelegramMessage(chatId, `🎉 *Akun PRO Berhasil Dihubungkan!*\n\nHalo *${profile.full_name || profile.email}*, bot NTWallet siap mencatat pengeluaran Anda dan menginfokan progres tabungan emas NTGold.`, { parse_mode: 'Markdown' });
 }
 
 // ==========================================
