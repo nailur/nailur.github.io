@@ -23,6 +23,15 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Ensure columns exist even if the table was created earlier without these columns
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS tier TEXT DEFAULT 'free';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS pro_valid_until TIMESTAMPTZ;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS telegram_chat_id BIGINT UNIQUE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS telegram_username TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS telegram_link_code TEXT UNIQUE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS default_wallet_id UUID;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'IDR';
+
 -- Index for telegram & tier lookups
 CREATE INDEX IF NOT EXISTS idx_profiles_telegram_chat_id ON public.profiles(telegram_chat_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_telegram_link_code ON public.profiles(telegram_link_code);
@@ -42,6 +51,7 @@ CREATE TABLE IF NOT EXISTS public.wallets (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+ALTER TABLE public.wallets ADD COLUMN IF NOT EXISTS is_default BOOLEAN DEFAULT false;
 CREATE INDEX IF NOT EXISTS idx_wallets_user_id ON public.wallets(user_id);
 
 -- 4. TABLE: CATEGORIES (Master Kategori Transaksi)
@@ -56,6 +66,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+ALTER TABLE public.categories ADD COLUMN IF NOT EXISTS is_default BOOLEAN DEFAULT false;
 CREATE INDEX IF NOT EXISTS idx_categories_user_id ON public.categories(user_id);
 
 -- 5. TABLE: TRANSACTIONS (Pencatatan Keuangan)
@@ -77,6 +88,8 @@ CREATE TABLE IF NOT EXISTS public.transactions (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'web';
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS to_wallet_id UUID REFERENCES public.wallets(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON public.transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON public.transactions(wallet_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON public.transactions(transaction_date);
@@ -151,43 +164,49 @@ BEGIN
         'free',
         UPPER(SUBSTRING(MD5(RANDOM()::TEXT) FROM 1 FOR 6))
     )
-    ON CONFLICT (id) DO NOTHING;
+    ON CONFLICT (id) DO UPDATE SET 
+        email = EXCLUDED.email,
+        full_name = COALESCE(public.profiles.full_name, EXCLUDED.full_name);
 
-    -- 2. Create Default Wallet (Cash)
-    INSERT INTO public.wallets (id, user_id, name, type, balance, color, icon, is_default)
-    VALUES (
-        gen_random_uuid(),
-        new.id,
-        'Dompet Utama (Cash)',
-        'cash',
-        0,
-        '#10B981',
-        'ph-wallet',
-        true
-    )
-    RETURNING id INTO new_wallet_id;
+    -- 2. Create Default Wallet (Cash) if user has no wallets
+    IF NOT EXISTS (SELECT 1 FROM public.wallets WHERE user_id = new.id) THEN
+        INSERT INTO public.wallets (id, user_id, name, type, balance, color, icon, is_default)
+        VALUES (
+            gen_random_uuid(),
+            new.id,
+            'Dompet Utama (Cash)',
+            'cash',
+            0,
+            '#10B981',
+            'ph-wallet',
+            true
+        )
+        RETURNING id INTO new_wallet_id;
 
-    -- Update profile default wallet
-    UPDATE public.profiles SET default_wallet_id = new_wallet_id WHERE id = new.id;
+        -- Update profile default wallet
+        UPDATE public.profiles SET default_wallet_id = new_wallet_id WHERE id = new.id;
+    END IF;
 
-    -- 3. Seed Default Expense Categories
-    INSERT INTO public.categories (user_id, name, type, icon, color, is_default) VALUES
-        (new.id, 'Makanan & Minuman', 'expense', 'ph-hamburger', '#EF4444', true),
-        (new.id, 'Transportasi & Bensin', 'expense', 'ph-gas-pump', '#F59E0B', true),
-        (new.id, 'Belanja & Kebutuhan', 'expense', 'ph-shopping-bag', '#3B82F6', true),
-        (new.id, 'Tagihan & Utilitas', 'expense', 'ph-receipt', '#8B5CF6', true),
-        (new.id, 'Hiburan & Hobi', 'expense', 'ph-game-controller', '#EC4899', true),
-        (new.id, 'Kesehatan', 'expense', 'ph-first-aid', '#10B981', true),
-        (new.id, 'Pendidikan', 'expense', 'ph-graduation-cap', '#6366F1', true),
-        (new.id, 'Lain-lain', 'expense', 'ph-tag', '#6B7280', true);
+    -- 3. Seed Default Expense Categories if empty
+    IF NOT EXISTS (SELECT 1 FROM public.categories WHERE user_id = new.id) THEN
+        INSERT INTO public.categories (user_id, name, type, icon, color, is_default) VALUES
+            (new.id, 'Makanan & Minuman', 'expense', 'ph-hamburger', '#EF4444', true),
+            (new.id, 'Transportasi & Bensin', 'expense', 'ph-gas-pump', '#F59E0B', true),
+            (new.id, 'Belanja & Kebutuhan', 'expense', 'ph-shopping-bag', '#3B82F6', true),
+            (new.id, 'Tagihan & Utilitas', 'expense', 'ph-receipt', '#8B5CF6', true),
+            (new.id, 'Hiburan & Hobi', 'expense', 'ph-game-controller', '#EC4899', true),
+            (new.id, 'Kesehatan', 'expense', 'ph-first-aid', '#10B981', true),
+            (new.id, 'Pendidikan', 'expense', 'ph-graduation-cap', '#6366F1', true),
+            (new.id, 'Lain-lain', 'expense', 'ph-tag', '#6B7280', true);
 
-    -- 4. Seed Default Income Categories
-    INSERT INTO public.categories (user_id, name, type, icon, color, is_default) VALUES
-        (new.id, 'Gaji / Penghasilan', 'income', 'ph-money', '#10B981', true),
-        (new.id, 'Bisnis / Usaha', 'income', 'ph-storefront', '#3B82F6', true),
-        (new.id, 'Bonus / THR', 'income', 'ph-gift', '#F59E0B', true),
-        (new.id, 'Investasi & Dividen', 'income', 'ph-chart-line-up', '#8B5CF6', true),
-        (new.id, 'Pemasukan Lainnya', 'income', 'ph-tag', '#6B7280', true);
+        -- 4. Seed Default Income Categories
+        INSERT INTO public.categories (user_id, name, type, icon, color, is_default) VALUES
+            (new.id, 'Gaji / Penghasilan', 'income', 'ph-money', '#10B981', true),
+            (new.id, 'Bisnis / Usaha', 'income', 'ph-storefront', '#3B82F6', true),
+            (new.id, 'Bonus / THR', 'income', 'ph-gift', '#F59E0B', true),
+            (new.id, 'Investasi & Dividen', 'income', 'ph-chart-line-up', '#8B5CF6', true),
+            (new.id, 'Pemasukan Lainnya', 'income', 'ph-tag', '#6B7280', true);
+    END IF;
 
     RETURN new;
 END;
@@ -214,7 +233,7 @@ DECLARE
     v_user_tier TEXT := 'free';
     v_result JSON;
 BEGIN
-    -- Get User Tier
+    -- Get User Tier safely
     SELECT COALESCE(tier, 'free') INTO v_user_tier
     FROM public.profiles
     WHERE id = p_user_id;
