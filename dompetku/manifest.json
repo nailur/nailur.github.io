@@ -1,13 +1,13 @@
 {
   "id": "/dompetku/",
-  "name": "Dompetku - Catatan Keuangan & Pengeluaran",
-  "short_name": "Dompetku",
+  "name": "NTWallet - Smart Finance & Expense Tracker",
+  "short_name": "NTWallet",
   "description": "Aplikasi pencatatan keuangan pribadi & bisnis modern dengan integrasi multi-dompet, anggaran, visualisasi laporan, dan Bot Telegram pintar.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0B0F19",
+  "background_color": "#080C14",
   "theme_color": "#10B981",
   "icons": [
     {
@@ -24,4 +24,3 @@
     }
   ]
 }
-

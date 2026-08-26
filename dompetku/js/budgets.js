@@ -1,6 +1,9 @@
 import { supabase } from './supabase.js';
 import { setState, getState } from './state.js';
 import { showToast, formatRupiah } from './utils.js';
+import { isPro } from './auth.js';
+
+export const FREE_TIER_MAX_BUDGETS = 3;
 
 export async function loadBudgets(month, year) {
     const user = getState().user;
@@ -35,6 +38,15 @@ export async function loadBudgets(month, year) {
 export async function setBudget({ category_id, amount, month, year }) {
     const user = getState().user;
     if (!user) return false;
+
+    // Check Free tier limit
+    const currentBudgets = getState().budgets;
+    const isExisting = currentBudgets.some(b => b.category_id === category_id);
+
+    if (!isExisting && !isPro() && currentBudgets.length >= FREE_TIER_MAX_BUDGETS) {
+        window.openUpgradeModal('Batas Anggaran Free Tier', `Akun Free Tier dibatasi maksimal ${FREE_TIER_MAX_BUDGETS} pos anggaran bulanan. Upgrade ke NTWallet PRO untuk mengatur anggaran tanpa batas!`);
+        return false;
+    }
 
     const numAmount = Number(amount);
     if (!numAmount || numAmount <= 0) {
@@ -97,7 +109,6 @@ export function computeBudgetProgress(budgets, transactions, month, year) {
     const targetMonth = month || (now.getMonth() + 1);
     const targetYear = year || now.getFullYear();
 
-    // Sum transactions for the selected month and year
     const spentByCategory = new Map();
 
     transactions.forEach(t => {
@@ -126,4 +137,3 @@ export function computeBudgetProgress(budgets, transactions, month, year) {
         };
     });
 }
-

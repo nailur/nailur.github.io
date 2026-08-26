@@ -1,17 +1,19 @@
 -- ==============================================================================
--- DOMPETKU & UNIFIED BOT DATABASE SCHEMA (SUPABASE POSTGRESQL)
+-- NTWALLET (FORMERLY DOMPETKU) & UNIFIED BOT DATABASE SCHEMA
 -- Project ID: nnizooudxhvjyfaahydc
 -- ==============================================================================
 
 -- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. TABLE: PROFILES (User Profile & Telegram Link)
+-- 2. TABLE: PROFILES (User Profile, Tier & Telegram Link)
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
     avatar_url TEXT,
+    tier TEXT DEFAULT 'free', -- 'free' or 'pro'
+    pro_valid_until TIMESTAMPTZ,
     telegram_chat_id BIGINT UNIQUE,
     telegram_username TEXT,
     telegram_link_code TEXT UNIQUE,
@@ -21,9 +23,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Index for telegram lookups
+-- Index for telegram & tier lookups
 CREATE INDEX IF NOT EXISTS idx_profiles_telegram_chat_id ON public.profiles(telegram_chat_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_telegram_link_code ON public.profiles(telegram_link_code);
+CREATE INDEX IF NOT EXISTS idx_profiles_tier ON public.profiles(tier);
 
 -- 3. TABLE: WALLETS (Dompet / Rekening Bank / E-Wallet)
 CREATE TABLE IF NOT EXISTS public.wallets (
@@ -139,12 +142,13 @@ RETURNS TRIGGER AS $$
 DECLARE
     new_wallet_id UUID;
 BEGIN
-    -- 1. Create Profile
-    INSERT INTO public.profiles (id, email, full_name, telegram_link_code)
+    -- 1. Create Profile with Free Tier default
+    INSERT INTO public.profiles (id, email, full_name, tier, telegram_link_code)
     VALUES (
         new.id, 
         new.email, 
         COALESCE(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+        'free',
         UPPER(SUBSTRING(MD5(RANDOM()::TEXT) FROM 1 FOR 6))
     )
     ON CONFLICT (id) DO NOTHING;
@@ -175,7 +179,7 @@ BEGIN
         (new.id, 'Hiburan & Hobi', 'expense', 'ph-game-controller', '#EC4899', true),
         (new.id, 'Kesehatan', 'expense', 'ph-first-aid', '#10B981', true),
         (new.id, 'Pendidikan', 'expense', 'ph-graduation-cap', '#6366F1', true),
-        (new.id, 'Lain-lain', 'expense', 'ph-dots-three-circle', '#6B7280', true);
+        (new.id, 'Lain-lain', 'expense', 'ph-tag', '#6B7280', true);
 
     -- 4. Seed Default Income Categories
     INSERT INTO public.categories (user_id, name, type, icon, color, is_default) VALUES
@@ -183,7 +187,7 @@ BEGIN
         (new.id, 'Bisnis / Usaha', 'income', 'ph-storefront', '#3B82F6', true),
         (new.id, 'Bonus / THR', 'income', 'ph-gift', '#F59E0B', true),
         (new.id, 'Investasi & Dividen', 'income', 'ph-chart-line-up', '#8B5CF6', true),
-        (new.id, 'Pemasukan Lainnya', 'income', 'ph-arrow-down-left', '#6B7280', true);
+        (new.id, 'Pemasukan Lainnya', 'income', 'ph-tag', '#6B7280', true);
 
     RETURN new;
 END;
@@ -196,7 +200,7 @@ CREATE TRIGGER on_auth_user_created_dompetku
     FOR EACH ROW EXECUTE FUNCTION public.handle_dompetku_new_user();
 
 -- ==============================================================================
--- HELPER FUNCTIONS FOR BOT QUERIES (DOMPETKU + NTGOLD)
+-- HELPER FUNCTIONS FOR BOT QUERIES (NTWALLET + NTGOLD)
 -- ==============================================================================
 
 -- 1. Helper function: Get User Financial Summary (Cash + Gold Net Worth)
@@ -207,9 +211,15 @@ DECLARE
     v_total_gold_grams NUMERIC := 0;
     v_latest_gold_price NUMERIC := 0;
     v_gold_market_value NUMERIC := 0;
+    v_user_tier TEXT := 'free';
     v_result JSON;
 BEGIN
-    -- Sum all Dompetku Wallets
+    -- Get User Tier
+    SELECT COALESCE(tier, 'free') INTO v_user_tier
+    FROM public.profiles
+    WHERE id = p_user_id;
+
+    -- Sum all NTWallet Wallets
     SELECT COALESCE(SUM(balance), 0) INTO v_total_cash
     FROM public.wallets
     WHERE user_id = p_user_id;
@@ -237,6 +247,7 @@ BEGIN
     v_gold_market_value := v_total_gold_grams * v_latest_gold_price;
 
     SELECT json_build_object(
+        'tier', v_user_tier,
         'total_cash', v_total_cash,
         'total_gold_grams', v_total_gold_grams,
         'latest_gold_price', v_latest_gold_price,
@@ -247,4 +258,3 @@ BEGIN
     RETURN v_result;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-

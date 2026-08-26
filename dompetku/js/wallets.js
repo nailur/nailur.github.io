@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { setState, getState } from './state.js';
 import { showToast, formatRupiah } from './utils.js';
+import { isPro } from './auth.js';
 
 export const WALLET_TYPES = [
     { type: 'cash', name: 'Uang Tunai / Cash', icon: 'ph-money' },
@@ -9,6 +10,8 @@ export const WALLET_TYPES = [
     { type: 'savings', name: 'Tabungan / Deposito', icon: 'ph-piggy-bank' },
     { type: 'credit', name: 'Kartu Kredit', icon: 'ph-credit-card' }
 ];
+
+export const FREE_TIER_MAX_WALLETS = 3;
 
 export async function loadWallets() {
     const user = getState().user;
@@ -58,6 +61,13 @@ async function seedDefaultWallet(userId) {
 export async function createWallet({ name, type, balance, color, icon, is_default }) {
     const user = getState().user;
     if (!user) return false;
+
+    // Check Free tier limit
+    const currentWallets = getState().wallets;
+    if (!isPro() && currentWallets.length >= FREE_TIER_MAX_WALLETS) {
+        window.openUpgradeModal('Batas Dompet Free Tier', `Akun Free Tier dibatasi maksimal ${FREE_TIER_MAX_WALLETS} dompet. Upgrade ke NTWallet PRO untuk menambahkan dompet tanpa batas!`);
+        return false;
+    }
 
     try {
         const numBalance = Number(balance) || 0;
@@ -266,4 +276,3 @@ export async function deleteWallet(id) {
         return false;
     }
 }
-

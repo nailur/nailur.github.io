@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dompetku | Catatan Keuangan & Pengeluaran Modern</title>
+    <title>NTWallet | Smart Finance & Expense Tracker</title>
 
     <!-- HTTPS Enforcement -->
     <script>
@@ -18,8 +18,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Dompetku">
+    <meta name="apple-mobile-web-app-title" content="NTWallet">
     <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" href="../pos/assets/img/icon-192.png">
+    <link rel="apple-touch-icon" href="../pos/assets/img/icon-192.png">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,8 +36,8 @@
     <script src="../pos/assets/lib/xlsx.full.min.js"></script>
 
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="./css/style.css?v=1">
-    <link rel="stylesheet" href="./css/modals.css?v=1">
+    <link rel="stylesheet" href="./css/style.css?v=2">
+    <link rel="stylesheet" href="./css/modals.css?v=2">
 </head>
 
 <body>
@@ -48,14 +50,14 @@
     <!-- ==========================================
          AUTH SCREEN (LOGIN / REGISTER)
          ========================================== -->
-    <div id="auth-container" class="auth-wrapper hidden">
-        <div class="auth-card glass-panel">
-            <div class="auth-header">
-                <div class="brand-logo mx-auto">
+    <div id="auth-container" class="auth-wrapper hidden" style="display: flex; min-height: 100vh; align-items: center; justify-content: center; padding: 1.5rem;">
+        <div class="auth-card glass-panel" style="width: 100%; max-width: 400px; padding: 2rem;">
+            <div class="auth-header text-center">
+                <div class="brand-logo" style="width: 44px; height: 44px; margin: 0 auto; font-size: 1.4rem;">
                     <i class="ph-bold ph-wallet"></i>
                 </div>
-                <h1 class="brand-name mt-2">Dompetku</h1>
-                <p class="text-sm text-muted mt-1">Kelola keuangan pribadi & pantau pengeluaran cerdas</p>
+                <h1 class="brand-name mt-2" style="font-size: 1.5rem;">NTWallet</h1>
+                <p class="text-xs text-muted mt-1">Smart Personal & Business Finance Platform</p>
             </div>
 
             <form id="auth-form" class="mt-4">
@@ -77,13 +79,13 @@
                 </div>
 
                 <button type="submit" id="auth-submit-btn" class="btn btn-primary w-full mt-3">
-                    Masuk ke Dompetku
+                    Masuk ke NTWallet
                 </button>
             </form>
 
             <div class="text-center mt-4">
-                <span id="auth-switch-text" class="text-sm text-muted">
-                    Belum punya akun? <a href="javascript:void(0)" onclick="window.setAuthMode('register')">Daftar sekarang</a>
+                <span id="auth-switch-text" class="text-xs text-muted">
+                    Belum punya akun? <a href="javascript:void(0)" onclick="window.setAuthMode('register')" style="color: var(--primary); font-weight: 600; text-decoration: none;">Daftar gratis</a>
                 </span>
             </div>
         </div>
@@ -96,10 +98,17 @@
         <!-- Desktop Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="brand-logo">
-                    <i class="ph-bold ph-wallet"></i>
+                <div class="brand-wrapper">
+                    <div class="brand-logo">
+                        <i class="ph-bold ph-wallet"></i>
+                    </div>
+                    <div>
+                        <span class="brand-name">NTWallet</span>
+                    </div>
                 </div>
-                <span class="brand-name">Dompetku</span>
+                <div id="user-tier-badge-sidebar">
+                    <span class="badge-free-pill">FREE</span>
+                </div>
             </div>
 
             <ul class="sidebar-menu">
@@ -118,7 +127,7 @@
                 <li>
                     <a class="sidebar-link" data-view="wallets" onclick="window.switchView('wallets')">
                         <i class="ph-bold ph-wallet"></i>
-                        <span>Dompet & Rekening</span>
+                        <span>Dompet & Bank</span>
                     </a>
                 </li>
                 <li>
@@ -136,16 +145,27 @@
                 <li>
                     <a class="sidebar-link" data-view="reports" onclick="window.switchView('reports')">
                         <i class="ph-bold ph-chart-line-up"></i>
-                        <span>Laporan & Ekspor</span>
+                        <span>Laporan</span>
                     </a>
                 </li>
                 <li>
                     <a class="sidebar-link" data-view="settings" onclick="window.switchView('settings')">
                         <i class="ph-bold ph-gear"></i>
-                        <span>Bot & Pengaturan</span>
+                        <span>Bot & Akun</span>
                     </a>
                 </li>
             </ul>
+
+            <!-- Sidebar Upgrade Promo Banner -->
+            <div id="sidebar-upgrade-banner" class="sidebar-upgrade-banner">
+                <div class="text-xs font-bold text-gold flex items-center justify-center gap-1">
+                    <i class="ph-fill ph-crown"></i> UPGRADE PRO
+                </div>
+                <p class="text-xs text-muted mt-1" style="font-size: 0.7rem;">Buka unlimited dompet, kategori & AI Telegram bot sync</p>
+                <button class="btn btn-gold btn-sm w-full mt-2" onclick="window.openUpgradeModal()">
+                    Lihat Fitur PRO
+                </button>
+            </div>
 
             <div class="sidebar-footer">
                 <button id="theme-toggle-btn" class="btn-icon" onclick="window.toggleTheme()" title="Ganti Tema">
@@ -162,10 +182,13 @@
             <!-- Mobile Topbar -->
             <header class="topbar">
                 <div class="topbar-brand">
-                    <div class="brand-logo" style="width: 32px; height: 32px; font-size: 1.1rem;">
+                    <div class="brand-logo" style="width: 30px; height: 30px; font-size: 1rem;">
                         <i class="ph-bold ph-wallet"></i>
                     </div>
-                    <span class="brand-name" style="font-size: 1.1rem;">Dompetku</span>
+                    <span class="brand-name" style="font-size: 1.05rem;">NTWallet</span>
+                    <div id="user-tier-badge-topbar">
+                        <span class="badge-free-pill">FREE</span>
+                    </div>
                 </div>
                 <div class="topbar-actions">
                     <button class="btn-icon" onclick="window.toggleTheme()" title="Ganti Tema">
@@ -189,10 +212,10 @@
                                 <i class="ph-bold ph-wallet text-primary"></i> Total Saldo Keuangan
                             </div>
                             <div id="dash-total-balance" class="stat-value text-primary">Rp 0</div>
-                            <div class="stat-subtext">Akumulasi seluruh dompet & rekening</div>
+                            <div class="stat-subtext">Akumulasi seluruh akun dompet</div>
                         </div>
 
-                        <div class="stat-card">
+                        <div class="stat-card stat-success">
                             <div class="stat-label">
                                 <i class="ph-bold ph-arrow-down-left text-success"></i> Pemasukan Bulan Ini
                             </div>
@@ -200,12 +223,12 @@
                             <div class="stat-subtext">Total pendapatan tercatat</div>
                         </div>
 
-                        <div class="stat-card">
+                        <div class="stat-card stat-danger">
                             <div class="stat-label">
                                 <i class="ph-bold ph-arrow-up-right text-danger"></i> Pengeluaran Bulan Ini
                             </div>
                             <div id="dash-month-expense" class="stat-value text-danger">Rp 0</div>
-                            <div class="stat-subtext">Total biaya & belanja</div>
+                            <div class="stat-subtext">Total belanja & biaya</div>
                         </div>
 
                         <div class="stat-card">
@@ -213,55 +236,55 @@
                                 <i class="ph-bold ph-scales"></i> Arus Kas Bersih (Net)
                             </div>
                             <div id="dash-net-cashflow" class="stat-value">Rp 0</div>
-                            <div class="stat-subtext">Selisih pemasukan vs pengeluaran</div>
+                            <div class="stat-subtext">Selisih pemasukan & pengeluaran</div>
                         </div>
                     </div>
 
                     <!-- Quick Actions -->
                     <div class="flex gap-2 mb-4 flex-wrap">
-                        <button class="btn btn-primary" onclick="window.openTransactionModal('expense')">
+                        <button class="btn btn-primary btn-sm" onclick="window.openTransactionModal('expense')">
                             <i class="ph-bold ph-minus-circle"></i> Catat Pengeluaran
                         </button>
-                        <button class="btn btn-secondary" onclick="window.openTransactionModal('income')">
+                        <button class="btn btn-secondary btn-sm" onclick="window.openTransactionModal('income')">
                             <i class="ph-bold ph-plus-circle"></i> Catat Pemasukan
                         </button>
-                        <button class="btn btn-outline" onclick="window.openTransactionModal('transfer')">
+                        <button class="btn btn-outline btn-sm" onclick="window.openTransactionModal('transfer')">
                             <i class="ph-bold ph-arrows-left-right"></i> Transfer Saldo
                         </button>
                     </div>
 
                     <!-- Charts Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.85rem;">
                         <div class="glass-panel">
-                            <div class="font-semibold mb-3 flex items-center justify-between">
+                            <div class="font-semibold text-sm mb-3 flex items-center justify-between">
                                 <span>Distribusi Pengeluaran</span>
                                 <i class="ph-bold ph-chart-donut text-muted"></i>
                             </div>
-                            <div style="height: 240px; position: relative;">
+                            <div style="height: 220px; position: relative;">
                                 <canvas id="chart-expense-breakdown"></canvas>
                             </div>
                         </div>
 
                         <div class="glass-panel">
-                            <div class="font-semibold mb-3 flex items-center justify-between">
+                            <div class="font-semibold text-sm mb-3 flex items-center justify-between">
                                 <span>Tren Arus Kas (6 Bulan)</span>
                                 <i class="ph-bold ph-chart-bar text-muted"></i>
                             </div>
-                            <div style="height: 240px; position: relative;">
+                            <div style="height: 220px; position: relative;">
                                 <canvas id="chart-cashflow-trend"></canvas>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Wallets Quick View -->
+                    <!-- Wallets Mini Overview -->
                     <div class="glass-panel mb-4">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="font-semibold">Dompet & Rekening Anda</span>
+                            <span class="font-semibold text-sm">Akun Dompet & Rekening</span>
                             <button class="btn btn-sm btn-outline" onclick="window.openCreateWalletModal()">
                                 <i class="ph-bold ph-plus"></i> Tambah
                             </button>
                         </div>
-                        <div id="dash-wallets-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem;">
+                        <div id="dash-wallets-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.65rem;">
                             <!-- Populated dynamically -->
                         </div>
                     </div>
@@ -269,7 +292,7 @@
                     <!-- Recent Transactions -->
                     <div class="glass-panel">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="font-semibold">Transaksi Terbaru</span>
+                            <span class="font-semibold text-sm">Transaksi Terbaru</span>
                             <button class="btn btn-sm btn-outline" onclick="window.switchView('transactions')">
                                 Lihat Semua
                             </button>
@@ -284,10 +307,10 @@
                      VIEW: TRANSACTIONS
                      ========================================== -->
                 <section id="view-transactions" class="view-panel">
-                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                         <div>
-                            <h2 class="font-bold" style="font-size: 1.4rem;">Riwayat Transaksi</h2>
-                            <p class="text-xs text-muted">Filter, cari, dan kelola seluruh transaksi keuangan Anda</p>
+                            <h2 class="font-bold" style="font-size: 1.25rem;">Riwayat Transaksi</h2>
+                            <p class="text-xs text-muted">Filter, cari, dan kelola catatan pemasukan & pengeluaran</p>
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="window.openTransactionModal('expense')">
                             <i class="ph-bold ph-plus"></i> Transaksi Baru
@@ -295,11 +318,11 @@
                     </div>
 
                     <!-- Filters Bar -->
-                    <div class="glass-panel mb-4">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem;">
+                    <div class="glass-panel mb-3">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.65rem;">
                             <div>
                                 <label class="text-xs text-muted font-medium mb-1 block">Tipe</label>
-                                <select id="tx-filter-type" class="form-control" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+                                <select id="tx-filter-type" class="form-control" style="padding: 0.45rem 0.65rem; font-size: 0.82rem;">
                                     <option value="all">Semua Tipe</option>
                                     <option value="expense">Pengeluaran</option>
                                     <option value="income">Pemasukan</option>
@@ -308,19 +331,19 @@
                             </div>
                             <div>
                                 <label class="text-xs text-muted font-medium mb-1 block">Dompet</label>
-                                <select id="tx-filter-wallet" class="form-control" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+                                <select id="tx-filter-wallet" class="form-control" style="padding: 0.45rem 0.65rem; font-size: 0.82rem;">
                                     <option value="all">Semua Dompet</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="text-xs text-muted font-medium mb-1 block">Kategori</label>
-                                <select id="tx-filter-category" class="form-control" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+                                <select id="tx-filter-category" class="form-control" style="padding: 0.45rem 0.65rem; font-size: 0.82rem;">
                                     <option value="all">Semua Kategori</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="text-xs text-muted font-medium mb-1 block">Cari Keterangan</label>
-                                <input type="text" id="tx-search-input" class="form-control" placeholder="Cari..." style="padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+                                <label class="text-xs text-muted font-medium mb-1 block">Cari</label>
+                                <input type="text" id="tx-search-input" class="form-control" placeholder="Cari keterangan..." style="padding: 0.45rem 0.65rem; font-size: 0.82rem;">
                             </div>
                         </div>
                     </div>
@@ -335,10 +358,10 @@
                      VIEW: WALLETS
                      ========================================== -->
                 <section id="view-wallets" class="view-panel">
-                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                         <div>
-                            <h2 class="font-bold" style="font-size: 1.4rem;">Dompet & Rekening</h2>
-                            <p class="text-xs text-muted">Kelola akun uang tunai, bank, e-wallet, dan saldo Anda</p>
+                            <h2 class="font-bold" style="font-size: 1.25rem;">Dompet & Rekening Bank</h2>
+                            <div id="wallets-limit-info" class="mt-1"></div>
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="window.openCreateWalletModal()">
                             <i class="ph-bold ph-plus"></i> Tambah Dompet
@@ -354,10 +377,10 @@
                      VIEW: BUDGETS
                      ========================================== -->
                 <section id="view-budgets" class="view-panel">
-                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                         <div>
-                            <h2 class="font-bold" style="font-size: 1.4rem;">Batas Anggaran Bulanan</h2>
-                            <p class="text-xs text-muted">Kendalikan pengeluaran per kategori agar tidak melebihi rencana</p>
+                            <h2 class="font-bold" style="font-size: 1.25rem;">Batas Anggaran Bulanan</h2>
+                            <div id="budgets-limit-info" class="mt-1"></div>
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="window.openBudgetModal()">
                             <i class="ph-bold ph-plus"></i> Atur Anggaran
@@ -373,10 +396,10 @@
                      VIEW: CATEGORIES
                      ========================================== -->
                 <section id="view-categories" class="view-panel">
-                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                         <div>
-                            <h2 class="font-bold" style="font-size: 1.4rem;">Master Kategori</h2>
-                            <p class="text-xs text-muted">Kategori transaksi untuk pengelompokan laporan dan bot Telegram</p>
+                            <h2 class="font-bold" style="font-size: 1.25rem;">Master Kategori</h2>
+                            <p class="text-xs text-muted">Kategori transaksi untuk pengelompokan laporan & Bot Telegram</p>
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="window.openCreateCategoryModal('expense')">
                             <i class="ph-bold ph-plus"></i> Tambah Kategori
@@ -384,15 +407,15 @@
                     </div>
 
                     <div class="mb-4">
-                        <h3 class="font-semibold text-sm text-danger mb-2">Kategori Pengeluaran (Expense)</h3>
-                        <div id="categories-expense-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.6rem;">
+                        <h3 class="font-semibold text-xs text-danger mb-2">Kategori Pengeluaran (Expense)</h3>
+                        <div id="categories-expense-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.5rem;">
                             <!-- Populated dynamically -->
                         </div>
                     </div>
 
                     <div>
-                        <h3 class="font-semibold text-sm text-success mb-2">Kategori Pemasukan (Income)</h3>
-                        <div id="categories-income-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.6rem;">
+                        <h3 class="font-semibold text-xs text-success mb-2">Kategori Pemasukan (Income)</h3>
+                        <div id="categories-income-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.5rem;">
                             <!-- Populated dynamically -->
                         </div>
                     </div>
@@ -402,10 +425,10 @@
                      VIEW: REPORTS
                      ========================================== -->
                 <section id="view-reports" class="view-panel">
-                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                         <div>
-                            <h2 class="font-bold" style="font-size: 1.4rem;">Laporan & Rekap Keuangan</h2>
-                            <p class="text-xs text-muted">Analisis keuangan mendalam dan ekspor laporan ke Excel</p>
+                            <h2 class="font-bold" style="font-size: 1.25rem;">Laporan & Rekap Keuangan</h2>
+                            <p class="text-xs text-muted">Analisis performa keuangan dan ekspor laporan ke Excel</p>
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="window.handleExportExcel()">
                             <i class="ph-bold ph-file-xls"></i> Unduh Excel (.xlsx)
@@ -413,11 +436,11 @@
                     </div>
 
                     <!-- Period Selector -->
-                    <div class="glass-panel mb-4">
+                    <div class="glass-panel mb-3">
                         <div class="flex gap-3 items-center flex-wrap">
                             <div>
                                 <label class="text-xs text-muted font-medium mb-1 block">Bulan</label>
-                                <select id="report-month-select" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;" onchange="window.switchView('reports')">
+                                <select id="report-month-select" class="form-control" style="padding: 0.4rem 0.65rem; font-size: 0.82rem;" onchange="window.switchView('reports')">
                                     <option value="0">Januari</option>
                                     <option value="1">Februari</option>
                                     <option value="2">Maret</option>
@@ -434,7 +457,7 @@
                             </div>
                             <div>
                                 <label class="text-xs text-muted font-medium mb-1 block">Tahun</label>
-                                <select id="report-year-select" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;" onchange="window.switchView('reports')">
+                                <select id="report-year-select" class="form-control" style="padding: 0.4rem 0.65rem; font-size: 0.82rem;" onchange="window.switchView('reports')">
                                     <option value="2025">2025</option>
                                     <option value="2026" selected>2026</option>
                                     <option value="2027">2027</option>
@@ -444,12 +467,12 @@
                     </div>
 
                     <!-- Report Summary Stats -->
-                    <div class="stats-grid mb-4">
-                        <div class="stat-card">
+                    <div class="stats-grid mb-3">
+                        <div class="stat-card stat-success">
                             <div class="stat-label">Total Pemasukan</div>
                             <div id="rep-total-income" class="stat-value text-success">Rp 0</div>
                         </div>
-                        <div class="stat-card">
+                        <div class="stat-card stat-danger">
                             <div class="stat-label">Total Pengeluaran</div>
                             <div id="rep-total-expense" class="stat-value text-danger">Rp 0</div>
                         </div>
@@ -464,16 +487,16 @@
                     </div>
 
                     <!-- Category Breakdown Table -->
-                    <div class="glass-panel mb-4">
-                        <h3 class="font-semibold mb-3">Rincian Pengeluaran per Kategori</h3>
+                    <div class="glass-panel mb-3">
+                        <h3 class="font-semibold text-sm mb-3">Rincian Pengeluaran per Kategori</h3>
                         <div class="table-responsive">
                             <table class="data-table">
                                 <thead>
                                     <tr>
                                         <th>Kategori</th>
-                                        <th class="text-right">Total Nominal</th>
-                                        <th class="text-right" style="width: 140px;">Porsi</th>
-                                        <th class="text-center">Frekuensi</th>
+                                        <th class="text-right">Nominal</th>
+                                        <th class="text-right" style="width: 120px;">Porsi</th>
+                                        <th class="text-center">Jumlah</th>
                                     </tr>
                                 </thead>
                                 <tbody id="report-category-tbody">
@@ -485,7 +508,7 @@
 
                     <!-- Transactions Table -->
                     <div class="glass-panel">
-                        <h3 class="font-semibold mb-3">Daftar Transaksi Periode Ini</h3>
+                        <h3 class="font-semibold text-sm mb-3">Daftar Transaksi Periode Ini</h3>
                         <div class="table-responsive">
                             <table class="data-table">
                                 <thead>
@@ -509,16 +532,32 @@
                      VIEW: SETTINGS & TELEGRAM BOT
                      ========================================== -->
                 <section id="view-settings" class="view-panel">
-                    <h2 class="font-bold mb-4" style="font-size: 1.4rem;">Pengaturan & Integrasi Bot</h2>
+                    <h2 class="font-bold mb-3" style="font-size: 1.25rem;">Pengaturan Akun & Integrasi Bot</h2>
+
+                    <!-- Membership Tier Status Card -->
+                    <div class="glass-panel mb-3 flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                            <div class="text-xs text-muted">Status Keanggotaan Akun</div>
+                            <div id="profile-tier-badge-card" class="mt-1"></div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button class="btn btn-outline btn-sm" onclick="window.handleToggleTier()">
+                                <i class="ph-bold ph-arrows-left-right"></i> Toggle Status PRO (Demo / Test)
+                            </button>
+                            <button class="btn btn-gold btn-sm" onclick="window.openUpgradeModal()">
+                                <i class="ph-fill ph-crown"></i> Detail Tier
+                            </button>
+                        </div>
+                    </div>
 
                     <!-- Telegram Bot Integration Box -->
-                    <div class="glass-panel mb-4">
-                        <div class="flex items-center gap-2 mb-3">
-                            <i class="ph-bold ph-telegram-logo text-primary" style="font-size: 1.5rem;"></i>
-                            <h3 class="font-semibold">Integrasi Bot Telegram Pintar</h3>
+                    <div class="glass-panel mb-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="ph-bold ph-telegram-logo text-primary" style="font-size: 1.4rem;"></i>
+                            <h3 class="font-semibold text-sm">Integrasi Bot Telegram Pintar (NTWallet + NTGold)</h3>
                         </div>
-                        <p class="text-sm text-muted mb-4">
-                            Hubungkan akun Telegram Anda untuk mencatat pengeluaran via chat secara natural (misal: <em>"beli kopi 15rb"</em>) dan mengecek target tabungan emas NTGold (misal: <em>"berapa lagi target untuk Dana Pensiun"</em>).
+                        <p class="text-xs text-muted mb-3">
+                            Catat pengeluaran natural (<em>"beli kopi 15rb"</em>) dan kueri target tabungan emas NTGold (<em>"berapa lagi target untuk Dana Pensiun"</em>) langsung dari chat Telegram.
                         </p>
                         <div id="telegram-status-container">
                             <!-- Populated dynamically -->
@@ -527,7 +566,7 @@
 
                     <!-- Profile Settings -->
                     <div class="glass-panel">
-                        <h3 class="font-semibold mb-3">Profil Pengguna</h3>
+                        <h3 class="font-semibold text-sm mb-3">Profil Pengguna</h3>
                         <form id="form-profile">
                             <div class="form-group">
                                 <label class="form-label">Email</label>
@@ -571,7 +610,7 @@
         </nav>
 
         <!-- Floating Action Button for Quick Add -->
-        <button class="fab-quick-add" onclick="window.openTransactionModal('expense')" title="Catat Pengeluaran / Pemasukan">
+        <button class="fab-quick-add" onclick="window.openTransactionModal('expense')" title="Catat Transaksi">
             <i class="ph-bold ph-plus"></i>
         </button>
     </div>
@@ -579,6 +618,62 @@
     <!-- ==========================================
          MODALS & BOTTOM SHEETS
          ========================================== -->
+
+    <!-- Modal: Upgrade to PRO -->
+    <div id="modal-upgrade-pro" class="modal-overlay">
+        <div class="modal-content" style="max-width: 460px;">
+            <div class="bottom-sheet-drag-handle"></div>
+            <div class="modal-header">
+                <div class="flex items-center gap-2">
+                    <i class="ph-fill ph-crown text-gold" style="font-size: 1.25rem;"></i>
+                    <h3 id="upgrade-modal-title" class="modal-title">Upgrade ke NTWallet PRO</h3>
+                </div>
+                <button class="modal-close" onclick="window.closeModal('modal-upgrade-pro')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="pro-card-glow text-center">
+                    <span class="badge-pro-pill mb-2"><i class="ph-fill ph-crown"></i> PRO ACCESS</span>
+                    <h4 class="font-bold text-lg mt-1">Kebebasan Kelola Finansial Penuh</h4>
+                    <p id="upgrade-modal-desc" class="text-xs text-muted mt-1">
+                        Dapatkan akses fitur tanpa batas untuk produktivitas keuangan maksimal.
+                    </p>
+                </div>
+
+                <ul class="pro-features-list">
+                    <li class="pro-feature-item">
+                        <i class="ph-bold ph-check-circle"></i>
+                        <span><strong>Unlimited Dompet & Rekening Bank</strong> (Free max 3)</span>
+                    </li>
+                    <li class="pro-feature-item">
+                        <i class="ph-bold ph-check-circle"></i>
+                        <span><strong>Unlimited Master Kategori & Ikon Kustom</strong></span>
+                    </li>
+                    <li class="pro-feature-item">
+                        <i class="ph-bold ph-check-circle"></i>
+                        <span><strong>Unlimited Pos Anggaran Bulanan</strong> (Free max 3)</span>
+                    </li>
+                    <li class="pro-feature-item">
+                        <i class="ph-bold ph-check-circle"></i>
+                        <span><strong>Ekspor Laporan Excel (.xlsx) Tanpa Batas</strong></span>
+                    </li>
+                    <li class="pro-feature-item">
+                        <i class="ph-bold ph-check-circle"></i>
+                        <span><strong>Integrasi Penuh Bot Telegram</strong> (NTWallet + NTGold + Net Worth)</span>
+                    </li>
+                    <li class="pro-feature-item">
+                        <i class="ph-bold ph-check-circle"></i>
+                        <span><strong>Badge Eksklusif 👑 PRO</strong> pada profil Anda</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline btn-sm" onclick="window.closeModal('modal-upgrade-pro')">Tutup</button>
+                <button type="button" class="btn btn-gold btn-sm" onclick="window.handleToggleTier()">
+                    <i class="ph-fill ph-crown"></i> Aktifkan Status PRO Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal: Quick Add / Edit Transaction -->
     <div id="modal-transaction" class="modal-overlay">
@@ -826,4 +921,3 @@
 </body>
 
 </html>
-

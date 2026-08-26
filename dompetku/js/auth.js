@@ -2,6 +2,11 @@ import { supabase } from './supabase.js';
 import { setState, getState } from './state.js';
 import { showToast } from './utils.js';
 
+export function isPro() {
+    const profile = getState().profile;
+    return profile && profile.tier === 'pro';
+}
+
 export async function checkSession() {
     try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -36,13 +41,14 @@ export async function loadProfile(userId) {
             setState('profile', data);
             return data;
         } else {
-            // If profile doesn't exist yet, insert one
+            // If profile doesn't exist yet, insert one with free tier
             const user = getState().user;
             const linkCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             const newProfile = {
                 id: userId,
                 email: user?.email || '',
                 full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
+                tier: 'free',
                 telegram_link_code: linkCode,
                 currency: 'IDR'
             };
@@ -79,7 +85,7 @@ export async function login(email, password) {
         if (data?.user) {
             setState('user', data.user);
             await loadProfile(data.user.id);
-            showToast('Selamat datang kembali!', 'success');
+            showToast('Selamat datang di NTWallet!', 'success');
             return true;
         }
     } catch (err) {
@@ -109,7 +115,7 @@ export async function register(email, password, fullName) {
         if (data?.user) {
             setState('user', data.user);
             await loadProfile(data.user.id);
-            showToast('Akun berhasil dibuat!', 'success');
+            showToast('Akun NTWallet berhasil dibuat!', 'success');
             return true;
         }
     } catch (err) {
@@ -159,3 +165,27 @@ export async function updateProfile(updateData) {
     }
 }
 
+export async function toggleUserTier(targetTier) {
+    const user = getState().user;
+    if (!user) return false;
+
+    try {
+        const newTier = targetTier || (isPro() ? 'free' : 'pro');
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({ tier: newTier })
+            .eq('id', user.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        setState('profile', data);
+        showToast(`Tier berhasil diubah ke: ${newTier.toUpperCase()}`, 'success');
+        return true;
+    } catch (err) {
+        console.error('Error toggling tier:', err);
+        showToast('Gagal mengubah tier', 'error');
+        return false;
+    }
+}

@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://nnizooudxhvjyfaahydc.supabase.co';
 const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaXpvb3VkeGh2anlmYWFoeWRjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzcyODE1NywiZXhwIjoyMTAzMzA0MTU3fQ.8CjJAPFkJbFfo5Hrn1eOU3u8AnFSmx-KCnE0L2xAVnE';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
 
@@ -15,7 +14,7 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     if (req.method === 'GET') {
-        return res.status(200).json({ status: 'active', message: 'Dompetku & NTGold Unified Bot Webhook is running.' });
+        return res.status(200).json({ status: 'active', message: 'NTWallet & NTGold Unified Bot Webhook is running.' });
     }
 
     if (req.method !== 'POST') {
@@ -55,7 +54,7 @@ async function handleTelegramMessage(msg) {
             await handleLinkAccount(chatId, parts[1].trim(), msg.from?.username);
             return;
         }
-        await sendTelegramMessage(chatId, `👋 *Halo! Selamat datang di Bot Asisten Keuangan Dompetku & NTGold.*\n\nUntuk memulai, tautkan akun Anda dengan perintah:\n• \`/link <KODE_PAIRING>\` (Dapatkan di menu Pengaturan Web)\n• Atau ketik \`/login email@domain.com password\`\n\n*Fitur Utama:*\n💵 Catat pengeluaran: _"beli kopi 15rb"_\n📈 Cek target tabungan emas: _"berapa lagi target untuk Dana Pensiun"_\n🪙 Cek harga emas: _"harga emas antam hari ini"_`, { parse_mode: 'Markdown' });
+        await sendTelegramMessage(chatId, `👋 *Halo! Selamat datang di Bot Asisten Keuangan NTWallet & NTGold.*\n\nUntuk memulai, tautkan akun Anda dengan perintah:\n• \`/link <KODE_PAIRING>\` (Dapatkan di menu Pengaturan NTWallet)\n• Atau ketik \`/login email@domain.com password\`\n\n*Fitur Utama:*\n💵 Catat pengeluaran: _"beli kopi 15rb"_\n📈 Cek target tabungan emas: _"berapa lagi target untuk Dana Pensiun"_\n🪙 Cek harga emas: _"harga emas antam hari ini"_\n💎 Cek total kekayaan: _"rekap kekayaan saya"_`, { parse_mode: 'Markdown' });
         return;
     }
 
@@ -72,7 +71,6 @@ async function handleTelegramMessage(msg) {
 
     // 3. COMMAND: /login <email> <password>
     if (text.startsWith('/login')) {
-        // Auto delete message to keep password secret
         await deleteTelegramMessage(chatId, messageId);
 
         const parts = text.split(' ');
@@ -96,11 +94,11 @@ async function handleTelegramMessage(msg) {
         .maybeSingle();
 
     if (!profile) {
-        await sendTelegramMessage(chatId, `🔒 *Akun Belum Terhubung*\n\nSilakan tautkan akun Anda terlebih dahulu:\n• Ketik \`/link <KODE_PAIRING>\`\n• Atau ketik \`/login email password\``, { parse_mode: 'Markdown' });
+        await sendTelegramMessage(chatId, `🔒 *Akun Belum Terhubung*\n\nSilakan tautkan akun NTWallet Anda:\n• Ketik \`/link <KODE_PAIRING>\`\n• Atau ketik \`/login email password\``, { parse_mode: 'Markdown' });
         return;
     }
 
-    // 5. INTENT CLASSIFICATION & PARSING (DOMPETKU vs NTGOLD)
+    // 5. INTENT CLASSIFICATION & PARSING (NTWALLET vs NTGOLD)
     await processSmartUserInput(chatId, messageId, text, profile);
 }
 
@@ -128,15 +126,14 @@ async function processSmartUserInput(chatId, messageId, text, profile) {
         return;
     }
 
-    // Skenario D: Pencatatan Transaksi Dompetku ("beli kopi 15rb", "belanja bulanan 1.2jt", "gaji 5jt")
-    await handleDompetkuTransaction(chatId, profile, text);
+    // Skenario D: Pencatatan Transaksi NTWallet ("beli kopi 15rb", "belanja bulanan 1.2jt", "gaji 5jt")
+    await handleNTWalletTransaction(chatId, profile, text);
 }
 
 // ==========================================
-// DOMPETKU EXPENSE/INCOME LOGIC
+// NTWALLET EXPENSE/INCOME LOGIC
 // ==========================================
-async function handleDompetkuTransaction(chatId, profile, text) {
-    // 1. Fetch user's categories and wallets
+async function handleNTWalletTransaction(chatId, profile, text) {
     const [{ data: categories }, { data: wallets }] = await Promise.all([
         supabaseAdmin.from('categories').select('*').or(`user_id.eq.${profile.id},user_id.is.null`),
         supabaseAdmin.from('wallets').select('*').eq('user_id', profile.id)
@@ -153,7 +150,7 @@ async function handleDompetkuTransaction(chatId, profile, text) {
     const targetWallet = parsed.wallet || defaultWallet;
 
     if (!targetWallet) {
-        await sendTelegramMessage(chatId, `⚠️ Anda belum memiliki dompet di Dompetku. Buka aplikasi web untuk membuat dompet terlebih dahulu.`);
+        await sendTelegramMessage(chatId, `⚠️ Anda belum memiliki dompet di NTWallet. Buka aplikasi web untuk membuat dompet terlebih dahulu.`);
         return;
     }
 
@@ -180,12 +177,13 @@ async function handleDompetkuTransaction(chatId, profile, text) {
         return;
     }
 
+    const tierBadge = profile.tier === 'pro' ? '👑 PRO' : 'FREE';
     const typeEmoji = parsed.type === 'expense' ? '🔴' : '🟢';
     const typeLabel = parsed.type === 'expense' ? 'Pengeluaran' : 'Pemasukan';
     const formattedAmount = formatCurrency(parsed.amount);
     const formattedBal = formatCurrency(newBal);
 
-    const responseMsg = `✅ *${typeLabel} Berhasil Dicatat!*
+    const responseMsg = `✅ *${typeLabel} Berhasil Dicatat!* [${tierBadge}]
 ━━━━━━━━━━━━━━━━━━━━━━
 📝 *Keterangan* : ${parsed.description}
 💰 *Nominal*    : ${typeEmoji} ${formattedAmount}
@@ -210,7 +208,6 @@ async function handleDompetkuTransaction(chatId, profile, text) {
 // NTGOLD TARGET QUERY LOGIC
 // ==========================================
 async function handleNTGoldGoalQuery(chatId, userId, text) {
-    // 1. Search for wallet/goal in tblwallet
     const { data: goals, error: gErr } = await supabaseAdmin
         .from('tblwallet')
         .select('*')
@@ -221,10 +218,8 @@ async function handleNTGoldGoalQuery(chatId, userId, text) {
         return;
     }
 
-    // Match closest goal name or use first
     let matchedGoal = goals.find(g => text.toLowerCase().includes((g.wallet_name || '').toLowerCase())) || goals[0];
 
-    // 2. Sum inventory grams in tblinventory
     const { data: items } = await supabaseAdmin
         .from('tblinventory')
         .select('weight_grams, purchase_price')
@@ -238,7 +233,6 @@ async function handleNTGoldGoalQuery(chatId, userId, text) {
     const remainingGrams = Math.max(0, targetGrams - totalGrams);
     const progressPercent = targetGrams > 0 ? (totalGrams / targetGrams) * 100 : 0;
 
-    // 3. Get latest gold price (Antam 1 gr)
     let latestPrice = 1500000;
     const { data: priceRow } = await supabaseAdmin
         .from('market_price_history')
@@ -301,7 +295,9 @@ async function handleNetWorthQuery(chatId, userId) {
         return;
     }
 
-    const reply = `👑 *Rekap Kekayaan Bersih (Net Worth)*
+    const tierBadge = data.tier === 'pro' ? '👑 PRO' : 'FREE';
+
+    const reply = `👑 *Rekap Kekayaan Bersih (Net Worth)* [${tierBadge}]
 ━━━━━━━━━━━━━━━━━━━━━━
 💵 *Saldo Uang Tunai / Bank* : ${formatCurrency(data.total_cash)}
 🪙 *Total Emas Dimiliki*     : ${Number(data.total_gold_grams).toFixed(2)} gr
@@ -325,7 +321,6 @@ async function handleTelegramCallback(callbackQuery) {
         const { data: tx } = await supabaseAdmin.from('transactions').select('*').eq('id', txId).single();
 
         if (tx) {
-            // Revert balance
             const { data: wallet } = await supabaseAdmin.from('wallets').select('*').eq('id', tx.wallet_id).single();
             if (wallet) {
                 const restored = tx.type === 'expense' ? Number(wallet.balance) + Number(tx.amount) : Number(wallet.balance) - Number(tx.amount);
@@ -354,7 +349,7 @@ async function handleDirectLogin(chatId, email, password, username) {
         telegram_username: username || null
     });
 
-    await sendTelegramMessage(chatId, `🎉 *Login Berhasil!*\n\nSelamat datang, *${data.user.email}*! Akun Dompetku & NTGold Anda kini terhubung.\n\nAnda sekarang bisa langsung mencatat pengeluaran atau bertanya target tabungan emas di sini.`, { parse_mode: 'Markdown' });
+    await sendTelegramMessage(chatId, `🎉 *Login Berhasil!*\n\nSelamat datang di NTWallet, *${data.user.email}*! Akun NTWallet & NTGold Anda kini terhubung.\n\nAnda sekarang bisa langsung mencatat pengeluaran atau bertanya target tabungan emas di sini.`, { parse_mode: 'Markdown' });
 }
 
 async function handleLinkAccount(chatId, code, username) {
@@ -365,7 +360,7 @@ async function handleLinkAccount(chatId, code, username) {
         .maybeSingle();
 
     if (error || !profile) {
-        await sendTelegramMessage(chatId, `❌ Kode pairing *${code}* tidak ditemukan atau sudah kedaluwarsa. Silakan cek menu Pengaturan di Dompetku Web.`, { parse_mode: 'Markdown' });
+        await sendTelegramMessage(chatId, `❌ Kode pairing *${code}* tidak ditemukan atau sudah kedaluwarsa. Silakan cek menu Pengaturan di NTWallet Web.`, { parse_mode: 'Markdown' });
         return;
     }
 
@@ -377,7 +372,7 @@ async function handleLinkAccount(chatId, code, username) {
         })
         .eq('id', profile.id);
 
-    await sendTelegramMessage(chatId, `🎉 *Akun Berhasil Dihubungkan!*\n\nHalo *${profile.full_name || profile.email}*, bot siap mencatat pengeluaran Anda dan menginfokan progres tabungan emas NTGold.`, { parse_mode: 'Markdown' });
+    await sendTelegramMessage(chatId, `🎉 *Akun Berhasil Dihubungkan!*\n\nHalo *${profile.full_name || profile.email}*, bot NTWallet siap mencatat pengeluaran Anda dan menginfokan progres tabungan emas NTGold.`, { parse_mode: 'Markdown' });
 }
 
 // ==========================================
@@ -387,12 +382,10 @@ function parseExpenseTextNLP(text, categories, wallets) {
     let cleaned = text.trim();
     let type = 'expense';
 
-    // Detect income keywords
     if (/^(gaji|terima|dapat|masuk|bonus|penjualan|pemasukan)/i.test(cleaned)) {
         type = 'income';
     }
 
-    // Extract amount: e.g., "15rb", "15k", "1.200.000", "50000", "1.2jt", "2,5 juta"
     let amount = 0;
     const numMatch = cleaned.match(/(\d+[\d\.,]*)\s*(rb|k|ribu|jt|juta)?/i);
 
@@ -410,7 +403,6 @@ function parseExpenseTextNLP(text, categories, wallets) {
         }
     }
 
-    // Clean description: remove amount portion and common prefixes
     let desc = cleaned
         .replace(/^(beli|bayar|catat|pengeluaran|pemasukan|gaji)\s+/i, '')
         .replace(/(\d+[\d\.,]*)\s*(rb|k|ribu|jt|juta)?/gi, '')
@@ -420,7 +412,6 @@ function parseExpenseTextNLP(text, categories, wallets) {
     if (!desc) desc = type === 'expense' ? 'Pengeluaran' : 'Pemasukan';
     desc = desc.charAt(0).toUpperCase() + desc.slice(1);
 
-    // Match category
     let matchedCategory = null;
     const lowerDesc = desc.toLowerCase();
 
@@ -441,7 +432,6 @@ function parseExpenseTextNLP(text, categories, wallets) {
         }
     }
 
-    // Match wallet
     let matchedWallet = null;
     for (const w of wallets) {
         if (cleaned.toLowerCase().includes(w.name.toLowerCase())) {
@@ -457,9 +447,6 @@ function formatCurrency(num) {
     return 'Rp ' + new Intl.NumberFormat('id-ID').format(num || 0);
 }
 
-// ==========================================
-// TELEGRAM API CLIENT HELPERS
-// ==========================================
 async function sendTelegramMessage(chatId, text, options = {}) {
     if (!TELEGRAM_BOT_TOKEN) return;
     try {
@@ -485,4 +472,3 @@ async function deleteTelegramMessage(chatId, messageId) {
         console.error('Telegram delete error:', e);
     }
 }
-

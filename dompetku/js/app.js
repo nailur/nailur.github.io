@@ -1,9 +1,9 @@
-import { checkSession, login, register, logout, updateProfile } from './auth.js';
+import { checkSession, login, register, logout, updateProfile, isPro, toggleUserTier } from './auth.js';
 import { getState, setState, subscribe, updateFilters } from './state.js';
-import { loadWallets, createWallet, updateWallet, adjustWalletBalance, deleteWallet, WALLET_TYPES } from './wallets.js';
+import { loadWallets, createWallet, updateWallet, adjustWalletBalance, deleteWallet, WALLET_TYPES, FREE_TIER_MAX_WALLETS } from './wallets.js';
 import { loadCategories, createCategory, updateCategory, deleteCategory, DEFAULT_CATEGORY_ICONS, CATEGORY_COLORS } from './categories.js';
 import { loadTransactions, createTransaction, deleteTransaction } from './transactions.js';
-import { loadBudgets, setBudget, deleteBudget, computeBudgetProgress } from './budgets.js';
+import { loadBudgets, setBudget, deleteBudget, computeBudgetProgress, FREE_TIER_MAX_BUDGETS } from './budgets.js';
 import { renderDashboard } from './dashboard.js';
 import { renderReports, handleExportExcel } from './reports.js';
 import { renderTelegramSettings, regenerateTelegramCode, disconnectTelegram } from './telegram.js';
@@ -37,14 +37,41 @@ async function loadInitialData() {
         loadBudgets()
     ]);
     showLoading(false);
+    updateUserTierBadges();
     switchView('dashboard');
+}
+
+function updateUserTierBadges() {
+    const profile = getState().profile;
+    const proStatus = isPro();
+    
+    // Sidebar & Topbar Badges
+    const badgeSidebar = document.getElementById('user-tier-badge-sidebar');
+    if (badgeSidebar) {
+        badgeSidebar.innerHTML = proStatus 
+            ? `<span class="badge-pro-pill"><i class="ph-fill ph-crown"></i> PRO</span>` 
+            : `<span class="badge-free-pill">FREE</span>`;
+    }
+
+    const badgeTopbar = document.getElementById('user-tier-badge-topbar');
+    if (badgeTopbar) {
+        badgeTopbar.innerHTML = proStatus 
+            ? `<span class="badge-pro-pill"><i class="ph-fill ph-crown"></i> PRO</span>` 
+            : `<span class="badge-free-pill">FREE</span>`;
+    }
+
+    // Upgrade Banner in Sidebar
+    const sidebarBanner = document.getElementById('sidebar-upgrade-banner');
+    if (sidebarBanner) {
+        sidebarBanner.style.display = proStatus ? 'none' : 'block';
+    }
 }
 
 // ==========================================
 // THEME & VIEW MANAGEMENT
 // ==========================================
 function initTheme() {
-    const saved = localStorage.getItem('dompetku_theme') || 'dark';
+    const saved = localStorage.getItem('ntwallet_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', saved);
     updateThemeToggleIcon(saved);
 }
@@ -53,7 +80,7 @@ window.toggleTheme = function () {
     const current = document.documentElement.getAttribute('data-theme') || 'dark';
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('dompetku_theme', next);
+    localStorage.setItem('ntwallet_theme', next);
     updateThemeToggleIcon(next);
 };
 
@@ -80,6 +107,8 @@ export function switchView(viewName) {
     document.querySelectorAll('.nav-item, .sidebar-link').forEach(el => {
         el.classList.toggle('active', el.getAttribute('data-view') === viewName);
     });
+
+    updateUserTierBadges();
 
     // Render corresponding view data
     if (viewName === 'dashboard') {
@@ -139,15 +168,14 @@ function renderTransactionsView() {
             categories.map(c => `<option value="${c.id}" ${filters.categoryId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
     }
 
-    const tbody = document.getElementById('transactions-table-body');
     const container = document.getElementById('transactions-list-container');
-    if (!tbody || !container) return;
+    if (!container) return;
 
     if (!transactions || transactions.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <i class="ph-bold ph-receipt text-muted" style="font-size: 3rem;"></i>
-                <p class="font-medium mt-2">Belum ada transaksi yang sesuai.</p>
+                <i class="ph-bold ph-receipt text-muted" style="font-size: 2.75rem;"></i>
+                <p class="font-medium mt-2">Belum ada riwayat transaksi.</p>
                 <button class="btn btn-primary btn-sm mt-3" onclick="window.openTransactionModal('expense')">
                     <i class="ph-bold ph-plus"></i> Tambah Transaksi
                 </button>
@@ -156,21 +184,20 @@ function renderTransactionsView() {
         return;
     }
 
-    // Render grouped by date or list
     container.innerHTML = `
         <div class="transactions-full-list">
             ${transactions.map(t => {
                 const isExp = t.type === 'expense';
                 const isInc = t.type === 'income';
                 const icon = t.category?.icon || (isExp ? 'ph-arrow-up-right' : (isInc ? 'ph-arrow-down-left' : 'ph-arrows-left-right'));
-                const color = t.category?.color || (isExp ? '#EF4444' : (isInc ? '#10B981' : '#3B82F6'));
+                const color = t.category?.color || (isExp ? '#F43F5E' : (isInc ? '#10B981' : '#38BDF8'));
                 const sign = isExp ? '-' : (isInc ? '+' : '');
                 const amountClass = isExp ? 'text-danger' : (isInc ? 'text-success' : 'text-primary');
 
                 return `
                     <div class="transaction-card-item">
                         <div class="tx-left">
-                            <div class="tx-icon-box" style="background: ${color}20; color: ${color};">
+                            <div class="tx-icon-box" style="background: ${color}18; color: ${color};">
                                 <i class="ph-bold ${escapeHtml(icon)}"></i>
                             </div>
                             <div class="tx-details">
@@ -178,7 +205,7 @@ function renderTransactionsView() {
                                 <div class="tx-meta">
                                     <span class="badge badge-subtle">${escapeHtml(t.category?.name || (t.type === 'transfer' ? 'Transfer' : 'Umum'))}</span>
                                     <span>• ${escapeHtml(t.wallet?.name || 'Dompet')}${t.to_wallet ? ' ➔ ' + escapeHtml(t.to_wallet.name) : ''}</span>
-                                    <span>• ${formatDate(t.transaction_date, 'datetime')}</span>
+                                    <span>• ${formatDate(t.transaction_date, 'short')}</span>
                                     ${t.source === 'telegram' ? '<span class="badge-source-bot"><i class="ph-bold ph-telegram-logo"></i> Bot</span>' : ''}
                                 </div>
                                 ${t.notes ? `<div class="tx-notes text-xs text-muted mt-1">${escapeHtml(t.notes)}</div>` : ''}
@@ -211,13 +238,21 @@ function renderWalletsView() {
     const totalEl = document.getElementById('wallets-total-balance');
     if (totalEl) totalEl.textContent = formatRupiah(totalBalance);
 
+    const proStatus = isPro();
+    const limitInfoEl = document.getElementById('wallets-limit-info');
+    if (limitInfoEl) {
+        limitInfoEl.innerHTML = proStatus 
+            ? `<span class="badge-pro-pill"><i class="ph-fill ph-crown"></i> Unlimited Wallets</span>` 
+            : `<span class="text-xs text-muted">Free Tier: <strong>${wallets.length}/${FREE_TIER_MAX_WALLETS}</strong> Dompet</span>`;
+    }
+
     container.innerHTML = wallets.map(w => `
-        <div class="wallet-card-full glass-panel" style="border-top: 4px solid ${escapeHtml(w.color || '#10B981')}">
+        <div class="wallet-card-full glass-panel" style="border-top: 3px solid ${escapeHtml(w.color || '#10B981')}">
             <div class="wallet-card-header">
-                <div class="wallet-icon-box-lg" style="background: ${escapeHtml(w.color || '#10B981')}22; color: ${escapeHtml(w.color || '#10B981')}">
+                <div class="wallet-icon-box-lg" style="background: ${escapeHtml(w.color || '#10B981')}18; color: ${escapeHtml(w.color || '#10B981')}">
                     <i class="ph-bold ${escapeHtml(w.icon || 'ph-wallet')}"></i>
                 </div>
-                <div class="wallet-actions">
+                <div class="flex items-center gap-1">
                     <button class="btn-icon" onclick="window.openEditWalletModal('${w.id}')" title="Edit Dompet">
                         <i class="ph-bold ph-pencil-simple"></i>
                     </button>
@@ -244,21 +279,29 @@ function renderWalletsView() {
 // BUDGETS VIEW RENDERER
 // ==========================================
 function renderBudgetsView() {
-    const { budgets, transactions, categories } = getState();
+    const { budgets, transactions } = getState();
     const now = new Date();
     const progressList = computeBudgetProgress(budgets, transactions, now.getMonth() + 1, now.getFullYear());
 
     const container = document.getElementById('budgets-list-container');
     if (!container) return;
 
+    const proStatus = isPro();
+    const limitInfoEl = document.getElementById('budgets-limit-info');
+    if (limitInfoEl) {
+        limitInfoEl.innerHTML = proStatus 
+            ? `<span class="badge-pro-pill"><i class="ph-fill ph-crown"></i> Unlimited Budgets</span>` 
+            : `<span class="text-xs text-muted">Free Tier: <strong>${budgets.length}/${FREE_TIER_MAX_BUDGETS}</strong> Anggaran</span>`;
+    }
+
     if (!progressList || progressList.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <i class="ph-bold ph-chart-pie-slice text-muted" style="font-size: 3rem;"></i>
-                <p class="font-medium mt-2">Belum ada anggaran bulanan.</p>
-                <p class="text-xs text-muted">Buat batas anggaran per kategori untuk mengontrol pengeluaran Anda.</p>
+                <i class="ph-bold ph-chart-pie-slice text-muted" style="font-size: 2.75rem;"></i>
+                <p class="font-medium mt-2">Belum ada target anggaran bulanan.</p>
+                <p class="text-xs text-muted">Atur batas anggaran per kategori pengeluaran Anda.</p>
                 <button class="btn btn-primary btn-sm mt-3" onclick="window.openBudgetModal()">
-                    <i class="ph-bold ph-plus"></i> Buat Anggaran
+                    <i class="ph-bold ph-plus"></i> Atur Anggaran
                 </button>
             </div>
         `;
@@ -273,12 +316,12 @@ function renderBudgetsView() {
             <div class="budget-card glass-panel">
                 <div class="budget-card-header">
                     <div class="flex items-center gap-3">
-                        <div class="category-icon-sm" style="background: ${cat.color}22; color: ${cat.color}">
+                        <div class="category-icon-sm" style="background: ${cat.color}18; color: ${cat.color}">
                             <i class="ph-bold ${escapeHtml(cat.icon)}"></i>
                         </div>
                         <div>
-                            <div class="font-semibold">${escapeHtml(cat.name)}</div>
-                            <div class="text-xs text-muted">Bulan Ini (${now.toLocaleString('id-ID', { month: 'long', year: 'numeric' })})</div>
+                            <div class="font-semibold text-sm">${escapeHtml(cat.name)}</div>
+                            <div class="text-xs text-muted">Bulan Ini (${now.toLocaleString('id-ID', { month: 'short', year: 'numeric' })})</div>
                         </div>
                     </div>
                     <button class="btn-icon hover-danger" onclick="window.handleDeleteBudget('${b.id}')" title="Hapus Anggaran">
@@ -296,11 +339,11 @@ function renderBudgetsView() {
                     </div>
                 </div>
                 <div class="budget-progress-bar-wrapper mt-2">
-                    <div class="budget-progress-bar ${b.isOver ? 'bg-danger' : ''}" style="width: ${b.percentage}%; background: ${b.isOver ? '#EF4444' : cat.color}"></div>
+                    <div class="budget-progress-bar" style="width: ${b.percentage}%; background: ${b.isOver ? '#F43F5E' : cat.color}"></div>
                 </div>
                 <div class="budget-card-footer mt-2">
                     <span class="text-xs ${statusClass}">
-                        ${b.isOver ? `⚠️ Melebihi anggaran ${formatRupiah(Math.abs(b.remaining))}` : `Sisa ${formatRupiah(b.remaining)} (${(100 - b.percentage).toFixed(0)}%)`}
+                        ${b.isOver ? `⚠️ Melebihi ${formatRupiah(Math.abs(b.remaining))}` : `Sisa ${formatRupiah(b.remaining)} (${(100 - b.percentage).toFixed(0)}%)`}
                     </span>
                     <span class="text-xs font-semibold">${b.rawPercentage.toFixed(1)}%</span>
                 </div>
@@ -331,14 +374,14 @@ function renderCategoriesView() {
 
 function renderCategoryCard(cat) {
     return `
-        <div class="category-item-card glass-panel">
-            <div class="category-left">
-                <div class="category-icon-box" style="background: ${escapeHtml(cat.color)}22; color: ${escapeHtml(cat.color)}">
+        <div class="category-item-card glass-panel flex items-center justify-between p-3" style="padding: 0.75rem 1rem;">
+            <div class="flex items-center gap-3">
+                <div class="category-icon-sm" style="background: ${escapeHtml(cat.color)}18; color: ${escapeHtml(cat.color)}">
                     <i class="ph-bold ${escapeHtml(cat.icon || 'ph-tag')}"></i>
                 </div>
-                <span class="category-title">${escapeHtml(cat.name)}</span>
+                <span class="font-semibold text-sm">${escapeHtml(cat.name)}</span>
             </div>
-            <div class="category-actions">
+            <div class="flex items-center gap-1">
                 <button class="btn-icon" onclick="window.openEditCategoryModal('${cat.id}')" title="Edit Kategori">
                     <i class="ph-bold ph-pencil-simple"></i>
                 </button>
@@ -351,24 +394,44 @@ function renderCategoryCard(cat) {
 }
 
 // ==========================================
-// PROFILE SETTINGS RENDERER
+// PROFILE & TIER SETTINGS
 // ==========================================
 function renderProfileSettings() {
     const profile = getState().profile;
     const emailEl = document.getElementById('profile-email-input');
     const nameEl = document.getElementById('profile-name-input');
+    const tierBadgeEl = document.getElementById('profile-tier-badge-card');
 
     if (profile) {
         if (emailEl) emailEl.value = profile.email || '';
         if (nameEl) nameEl.value = profile.full_name || '';
+        if (tierBadgeEl) {
+            const proStatus = isPro();
+            tierBadgeEl.innerHTML = proStatus
+                ? `<span class="badge-pro-pill" style="font-size: 0.8rem; padding: 4px 10px;"><i class="ph-fill ph-crown"></i> AKUN PRO AKTIF</span>`
+                : `<span class="badge-free-pill" style="font-size: 0.8rem; padding: 4px 10px;">AKUN FREE TIER</span>`;
+        }
     }
 }
+
+// ==========================================
+// UPGRADE TO PRO MODAL
+// ==========================================
+window.openUpgradeModal = function (title = 'Upgrade ke NTWallet PRO', desc = '') {
+    const modalTitleEl = document.getElementById('upgrade-modal-title');
+    const modalDescEl = document.getElementById('upgrade-modal-desc');
+
+    if (modalTitleEl) modalTitleEl.textContent = title;
+    if (modalDescEl && desc) modalDescEl.textContent = desc;
+
+    openModal('modal-upgrade-pro');
+};
 
 // ==========================================
 // MODAL MANAGEMENT & EVENT HANDLERS
 // ==========================================
 function setupModals() {
-    // Quick Add Transaction Modal
+    // Transaction Modal
     window.openTransactionModal = function (type = 'expense') {
         const { wallets, categories } = getState();
         const form = document.getElementById('form-transaction');
@@ -378,7 +441,6 @@ function setupModals() {
         document.getElementById('tx-type-input').value = type;
         setTransactionTypeTab(type);
 
-        // Populate Wallets
         const walletSelect = document.getElementById('tx-wallet-select');
         const toWalletSelect = document.getElementById('tx-to-wallet-select');
         if (walletSelect) {
@@ -388,9 +450,7 @@ function setupModals() {
             toWalletSelect.innerHTML = wallets.map(w => `<option value="${w.id}">${escapeHtml(w.name)} (${formatRupiah(w.balance)})</option>`).join('');
         }
 
-        // Populate Categories
         populateTransactionCategorySelect(type);
-
         document.getElementById('tx-date-input').value = new Date().toISOString().slice(0, 16);
         openModal('modal-transaction');
     };
@@ -442,7 +502,7 @@ function setupModals() {
         document.getElementById('wallet-modal-title').textContent = 'Edit Dompet';
         document.getElementById('wallet-name-input').value = wallet.name;
         document.getElementById('wallet-type-select').value = wallet.type;
-        document.getElementById('wallet-balance-group').style.display = 'none'; // Balance edited via adjust
+        document.getElementById('wallet-balance-group').style.display = 'none';
         document.getElementById('wallet-default-check').checked = !!wallet.is_default;
 
         renderWalletIconPicker(wallet.icon || 'ph-wallet');
@@ -590,7 +650,7 @@ window.selectCategoryColor = function (color, el) {
 };
 
 // ==========================================
-// FORM SUBMIT HANDLERS
+// FORM SUBMITS & EVENT LISTENERS
 // ==========================================
 function setupEventListeners() {
     // Auth Form
@@ -598,7 +658,7 @@ function setupEventListeners() {
     if (authForm) {
         authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const mode = document.getElementById('auth-mode-input').value; // 'login' or 'register'
+            const mode = document.getElementById('auth-mode-input').value;
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
             const fullName = document.getElementById('auth-name')?.value || '';
@@ -632,7 +692,7 @@ function setupEventListeners() {
             if (switchText) switchText.innerHTML = `Sudah punya akun? <a href="javascript:void(0)" onclick="window.setAuthMode('login')">Masuk disini</a>`;
         } else {
             if (nameGroup) nameGroup.style.display = 'none';
-            if (submitBtn) submitBtn.textContent = 'Masuk ke Dompetku';
+            if (submitBtn) submitBtn.textContent = 'Masuk ke NTWallet';
             if (switchText) switchText.innerHTML = `Belum punya akun? <a href="javascript:void(0)" onclick="window.setAuthMode('register')">Daftar sekarang</a>`;
         }
     };
@@ -828,8 +888,19 @@ function setupEventListeners() {
     // Global Action Helpers
     window.handleLogout = logout;
     window.handleExportExcel = handleExportExcel;
+    window.handleToggleTier = async () => {
+        showLoading(true);
+        const ok = await toggleUserTier();
+        showLoading(false);
+        if (ok) {
+            updateUserTierBadges();
+            switchView(getState().activeTab);
+            closeModal('modal-upgrade-pro');
+        }
+    };
+
     window.handleDeleteTransaction = async (id) => {
-        if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
+        if (confirm('Hapus transaksi ini? Saldo dompet akan disesuaikan kembali.')) {
             showLoading(true);
             await deleteTransaction(id);
             showLoading(false);
@@ -837,7 +908,7 @@ function setupEventListeners() {
         }
     };
     window.handleDeleteWallet = async (id) => {
-        if (confirm('Hapus dompet ini? Semua riwayat saldo akan terpengaruh.')) {
+        if (confirm('Hapus dompet ini?')) {
             showLoading(true);
             await deleteWallet(id);
             showLoading(false);
@@ -865,7 +936,7 @@ function setupEventListeners() {
         const text = document.getElementById('telegram-link-command')?.innerText;
         if (text) {
             navigator.clipboard.writeText(text);
-            showToast('Perintah pairing berhasil disalin!', 'success');
+            showToast('Perintah pairing disalin!', 'success');
         }
     };
     window.regenerateTelegramCode = regenerateTelegramCode;
@@ -878,8 +949,7 @@ function setupEventListeners() {
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log('Dompetku Service Worker Registered'))
+            .then(() => console.log('NTWallet Service Worker Registered'))
             .catch(err => console.error('SW error:', err));
     }
 }
-
