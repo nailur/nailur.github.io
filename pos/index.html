@@ -3,8 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>NTPOS | Point of Sale | Manage Stock and Sales</title>
+
+    <script>
+        if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            location.replace(location.href.replace('http:', 'https:'));
+        }
+    </script>
 
     <!-- Content Security Policy -->
     <meta http-equiv="Content-Security-Policy"

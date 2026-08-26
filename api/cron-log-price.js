@@ -161,8 +161,8 @@ export default async function cronHandler(req, res) {
                     ],
                     headings: { "en": `Harga Emas 1g ${dateStr}` },
                     contents: { "en": msg },
-                    url: "https://nailur.github.io/goldapp/",
-                    chrome_web_icon: "https://nailur.github.io/goldapp/res/img/icon.png"
+                    url: "https://ntgroup.my.id/goldapp/",
+                    chrome_web_icon: "https://ntgroup.my.id/goldapp/res/img/icon.png"
                 })
             });
             

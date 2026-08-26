@@ -32,8 +32,8 @@ export default async function handler(req, res) {
             app_id: ONESIGNAL_APP_ID,
             contents: { en: body },
             headings: { en: title },
-            chrome_web_icon: 'https://nailur.github.io/pos/assets/img/icon-192.png',
-            chrome_web_badge: 'https://nailur.github.io/pos/assets/img/icon-192.png'
+            chrome_web_icon: 'https://ntgroup.my.id/pos/assets/img/icon-192.png',
+            chrome_web_badge: 'https://ntgroup.my.id/pos/assets/img/icon-192.png'
         };
 
         if (target === 'all') {

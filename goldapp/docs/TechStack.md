@@ -28,7 +28,7 @@ NTGold dibangun menggunakan arsitektur **Modern Serverless** dan **JAMStack (Jav
 
 ## 6. Hosting & Deployment
 - **GitHub Pages**: Menjadi *hosting* 100% statis untuk *frontend* (UI/UX). Memiliki perlindungan terhadap serangan trafik dan bebas *downtime*.
-- **GitHub Repositories**: Manajemen versi (*Version Control*) untuk semua aset kode (`nailur.github.io`).
+- **GitHub Repositories**: Manajemen versi (*Version Control*) untuk semua aset kode (`ntgroup.my.id`).
 
 ## 7. Directory Structure Map & Environment
 Peta file penting untuk membantu pemahaman arsitektur secara instan:
