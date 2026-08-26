@@ -15,6 +15,8 @@ export async function checkSession() {
         if (session && session.user) {
             setState('user', session.user);
             await loadProfile(session.user.id);
+            // Background sync ecosystem PRO tier (NTWallet <-> NTGold)
+            syncEcosystemTierInBackground(session.user.email);
             return session.user;
         } else {
             setState('user', null);
@@ -41,14 +43,26 @@ export async function loadProfile(userId) {
             setState('profile', data);
             return data;
         } else {
-            // If profile doesn't exist yet, insert one with free tier
             const user = getState().user;
             const linkCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            
+            // Check if user is already PRO in NTGold
+            let initialTier = 'free';
+            try {
+                const checkRes = await fetch(`/api/sync-ecosystem-tier?email=${encodeURIComponent(user?.email || '')}`);
+                if (checkRes.ok) {
+                    const checkData = await checkRes.json();
+                    if (checkData.isPro) initialTier = 'pro';
+                }
+            } catch (e) {
+                console.warn('Could not verify ecosystem tier:', e);
+            }
+
             const newProfile = {
                 id: userId,
                 email: user?.email || '',
                 full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
-                tier: 'free',
+                tier: initialTier,
                 telegram_link_code: linkCode,
                 currency: 'IDR'
             };
@@ -70,6 +84,23 @@ export async function loadProfile(userId) {
     return null;
 }
 
+async function syncEcosystemTierInBackground(email) {
+    if (!email) return;
+    try {
+        const res = await fetch(`/api/sync-ecosystem-tier?email=${encodeURIComponent(email)}`);
+        if (res.ok) {
+            const data = await res.json();
+            const currentProfile = getState().profile;
+            if (data.isPro && currentProfile && currentProfile.tier !== 'pro') {
+                currentProfile.tier = 'pro';
+                setState('profile', currentProfile);
+            }
+        }
+    } catch (e) {
+        console.warn('Background ecosystem sync failed:', e);
+    }
+}
+
 export async function login(email, password) {
     try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -85,6 +116,7 @@ export async function login(email, password) {
         if (data?.user) {
             setState('user', data.user);
             await loadProfile(data.user.id);
+            syncEcosystemTierInBackground(data.user.email);
             showToast('Selamat datang di NTWallet!', 'success');
             return true;
         }
@@ -115,6 +147,7 @@ export async function register(email, password, fullName) {
         if (data?.user) {
             setState('user', data.user);
             await loadProfile(data.user.id);
+            syncEcosystemTierInBackground(data.user.email);
             showToast('Akun NTWallet berhasil dibuat!', 'success');
             return true;
         }
@@ -171,6 +204,19 @@ export async function toggleUserTier(targetTier) {
 
     try {
         const newTier = targetTier || (isPro() ? 'free' : 'pro');
+
+        // 1. Call Ecosystem Sync API to update both NTWallet & NTGold
+        try {
+            await fetch('/api/sync-ecosystem-tier', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email, targetTier: newTier })
+            });
+        } catch (e) {
+            console.warn('API sync warning:', e);
+        }
+
+        // 2. Update local NTWallet database
         const { data, error } = await supabase
             .from('profiles')
             .update({ tier: newTier })
@@ -181,7 +227,7 @@ export async function toggleUserTier(targetTier) {
         if (error) throw error;
 
         setState('profile', data);
-        showToast(`Tier berhasil diubah ke: ${newTier.toUpperCase()}`, 'success');
+        showToast(`Status ${newTier.toUpperCase()} berhasil disinkronkan ke NTWallet & NTGold!`, 'success');
         return true;
     } catch (err) {
         console.error('Error toggling tier:', err);

@@ -1169,6 +1169,19 @@ async function loadProfile(user) {
 		setSubBadge(data.user_type);
 		toggleLang(data.tbllang.lang_code.toLowerCase());
 		applyLang();
+
+		// Auto-sync PRO tier from NTWallet
+		if (data.user_type !== 'pro' && user.email) {
+			fetch(`/api/sync-ecosystem-tier?email=${encodeURIComponent(user.email)}`)
+				.then(r => r.json())
+				.then(res => {
+					if (res && res.isPro) {
+						data.user_type = 'pro';
+						setSubBadge('pro');
+					}
+				})
+				.catch(() => {});
+		}
 	}
 }
 
