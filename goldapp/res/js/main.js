@@ -3,38 +3,28 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = supabase;
 const sbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// --- Encryption Core ---
+// --- Direct Database & Legacy Decryption Helper ---
 const APP_SALT = "NTGold_Secret_2026";
-let sessionVaultKey = null;
-
-function getSecretKey() {
-    if (!currentSessionUser || !currentSessionUser.id) return APP_SALT;
-    if (!sessionVaultKey) {
-        const pin = prompt("Enter your Vault PIN to unlock your encrypted data:") || "";
-        sessionVaultKey = CryptoJS.SHA256(pin + currentSessionUser.id + APP_SALT).toString();
-    }
-    return sessionVaultKey;
-}
 
 function encryptData(text) {
-    if (text === null || text === undefined || text === '') return text;
-    return CryptoJS.AES.encrypt(text.toString(), getSecretKey()).toString();
+    return text;
 }
 
 function decryptData(ciphertext) {
     if (!ciphertext) return ciphertext;
     const str = ciphertext.toString();
     
-    // Skip decryption for old plaintext data (numbers or dates) to avoid random CryptoJS parsing errors
+    // Direct plaintext data
     if (!str.startsWith('U2Fsd')) {
         return str;
     }
 
+    // Seamless legacy decryption without PIN prompt
     try {
-        const bytes = CryptoJS.AES.decrypt(str, getSecretKey());
+        const key = CryptoJS.SHA256((currentSessionUser?.id || '') + APP_SALT).toString();
+        const bytes = CryptoJS.AES.decrypt(str, key);
         const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-        if (decrypted) return decrypted;
-        return str; 
+        return decrypted || str; 
     } catch (e) {
         return str; 
     }
@@ -1037,9 +1027,9 @@ async function saveInventory() {
 	const { error } = await sbClient.from('tblinventory').insert({
 		user_id: currentSessionUser.id,
 		brand_id: b,
-		weight_grams: encryptData(w.toString()),
-		purchase_price: encryptData(p.toString()),
-		purchase_date: encryptData(d.toString()),
+		weight_grams: w,
+		purchase_price: p,
+		purchase_date: d,
 		wallet_id: currentWalletId
 	});
 

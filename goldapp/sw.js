@@ -1,11 +1,11 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'goldapp-v6';
+const CACHE_NAME = 'goldapp-v7';
 const ASSETS_TO_CACHE = [
     './index.html',
     './manifest.json',
     './res/css/main.min.css?v=5',
-    './res/js/main.js?v=5',
+    './res/js/main.js?v=6',
     './res/img/icon_192.png',
     './res/img/icon_512.png',
     './res/img/apple-touch-icon.png'
