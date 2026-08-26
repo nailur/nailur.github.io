@@ -5,6 +5,13 @@ Semua perubahan pada kode dan struktur proyek didokumentasikan di sini untuk men
 ## [Unreleased]
 *Catatan: Setiap kali fitur atau tugas baru diselesaikan, AI harus mencatat perubahannya pada bagian bawah (atau atas) tanggal hari ini.*
 
+### 2026-08-26
+- **PWA Icons & Manifest Fix (`goldapp/manifest.json`, `goldapp/index.html`, `goldapp/sw.js`, `goldapp/res/img/apple-touch-icon.png`)**:
+  - Separated `any` and `maskable` icon definitions in `manifest.json` so Android WebAPK/PWA generator can reliably load the icon.
+  - Added square 180x180 `apple-touch-icon.png` and updated favicon/apple-touch-icon links in `index.html` (which previously linked to non-square 760x597 `icon.png`, causing missing logos on home screens).
+  - Added mobile PWA meta tags (`mobile-web-app-capable`, `apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`) to `index.html`.
+  - Added icon assets to `ASSETS_TO_CACHE` and bumped cache version to `goldapp-v6` in `sw.js`.
+
 ### 2026-07-31
 - **Documentation (Token-Saving Reference Guides)**:
   - Menambahkan dokumen `docs/DOM_Modal_Map.md` yang memetakan ID Modal, form, dan fungsi JS untuk menghemat token pencarian AI.

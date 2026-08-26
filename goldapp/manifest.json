@@ -1,8 +1,10 @@
 {
+  "id": "/goldapp/",
   "name": "NTGold",
   "short_name": "NTGold",
   "description": "Pantau pergerakan harga emas lokal secara real-time.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
@@ -17,7 +19,13 @@
       "src": "./res/img/icon_512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./res/img/icon_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

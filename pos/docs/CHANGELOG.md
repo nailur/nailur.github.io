@@ -5,6 +5,13 @@ All changes to the codebase and project structure must be documented here to mai
 ## [Unreleased]
 *Note: Every time a new feature or task is completed, AI agents must append their changes under the current date.*
 
+### 2026-08-26
+- **PWA Manifest & Standalone Fix (`pos/manifest.json`, `pos/index.html`, `pos/sw.js`)**:
+  - Changed `start_url` from absolute URL `https://ntgroup.my.id/pos/` to relative `./index.html` and added `scope: "./"` to prevent Android Chrome from treating navigation as out-of-scope (which caused browser header and footer / CCT toolbar to appear).
+  - Added `id: "/pos/"` and separated `any` vs `maskable` icon purposes.
+  - Added mobile PWA meta tags (`mobile-web-app-capable`, `apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`) to `index.html`.
+  - Bumped PWA cache to `pos-cache-v118` in `sw.js`.
+
 ### 2026-08-08
 - **Affiliate & HPP Enhancements (`pos/index.html`, `pos/js/affiliate.js`, `pos/js/hpp.js`)**:
   - Added "Metode Bayar" column to the Affiliate Unclaimed Transactions table and the Affiliate Details Modal to display the payment method of each claimed transaction.
