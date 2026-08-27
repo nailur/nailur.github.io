@@ -54,6 +54,9 @@ export function renderDashboard() {
         netCashflowEl.className = `stat-value ${netCashflow >= 0 ? 'text-success' : 'text-danger'}`;
     }
 
+    // Render User Profile & Tier Header Card
+    renderDashboardUserProfile();
+
     // Render Mini Wallets List
     renderDashboardWallets(wallets);
 
@@ -281,4 +284,28 @@ function renderCashflowTrendChart(transactions) {
         }
     });
 }
+
+function renderDashboardUserProfile() {
+    const { user, profile } = getState();
+    const nameEl = document.getElementById('dash-user-name');
+    const emailEl = document.getElementById('dash-user-email');
+    const badgeEl = document.getElementById('dash-user-tier-badge');
+    const upgradeBtn = document.getElementById('dash-pro-upgrade-btn');
+
+    const isProUser = profile && profile.tier === 'pro';
+
+    if (nameEl) nameEl.textContent = profile?.full_name || user?.email?.split('@')[0] || 'Pengguna';
+    if (emailEl) emailEl.textContent = user?.email || '';
+
+    if (badgeEl) {
+        badgeEl.innerHTML = isProUser 
+            ? `<span class="badge-pro-pill" style="font-size: 0.62rem; padding: 2px 6px;"><i class="ph-fill ph-crown"></i> PRO</span>` 
+            : `<span class="badge-free-pill" style="font-size: 0.62rem; padding: 2px 6px;">FREE</span>`;
+    }
+
+    if (upgradeBtn) {
+        upgradeBtn.style.display = isProUser ? 'none' : 'inline-flex';
+    }
+}
+
 

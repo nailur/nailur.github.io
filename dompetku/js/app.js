@@ -60,10 +60,15 @@ function updateUserTierBadges() {
             : `<span class="badge-free-pill">FREE</span>`;
     }
 
-    // Upgrade Banner in Sidebar
+    // Upgrade Banner & Buttons
     const sidebarBanner = document.getElementById('sidebar-upgrade-banner');
     if (sidebarBanner) {
         sidebarBanner.style.display = proStatus ? 'none' : 'block';
+    }
+
+    const mobileUpgradeBtn = document.getElementById('mobile-upgrade-btn');
+    if (mobileUpgradeBtn) {
+        mobileUpgradeBtn.style.display = proStatus ? 'none' : 'inline-flex';
     }
 }
 

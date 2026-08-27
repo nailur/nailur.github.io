@@ -181,7 +181,7 @@
         <main class="main-content">
             <!-- Mobile Topbar -->
             <header class="topbar">
-                <div class="topbar-brand">
+                <div class="topbar-brand" onclick="window.switchView('settings')" style="cursor: pointer;" title="Buka Profil & Pengaturan">
                     <div class="brand-logo" style="width: 30px; height: 30px; font-size: 1rem;">
                         <i class="ph-bold ph-wallet"></i>
                     </div>
@@ -191,7 +191,13 @@
                     </div>
                 </div>
                 <div class="topbar-actions">
-                    <button class="btn-icon" onclick="window.toggleTheme()" title="Ganti Tema">
+                    <button class="btn btn-gold btn-sm" onclick="window.openUpgradeModal()" title="Upgrade ke NTWallet PRO" style="padding: 3px 8px; font-size: 0.72rem;">
+                        <i class="ph-fill ph-crown"></i> PRO
+                    </button>
+                    <button class="btn-icon" onclick="window.switchView('settings')" title="Profil & Akun">
+                        <i class="ph-bold ph-user-circle" style="font-size: 1.25rem;"></i>
+                    </button>
+                    <button id="theme-toggle-btn" class="btn-icon" onclick="window.toggleTheme()" title="Ganti Tema">
                         <i class="ph-bold ph-sun"></i>
                     </button>
                     <button class="btn-icon hover-danger" onclick="window.handleLogout()" title="Keluar">
@@ -205,6 +211,32 @@
                      VIEW: DASHBOARD
                      ========================================== -->
                 <section id="view-dashboard" class="view-panel active">
+                    <!-- Dashboard User Profile & PRO Status Card -->
+                    <div class="glass-panel mb-3 flex items-center justify-between p-3" style="padding: 0.85rem 1rem;">
+                        <div class="flex items-center gap-3">
+                            <div style="width: 38px; height: 38px; border-radius: var(--radius-full); background: var(--surface-hover); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--primary);">
+                                <i class="ph-bold ph-user"></i>
+                            </div>
+                            <div>
+                                <div id="dash-user-name" class="font-bold text-sm">Pengguna</div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <div id="dash-user-tier-badge">
+                                        <span class="badge-free-pill" style="font-size: 0.62rem; padding: 2px 6px;">FREE</span>
+                                    </div>
+                                    <span id="dash-user-email" class="text-xs text-muted" style="font-size: 0.72rem;">user@email.com</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="dash-pro-upgrade-btn" class="btn btn-gold btn-sm" onclick="window.openUpgradeModal()" style="padding: 4px 10px; font-size: 0.78rem;">
+                                <i class="ph-fill ph-crown"></i> Beli PRO
+                            </button>
+                            <button class="btn btn-outline btn-sm" onclick="window.switchView('settings')" title="Edit Profil" style="padding: 4px 8px; font-size: 0.78rem;">
+                                <i class="ph-bold ph-gear"></i>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Summary Stats Grid -->
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -599,13 +631,13 @@
                 <i class="ph-bold ph-wallet"></i>
                 <span>Dompet</span>
             </a>
-            <a class="nav-item" data-view="budgets" onclick="window.switchView('budgets')">
-                <i class="ph-bold ph-chart-pie-slice"></i>
-                <span>Anggaran</span>
-            </a>
             <a class="nav-item" data-view="reports" onclick="window.switchView('reports')">
                 <i class="ph-bold ph-chart-line-up"></i>
                 <span>Laporan</span>
+            </a>
+            <a class="nav-item" data-view="settings" onclick="window.switchView('settings')">
+                <i class="ph-bold ph-user-gear"></i>
+                <span>Akun & PRO</span>
             </a>
         </nav>
 
