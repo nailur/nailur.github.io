@@ -9,6 +9,36 @@ export function isPro() {
 
 export async function checkSession() {
     try {
+        // 1. Check for incoming NTLink SSO Token
+        const urlParams = new URLSearchParams(window.location.search);
+        const ssoToken = urlParams.get('sso_token');
+        if (ssoToken) {
+            try {
+                const ssoRes = await fetch(`/api/ntlink-auth?action=verify-token&token=${encodeURIComponent(ssoToken)}`);
+                if (ssoRes.ok) {
+                    const ssoData = await ssoRes.json();
+                    if (ssoData.success && ssoData.data?.email) {
+                        const verifiedUser = ssoData.data;
+                        // Clean URL without reloading
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        
+                        // Load or upsert profile by email
+                        let profile = await loadProfileByEmail(verifiedUser.email, verifiedUser.fullName, verifiedUser.tier);
+                        if (profile) {
+                            const userObj = { id: profile.id, email: profile.email, user_metadata: { full_name: profile.full_name } };
+                            setState('user', userObj);
+                            setState('profile', profile);
+                            showToast(`Terhubung via NTLink SSO ⚡`, 'success');
+                            return userObj;
+                        }
+                    }
+                }
+            } catch (ssoErr) {
+                console.warn('SSO token verification failed:', ssoErr);
+            }
+        }
+
+        // 2. Check standard Supabase session
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
 
@@ -80,6 +110,46 @@ export async function loadProfile(userId) {
         }
     } catch (err) {
         console.error('Error loading profile:', err);
+    }
+    return null;
+}
+
+export async function loadProfileByEmail(email, fullName, tier) {
+    try {
+        const { data: existing } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (existing) {
+            if (tier === 'pro' && existing.tier !== 'pro') {
+                existing.tier = 'pro';
+                await supabase.from('profiles').update({ tier: 'pro' }).eq('id', existing.id);
+            }
+            return existing;
+        }
+
+        const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : (Math.random().toString(36).substring(2, 10) + '-' + Math.random().toString(36).substring(2, 10));
+        const linkCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const newProfile = {
+            id: newId,
+            email: email,
+            full_name: fullName || email.split('@')[0],
+            tier: tier || 'free',
+            telegram_link_code: linkCode,
+            currency: 'IDR'
+        };
+
+        const { data: created, error } = await supabase
+            .from('profiles')
+            .insert(newProfile)
+            .select()
+            .single();
+
+        if (!error && created) return created;
+    } catch (e) {
+        console.error('Error in loadProfileByEmail:', e);
     }
     return null;
 }

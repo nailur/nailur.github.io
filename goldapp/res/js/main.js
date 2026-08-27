@@ -39,15 +39,43 @@ let currentWalletItemCount = 0;
 document.addEventListener('DOMContentLoaded', async () => {
 	document.getElementById('lang_select').value = currentLang;
 
+	// Check for incoming NTLink SSO Token
+	const urlParams = new URLSearchParams(window.location.search);
+	const ssoToken = urlParams.get('sso_token');
+	if (ssoToken) {
+		try {
+			const ssoRes = await fetch(`/api/ntlink-auth?action=verify-token&token=${encodeURIComponent(ssoToken)}`);
+			if (ssoRes.ok) {
+				const ssoData = await ssoRes.json();
+				if (ssoData.success && ssoData.data?.email) {
+					const verified = ssoData.data;
+					window.history.replaceState({}, document.title, window.location.pathname);
+					
+					const mockUser = {
+						id: verified.email,
+						email: verified.email,
+						user_metadata: { full_name: verified.fullName }
+					};
+					handleSessionSync({ user: mockUser });
+					showToast(currentLang === 'en' ? "Connected via NTLink SSO ⚡" : "Terhubung via NTLink SSO ⚡");
+				}
+			}
+		} catch (ssoErr) {
+			console.warn('NTGold SSO verification note:', ssoErr);
+		}
+	}
+
 	const marketFetch = fetchMarketData(); 
     const sessionFetch = sbClient.auth.getSession();
 
 	// Check session
 	const { data: { session } } = await sessionFetch;
-    handleSessionSync(session);
+	if (!ssoToken && session) {
+		handleSessionSync(session);
+	}
 	
 	sbClient.auth.onAuthStateChange((event, session) => { 
-        handleSessionSync(session);
+		if (session) handleSessionSync(session);
     });
 
 	applyLang();

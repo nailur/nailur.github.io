@@ -83,9 +83,19 @@
                 </button>
             </form>
 
-            <div class="text-center mt-4">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin: 1rem 0;">
+                <div style="flex: 1; height: 1px; background: var(--border);"></div>
+                <span class="text-xs text-muted" style="font-size: 0.7rem;">ATAU</span>
+                <div style="flex: 1; height: 1px; background: var(--border);"></div>
+            </div>
+
+            <a href="../ntlink/" class="btn btn-secondary w-full" style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.82rem; text-decoration: none;">
+                <i class="ph-bold ph-lightning" style="color: #F59E0B;"></i> Masuk dengan Akun NTLink
+            </a>
+
+            <div class="text-center mt-3">
                 <span id="auth-switch-text" class="text-xs text-muted">
-                    Belum punya akun? <a href="javascript:void(0)" onclick="window.setAuthMode('register')" style="color: var(--primary); font-weight: 600; text-decoration: none;">Daftar gratis</a>
+                    Belum punya akun? <a href="javascript:void(0)" onclick="window.setAuthMode('register')" style="color: var(--text-main); font-weight: 600; text-decoration: underline;">Daftar gratis</a>
                 </span>
             </div>
         </div>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NTLink - Ecosystem Identity & SSO</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="brand" onclick="window.location.reload()">
+            <div class="brand-icon">
+                <i class="ph-bold ph-lightning"></i>
+            </div>
+            <span class="brand-name">NTLink</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button class="btn-icon" onclick="window.toggleTheme()" title="Ganti Tema">
+                <i class="ph-bold ph-sun"></i>
+            </button>
+            <button id="header-logout-btn" class="btn btn-outline btn-sm hidden" onclick="window.handleLogout()">
+                <i class="ph-bold ph-sign-out"></i> Keluar
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- ==========================================
+             VIEW: AUTH (LOGIN & REGISTER)
+             ========================================== -->
+        <section id="auth-section">
+            <div class="card" style="max-width: 440px; margin: 2rem auto;">
+                <div class="text-center mb-4">
+                    <div style="width: 48px; height: 48px; border-radius: var(--radius-sm); background: #FFFFFF; color: #000000; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin: 0 auto 0.75rem;">
+                        <i class="ph-bold ph-lightning"></i>
+                    </div>
+                    <h2 class="font-bold text-xl" style="letter-spacing: -0.5px;">Satu Akun untuk Semua</h2>
+                    <p class="text-xs text-muted mt-1">Masuk sekali dengan NTLink untuk mengakses NTWallet & NTGold secara otomatis.</p>
+                </div>
+
+                <div class="auth-tabs">
+                    <button class="auth-tab-btn active" id="tab-login-btn" onclick="window.switchAuthTab('login')">Masuk</button>
+                    <button class="auth-tab-btn" id="tab-register-btn" onclick="window.switchAuthTab('register')">Daftar Akun</button>
+                </div>
+
+                <!-- Form Login -->
+                <form id="form-login">
+                    <div class="form-group">
+                        <label class="form-label">Alamat Email</label>
+                        <input type="email" id="login-email" class="form-control" placeholder="nama@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" id="btn-submit-login" class="btn btn-primary mt-3">
+                        <i class="ph-bold ph-sign-in"></i> Masuk ke Ekosistem NT
+                    </button>
+                </form>
+
+                <!-- Form Register -->
+                <form id="form-register" class="hidden">
+                    <div class="form-group">
+                        <label class="form-label">Nama Lengkap</label>
+                        <input type="text" id="reg-name" class="form-control" placeholder="Contoh: John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Alamat Email</label>
+                        <input type="email" id="reg-email" class="form-control" placeholder="nama@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="reg-password" class="form-control" placeholder="Minimal 6 karakter" minlength="6" required>
+                    </div>
+                    <button type="submit" id="btn-submit-register" class="btn btn-primary mt-3">
+                        <i class="ph-bold ph-user-plus"></i> Buat Akun NTLink Terpadu
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             VIEW: LOGGED IN (ECOSYSTEM DASHBOARD HUB)
+             ========================================== -->
+        <section id="dashboard-section" class="hidden">
+            <!-- User Profile Summary Card -->
+            <div class="card flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center gap-3">
+                    <div style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: var(--surface-hover); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                        <i class="ph-bold ph-user"></i>
+                    </div>
+                    <div>
+                        <div id="user-display-name" class="font-bold text-base">Nama Pengguna</div>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span id="user-tier-badge" class="badge-free">FREE</span>
+                            <span id="user-display-email" class="text-xs text-muted">user@email.com</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btn-upgrade-pro" class="btn btn-gold btn-sm" onclick="window.handleUpgradePro()">
+                        <i class="ph-fill ph-crown"></i> Upgrade NT PRO
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ecosystem Apps Switcher -->
+            <div class="mt-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold text-sm text-muted" style="text-transform: uppercase; letter-spacing: 0.5px;">Aplikasi Ekosistem NT</h3>
+                    <span class="text-xs text-muted">SSO Siap Terhubung ⚡</span>
+                </div>
+
+                <div class="apps-grid">
+                    <!-- NTWallet Card -->
+                    <div class="app-card">
+                        <div>
+                            <div class="app-icon" style="background: rgba(255, 255, 255, 0.05); color: #FFFFFF;">
+                                <i class="ph-bold ph-wallet"></i>
+                            </div>
+                            <div class="app-title">NTWallet</div>
+                            <div class="app-desc">Pencatatan keuangan, multi-dompet, target anggaran, dan laporan visual modern.</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="window.launchApp('ntwallet')">
+                            Buka NTWallet <i class="ph-bold ph-arrow-up-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- NTGold Card -->
+                    <div class="app-card">
+                        <div>
+                            <div class="app-icon" style="background: rgba(245, 197, 24, 0.1); color: #F5C518;">
+                                <i class="ph-bold ph-coins"></i>
+                            </div>
+                            <div class="app-title">NTGold</div>
+                            <div class="app-desc">Manajemen portofolio tabungan emas, live tracker Antam/UBS, dan target masa depan.</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="window.launchApp('ntgold')">
+                            Buka NTGold <i class="ph-bold ph-arrow-up-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- NTPos Card -->
+                    <div class="app-card">
+                        <div>
+                            <div class="app-icon" style="background: rgba(99, 102, 241, 0.1); color: #818CF8;">
+                                <i class="ph-bold ph-receipt"></i>
+                            </div>
+                            <div class="app-title">NTPOS</div>
+                            <div class="app-desc">Aplikasi kasir point of sale, manajemen menu, dan struk penjualan outlet.</div>
+                        </div>
+                        <button class="btn btn-outline btn-sm" onclick="window.launchApp('ntpos')">
+                            Buka NTPOS <i class="ph-bold ph-arrow-up-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Telegram Bot Assistant Card -->
+            <div class="card mt-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="ph-bold ph-telegram-logo text-main" style="font-size: 1.3rem;"></i>
+                    <h3 class="font-bold text-sm">Bot Telegram Pintar (NTWallet + NTGold)</h3>
+                </div>
+                <p class="text-xs text-muted mb-3">
+                    Gunakan 1 Bot Telegram untuk mencatat pengeluaran harian dan menanyakan progres target emas NTGold Anda.
+                </p>
+                <div id="telegram-box-content" class="text-xs text-muted">
+                    Memuat status Telegram...
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toast-message">Notifikasi</span>
+    </div>
+
+    <!-- Main Module Script -->
+    <script type="module" src="./js/app.js"></script>
+</body>
+
+</html>
