@@ -163,7 +163,7 @@ function renderExpenseBreakdownChart(categorySpendingMap) {
                 data: data,
                 backgroundColor: colors,
                 borderWidth: 2,
-                borderColor: 'var(--surface, #ffffff)'
+                borderColor: '#121212'
             }]
         },
         options: {
@@ -171,23 +171,23 @@ function renderExpenseBreakdownChart(categorySpendingMap) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'bottom',
+                    position: 'right',
                     labels: {
-                        boxWidth: 12,
-                        font: { family: 'Inter', size: 11 },
-                        color: 'var(--text-main, #111827)'
+                        boxWidth: 10,
+                        font: { family: 'Plus Jakarta Sans', size: 11 },
+                        color: '#888888',
+                        padding: 10
                     }
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const val = context.raw;
-                            return ` ${context.label}: ${formatRupiah(val)}`;
+                            return ` ${context.label}: ${formatRupiah(context.raw)}`;
                         }
                     }
                 }
             },
-            cutout: '70%'
+            cutout: '72%'
         }
     });
 }
@@ -232,14 +232,14 @@ function renderCashflowTrendChart(transactions) {
                 {
                     label: 'Pemasukan',
                     data: incomeData,
-                    backgroundColor: 'rgba(16, 185, 129, 0.85)',
-                    borderRadius: 6
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 4
                 },
                 {
                     label: 'Pengeluaran',
                     data: expenseData,
-                    backgroundColor: 'rgba(239, 68, 68, 0.85)',
-                    borderRadius: 6
+                    backgroundColor: '#404040',
+                    borderRadius: 4
                 }
             ]
         },
@@ -250,9 +250,9 @@ function renderCashflowTrendChart(transactions) {
                 legend: {
                     position: 'top',
                     labels: {
-                        boxWidth: 12,
-                        font: { family: 'Inter', size: 11 },
-                        color: 'var(--text-main, #111827)'
+                        boxWidth: 10,
+                        font: { family: 'Plus Jakarta Sans', size: 11 },
+                        color: '#888888'
                     }
                 },
                 tooltip: {
@@ -272,12 +272,13 @@ function renderCashflowTrendChart(transactions) {
                             if (value >= 1000) return (value / 1000) + ' Rb';
                             return value;
                         },
-                        font: { size: 10 }
+                        font: { size: 10 },
+                        color: '#666666'
                     },
-                    grid: { color: 'rgba(0,0,0,0.05)' }
+                    grid: { color: 'rgba(255,255,255,0.06)' }
                 },
                 x: {
-                    ticks: { font: { size: 11 } },
+                    ticks: { font: { size: 10 }, color: '#666666' },
                     grid: { display: false }
                 }
             }
