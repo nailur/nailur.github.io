@@ -807,7 +807,7 @@ function setupEventListeners() {
             showLoading(true);
             let res;
             if (id) {
-                res = await updateCategory(id, { name, icon, color });
+                res = await updateCategory(id, { name, type, icon, color });
             } else {
                 res = await createCategory({ name, type, icon, color });
             }

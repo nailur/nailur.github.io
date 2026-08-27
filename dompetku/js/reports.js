@@ -1,5 +1,6 @@
 import { getState } from './state.js';
 import { formatRupiah, formatDate, exportToExcel, escapeHtml } from './utils.js';
+import { isPro } from './auth.js';
 
 export function renderReports() {
     const { transactions, categories, wallets } = getState();
@@ -142,6 +143,11 @@ function renderReportTransactionsTable(transactions) {
 }
 
 export function handleExportExcel() {
+    if (!isPro()) {
+        window.openUpgradeModal('Ekspor Excel Fitur PRO', 'Ekspor seluruh data laporan transaksi ke file spreadsheet Microsoft Excel (.xlsx) adalah fitur eksklusif untuk pengguna NTWallet PRO 👑.');
+        return;
+    }
+
     const { transactions } = getState();
     const monthSelect = document.getElementById('report-month-select');
     const yearSelect = document.getElementById('report-year-select');
@@ -170,6 +176,6 @@ export function handleExportExcel() {
         'Sumber': t.source || 'web'
     }));
 
-    exportToExcel(`Laporan_Dompetku_${periodName}`, exportData);
+    exportToExcel(`Laporan_NTWallet_${periodName}`, exportData);
 }
 

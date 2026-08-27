@@ -110,15 +110,18 @@ export async function createCategory({ name, type, icon, color }) {
     }
 }
 
-export async function updateCategory(id, { name, icon, color }) {
+export async function updateCategory(id, { name, type, icon, color }) {
     try {
+        const updatePayload = {
+            name: name.trim(),
+            icon: icon,
+            color: color
+        };
+        if (type) updatePayload.type = type;
+
         const { data, error } = await supabase
             .from('categories')
-            .update({
-                name: name.trim(),
-                icon: icon,
-                color: color
-            })
+            .update(updatePayload)
             .eq('id', id)
             .select()
             .single();
