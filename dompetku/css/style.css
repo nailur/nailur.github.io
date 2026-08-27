@@ -497,6 +497,7 @@ body {
 .btn-danger {
     background: var(--danger);
     color: #ffffff;
+    border: none;
 }
 
 .btn-danger:hover {
