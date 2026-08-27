@@ -532,7 +532,11 @@ function setupModals() {
         if (form) form.reset();
         document.getElementById('category-id-input').value = '';
         document.getElementById('category-modal-title').textContent = 'Tambah Kategori Baru';
-        document.getElementById('category-type-select').value = defaultType;
+        const typeSelect = document.getElementById('category-type-select');
+        if (typeSelect) {
+            typeSelect.value = defaultType;
+            typeSelect.disabled = false;
+        }
         renderCategoryIconPicker('ph-tag');
         renderCategoryColorPicker('#6366F1');
         openModal('modal-category');
@@ -545,8 +549,11 @@ function setupModals() {
         document.getElementById('category-id-input').value = cat.id;
         document.getElementById('category-modal-title').textContent = 'Edit Kategori';
         document.getElementById('category-name-input').value = cat.name;
-        document.getElementById('category-type-select').value = cat.type;
-        document.getElementById('category-type-select').disabled = true;
+        const typeSelect = document.getElementById('category-type-select');
+        if (typeSelect) {
+            typeSelect.value = cat.type;
+            typeSelect.disabled = false;
+        }
 
         renderCategoryIconPicker(cat.icon || 'ph-tag');
         renderCategoryColorPicker(cat.color || '#6366F1');
@@ -893,48 +900,83 @@ function setupEventListeners() {
     // Global Action Helpers
     window.handleLogout = logout;
     window.handleExportExcel = handleExportExcel;
-    window.handleToggleTier = async () => {
-        showLoading(true);
-        const ok = await toggleUserTier();
-        showLoading(false);
-        if (ok) {
-            updateUserTierBadges();
-            switchView(getState().activeTab);
-            closeModal('modal-upgrade-pro');
+
+    // Custom Reusable Confirmation Delete Modal Popup
+    let pendingConfirmAction = null;
+    window.showConfirmDelete = function ({ title, message, onConfirm }) {
+        const titleEl = document.getElementById('confirm-delete-title');
+        const msgEl = document.getElementById('confirm-delete-message');
+        const submitBtn = document.getElementById('confirm-delete-submit-btn');
+
+        if (titleEl) titleEl.textContent = title || 'Konfirmasi Hapus';
+        if (msgEl) msgEl.textContent = message || 'Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.';
+
+        pendingConfirmAction = onConfirm;
+
+        if (submitBtn) {
+            submitBtn.onclick = async () => {
+                closeModal('modal-confirm-delete');
+                if (typeof pendingConfirmAction === 'function') {
+                    const action = pendingConfirmAction;
+                    pendingConfirmAction = null;
+                    await action();
+                }
+            };
         }
+
+        openModal('modal-confirm-delete');
     };
 
-    window.handleDeleteTransaction = async (id) => {
-        if (confirm('Hapus transaksi ini? Saldo dompet akan disesuaikan kembali.')) {
-            showLoading(true);
-            await deleteTransaction(id);
-            showLoading(false);
-            switchView(getState().activeTab);
-        }
+    window.handleDeleteTransaction = (id) => {
+        window.showConfirmDelete({
+            title: 'Hapus Transaksi?',
+            message: 'Transaksi ini akan dihapus permanen dan saldo dompet akan otomatis disesuaikan kembali.',
+            onConfirm: async () => {
+                showLoading(true);
+                await deleteTransaction(id);
+                showLoading(false);
+                switchView(getState().activeTab);
+            }
+        });
     };
-    window.handleDeleteWallet = async (id) => {
-        if (confirm('Hapus dompet ini?')) {
-            showLoading(true);
-            await deleteWallet(id);
-            showLoading(false);
-            renderWalletsView();
-        }
+
+    window.handleDeleteWallet = (id) => {
+        window.showConfirmDelete({
+            title: 'Hapus Dompet / Rekening?',
+            message: 'Dompet ini beserta seluruh catatan transaksinya akan dihapus dari akun Anda.',
+            onConfirm: async () => {
+                showLoading(true);
+                await deleteWallet(id);
+                showLoading(false);
+                renderWalletsView();
+            }
+        });
     };
-    window.handleDeleteCategory = async (id) => {
-        if (confirm('Hapus kategori ini?')) {
-            showLoading(true);
-            await deleteCategory(id);
-            showLoading(false);
-            renderCategoriesView();
-        }
+
+    window.handleDeleteCategory = (id) => {
+        window.showConfirmDelete({
+            title: 'Hapus Kategori?',
+            message: 'Kategori ini akan dihapus dari daftar pilihan kategori Anda.',
+            onConfirm: async () => {
+                showLoading(true);
+                await deleteCategory(id);
+                showLoading(false);
+                renderCategoriesView();
+            }
+        });
     };
-    window.handleDeleteBudget = async (id) => {
-        if (confirm('Hapus anggaran ini?')) {
-            showLoading(true);
-            await deleteBudget(id);
-            showLoading(false);
-            renderBudgetsView();
-        }
+
+    window.handleDeleteBudget = (id) => {
+        window.showConfirmDelete({
+            title: 'Hapus Batas Anggaran?',
+            message: 'Batas anggaran bulanan untuk kategori ini akan dihapus.',
+            onConfirm: async () => {
+                showLoading(true);
+                await deleteBudget(id);
+                showLoading(false);
+                renderBudgetsView();
+            }
+        });
     };
 
     window.copyLinkCommand = () => {
@@ -945,7 +987,15 @@ function setupEventListeners() {
         }
     };
     window.regenerateTelegramCode = regenerateTelegramCode;
-    window.handleDisconnectTelegram = disconnectTelegram;
+    window.handleDisconnectTelegram = () => {
+        window.showConfirmDelete({
+            title: 'Putuskan Bot Telegram?',
+            message: 'Akun Telegram Anda tidak akan terhubung lagi dengan NTWallet & NTGold.',
+            onConfirm: async () => {
+                await disconnectTelegram();
+            }
+        });
+    };
 }
 
 // ==========================================

@@ -494,6 +494,16 @@ body {
     background: var(--danger-light);
 }
 
+.btn-danger {
+    background: var(--danger);
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background: #DC2626;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
 .btn-sm {
     padding: 0.4rem 0.75rem;
     font-size: 0.78rem;
