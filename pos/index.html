@@ -1006,10 +1006,7 @@
                         <span>-</span>
                         <input type="date" id="dashboard-date-end" class="input-sm">
                         <button class="btn btn-secondary" id="btn-open-dashboard-settings" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-faders"></i> Tampilan</button>
-                        <button class="btn btn-primary" id="btn-open-penarikan" style="padding: 5px 10px; font-size: 0.85rem; position: relative;">
-                            <i class="ph ph-money"></i> Input Penarikan
-                            <span id="badge-penarikan-reminder" class="hidden" style="position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff; border-radius: 999px; font-size: 0.65rem; font-weight: 700; padding: 1px 5px; min-width: 16px; text-align: center; line-height: 1.4;">0</span>
-                        </button>
+
                         <button class="btn btn-success" id="btn-export-dashboard-excel" style="padding: 5px 10px; font-size: 0.85rem;" onclick="window.exportDashboardExcel && window.exportDashboardExcel()"><i class="ph ph-file-xls"></i> Export Excel</button>
                     </div>
                 </div>
@@ -1120,17 +1117,17 @@
                     </div>
                 </div>
 
-                <div id="dash-sec-trend" class="analytics-charts-grid" style="display: grid; gap: 15px; margin-bottom: 20px;">
-                    <div class="glass-panel"
+                <div class="analytics-charts-grid" style="display: grid; gap: 15px; margin-bottom: 20px;">
+                    <div class="glass-panel dash-sec-trend"
                         style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px; grid-column: 1 / -1;">
                         <canvas id="revenueChart"></canvas>
                     </div>
-                    <div class="glass-panel"
+                    <div class="glass-panel dash-sec-trend"
                         style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px; grid-column: 1 / -1;">
                         <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);">Omset Bersih Non-Tunai</h4>
                         <canvas id="methodNetChart"></canvas>
                     </div>
-                    <div class="glass-panel"
+                    <div class="glass-panel dash-sec-trend"
                         style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px; grid-column: 1 / -1;">
                         <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);">Omset Bersih Tunai vs Setoran</h4>
                         <canvas id="depositComparisonChart"></canvas>
@@ -1156,25 +1153,28 @@
                             <h4 style="margin: 0; font-size: 1rem;"><i class="ph ph-money"></i> Rekap Penarikan Dana Platform</h4>
                             <p style="margin: 4px 0 0; font-size: 0.78rem; color: var(--text-secondary);">Shopee Food &bull; Grab Food &bull; Go Food</p>
                         </div>
-                        <button class="btn btn-primary" onclick="document.getElementById('btn-open-penarikan').click()" style="padding: 5px 12px; font-size: 0.83rem;"><i class="ph ph-plus"></i> Input Penarikan</button>
+                        <button class="btn btn-primary" id="btn-open-penarikan" style="padding: 5px 12px; font-size: 0.83rem; position: relative;"><i class="ph ph-plus"></i> Input Penarikan<span id="badge-penarikan-reminder" class="hidden" style="position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff; border-radius: 999px; font-size: 0.65rem; font-weight: 700; padding: 1px 5px; min-width: 16px; text-align: center; line-height: 1.4;">0</span></button>
                     </div>
                     <div class="table-responsive">
                         <table class="data-table" style="font-size: 0.83rem;">
                             <thead>
     <tr>
         <th rowspan="2" style="vertical-align: middle;">Tanggal</th>
-        <th colspan="3" style="text-align: center; border-bottom: 1px solid var(--border);">Potongan Platform</th>
         <th rowspan="2" style="text-align: right; vertical-align: middle;">Total Omset</th>
-        <th rowspan="2" style="text-align: right; vertical-align: middle;">Total Penarikan</th>
+        <th colspan="3" style="text-align: center; border-bottom: 1px solid var(--border);">Penarikan</th>
+        <th colspan="3" style="text-align: center; border-bottom: 1px solid var(--border);">Potongan</th>
         <th rowspan="2" style="text-align: right; vertical-align: middle;">Total Potongan</th>
     </tr>
     <tr>
         <th style="text-align: right; font-weight: 500; font-size: 0.75rem; color: #ea580c;">Shopee</th>
         <th style="text-align: right; font-weight: 500; font-size: 0.75rem; color: #16a34a;">Grab</th>
         <th style="text-align: right; font-weight: 500; font-size: 0.75rem; color: #e11d48;">GoFood</th>
+        <th style="text-align: right; font-weight: 500; font-size: 0.75rem; color: #ea580c;">Shopee</th>
+        <th style="text-align: right; font-weight: 500; font-size: 0.75rem; color: #16a34a;">Grab</th>
+        <th style="text-align: right; font-weight: 500; font-size: 0.75rem; color: #e11d48;">GoFood</th>
     </tr>
 </thead>
-                            <tbody id="platform-withdrawal-rekap-table"><tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Muat dashboard terlebih dahulu.</td></tr></tbody>
+                            <tbody id="platform-withdrawal-rekap-table"><tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:20px;">Muat dashboard terlebih dahulu.</td></tr></tbody>
                         </table>
                     </div>
                 </div>

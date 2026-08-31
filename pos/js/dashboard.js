@@ -1397,12 +1397,15 @@ if (btnSaveDashSettings) {
             
             // Apply settings immediately to UI
             const toggleSec = (id, show) => {
-                const el = document.getElementById(id);
-                if (el) { if (show) el.classList.remove('hidden'); else el.classList.add('hidden'); }
+                const els = document.querySelectorAll(id.startsWith('.') ? id : '#' + id);
+                els.forEach(el => {
+                    if (show !== false) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
+                });
             };
             toggleSec('dash-sec-summary', newSettings.show_summary_cards);
             toggleSec('dash-sec-tables', newSettings.show_method_type_tables);
-            toggleSec('dash-sec-trend', newSettings.show_trend_chart);
+            toggleSec('.dash-sec-trend', newSettings.show_trend_chart);
             toggleSec('dash-sec-peak', newSettings.show_peak_hours);
             toggleSec('dash-sec-profit', newSettings.show_net_profit);
             toggleSec('dash-sec-rekap', newSettings.show_withdrawal_rekap);
@@ -1500,15 +1503,20 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
     if (!container) return;
 
     let html = '';
-    let grandTotals = { omset: 0, penarikan: 0, potongan: 0, byPlatform: {} };
-    ONLINE_PLATFORMS.forEach(p => grandTotals.byPlatform[p] = 0);
+    let grandTotals = { omset: 0, penarikan: 0, potongan: 0, penarikanByPlatform: {}, potonganByPlatform: {} };
+    ONLINE_PLATFORMS.forEach(p => {
+        grandTotals.penarikanByPlatform[p] = 0;
+        grandTotals.potonganByPlatform[p] = 0;
+    });
 
     compDates.forEach(date => {
         let dateHasData = false;
         let dayOmset = 0;
         let dayPenarikan = 0;
         let dayPotongan = 0;
-        let colsHtml = '';
+        
+        let colsPenarikanHtml = '';
+        let colsPotonganHtml = '';
         const missingPlatforms = [];
         
         ONLINE_PLATFORMS.forEach(platform => {
@@ -1524,9 +1532,11 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
             dayOmset += omset;
             dayPenarikan += penarikan;
             dayPotongan += potongan;
-            grandTotals.byPlatform[platform] += potongan;
+            grandTotals.penarikanByPlatform[platform] += penarikan;
+            grandTotals.potonganByPlatform[platform] += potongan;
             
-            colsHtml += '<td style="text-align:right;">' + (potongan > 0 ? 'Rp ' + potongan.toLocaleString('id-ID') : '-') + '</td>';
+            colsPenarikanHtml += '<td style="text-align:right; color:#10b981;">' + (penarikan > 0 ? 'Rp ' + penarikan.toLocaleString('id-ID') : '-') + '</td>';
+            colsPotonganHtml += '<td style="text-align:right; color:var(--danger);">' + (potongan > 0 ? 'Rp ' + potongan.toLocaleString('id-ID') : '-') + '</td>';
         });
         
         if (!dateHasData) return;
@@ -1542,19 +1552,33 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
             
         const rowStyle = missingPlatforms.length > 0 ? 'background: rgba(239,68,68,0.06);' : '';
         
-        html += '<tr style="' + rowStyle + '"><td style="white-space:nowrap;">' + label + missingTag + '</td>' + colsHtml + '<td style="text-align:right;">Rp ' + dayOmset.toLocaleString('id-ID') + '</td><td style="text-align:right; color:#10b981;">Rp ' + dayPenarikan.toLocaleString('id-ID') + '</td><td style="text-align:right; color:var(--danger); font-weight:600;">Rp ' + dayPotongan.toLocaleString('id-ID') + '</td></tr>';
+        html += '<tr style="' + rowStyle + '">';
+        html += '<td style="white-space:nowrap;">' + label + missingTag + '</td>';
+        html += '<td style="text-align:right;">Rp ' + dayOmset.toLocaleString('id-ID') + '</td>';
+        html += colsPenarikanHtml;
+        html += colsPotonganHtml;
+        html += '<td style="text-align:right; color:var(--danger); font-weight:600;">Rp ' + dayPotongan.toLocaleString('id-ID') + '</td>';
+        html += '</tr>';
     });
 
     if (!html) {
-        container.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada data penarikan pada periode ini.</td></tr>';
+        container.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada data penarikan pada periode ini.</td></tr>';
         return;
     }
     
-    html += '<tr style="font-weight:700; background: rgba(99,102,241,0.07); border-top: 2px solid var(--border);"><td>TOTAL</td>';
+    html += '<tr style="font-weight:700; background: rgba(99,102,241,0.07); border-top: 2px solid var(--border);">';
+    html += '<td style="text-align:right;">TOTAL</td>';
+    html += '<td style="text-align:right;">Rp ' + grandTotals.omset.toLocaleString('id-ID') + '</td>';
+    
     ONLINE_PLATFORMS.forEach(platform => {
-        html += '<td style="text-align:right; color:var(--danger);">Rp ' + grandTotals.byPlatform[platform].toLocaleString('id-ID') + '</td>';
+        html += '<td style="text-align:right; color:#10b981;">Rp ' + grandTotals.penarikanByPlatform[platform].toLocaleString('id-ID') + '</td>';
     });
-    html += '<td style="text-align:right;">Rp ' + grandTotals.omset.toLocaleString('id-ID') + '</td><td style="text-align:right; color:#10b981;">Rp ' + grandTotals.penarikan.toLocaleString('id-ID') + '</td><td style="text-align:right; color:var(--danger);">Rp ' + grandTotals.potongan.toLocaleString('id-ID') + '</td></tr>';
+    ONLINE_PLATFORMS.forEach(platform => {
+        html += '<td style="text-align:right; color:var(--danger);">Rp ' + grandTotals.potonganByPlatform[platform].toLocaleString('id-ID') + '</td>';
+    });
+    
+    html += '<td style="text-align:right; color:var(--danger);">Rp ' + grandTotals.potongan.toLocaleString('id-ID') + '</td>';
+    html += '</tr>';
 
     container.innerHTML = html;
 };
@@ -1861,12 +1885,15 @@ window.loadDashboard = async function() {
             try { settings = JSON.parse(settings); } catch (e) { settings = {}; }
         }
         const toggleSec = (id, show) => {
-            const el = document.getElementById(id);
-            if (el) if (show !== false) el.classList.remove('hidden'); else el.classList.add('hidden');
-        };
+                const els = document.querySelectorAll(id.startsWith('.') ? id : '#' + id);
+                els.forEach(el => {
+                    if (show !== false) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
+                });
+            };
         toggleSec('dash-sec-summary', settings.show_summary_cards);
         toggleSec('dash-sec-tables', settings.show_method_type_tables);
-        toggleSec('dash-sec-trend', settings.show_trend_chart);
+        toggleSec('.dash-sec-trend', settings.show_trend_chart);
         toggleSec('dash-sec-peak', settings.show_peak_hours);
         toggleSec('dash-sec-profit', settings.show_net_profit);
         toggleSec('dash-sec-rekap', settings.show_withdrawal_rekap);
