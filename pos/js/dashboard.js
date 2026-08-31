@@ -1416,6 +1416,596 @@ window.exportDashboardExcel = async function() {
     if (typeof window.showToast === 'function') window.showToast('Laporan Excel berhasil diunduh (9 Sheet Lengkap)', 'success');
 };
 
+
+// ── Platform Withdrawals Feature ─────────────────────────────────────
+// Handles: load, reminder badge, modal open/fill, save, rekap table,
+//          MDR override for online platforms, and Excel Sheet 10.
+
+const ONLINE_PLATFORMS = ['Shopee Food', 'Grab Food', 'Go Food'];
+
+/**
+ * Fetch platform_withdrawals for the current dashboard date range.
+ * Returns a map: { 'YYYY-MM-DD': { 'Shopee Food': {omset,penarikan,potongan,notes}, ... } }
+ */
+window.loadPlatformWithdrawals = async function(startDateStr, endDateStr) {
+    if (!window.activeOutletId) return {};
+    const { data, error } = await supabase
+        .from('platform_withdrawals')
+        .select('date, platform, omset_bersih, penarikan_dana, notes')
+        .eq('outlet_id', window.activeOutletId)
+        .gte('date', startDateStr)
+        .lte('date', endDateStr)
+        .order('date');
+
+    if (error) {
+        console.error('loadPlatformWithdrawals error:', error);
+        return {};
+    }
+
+    const map = {};
+    (data || []).forEach(row => {
+        if (!map[row.date]) map[row.date] = {};
+        const omset = Number(row.omset_bersih) || 0;
+        const penarikan = Number(row.penarikan_dana) || 0;
+        map[row.date][row.platform] = {
+            omset,
+            penarikan,
+            potongan: omset - penarikan,
+            notes: row.notes || ''
+        };
+    });
+    return map;
+};
+
+/**
+ * Update reminder badge on the "Input Penarikan" button.
+ * Counts days that have online platform transactions but NO withdrawal entry.
+ * salesByDate: the salesByDate map from loadDashboard.
+ * withdrawalMap: the map from loadPlatformWithdrawals.
+ */
+window.updatePeraikanReminderBadge = function(salesByDate, withdrawalMap) {
+    const badge = document.getElementById('badge-penarikan-reminder');
+    if (!badge) return;
+
+    const missingDates = new Set();
+    Object.entries(salesByDate || {}).forEach(([date, dayData]) => {
+        ONLINE_PLATFORMS.forEach(platform => {
+            const hasRevenue = dayData.methodNet && Number(dayData.methodNet[platform] || 0) > 0;
+            const hasWithdrawal = withdrawalMap[date] && withdrawalMap[date][platform] !== undefined;
+            if (hasRevenue && !hasWithdrawal) {
+                missingDates.add(date);
+            }
+        });
+    });
+
+    const count = missingDates.size;
+    window._peraikanMissingDates = Array.from(missingDates).sort();
+
+    if (count > 0) {
+        badge.textContent = count;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+};
+
+/**
+ * Render the Rekap Penarikan Dana table inside the dashboard.
+ * Table id: #platform-withdrawal-rekap-table
+ */
+window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap) {
+    const container = document.getElementById('platform-withdrawal-rekap-table');
+    if (!container) return;
+
+    let html = '';
+    let totals = {};
+    ONLINE_PLATFORMS.forEach(p => totals[p] = { omset: 0, penarikan: 0, potongan: 0 });
+
+    compDates.forEach(date => {
+        const label = new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        ONLINE_PLATFORMS.forEach(platform => {
+            const omsetFromPOS = Math.round(salesByDate[date]?.methodNet?.[platform] || 0);
+            const wd = withdrawalMap[date]?.[platform];
+            const omset  = wd ? wd.omset    : omsetFromPOS;
+            const penarikan = wd ? wd.penarikan : 0;
+            const potongan  = omset - penarikan;
+            const pct = omset > 0 ? ((potongan / omset) * 100).toFixed(2) : '0.00';
+            const missing = omsetFromPOS > 0 && !wd;
+
+            totals[platform].omset    += omset;
+            totals[platform].penarikan += penarikan;
+            totals[platform].potongan  += potongan;
+
+            if (omsetFromPOS === 0 && !wd) return; // skip empty days
+
+            const rowStyle = missing
+                ? 'background: rgba(239,68,68,0.06);'
+                : '';
+            const missingTag = missing
+                ? '<span style="font-size:0.7rem; background:#ef4444; color:#fff; border-radius:4px; padding:1px 5px; margin-left:4px;">Belum diisi</span>'
+                : '';
+
+            html += `
+            <tr style="${rowStyle}">
+                <td style="white-space:nowrap;">${label} ${missingTag}</td>
+                <td>${window.escapeHtml(platform)}</td>
+                <td style="text-align:right;">Rp ${omset.toLocaleString('id-ID')}</td>
+                <td style="text-align:right; color:#10b981; font-weight:600;">Rp ${penarikan.toLocaleString('id-ID')}</td>
+                <td style="text-align:right; color:var(--danger); font-weight:600;">Rp ${potongan.toLocaleString('id-ID')}</td>
+                <td style="text-align:right; color:var(--text-secondary);">${pct}%</td>
+            </tr>`;
+        });
+    });
+
+    // Totals row per platform
+    ONLINE_PLATFORMS.forEach(platform => {
+        const t = totals[platform];
+        if (t.omset === 0) return;
+        const pct = t.omset > 0 ? ((t.potongan / t.omset) * 100).toFixed(2) : '0.00';
+        html += `
+        <tr style="font-weight:700; background: rgba(99,102,241,0.07); border-top: 2px solid var(--border);">
+            <td>TOTAL</td>
+            <td>${window.escapeHtml(platform)}</td>
+            <td style="text-align:right;">Rp ${t.omset.toLocaleString('id-ID')}</td>
+            <td style="text-align:right; color:#10b981;">Rp ${t.penarikan.toLocaleString('id-ID')}</td>
+            <td style="text-align:right; color:var(--danger);">Rp ${t.potongan.toLocaleString('id-ID')}</td>
+            <td style="text-align:right;">${pct}%</td>
+        </tr>`;
+    });
+
+    container.innerHTML = html || '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada data penarikan pada periode ini.</td></tr>';
+};
+
+// ── Modal: Input Penarikan Dana ───────────────────────────────────────
+
+const modalPerarikan = document.getElementById('modal-penarikan');
+const btnOpenPerarikan = document.getElementById('btn-open-penarikan');
+const btnPeraikanLoad  = document.getElementById('btn-penarikan-load');
+const btnSavePerarikan = document.getElementById('btn-save-penarikan');
+const peraikanDateInput = document.getElementById('penarikan-date');
+
+/** Update live potongan + % for a given platform row when penarikan-dana changes */
+function updatePeraikanCalc(platform) {
+    const omsetEl   = document.querySelector(`.penarikan-omset[data-platform="${platform}"]`);
+    const danaEl    = document.querySelector(`.penarikan-dana[data-platform="${platform}"]`);
+    const potEl     = document.querySelector(`.penarikan-potongan[data-platform="${platform}"]`);
+    const pctEl     = document.querySelector(`.penarikan-pct[data-platform="${platform}"]`);
+    if (!omsetEl || !danaEl || !potEl || !pctEl) return;
+
+    const omset    = Number(omsetEl.value) || 0;
+    const penarikan = Number(danaEl.value) || 0;
+    const potongan = omset - penarikan;
+    const pct = omset > 0 ? ((potongan / omset) * 100).toFixed(2) : '0.00';
+
+    potEl.textContent = `Rp ${potongan.toLocaleString('id-ID')}`;
+    pctEl.textContent = `${pct}%`;
+}
+
+/** Wire up live-calc listeners on all penarikan-dana inputs */
+function bindPeraikanLiveCalc() {
+    document.querySelectorAll('.penarikan-dana').forEach(input => {
+        input.removeEventListener('input', input._peraikanHandler);
+        input._peraikanHandler = () => updatePeraikanCalc(input.dataset.platform);
+        input.addEventListener('input', input._peraikanHandler);
+    });
+}
+
+/** Load omset from POS transactions + existing withdrawal data for selected date */
+async function loadPeraikanDataForDate(dateStr) {
+    if (!dateStr || !window.activeOutletId) return;
+
+    const startOfDay = new Date(`${dateStr}T00:00:00`).toISOString();
+    const endOfDay   = new Date(`${dateStr}T23:59:59.999`).toISOString();
+
+    // Fetch POS transactions for this date
+    const { data: txData } = await supabase
+        .from('transactions')
+        .select('total_amount, payment_method, mdr_fee_amount')
+        .eq('outlet_id', window.activeOutletId)
+        .gte('created_at', startOfDay)
+        .lte('created_at', endOfDay)
+        .eq('status', 'completed');
+
+    // Calculate omset per platform from POS
+    const omsetByPlatform = {};
+    ONLINE_PLATFORMS.forEach(p => omsetByPlatform[p] = 0);
+    (txData || []).forEach(tx => {
+        if (ONLINE_PLATFORMS.includes(tx.payment_method)) {
+            omsetByPlatform[tx.payment_method] += Number(tx.total_amount) || 0;
+        }
+    });
+
+    // Fetch existing withdrawal record for this date (if any)
+    const { data: existingData } = await supabase
+        .from('platform_withdrawals')
+        .select('platform, omset_bersih, penarikan_dana, notes')
+        .eq('outlet_id', window.activeOutletId)
+        .eq('date', dateStr);
+
+    const existingMap = {};
+    (existingData || []).forEach(r => { existingMap[r.platform] = r; });
+
+    // Show/hide reminder banner for missing platforms
+    const missingPlatforms = ONLINE_PLATFORMS.filter(p => omsetByPlatform[p] > 0 && !existingMap[p]);
+    const banner = document.getElementById('penarikan-reminder-banner');
+    const bannerText = document.getElementById('penarikan-reminder-text');
+    if (banner && bannerText) {
+        if (missingPlatforms.length > 0) {
+            bannerText.textContent = `Penarikan belum diisi untuk: ${missingPlatforms.join(', ')}`;
+            banner.classList.remove('hidden');
+        } else {
+            banner.classList.add('hidden');
+        }
+    }
+
+    // Fill form fields
+    const notesInput = document.getElementById('penarikan-notes');
+    let firstNotes = '';
+    ONLINE_PLATFORMS.forEach(platform => {
+        const omsetEl  = document.querySelector(`.penarikan-omset[data-platform="${platform}"]`);
+        const danaEl   = document.querySelector(`.penarikan-dana[data-platform="${platform}"]`);
+        if (!omsetEl || !danaEl) return;
+
+        const omset = Math.round(omsetByPlatform[platform]);
+        omsetEl.value = omset;
+
+        if (existingMap[platform]) {
+            danaEl.value = Number(existingMap[platform].penarikan_dana) || 0;
+            if (!firstNotes && existingMap[platform].notes) {
+                firstNotes = existingMap[platform].notes;
+            }
+        } else {
+            danaEl.value = 0;
+        }
+        updatePeraikanCalc(platform);
+    });
+
+    if (notesInput) notesInput.value = firstNotes;
+}
+
+if (btnOpenPerarikan) {
+    btnOpenPerarikan.addEventListener('click', async () => {
+        if (!window.activeOutletId) return window.showToast('Pilih outlet terlebih dahulu', 'error');
+
+        // Default to today's date in local timezone
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm   = String(today.getMonth() + 1).padStart(2, '0');
+        const dd   = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`;
+
+        if (peraikanDateInput) peraikanDateInput.value = todayStr;
+        modalPerarikan.classList.remove('hidden');
+
+        // Show missing dates in reminder banner if known
+        const missingDates = window._peraikanMissingDates || [];
+        const banner = document.getElementById('penarikan-reminder-banner');
+        const bannerText = document.getElementById('penarikan-reminder-text');
+        if (banner && bannerText && missingDates.length > 0) {
+            const labels = missingDates.map(d =>
+                new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+            ).join(', ');
+            bannerText.textContent = `Ada ${missingDates.length} hari yang belum diisi penarikannya: ${labels}`;
+            banner.classList.remove('hidden');
+        } else if (banner) {
+            banner.classList.add('hidden');
+        }
+
+        bindPeraikanLiveCalc();
+        await loadPeraikanDataForDate(todayStr);
+    });
+}
+
+if (btnPeraikanLoad) {
+    btnPeraikanLoad.addEventListener('click', async () => {
+        const dateStr = peraikanDateInput?.value;
+        if (!dateStr) return window.showToast('Pilih tanggal terlebih dahulu', 'error');
+        btnPeraikanLoad.disabled = true;
+        btnPeraikanLoad.innerHTML = '<i class="ph ph-spinner"></i> Memuat...';
+        await loadPeraikanDataForDate(dateStr);
+        btnPeraikanLoad.disabled = false;
+        btnPeraikanLoad.innerHTML = '<i class="ph ph-arrow-clockwise"></i> Muat Data';
+    });
+}
+
+if (btnSavePerarikan) {
+    btnSavePerarikan.addEventListener('click', async () => {
+        const dateStr = peraikanDateInput?.value;
+        if (!dateStr) return window.showToast('Pilih tanggal terlebih dahulu', 'error');
+
+        const notes = document.getElementById('penarikan-notes')?.value?.trim() || null;
+
+        btnSavePerarikan.disabled = true;
+        btnSavePerarikan.innerHTML = '<i class="ph ph-spinner"></i> Menyimpan...';
+
+        try {
+            const upsertRows = ONLINE_PLATFORMS.map(platform => {
+                const omsetEl   = document.querySelector(`.penarikan-omset[data-platform="${platform}"]`);
+                const danaEl    = document.querySelector(`.penarikan-dana[data-platform="${platform}"]`);
+                return {
+                    outlet_id:     window.activeOutletId,
+                    date:          dateStr,
+                    platform:      platform,
+                    omset_bersih:  Number(omsetEl?.value) || 0,
+                    penarikan_dana: Number(danaEl?.value) || 0,
+                    notes:         notes
+                };
+            });
+
+            const { error } = await supabase
+                .from('platform_withdrawals')
+                .upsert(upsertRows, { onConflict: 'outlet_id,date,platform' });
+
+            if (error) throw error;
+
+            window.showToast(`Penarikan dana ${new Date(dateStr).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'})} berhasil disimpan`, 'success');
+            modalPerarikan.classList.add('hidden');
+
+            // Reload dashboard to reflect updated MDR
+            if (typeof window.loadDashboard === 'function') {
+                window.loadDashboard();
+            }
+        } catch (err) {
+            console.error('Gagal simpan penarikan:', err);
+            window.showToast('Gagal menyimpan: ' + err.message, 'error');
+        } finally {
+            btnSavePerarikan.disabled = false;
+            btnSavePerarikan.innerHTML = '<i class="ph ph-floppy-disk"></i> Simpan';
+        }
+    });
+}
+
+// ── Hook: inject platform withdrawals into loadDashboard ─────────────
+// Wrap the existing loadDashboard to:
+//   1. After it finishes, fetch platform_withdrawals for the date range
+//   2. Override salesByDate[date].fees for online platforms with actual potongan
+//   3. Re-render net profit card, update reminder badge, render rekap table
+
+const _origLoadDashboard = window.loadDashboard;
+window.loadDashboard = async function() {
+    await _origLoadDashboard.apply(this, arguments);
+
+    const startDate = document.getElementById('dashboard-date-start');
+    const endDate   = document.getElementById('dashboard-date-end');
+    if (!startDate?.value || !endDate?.value) return;
+
+    const withdrawalMap = await window.loadPlatformWithdrawals(startDate.value, endDate.value);
+    window._lastWithdrawalMap = withdrawalMap;
+
+    const data = window._lastDashboardData;
+    if (!data) return;
+
+    const { salesByDate, compDates } = data;
+
+    // Override fees for online platforms using actual withdrawal data
+    // For dates with withdrawal data: potongan = omset - penarikan
+    // For dates without: potongan = 0 (fallback)
+    let totalOnlineFees = 0;
+    compDates.forEach(date => {
+        if (!salesByDate[date]) return;
+        ONLINE_PLATFORMS.forEach(platform => {
+            // Remove the old estimate-based fee for this platform
+            // and replace with actual (or 0 if not yet recorded)
+            const omsetForPlatform = salesByDate[date].methodNet?.[platform] || 0;
+            const wd = withdrawalMap[date]?.[platform];
+            const actualPotongan = wd ? (wd.omset - wd.penarikan) : 0;
+
+            // Recalculate methodNet for this platform using actual data
+            if (wd) {
+                salesByDate[date].methodNet = salesByDate[date].methodNet || {};
+                salesByDate[date].methodNet[platform] = wd.penarikan;
+            }
+
+            totalOnlineFees += actualPotongan;
+        });
+    });
+
+    // Recalculate totalFeesMDR: non-platform fees (QRIS, Bank Transfer) + online actual
+    const nonPlatformFees = Object.values(salesByDate).reduce((sum, day) => {
+        let fee = 0;
+        ['QRIS', 'Bank Transfer'].forEach(m => {
+            // These fees are already in day.fees from mdr_fee_amount
+        });
+        return sum + fee;
+    }, 0);
+
+    // Total fees = QRIS+BankTransfer fees (from transactions) + online platform actual
+    // Rebuild from clientMethodFees for QRIS/Bank Transfer
+    const qrisBankFees = Object.entries(window.clientMethodFees || {})
+        .filter(([m]) => !ONLINE_PLATFORMS.includes(m) && m !== 'Tunai')
+        .reduce((sum, [, v]) => sum + v, 0);
+
+    const newTotalFeesMDR = Math.round(qrisBankFees + totalOnlineFees);
+
+    // Update summary cards display
+    const summaryCards = data.summaryCards;
+    const prevFeesMDR = summaryCards.totalFeesMDR || 0;
+    summaryCards.totalFeesMDR = newTotalFeesMDR;
+
+    const totalGrossRevenue = summaryCards.totalRevenue || 0;
+    const totalOpExp  = summaryCards.totalOpExp  || 0;
+    const totalStockExp = summaryCards.totalStockExp || 0;
+    const totalNetProfit = Math.round(totalGrossRevenue - newTotalFeesMDR - totalOpExp - totalStockExp);
+    summaryCards.totalNetProfit = totalNetProfit;
+
+    // Re-render net profit card
+    const netProfitCard = document.getElementById('net-profit-card');
+    if (netProfitCard) {
+        const THRESHOLD = 3500000;
+        const totalNetRevenue = (data.netTotalRevenueData || []).reduce((s, v) => s + v, 0);
+        let ownerShare = 0, investorShare = 0;
+        if (totalNetRevenue > THRESHOLD) {
+            ownerShare += THRESHOLD * 0.8; investorShare += THRESHOLD * 0.2;
+            const remaining = totalNetRevenue - THRESHOLD;
+            ownerShare += remaining * 0.75; investorShare += remaining * 0.25;
+        } else {
+            ownerShare += totalNetRevenue * 0.8; investorShare += totalNetRevenue * 0.2;
+        }
+        summaryCards.ownerShare    = Math.round(ownerShare);
+        summaryCards.investorShare = Math.round(investorShare);
+
+        netProfitCard.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 12px; height: 100%; justify-content: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Total Pendapatan Kotor</span>
+                    <span style="font-weight: 600; color: var(--text-main);">Rp ${totalGrossRevenue.toLocaleString('id-ID')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Potongan MDR / Fee <small style="font-size:0.75rem; color:${newTotalFeesMDR !== prevFeesMDR ? '#10b981' : 'var(--text-muted)'};">(aktual)</small></span>
+                    <span style="font-weight: 600; color: var(--danger);">- Rp ${newTotalFeesMDR.toLocaleString('id-ID')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Operasional</span>
+                    <span style="font-weight: 600; color: var(--danger);">- Rp ${totalOpExp.toLocaleString('id-ID')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Stock</span>
+                    <span style="font-weight: 600; color: #f59e0b;">- Rp ${totalStockExp.toLocaleString('id-ID')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 10px 12px; border-radius: 6px; margin-top: 4px;">
+                    <div>
+                        <div style="font-weight: 700; color: #10b981; font-size: 1.05rem;">ESTIMASI LABA BERSIH</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Omset Bersih sebelum Bagi Hasil</div>
+                    </div>
+                    <div style="font-size: 1.35rem; font-weight: 800; color: #10b981;">Rp ${totalNetProfit.toLocaleString('id-ID')}</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
+                    <div style="background: rgba(59, 130, 246, 0.1); padding: 8px 10px; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Bisnis Owner</div>
+                        <div style="font-weight: 700; color: #3b82f6; font-size: 0.95rem;">Rp ${Math.round(ownerShare).toLocaleString('id-ID')}</div>
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.1); padding: 8px 10px; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Investor</div>
+                        <div style="font-weight: 700; color: #f59e0b; font-size: 0.95rem;">Rp ${Math.round(investorShare).toLocaleString('id-ID')}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Reminder badge
+    window.updatePeraikanReminderBadge(salesByDate, withdrawalMap);
+
+    // Rekap table
+    window.renderPeraikanRekapTable(compDates, salesByDate, withdrawalMap);
+
+    // Store withdrawal map for Excel export
+    data.withdrawalMap = withdrawalMap;
+};
+
+// ── Excel: Sheet 10 — Penarikan Dana Platform ────────────────────────
+// Patch exportDashboardExcel to append Sheet 10
+
+const _origExportExcel = window.exportDashboardExcel;
+window.exportDashboardExcel = async function() {
+    // Run original export first (creates & downloads file)
+    // We need to intercept before writeFile — rebuild the workbook here instead
+
+    if (!window._lastDashboardData && typeof window.loadDashboard === 'function') {
+        await window.loadDashboard();
+    }
+    if (!window._lastDashboardData) {
+        return window.showToast('Silakan muat data dashboard terlebih dahulu', 'error');
+    }
+
+    // Delegate to original for all sheets 1-9, but we patch XLSX.writeFile temporarily
+    const _origWriteFile = window.XLSX?.writeFile;
+    let capturedWb = null;
+
+    if (window.XLSX) {
+        window.XLSX.writeFile = function(wb, filename) {
+            capturedWb = { wb, filename };
+        };
+    }
+
+    await _origExportExcel.apply(this, arguments);
+
+    if (window.XLSX) {
+        window.XLSX.writeFile = _origWriteFile;
+    }
+
+    if (!capturedWb) return; // Original already handled or XLSX not ready
+
+    const { wb, filename } = capturedWb;
+    const data = window._lastDashboardData;
+    const { compDates = [], salesByDate = {}, withdrawalMap = window._lastWithdrawalMap || {} } = data;
+
+    // Build Sheet 10: Penarikan Dana Platform
+    const sheet10Rows = [];
+    let totals10 = {};
+    ONLINE_PLATFORMS.forEach(p => totals10[p] = { omset: 0, penarikan: 0, potongan: 0 });
+
+    compDates.forEach(date => {
+        ONLINE_PLATFORMS.forEach(platform => {
+            const omsetFromPOS = Math.round(salesByDate[date]?.methodNet?.[platform] || 0);
+            const wd = withdrawalMap[date]?.[platform];
+            const omset     = wd ? wd.omset    : omsetFromPOS;
+            const penarikan = wd ? wd.penarikan : 0;
+            const potongan  = omset - penarikan;
+            const pct = omset > 0 ? parseFloat(((potongan / omset) * 100).toFixed(2)) : 0;
+
+            if (omsetFromPOS === 0 && !wd) return;
+
+            totals10[platform].omset    += omset;
+            totals10[platform].penarikan += penarikan;
+            totals10[platform].potongan  += potongan;
+
+            sheet10Rows.push({
+                'Tanggal':         date,
+                'Platform':        platform,
+                'Omset Bersih POS (Rp)': omset,
+                'Penarikan Dana (Rp)': penarikan,
+                'Potongan (Rp)': potongan,
+                '% Potongan': pct,
+                'Status': wd ? 'Sudah diisi' : 'Belum diisi',
+                'Catatan': wd?.notes || ''
+            });
+        });
+    });
+
+    // Total rows
+    ONLINE_PLATFORMS.forEach(platform => {
+        const t = totals10[platform];
+        if (t.omset === 0) return;
+        const pct = t.omset > 0 ? parseFloat(((t.potongan / t.omset) * 100).toFixed(2)) : 0;
+        sheet10Rows.push({
+            'Tanggal':         'TOTAL',
+            'Platform':        platform,
+            'Omset Bersih POS (Rp)': t.omset,
+            'Penarikan Dana (Rp)': t.penarikan,
+            'Potongan (Rp)': t.potongan,
+            '% Potongan': pct,
+            'Status': '',
+            'Catatan': ''
+        });
+    });
+
+    if (sheet10Rows.length > 0) {
+        const ws10 = window.XLSX.utils.json_to_sheet(sheet10Rows);
+        ws10['!cols'] = [
+            { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 22 },
+            { wch: 18 }, { wch: 12 }, { wch: 14 }, { wch: 30 }
+        ];
+        // Currency format for Rp columns (C, D, E)
+        for (let cell in ws10) {
+            if (cell[0] === '!') continue;
+            const col = cell.replace(/[0-9]/g, '');
+            const row = parseInt(cell.replace(/\D/g, ''), 10);
+            if (['C', 'D', 'E'].includes(col) && row > 1) {
+                ws10[cell].z = '"Rp "#,##0;-"Rp "#,##0;"Rp "0';
+            }
+        }
+        window.XLSX.utils.book_append_sheet(wb, ws10, 'Penarikan Dana Platform');
+    }
+
+    // Write the final file with Sheet 10 included
+    const newFilename = filename.replace('.xlsx', '') + '.xlsx';
+    window.XLSX.writeFile(wb, newFilename);
+    window.showToast('Laporan Excel berhasil diunduh (10 Sheet)', 'success');
+};
+
+// ── bindDashboardButtons ──────────────────────────────────────────────
+
 function bindDashboardButtons() {
     const btnExportExcel = document.getElementById('btn-export-dashboard-excel');
     if (btnExportExcel) {

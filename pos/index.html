@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -1006,6 +1006,10 @@
                         <span>-</span>
                         <input type="date" id="dashboard-date-end" class="input-sm">
                         <button class="btn btn-secondary" id="btn-open-mdr-settings" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-gear"></i> Potongan MDR</button>
+                        <button class="btn btn-primary" id="btn-open-penarikan" style="padding: 5px 10px; font-size: 0.85rem; position: relative;">
+                            <i class="ph ph-money"></i> Input Penarikan
+                            <span id="badge-penarikan-reminder" class="hidden" style="position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff; border-radius: 999px; font-size: 0.65rem; font-weight: 700; padding: 1px 5px; min-width: 16px; text-align: center; line-height: 1.4;">0</span>
+                        </button>
                         <button class="btn btn-success" id="btn-export-dashboard-excel" style="padding: 5px 10px; font-size: 0.85rem;" onclick="window.exportDashboardExcel && window.exportDashboardExcel()"><i class="ph ph-file-xls"></i> Export Excel</button>
                     </div>
                 </div>
@@ -1151,7 +1155,24 @@
                 </div>
 
             </div>
-            <div id="stock-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
+
+            <!-- REKAP PENARIKAN DANA PLATFORM -->
+            <div class="glass-panel" style="margin-top: 20px; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                    <div>
+                        <h4 style="margin: 0; font-size: 1rem;"><i class="ph ph-money"></i> Rekap Penarikan Dana Platform</h4>
+                        <p style="margin: 4px 0 0; font-size: 0.78rem; color: var(--text-secondary);">Shopee Food &bull; Grab Food &bull; Go Food</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="document.getElementById('btn-open-penarikan').click()" style="padding: 5px 12px; font-size: 0.83rem;"><i class="ph ph-plus"></i> Input Penarikan</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" style="font-size: 0.83rem;">
+                        <thead><tr><th>Tanggal</th><th>Platform</th><th style="text-align:right;">Omset Bersih (POS)</th><th style="text-align:right;">Penarikan Dana</th><th style="text-align:right;">Potongan</th><th style="text-align:right;">%</th></tr></thead>
+                        <tbody id="platform-withdrawal-rekap-table"><tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Muat dashboard terlebih dahulu.</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+            </div>
                 <div class="tabs sub-tabs"
                     style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0;">
                     <button class="sub-nav-btn active" data-target="subtab-stock-master">Master Stok</button>
@@ -1245,6 +1266,7 @@
                     </div>
                 </div>
             </div>
+            <div id="stock-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
             <div id="expenses-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="tabs sub-tabs"
                     style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0;">
@@ -2593,6 +2615,66 @@
                     <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- MODAL INPUT PENARIKAN DANA PLATFORM       -->
+    <!-- ========================================= -->
+    <div id="modal-penarikan" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 640px; width: 96%; max-height: 92vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div>
+                    <h3 style="margin: 0;"><i class="ph ph-money"></i> Input Penarikan Dana Platform</h3>
+                    <p style="margin: 4px 0 0; font-size: 0.8rem; color: var(--text-secondary);">Catat dana aktual yang diterima dari Shopee Food, Grab Food, Go Food.</p>
+                </div>
+                <button class="btn btn-icon" data-close="modal-penarikan"><i class="ph ph-x"></i></button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                <label style="font-weight: 600; font-size: 0.9rem; flex-shrink: 0;">Tanggal:</label>
+                <input type="date" id="penarikan-date" class="input" style="flex: 1; padding: 7px 10px;">
+                <button class="btn btn-secondary" id="btn-penarikan-load" style="padding: 7px 14px; font-size: 0.85rem; flex-shrink: 0;">
+                    <i class="ph ph-arrow-clockwise"></i> Muat Data
+                </button>
+            </div>
+            <div id="penarikan-reminder-banner" class="hidden" style="background: rgba(239,68,68,0.1); border: 1px solid #ef4444; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.83rem; color: #dc2626; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-warning-circle" style="font-size: 1.1rem; flex-shrink:0;"></i>
+                <span id="penarikan-reminder-text"></span>
+            </div>
+            <div style="overflow-y: auto; flex: 1;">
+                <div style="display: grid; grid-template-columns: 90px 1fr 1fr 80px; gap: 6px; font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); padding: 0 4px 6px; border-bottom: 1px solid var(--border);">
+                    <span>Platform</span><span>Omset Bersih (POS)</span><span>Penarikan Dana</span><span style="text-align:right;">Potongan</span>
+                </div>
+                <div class="penarikan-row" data-platform="Shopee Food" style="display: grid; grid-template-columns: 90px 1fr 1fr 80px; gap: 6px; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--border);">
+                    <span style="font-weight: 600; font-size: 0.88rem; color: #ea580c;"><i class="ph ph-storefront"></i> Shopee</span>
+                    <input type="number" class="input penarikan-omset" data-platform="Shopee Food" value="0" readonly style="padding: 6px 8px; font-size: 0.85rem; background: var(--surface-secondary); cursor: not-allowed;">
+                    <input type="number" class="input penarikan-dana" data-platform="Shopee Food" value="0" min="0" step="1" style="padding: 6px 8px; font-size: 0.85rem;" placeholder="0">
+                    <div style="text-align: right;"><span class="penarikan-potongan" data-platform="Shopee Food" style="font-weight: 700; color: var(--danger); font-size: 0.85rem;">Rp 0</span><div class="penarikan-pct" data-platform="Shopee Food" style="font-size: 0.72rem; color: var(--text-muted);">0%</div></div>
+                </div>
+                <div class="penarikan-row" data-platform="Grab Food" style="display: grid; grid-template-columns: 90px 1fr 1fr 80px; gap: 6px; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--border);">
+                    <span style="font-weight: 600; font-size: 0.88rem; color: #16a34a;"><i class="ph ph-storefront"></i> GrabFood</span>
+                    <input type="number" class="input penarikan-omset" data-platform="Grab Food" value="0" readonly style="padding: 6px 8px; font-size: 0.85rem; background: var(--surface-secondary); cursor: not-allowed;">
+                    <input type="number" class="input penarikan-dana" data-platform="Grab Food" value="0" min="0" step="1" style="padding: 6px 8px; font-size: 0.85rem;" placeholder="0">
+                    <div style="text-align: right;"><span class="penarikan-potongan" data-platform="Grab Food" style="font-weight: 700; color: var(--danger); font-size: 0.85rem;">Rp 0</span><div class="penarikan-pct" data-platform="Grab Food" style="font-size: 0.72rem; color: var(--text-muted);">0%</div></div>
+                </div>
+                <div class="penarikan-row" data-platform="Go Food" style="display: grid; grid-template-columns: 90px 1fr 1fr 80px; gap: 6px; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--border);">
+                    <span style="font-weight: 600; font-size: 0.88rem; color: #e11d48;"><i class="ph ph-storefront"></i> GoFood</span>
+                    <input type="number" class="input penarikan-omset" data-platform="Go Food" value="0" readonly style="padding: 6px 8px; font-size: 0.85rem; background: var(--surface-secondary); cursor: not-allowed;">
+                    <input type="number" class="input penarikan-dana" data-platform="Go Food" value="0" min="0" step="1" style="padding: 6px 8px; font-size: 0.85rem;" placeholder="0">
+                    <div style="text-align: right;"><span class="penarikan-potongan" data-platform="Go Food" style="font-weight: 700; color: var(--danger); font-size: 0.85rem;">Rp 0</span><div class="penarikan-pct" data-platform="Go Food" style="font-size: 0.72rem; color: var(--text-muted);">0%</div></div>
+                </div>
+                <div style="padding: 10px 4px 4px;">
+                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">Catatan (opsional):</label>
+                    <input type="text" id="penarikan-notes" class="input" style="width: 100%; margin-top: 6px; padding: 7px 10px; font-size: 0.85rem;" placeholder="Misal: Ada promo gratis ongkir, dispute Rp 5.000">
+                </div>
+            </div>
+            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div style="font-size: 0.78rem; color: var(--text-muted);"><i class="ph ph-info"></i> Omset Bersih diisi otomatis dari data transaksi POS.</div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn" data-close="modal-penarikan">Batal</button>
+                    <button class="btn btn-primary" id="btn-save-penarikan"><i class="ph ph-floppy-disk"></i> Simpan</button>
+                </div>
+            </div>
         </div>
     </div>
 
