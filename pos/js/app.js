@@ -1,4 +1,4 @@
-/* global XLSX */
+﻿/* global XLSX */
 import { supabase } from './supabase.js';
 import { showToast, showConfirm, debounce, escapeHtml, getLocalToday, generateOrderId, generateRandomDocNumber, enableTableSort } from './utils.js';
 import { checkSession, login, logout, getCurrentUser, getCurrentProfile } from './auth.js';
@@ -289,7 +289,7 @@ async function initPosMultiOutlet(profile) {
     document.getElementById('btn-export-products-excel')?.classList.remove('hidden');
     
     // Load accessible outlets
-    let query = supabase.from('outlets').select('id, name, code, branch_id, address, phone, tax_rate_percent, mdr_fees').order('name');
+    let query = supabase.from('outlets').select('id, name, code, branch_id, address, phone, tax_rate_percent, mdr_fees, dashboard_settings').order('name');
     if (profile.role === 'kepala_cabang') {
         query = query.eq('branch_id', profile.branch_id);
     }

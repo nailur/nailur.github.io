@@ -1005,7 +1005,7 @@
                         <input type="date" id="dashboard-date-start" class="input-sm">
                         <span>-</span>
                         <input type="date" id="dashboard-date-end" class="input-sm">
-                        <button class="btn btn-secondary" id="btn-open-mdr-settings" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-gear"></i> Potongan MDR</button>
+                        <button class="btn btn-secondary" id="btn-open-dashboard-settings" style="padding: 5px 10px; font-size: 0.85rem;"><i class="ph ph-faders"></i> Tampilan</button>
                         <button class="btn btn-primary" id="btn-open-penarikan" style="padding: 5px 10px; font-size: 0.85rem; position: relative;">
                             <i class="ph ph-money"></i> Input Penarikan
                             <span id="badge-penarikan-reminder" class="hidden" style="position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff; border-radius: 999px; font-size: 0.65rem; font-weight: 700; padding: 1px 5px; min-width: 16px; text-align: center; line-height: 1.4;">0</span>
@@ -1014,8 +1014,7 @@
                     </div>
                 </div>
 
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                <div id="dash-sec-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)); gap: 10px; margin-bottom: 20px;">
                     <div class="glass-panel" style="padding: 12px 8px; text-align: center; min-width: 0;">
                         <h4 style="margin: 0; color: var(--text-secondary); font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Total Pendapatan</h4>
                         <div id="dash-total-revenue"
@@ -1136,13 +1135,10 @@
                         <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);">Omset Bersih Tunai vs Setoran</h4>
                         <canvas id="depositComparisonChart"></canvas>
                     </div>
-                    <div class="glass-panel"
-                        style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px; grid-column: 1 / -1;">
-                        <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);">Jam Sibuk (Peak Hours)</h4>
+                    <div id="dash-sec-peak" class="glass-panel" style="position: relative; width: 100%; min-width: 0; padding: 15px; height: 300px; grid-column: 1 / -1;"><h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);">Jam Sibuk (Peak Hours)</h4>
                         <canvas id="peakHoursChart"></canvas>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; grid-column: 1 / -1;">
-                        <div class="glass-panel" id="net-profit-card"
+                    <div id="dash-sec-profit" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; grid-column: 1 / -1;"><div class="glass-panel" id="net-profit-card"
                             style="position: relative; width: 100%; min-width: 0; padding: 20px; display: flex; flex-direction: column; justify-content: center;">
                             <!-- Injected dynamically in dashboard.js -->
                         </div>
@@ -1154,8 +1150,7 @@
                     </div>
                 </div>
 
-                <!-- REKAP PENARIKAN DANA PLATFORM -->
-                <div class="glass-panel" style="margin-top: 20px; padding: 20px;">
+                <!-- REKAP PENARIKAN DANA PLATFORM --><div id="dash-sec-rekap" class="glass-panel" style="margin-top: 20px; padding: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                         <div>
                             <h4 style="margin: 0; font-size: 1rem;"><i class="ph ph-money"></i> Rekap Penarikan Dana Platform</h4>
@@ -1165,8 +1160,21 @@
                     </div>
                     <div class="table-responsive">
                         <table class="data-table" style="font-size: 0.83rem;">
-                            <thead><tr><th>Tanggal</th><th>Platform</th><th style="text-align:right;">Omset Bersih (POS)</th><th style="text-align:right;">Penarikan Dana</th><th style="text-align:right;">Potongan</th><th style="text-align:right;">%</th></tr></thead>
-                            <tbody id="platform-withdrawal-rekap-table"><tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Muat dashboard terlebih dahulu.</td></tr></tbody>
+                            <thead>
+    <tr>
+        <th rowspan="2" style="vertical-align: middle;">Tanggal</th>
+        <th colspan="3" style="text-align: center; border-bottom: 1px solid var(--border);">Potongan Platform</th>
+        <th rowspan="2" style="text-align: right; vertical-align: middle;">Total Omset</th>
+        <th rowspan="2" style="text-align: right; vertical-align: middle;">Total Penarikan</th>
+        <th rowspan="2" style="text-align: right; vertical-align: middle;">Total Potongan</th>
+    </tr>
+    <tr>
+        <th style="text-align: right; font-weight: 500; font-size: 0.75rem; color: #ea580c;">Shopee</th>
+        <th style="text-align: right; font-weight: 500; font-size: 0.75rem; color: #16a34a;">Grab</th>
+        <th style="text-align: right; font-weight: 500; font-size: 0.75rem; color: #e11d48;">GoFood</th>
+    </tr>
+</thead>
+                            <tbody id="platform-withdrawal-rekap-table"><tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Muat dashboard terlebih dahulu.</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -2597,8 +2605,6 @@
         </div>
     </div>
     <!-- ======================= -->
-    <!-- MODAL MDR SETTINGS      -->
-    <!-- ======================= -->
     <div id="modal-mdr" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="max-width: 500px; width: 95%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -2618,7 +2624,50 @@
         </div>
     </div>
 
-    <!-- ========================================= -->
+        <!-- ======================================= -->
+    <!-- MODAL PENGATURAN TAMPILAN DASHBOARD     -->
+    <!-- ======================================= -->
+    <div id="modal-dashboard-settings" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 400px; width: 90%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;"><i class="ph ph-faders"></i> Tampilan Dashboard</h3>
+                <button class="btn btn-icon" data-close="modal-dashboard-settings"><i class="ph ph-x"></i></button>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="chk-dash-summary" class="input-checkbox" checked>
+                    <span>Ringkasan Penjualan (Cards)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="chk-dash-tables" class="input-checkbox" checked>
+                    <span>Tabel Metode & Tipe Pesanan</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="chk-dash-trend" class="input-checkbox" checked>
+                    <span>Grafik Tren Penjualan</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="chk-dash-peak" class="input-checkbox" checked>
+                    <span>Grafik Jam Sibuk (Peak Hours)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="chk-dash-profit" class="input-checkbox" checked>
+                    <span>Estimasi Bagi Hasil & Laba Bersih</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="chk-dash-rekap" class="input-checkbox" checked>
+                    <span>Rekap Penarikan Dana Platform</span>
+                </label>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn" data-close="modal-dashboard-settings">Batal</button>
+                <button class="btn btn-primary" id="btn-save-dashboard-settings"><i class="ph ph-floppy-disk"></i> Simpan</button>
+            </div>
+        </div>
+    </div>
+<!-- ========================================= -->
     <!-- MODAL INPUT PENARIKAN DANA PLATFORM       -->
     <!-- ========================================= -->
     <div id="modal-penarikan" class="modal-overlay hidden">

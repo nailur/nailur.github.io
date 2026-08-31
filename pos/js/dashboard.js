@@ -1,4 +1,4 @@
-window.revenueChartInst = null;
+﻿window.revenueChartInst = null;
 window.productChartInst = null;
 window.depositCompChartInst = null;
 window.methodNetChartInst = null;
@@ -960,81 +960,6 @@ window.loadDashboard = async function() {
     };
 };
 
-// ── MDR Settings Modal Logic ────────────────────────────────────────
-
-const btnOpenMdr = document.getElementById('btn-open-mdr-settings');
-const modalMdr = document.getElementById('modal-mdr');
-const formMdr = document.getElementById('form-mdr-settings');
-const mdrContainer = document.getElementById('mdr-fields-container');
-
-if (btnOpenMdr) {
-    btnOpenMdr.addEventListener('click', () => {
-        const activeOutletObj = window.posOutletsList?.find(o => o.id === window.activeOutletId);
-        if (!activeOutletObj) return window.showToast('Pilih outlet terlebih dahulu', 'error');
-
-        const currentFees = activeOutletObj.mdr_fees || {};
-        
-        // Exclude Tunai
-        const paymentMethods = window.ALL_PAYMENT_METHODS?.filter(m => m !== 'Tunai') || ['QRIS', 'Bank Transfer', 'Go Food', 'Grab Food', 'Shopee Food'];
-        
-        mdrContainer.innerHTML = paymentMethods.map(method => {
-            const fee = currentFees[method] || { type: 'percent', value: 0 };
-            return `
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                    <label style="font-weight: 600; width: 110px; flex-shrink: 0; margin: 0; font-size: 0.9rem;">${method}</label>
-                    <select class="input mdr-type" data-method="${method}" style="flex: 1; padding: 6px; font-size: 0.85rem;">
-                        <option value="percent" ${fee.type === 'percent' ? 'selected' : ''}>%</option>
-                        <option value="fixed" ${fee.type === 'fixed' ? 'selected' : ''}>Rp</option>
-                    </select>
-                    <input type="number" class="input mdr-value" data-method="${method}" value="${fee.value}" step="any" min="0" style="flex: 2; padding: 6px; font-size: 0.9rem;" placeholder="0">
-                </div>
-            `;
-        }).join('');
-
-        modalMdr.classList.remove('hidden');
-    });
-}
-
-if (formMdr) {
-    formMdr.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const newFees = {};
-        const types = formMdr.querySelectorAll('.mdr-type');
-        const values = formMdr.querySelectorAll('.mdr-value');
-        
-        for (let i = 0; i < types.length; i++) {
-            const method = types[i].dataset.method;
-            const type = types[i].value;
-            const value = Number(values[i].value) || 0;
-            
-            if (value > 0) {
-                newFees[method] = { type, value };
-            }
-        }
-
-        try {
-            const { error } = await supabase.from('outlets').update({ mdr_fees: newFees }).eq('id', window.activeOutletId);
-            if (error) throw error;
-            
-            window.showToast('Pengaturan potongan MDR berhasil disimpan', 'success');
-            modalMdr.classList.add('hidden');
-            
-            // Update local object
-            const activeOutletObj = window.posOutletsList?.find(o => o.id === window.activeOutletId);
-            if (activeOutletObj) activeOutletObj.mdr_fees = newFees;
-            
-            // Reload dashboard to apply
-            window.loadDashboard();
-        } catch (err) {
-            console.error(err);
-            window.showToast('Gagal menyimpan: ' + err.message, 'error');
-        }
-    });
-}
-
-// ── Export Dashboard Excel (2 Sheet) ──────────────────────────────────
-
 window.exportDashboardExcel = async function() {
     if (!window._lastDashboardData && typeof window.loadDashboard === 'function') {
         await window.loadDashboard();
@@ -1417,6 +1342,83 @@ window.exportDashboardExcel = async function() {
 };
 
 
+// ── Dashboard Settings Modal ──────────────────────────────────────────
+
+const btnOpenDashSettings = document.getElementById('btn-open-dashboard-settings');
+const modalDashSettings = document.getElementById('modal-dashboard-settings');
+const btnSaveDashSettings = document.getElementById('btn-save-dashboard-settings');
+
+if (btnOpenDashSettings) {
+    btnOpenDashSettings.addEventListener('click', () => {
+        if (!window.activeOutletObj) return window.showToast('Pilih outlet terlebih dahulu', 'error');
+        
+        let settings = window.activeOutletObj.dashboard_settings || {};
+        if (typeof settings === 'string') {
+            try { settings = JSON.parse(settings); } catch (e) { settings = {}; }
+        }
+        
+        const setChk = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.checked = val !== false; // default true
+        };
+        
+        setChk('chk-dash-summary', settings.show_summary_cards);
+        setChk('chk-dash-tables', settings.show_method_type_tables);
+        setChk('chk-dash-trend', settings.show_trend_chart);
+        setChk('chk-dash-peak', settings.show_peak_hours);
+        setChk('chk-dash-profit', settings.show_net_profit);
+        setChk('chk-dash-rekap', settings.show_withdrawal_rekap);
+        
+        modalDashSettings.classList.remove('hidden');
+    });
+}
+
+if (btnSaveDashSettings) {
+    btnSaveDashSettings.addEventListener('click', async () => {
+        if (!window.activeOutletId) return;
+        
+        const newSettings = {
+            show_summary_cards: document.getElementById('chk-dash-summary')?.checked ?? true,
+            show_method_type_tables: document.getElementById('chk-dash-tables')?.checked ?? true,
+            show_trend_chart: document.getElementById('chk-dash-trend')?.checked ?? true,
+            show_peak_hours: document.getElementById('chk-dash-peak')?.checked ?? true,
+            show_net_profit: document.getElementById('chk-dash-profit')?.checked ?? true,
+            show_withdrawal_rekap: document.getElementById('chk-dash-rekap')?.checked ?? true
+        };
+        
+        btnSaveDashSettings.disabled = true;
+        btnSaveDashSettings.innerHTML = '<i class="ph ph-spinner"></i> Menyimpan...';
+        
+        try {
+            const { error } = await supabase.from('outlets').update({ dashboard_settings: newSettings }).eq('id', window.activeOutletId);
+            if (error) throw error;
+            
+            window.activeOutletObj.dashboard_settings = newSettings;
+            
+            // Apply settings immediately to UI
+            const toggleSec = (id, show) => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = show ? '' : 'none';
+            };
+            toggleSec('dash-sec-summary', newSettings.show_summary_cards);
+            toggleSec('dash-sec-tables', newSettings.show_method_type_tables);
+            toggleSec('dash-sec-trend', newSettings.show_trend_chart);
+            toggleSec('dash-sec-peak', newSettings.show_peak_hours);
+            toggleSec('dash-sec-profit', newSettings.show_net_profit);
+            toggleSec('dash-sec-rekap', newSettings.show_withdrawal_rekap);
+            
+            window.showToast('Pengaturan tampilan dashboard disimpan', 'success');
+            modalDashSettings.classList.add('hidden');
+        } catch (err) {
+            console.error(err);
+            window.showToast('Gagal menyimpan pengaturan', 'error');
+        } finally {
+            btnSaveDashSettings.disabled = false;
+            btnSaveDashSettings.innerHTML = '<i class="ph ph-floppy-disk"></i> Simpan';
+        }
+    });
+}
+
 // ── Platform Withdrawals Feature ─────────────────────────────────────
 // Handles: load, reminder badge, modal open/fill, save, rekap table,
 //          MDR override for online platforms, and Excel Sheet 10.
@@ -1498,62 +1500,79 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
     if (!container) return;
 
     let html = '';
-    let totals = {};
-    ONLINE_PLATFORMS.forEach(p => totals[p] = { omset: 0, penarikan: 0, potongan: 0 });
+    let grandTotals = { omset: 0, penarikan: 0, potongan: 0, byPlatform: {} };
+    ONLINE_PLATFORMS.forEach(p => grandTotals.byPlatform[p] = 0);
 
     compDates.forEach(date => {
-        const label = new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        let dateHasData = false;
+        let dayOmset = 0;
+        let dayPenarikan = 0;
+        let dayPotongan = 0;
+        
+        let colsHtml = '';
+        const missingPlatforms = [];
+        
         ONLINE_PLATFORMS.forEach(platform => {
             const omsetFromPOS = Math.round(salesByDate[date]?.methodNet?.[platform] || 0);
             const wd = withdrawalMap[date]?.[platform];
-            const omset  = wd ? wd.omset    : omsetFromPOS;
+            const omset = wd ? wd.omset : omsetFromPOS;
             const penarikan = wd ? wd.penarikan : 0;
-            const potongan  = omset - penarikan;
-            const pct = omset > 0 ? ((potongan / omset) * 100).toFixed(2) : '0.00';
-            const missing = omsetFromPOS > 0 && !wd;
-
-            totals[platform].omset    += omset;
-            totals[platform].penarikan += penarikan;
-            totals[platform].potongan  += potongan;
-
-            if (omsetFromPOS === 0 && !wd) return; // skip empty days
-
-            const rowStyle = missing
-                ? 'background: rgba(239,68,68,0.06);'
-                : '';
-            const missingTag = missing
-                ? '<span style="font-size:0.7rem; background:#ef4444; color:#fff; border-radius:4px; padding:1px 5px; margin-left:4px;">Belum diisi</span>'
-                : '';
-
-            html += `
-            <tr style="${rowStyle}">
-                <td style="white-space:nowrap;">${label} ${missingTag}</td>
-                <td>${window.escapeHtml(platform)}</td>
-                <td style="text-align:right;">Rp ${omset.toLocaleString('id-ID')}</td>
-                <td style="text-align:right; color:#10b981; font-weight:600;">Rp ${penarikan.toLocaleString('id-ID')}</td>
-                <td style="text-align:right; color:var(--danger); font-weight:600;">Rp ${potongan.toLocaleString('id-ID')}</td>
-                <td style="text-align:right; color:var(--text-secondary);">${pct}%</td>
-            </tr>`;
+            const potongan = omset - penarikan;
+            
+            if (omsetFromPOS > 0 && !wd) missingPlatforms.push(platform);
+            if (omset > 0 || wd) dateHasData = true;
+            
+            dayOmset += omset;
+            dayPenarikan += penarikan;
+            dayPotongan += potongan;
+            grandTotals.byPlatform[platform] += potongan;
+            
+            colsHtml += <td style="text-align:right;"> + (potongan > 0 ? Rp  + potongan.toLocaleString(id-ID) : -) + </td>;
         });
+        
+        if (!dateHasData) return;
+        
+        grandTotals.omset += dayOmset;
+        grandTotals.penarikan += dayPenarikan;
+        grandTotals.potongan += dayPotongan;
+        
+        const label = new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        const missingTag = missingPlatforms.length > 0
+            ? <span style="font-size:0.65rem; background:#ef4444; color:#fff; border-radius:4px; padding:1px 4px; margin-left:4px;" title="Belum diisi:  + missingPlatforms.join(', ') + ">!</span>
+            : '';
+            
+        const rowStyle = missingPlatforms.length > 0 ? 'background: rgba(239,68,68,0.06);' : '';
+        
+        html += 
+        <tr style=" + rowStyle + ">
+            <td style="white-space:nowrap;"> + label + missingTag + </td>
+             + colsHtml + 
+            <td style="text-align:right;">Rp  + dayOmset.toLocaleString(id-ID) + </td>
+            <td style="text-align:right; color:#10b981;">Rp  + dayPenarikan.toLocaleString(id-ID) + </td>
+            <td style="text-align:right; color:var(--danger); font-weight:600;">Rp  + dayPotongan.toLocaleString(id-ID) + </td>
+        </tr>;
     });
 
-    // Totals row per platform
+    if (!html) {
+        container.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada data penarikan pada periode ini.</td></tr>';
+        return;
+    }
+    
+    html += 
+    <tr style="font-weight:700; background: rgba(99,102,241,0.07); border-top: 2px solid var(--border);">
+        <td>TOTAL</td>;
+        
     ONLINE_PLATFORMS.forEach(platform => {
-        const t = totals[platform];
-        if (t.omset === 0) return;
-        const pct = t.omset > 0 ? ((t.potongan / t.omset) * 100).toFixed(2) : '0.00';
-        html += `
-        <tr style="font-weight:700; background: rgba(99,102,241,0.07); border-top: 2px solid var(--border);">
-            <td>TOTAL</td>
-            <td>${window.escapeHtml(platform)}</td>
-            <td style="text-align:right;">Rp ${t.omset.toLocaleString('id-ID')}</td>
-            <td style="text-align:right; color:#10b981;">Rp ${t.penarikan.toLocaleString('id-ID')}</td>
-            <td style="text-align:right; color:var(--danger);">Rp ${t.potongan.toLocaleString('id-ID')}</td>
-            <td style="text-align:right;">${pct}%</td>
-        </tr>`;
+        html += <td style="text-align:right; color:var(--danger);">Rp  + grandTotals.byPlatform[platform].toLocaleString(id-ID) + </td>;
     });
+    
+    html += 
+        <td style="text-align:right;">Rp  + grandTotals.omset.toLocaleString(id-ID) + </td>
+        <td style="text-align:right; color:#10b981;">Rp  + grandTotals.penarikan.toLocaleString(id-ID) + </td>
+        <td style="text-align:right; color:var(--danger);">Rp  + grandTotals.potongan.toLocaleString(id-ID) + </td>
+    </tr>;
 
-    container.innerHTML = html || '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada data penarikan pada periode ini.</td></tr>';
+    container.innerHTML = html; color:var(--text-muted); padding:20px;">Belum ada data penarikan pada periode ini.</td></tr>';
 };
 
 // ── Modal: Input Penarikan Dana ───────────────────────────────────────
@@ -1850,9 +1869,13 @@ window.loadDashboard = async function() {
                     <span style="color: var(--text-secondary); font-size: 0.95rem;">Total Pendapatan Kotor</span>
                     <span style="font-weight: 600; color: var(--text-main);">Rp ${totalGrossRevenue.toLocaleString('id-ID')}</span>
                 </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Potongan Platform <small style="font-size:0.75rem; color:#10b981;">(aktual)</small></span>
+                    <span style="font-weight: 600; color: var(--danger);">- Rp \</span>
+                </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
-                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Potongan MDR / Fee <small style="font-size:0.75rem; color:${newTotalFeesMDR !== prevFeesMDR ? '#10b981' : 'var(--text-muted)'};">(aktual)</small></span>
-                    <span style="font-weight: 600; color: var(--danger);">- Rp ${newTotalFeesMDR.toLocaleString('id-ID')}</span>
+                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Fee QRIS & Bank Transfer</span>
+                    <span style="font-weight: 600; color: var(--danger);">- Rp \</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
                     <span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Operasional</span>
@@ -1889,6 +1912,24 @@ window.loadDashboard = async function() {
     // Rekap table
     window.renderPeraikanRekapTable(compDates, salesByDate, withdrawalMap);
 
+    // Apply dashboard settings on load
+    if (window.activeOutletObj) {
+        let settings = window.activeOutletObj.dashboard_settings || {};
+        if (typeof settings === 'string') {
+            try { settings = JSON.parse(settings); } catch (e) { settings = {}; }
+        }
+        const toggleSec = (id, show) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = show !== false ? '' : 'none';
+        };
+        toggleSec('dash-sec-summary', settings.show_summary_cards);
+        toggleSec('dash-sec-tables', settings.show_method_type_tables);
+        toggleSec('dash-sec-trend', settings.show_trend_chart);
+        toggleSec('dash-sec-peak', settings.show_peak_hours);
+        toggleSec('dash-sec-profit', settings.show_net_profit);
+        toggleSec('dash-sec-rekap', settings.show_withdrawal_rekap);
+    }
+    
     // Store withdrawal map for Excel export
     data.withdrawalMap = withdrawalMap;
 };
