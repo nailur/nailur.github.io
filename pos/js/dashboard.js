@@ -1398,7 +1398,7 @@ if (btnSaveDashSettings) {
             // Apply settings immediately to UI
             const toggleSec = (id, show) => {
                 const el = document.getElementById(id);
-                if (el) el.style.display = show ? '' : 'none';
+                if (el) { if (show) el.classList.remove('hidden'); else el.classList.add('hidden'); }
             };
             toggleSec('dash-sec-summary', newSettings.show_summary_cards);
             toggleSec('dash-sec-tables', newSettings.show_method_type_tables);
@@ -1862,7 +1862,7 @@ window.loadDashboard = async function() {
         }
         const toggleSec = (id, show) => {
             const el = document.getElementById(id);
-            if (el) el.style.display = show !== false ? '' : 'none';
+            if (el) if (show !== false) el.classList.remove('hidden'); else el.classList.add('hidden');
         };
         toggleSec('dash-sec-summary', settings.show_summary_cards);
         toggleSec('dash-sec-tables', settings.show_method_type_tables);
