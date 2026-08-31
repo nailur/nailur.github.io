@@ -1154,25 +1154,26 @@
                     </div>
                 </div>
 
+                <!-- REKAP PENARIKAN DANA PLATFORM -->
+                <div class="glass-panel" style="margin-top: 20px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 1rem;"><i class="ph ph-money"></i> Rekap Penarikan Dana Platform</h4>
+                            <p style="margin: 4px 0 0; font-size: 0.78rem; color: var(--text-secondary);">Shopee Food &bull; Grab Food &bull; Go Food</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="document.getElementById('btn-open-penarikan').click()" style="padding: 5px 12px; font-size: 0.83rem;"><i class="ph ph-plus"></i> Input Penarikan</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" style="font-size: 0.83rem;">
+                            <thead><tr><th>Tanggal</th><th>Platform</th><th style="text-align:right;">Omset Bersih (POS)</th><th style="text-align:right;">Penarikan Dana</th><th style="text-align:right;">Potongan</th><th style="text-align:right;">%</th></tr></thead>
+                            <tbody id="platform-withdrawal-rekap-table"><tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Muat dashboard terlebih dahulu.</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- REKAP PENARIKAN DANA PLATFORM -->
-            <div class="glass-panel" style="margin-top: 20px; padding: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                    <div>
-                        <h4 style="margin: 0; font-size: 1rem;"><i class="ph ph-money"></i> Rekap Penarikan Dana Platform</h4>
-                        <p style="margin: 4px 0 0; font-size: 0.78rem; color: var(--text-secondary);">Shopee Food &bull; Grab Food &bull; Go Food</p>
-                    </div>
-                    <button class="btn btn-primary" onclick="document.getElementById('btn-open-penarikan').click()" style="padding: 5px 12px; font-size: 0.83rem;"><i class="ph ph-plus"></i> Input Penarikan</button>
-                </div>
-                <div class="table-responsive">
-                    <table class="data-table" style="font-size: 0.83rem;">
-                        <thead><tr><th>Tanggal</th><th>Platform</th><th style="text-align:right;">Omset Bersih (POS)</th><th style="text-align:right;">Penarikan Dana</th><th style="text-align:right;">Potongan</th><th style="text-align:right;">%</th></tr></thead>
-                        <tbody id="platform-withdrawal-rekap-table"><tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Muat dashboard terlebih dahulu.</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-            </div>
+            <div id="stock-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="tabs sub-tabs"
                     style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0;">
                     <button class="sub-nav-btn active" data-target="subtab-stock-master">Master Stok</button>
@@ -1266,7 +1267,6 @@
                     </div>
                 </div>
             </div>
-            <div id="stock-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
             <div id="expenses-tab-content" class="pos-tab-pane hidden glass-panel history-panel">
                 <div class="tabs sub-tabs"
                     style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0;">
