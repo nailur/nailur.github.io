@@ -1350,9 +1350,9 @@ const btnSaveDashSettings = document.getElementById('btn-save-dashboard-settings
 
 if (btnOpenDashSettings) {
     btnOpenDashSettings.addEventListener('click', () => {
-        if (!window.activeOutletObj) return window.showToast('Pilih outlet terlebih dahulu', 'error');
+        if (!(window.posOutletsList?.find(o => o.id === window.activeOutletId))) return window.showToast('Pilih outlet terlebih dahulu', 'error');
         
-        let settings = window.activeOutletObj.dashboard_settings || {};
+        let settings = (window.posOutletsList?.find(o => o.id === window.activeOutletId)).dashboard_settings || {};
         if (typeof settings === 'string') {
             try { settings = JSON.parse(settings); } catch (e) { settings = {}; }
         }
@@ -1393,7 +1393,7 @@ if (btnSaveDashSettings) {
             const { error } = await supabase.from('outlets').update({ dashboard_settings: newSettings }).eq('id', window.activeOutletId);
             if (error) throw error;
             
-            window.activeOutletObj.dashboard_settings = newSettings;
+            (window.posOutletsList?.find(o => o.id === window.activeOutletId)).dashboard_settings = newSettings;
             
             // Apply settings immediately to UI
             const toggleSec = (id, show) => {
@@ -1855,8 +1855,8 @@ window.loadDashboard = async function() {
     window.renderPeraikanRekapTable(compDates, salesByDate, withdrawalMap);
 
     // Apply dashboard settings on load
-    if (window.activeOutletObj) {
-        let settings = window.activeOutletObj.dashboard_settings || {};
+    if ((window.posOutletsList?.find(o => o.id === window.activeOutletId))) {
+        let settings = (window.posOutletsList?.find(o => o.id === window.activeOutletId)).dashboard_settings || {};
         if (typeof settings === 'string') {
             try { settings = JSON.parse(settings); } catch (e) { settings = {}; }
         }
