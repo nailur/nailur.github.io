@@ -1508,7 +1508,6 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
         let dayOmset = 0;
         let dayPenarikan = 0;
         let dayPotongan = 0;
-        
         let colsHtml = '';
         const missingPlatforms = [];
         
@@ -1527,7 +1526,7 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
             dayPotongan += potongan;
             grandTotals.byPlatform[platform] += potongan;
             
-            colsHtml += <td style="text-align:right;"> + (potongan > 0 ? Rp  + potongan.toLocaleString(id-ID) : -) + </td>;
+            colsHtml += '<td style="text-align:right;">' + (potongan > 0 ? 'Rp ' + potongan.toLocaleString('id-ID') : '-') + '</td>';
         });
         
         if (!dateHasData) return;
@@ -1538,19 +1537,12 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
         
         const label = new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
         const missingTag = missingPlatforms.length > 0
-            ? <span style="font-size:0.65rem; background:#ef4444; color:#fff; border-radius:4px; padding:1px 4px; margin-left:4px;" title="Belum diisi:  + missingPlatforms.join(', ') + ">!</span>
+            ? '<span style="font-size:0.65rem; background:#ef4444; color:#fff; border-radius:4px; padding:1px 4px; margin-left:4px;" title="Belum diisi: ' + missingPlatforms.join(', ') + '">!</span>'
             : '';
             
         const rowStyle = missingPlatforms.length > 0 ? 'background: rgba(239,68,68,0.06);' : '';
         
-        html += 
-        <tr style=" + rowStyle + ">
-            <td style="white-space:nowrap;"> + label + missingTag + </td>
-             + colsHtml + 
-            <td style="text-align:right;">Rp  + dayOmset.toLocaleString(id-ID) + </td>
-            <td style="text-align:right; color:#10b981;">Rp  + dayPenarikan.toLocaleString(id-ID) + </td>
-            <td style="text-align:right; color:var(--danger); font-weight:600;">Rp  + dayPotongan.toLocaleString(id-ID) + </td>
-        </tr>;
+        html += '<tr style="' + rowStyle + '"><td style="white-space:nowrap;">' + label + missingTag + '</td>' + colsHtml + '<td style="text-align:right;">Rp ' + dayOmset.toLocaleString('id-ID') + '</td><td style="text-align:right; color:#10b981;">Rp ' + dayPenarikan.toLocaleString('id-ID') + '</td><td style="text-align:right; color:var(--danger); font-weight:600;">Rp ' + dayPotongan.toLocaleString('id-ID') + '</td></tr>';
     });
 
     if (!html) {
@@ -1558,25 +1550,18 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
         return;
     }
     
-    html += 
-    <tr style="font-weight:700; background: rgba(99,102,241,0.07); border-top: 2px solid var(--border);">
-        <td>TOTAL</td>;
-        
+    html += '<tr style="font-weight:700; background: rgba(99,102,241,0.07); border-top: 2px solid var(--border);"><td>TOTAL</td>';
     ONLINE_PLATFORMS.forEach(platform => {
-        html += <td style="text-align:right; color:var(--danger);">Rp  + grandTotals.byPlatform[platform].toLocaleString(id-ID) + </td>;
+        html += '<td style="text-align:right; color:var(--danger);">Rp ' + grandTotals.byPlatform[platform].toLocaleString('id-ID') + '</td>';
     });
-    
-    html += 
-        <td style="text-align:right;">Rp  + grandTotals.omset.toLocaleString(id-ID) + </td>
-        <td style="text-align:right; color:#10b981;">Rp  + grandTotals.penarikan.toLocaleString(id-ID) + </td>
-        <td style="text-align:right; color:var(--danger);">Rp  + grandTotals.potongan.toLocaleString(id-ID) + </td>
-    </tr>;
+    html += '<td style="text-align:right;">Rp ' + grandTotals.omset.toLocaleString('id-ID') + '</td><td style="text-align:right; color:#10b981;">Rp ' + grandTotals.penarikan.toLocaleString('id-ID') + '</td><td style="text-align:right; color:var(--danger);">Rp ' + grandTotals.potongan.toLocaleString('id-ID') + '</td></tr>';
 
-    container.innerHTML = html; color:var(--text-muted); padding:20px;">Belum ada data penarikan pada periode ini.</td></tr>';
+    container.innerHTML = html;
 };
 
-// ── Modal: Input Penarikan Dana ───────────────────────────────────────
-
+/**
+ * Update reminder badge
+ */
 const modalPerarikan = document.getElementById('modal-penarikan');
 const btnOpenPerarikan = document.getElementById('btn-open-penarikan');
 const btnPeraikanLoad  = document.getElementById('btn-penarikan-load');
@@ -1863,51 +1848,8 @@ window.loadDashboard = async function() {
         summaryCards.ownerShare    = Math.round(ownerShare);
         summaryCards.investorShare = Math.round(investorShare);
 
-        netProfitCard.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 12px; height: 100%; justify-content: center;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
-                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Total Pendapatan Kotor</span>
-                    <span style="font-weight: 600; color: var(--text-main);">Rp ${totalGrossRevenue.toLocaleString('id-ID')}</span>
-                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
-                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Potongan Platform <small style="font-size:0.75rem; color:#10b981;">(aktual)</small></span>
-                    <span style="font-weight: 600; color: var(--danger);">- Rp \</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
-                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Fee QRIS & Bank Transfer</span>
-                    <span style="font-weight: 600; color: var(--danger);">- Rp \</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
-                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Operasional</span>
-                    <span style="font-weight: 600; color: var(--danger);">- Rp ${totalOpExp.toLocaleString('id-ID')}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
-                    <span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Stock</span>
-                    <span style="font-weight: 600; color: #f59e0b;">- Rp ${totalStockExp.toLocaleString('id-ID')}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 10px 12px; border-radius: 6px; margin-top: 4px;">
-                    <div>
-                        <div style="font-weight: 700; color: #10b981; font-size: 1.05rem;">ESTIMASI LABA BERSIH</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Omset Bersih sebelum Bagi Hasil</div>
-                    </div>
-                    <div style="font-size: 1.35rem; font-weight: 800; color: #10b981;">Rp ${totalNetProfit.toLocaleString('id-ID')}</div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
-                    <div style="background: rgba(59, 130, 246, 0.1); padding: 8px 10px; border-radius: 6px; text-align: center;">
-                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Bisnis Owner</div>
-                        <div style="font-weight: 700; color: #3b82f6; font-size: 0.95rem;">Rp ${Math.round(ownerShare).toLocaleString('id-ID')}</div>
-                    </div>
-                    <div style="background: rgba(245, 158, 11, 0.1); padding: 8px 10px; border-radius: 6px; text-align: center;">
-                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Investor</div>
-                        <div style="font-weight: 700; color: #f59e0b; font-size: 0.95rem;">Rp ${Math.round(investorShare).toLocaleString('id-ID')}</div>
-                    </div>
-                </div>
-            </div>
-        `;
+        netProfitCard.innerHTML = '<div style="display: flex; flex-direction: column; gap: 12px; height: 100%; justify-content: center;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Total Pendapatan Kotor</span><span style="font-weight: 600; color: var(--text-main);">Rp ' + totalGrossRevenue.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Potongan Platform <small style="font-size:0.75rem; color:#10b981;">(aktual)</small></span><span style="font-weight: 600; color: var(--danger);">- Rp ' + totalOnlineFees.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Fee QRIS & Bank Transfer</span><span style="font-weight: 600; color: var(--danger);">- Rp ' + qrisBankFees.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Operasional</span><span style="font-weight: 600; color: var(--danger);">- Rp ' + totalOpExp.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Stock</span><span style="font-weight: 600; color: #f59e0b;">- Rp ' + totalStockExp.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 10px 12px; border-radius: 6px; margin-top: 4px;"><div><div style="font-weight: 700; color: #10b981; font-size: 1.05rem;">ESTIMASI LABA BERSIH</div><div style="font-size: 0.75rem; color: var(--text-muted);">Omset Bersih sebelum Bagi Hasil</div></div><div style="font-size: 1.35rem; font-weight: 800; color: #10b981;">Rp ' + totalNetProfit.toLocaleString('id-ID') + '</div></div></div>';
     }
-
-    // Reminder badge
-    window.updatePeraikanReminderBadge(salesByDate, withdrawalMap);
 
     // Rekap table
     window.renderPeraikanRekapTable(compDates, salesByDate, withdrawalMap);
