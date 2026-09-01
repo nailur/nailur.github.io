@@ -1503,20 +1503,14 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
     if (!container) return;
 
     let html = '';
-    let grandTotals = { omset: 0, penarikan: 0, potongan: 0, penarikanByPlatform: {}, potonganByPlatform: {} };
+    let grandTotals = { byPlatform: {} };
     ONLINE_PLATFORMS.forEach(p => {
-        grandTotals.penarikanByPlatform[p] = 0;
-        grandTotals.potonganByPlatform[p] = 0;
+        grandTotals.byPlatform[p] = { omset: 0, penarikan: 0, potongan: 0 };
     });
 
     compDates.forEach(date => {
         let dateHasData = false;
-        let dayOmset = 0;
-        let dayPenarikan = 0;
-        let dayPotongan = 0;
-        
-        let colsPenarikanHtml = '';
-        let colsPotonganHtml = '';
+        let colsHtml = '';
         const missingPlatforms = [];
         
         ONLINE_PLATFORMS.forEach(platform => {
@@ -1525,25 +1519,22 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
             const omset = wd ? wd.omset : omsetFromPOS;
             const penarikan = wd ? wd.penarikan : 0;
             const potongan = omset - penarikan;
+            const pct = omset > 0 ? ((potongan / omset) * 100).toFixed(1) : '0.0';
             
             if (omsetFromPOS > 0 && !wd) missingPlatforms.push(platform);
             if (omset > 0 || wd) dateHasData = true;
             
-            dayOmset += omset;
-            dayPenarikan += penarikan;
-            dayPotongan += potongan;
-            grandTotals.penarikanByPlatform[platform] += penarikan;
-            grandTotals.potonganByPlatform[platform] += potongan;
+            grandTotals.byPlatform[platform].omset += omset;
+            grandTotals.byPlatform[platform].penarikan += penarikan;
+            grandTotals.byPlatform[platform].potongan += potongan;
             
-            colsPenarikanHtml += '<td style="text-align:right; color:#10b981;">' + (penarikan > 0 ? 'Rp ' + penarikan.toLocaleString('id-ID') : '-') + '</td>';
-            colsPotonganHtml += '<td style="text-align:right; color:var(--danger);">' + (potongan > 0 ? 'Rp ' + potongan.toLocaleString('id-ID') : '-') + '</td>';
+            colsHtml += '<td style="text-align:right;">' + (omset > 0 ? 'Rp ' + omset.toLocaleString('id-ID') : '-') + '</td>';
+            colsHtml += '<td style="text-align:right; color:#10b981;">' + (penarikan > 0 ? 'Rp ' + penarikan.toLocaleString('id-ID') : '-') + '</td>';
+            colsHtml += '<td style="text-align:right; color:var(--danger);">' + (potongan > 0 ? 'Rp ' + potongan.toLocaleString('id-ID') : '-') + '</td>';
+            colsHtml += '<td style="text-align:right; font-size:0.75rem; color:var(--text-secondary);">' + (pct !== '0.0' ? pct + '%' : '-') + '</td>';
         });
         
         if (!dateHasData) return;
-        
-        grandTotals.omset += dayOmset;
-        grandTotals.penarikan += dayPenarikan;
-        grandTotals.potongan += dayPotongan;
         
         const label = new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
         const missingTag = missingPlatforms.length > 0
@@ -1554,32 +1545,28 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
         
         html += '<tr style="' + rowStyle + '">';
         html += '<td style="white-space:nowrap;">' + label + missingTag + '</td>';
-        html += '<td style="text-align:right;">Rp ' + dayOmset.toLocaleString('id-ID') + '</td>';
-        html += colsPenarikanHtml;
-        html += colsPotonganHtml;
-        html += '<td style="text-align:right; color:var(--danger); font-weight:600;">Rp ' + dayPotongan.toLocaleString('id-ID') + '</td>';
+        html += colsHtml;
         html += '</tr>';
     });
 
     if (!html) {
-        container.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada data penarikan pada periode ini.</td></tr>';
+        container.innerHTML = '<tr><td colspan="13" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada data penarikan pada periode ini.</td></tr>';
         return;
     }
     
     html += '<tr style="font-weight:700; background: rgba(99,102,241,0.07); border-top: 2px solid var(--border);">';
-    html += '<td style="text-align:right;">TOTAL</td>';
-    html += '<td style="text-align:right;">Rp ' + grandTotals.omset.toLocaleString('id-ID') + '</td>';
+    html += '<td>TOTAL</td>';
     
     ONLINE_PLATFORMS.forEach(platform => {
-        html += '<td style="text-align:right; color:#10b981;">Rp ' + grandTotals.penarikanByPlatform[platform].toLocaleString('id-ID') + '</td>';
-    });
-    ONLINE_PLATFORMS.forEach(platform => {
-        html += '<td style="text-align:right; color:var(--danger);">Rp ' + grandTotals.potonganByPlatform[platform].toLocaleString('id-ID') + '</td>';
+        const tot = grandTotals.byPlatform[platform];
+        const pct = tot.omset > 0 ? ((tot.potongan / tot.omset) * 100).toFixed(1) : '0.0';
+        html += '<td style="text-align:right;">Rp ' + tot.omset.toLocaleString('id-ID') + '</td>';
+        html += '<td style="text-align:right; color:#10b981;">Rp ' + tot.penarikan.toLocaleString('id-ID') + '</td>';
+        html += '<td style="text-align:right; color:var(--danger);">Rp ' + tot.potongan.toLocaleString('id-ID') + '</td>';
+        html += '<td style="text-align:right; font-size:0.75rem; color:var(--text-secondary);">' + (pct !== '0.0' ? pct + '%' : '-') + '</td>';
     });
     
-    html += '<td style="text-align:right; color:var(--danger);">Rp ' + grandTotals.potongan.toLocaleString('id-ID') + '</td>';
     html += '</tr>';
-
     container.innerHTML = html;
 };
 
