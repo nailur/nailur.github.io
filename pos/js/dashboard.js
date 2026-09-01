@@ -208,9 +208,9 @@ window.loadDashboard = async function() {
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                 <div>
                     <h3 style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 1.05rem; color: var(--primary);">
-                        <i class="ph-fill ph-package"></i> Estimasi Kantong Ayam Dibuka
+                        Estimasi Kantong Ayam Dibuka
                     </h3>
-                    <span style="font-size: 0.72rem; color: var(--text-muted);">1 Kantong = 9 pcs (3 Dada, 2 Paha Atas, 2 Paha Bawah, 2 Sayap)</span>
+                    <!-- <span style="font-size: 0.72rem; color: var(--text-muted);">1 Kantong = 9 pcs (3 Dada, 2 Paha Atas, 2 Paha Bawah, 2 Sayap)</span> -->
                 </div>
                 <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); padding: 5px 10px; border-radius: 8px; text-align: center; white-space: nowrap;">
                     <div style="font-size: 0.65rem; color: #10b981; font-weight: 600; text-transform: uppercase;">Kantong Dibuka</div>
@@ -282,9 +282,9 @@ window.loadDashboard = async function() {
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                 <div>
                     <h3 style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 1.05rem; color: #f59e0b;">
-                        <i class="ph-fill ph-cube"></i> Estimasi Packaging Box Terpakai
+                        Estimasi Box Terpakai
                     </h3>
-                    <span style="font-size: 0.72rem; color: var(--text-muted);">Estimasi pemakaian box berdasarkan menu Paket Ori, Paket Geprek & Geprek</span>
+                    <!-- <span style="font-size: 0.72rem; color: var(--text-muted);">Estimasi pemakaian box berdasarkan menu Paket Ori, Paket Geprek & Geprek</span> -->
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
                     <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); padding: 5px 8px; border-radius: 8px; text-align: center; white-space: nowrap;">
@@ -299,14 +299,14 @@ window.loadDashboard = async function() {
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(245, 158, 11, 0.08); padding: 7px 10px; border-radius: 6px; font-size: 0.8rem;">
-                <span style="color: var(--text-secondary); font-weight: 600;">Total Seluruh Packaging Box Terpakai:</span>
+                <span style="color: var(--text-secondary); font-weight: 600;">Total Seluruh Box Terpakai:</span>
                 <strong style="color: #f59e0b; font-size: 0.88rem;">${countBoxM + countBoxXS} Box (M: ${countBoxM}, XS: ${countBoxXS})</strong>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
-                        <span style="font-weight: 700; font-size: 0.85rem; color: #f59e0b;">Box Ukuran M (Paket Ayam Ori & Geprek)</span>
+                        <span style="font-weight: 700; font-size: 0.85rem; color: #f59e0b;">Box Ukuran M</span>
                         <span style="font-size: 0.72rem; font-weight: 700; color: #f59e0b;">${countBoxM} Box Terpakai</span>
                     </div>
                     <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">Paket Ayam Ori</div>
@@ -351,7 +351,7 @@ window.loadDashboard = async function() {
 
                 <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
-                        <span style="font-weight: 700; font-size: 0.85rem; color: #8b5cf6;">Box Ukuran XS (Ayam Geprek Non-Paket)</span>
+                        <span style="font-weight: 700; font-size: 0.85rem; color: #8b5cf6;">Box Ukuran XS</span>
                         <span style="font-size: 0.72rem; font-weight: 700; color: #8b5cf6;">${countBoxXS} Box Terpakai</span>
                     </div>
                     <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">Ayam Geprek</div>
@@ -1860,7 +1860,7 @@ window.loadDashboard = async function() {
         summaryCards.ownerShare    = Math.round(ownerShare);
         summaryCards.investorShare = Math.round(investorShare);
 
-        netProfitCard.innerHTML = '<div style="display: flex; flex-direction: column; gap: 12px; height: 100%; justify-content: center;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Total Pendapatan Kotor</span><span style="font-weight: 600; color: var(--text-main);">Rp ' + totalGrossRevenue.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Potongan Platform <small style="font-size:0.75rem; color:#10b981;">(aktual)</small></span><span style="font-weight: 600; color: var(--danger);">- Rp ' + totalOnlineFees.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Fee QRIS & Bank Transfer</span><span style="font-weight: 600; color: var(--danger);">- Rp ' + qrisBankFees.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Operasional</span><span style="font-weight: 600; color: var(--danger);">- Rp ' + totalOpExp.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Stock</span><span style="font-weight: 600; color: #f59e0b;">- Rp ' + totalStockExp.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 10px 12px; border-radius: 6px; margin-top: 4px;"><div><div style="font-weight: 700; color: #10b981; font-size: 1.05rem;">ESTIMASI LABA BERSIH</div><div style="font-size: 0.75rem; color: var(--text-muted);">Omset Bersih sebelum Bagi Hasil</div></div><div style="font-size: 1.35rem; font-weight: 800; color: #10b981;">Rp ' + totalNetProfit.toLocaleString('id-ID') + '</div></div></div>';
+        netProfitCard.innerHTML = '<div style="display: flex; flex-direction: column; gap: 12px; height: 100%; justify-content: center;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Total Pendapatan Kotor</span><span style="font-weight: 600; color: var(--text-main);">Rp ' + totalGrossRevenue.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Potongan Platform</span><span style="font-weight: 600; color: var(--danger);">- Rp ' + totalOnlineFees.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Fee QRIS & Bank Transfer</span><span style="font-weight: 600; color: var(--danger);">- Rp ' + qrisBankFees.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Operasional</span><span style="font-weight: 600; color: var(--danger);">- Rp ' + totalOpExp.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Stock</span><span style="font-weight: 600; color: #f59e0b;">- Rp ' + totalStockExp.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 10px 12px; border-radius: 6px; margin-top: 4px;"><div><div style="font-weight: 700; color: #10b981; font-size: 1.05rem;">ESTIMASI LABA BERSIH</div><div style="font-size: 0.75rem; color: var(--text-muted);">Omset Bersih sebelum Bagi Hasil</div></div><div style="font-size: 1.35rem; font-weight: 800; color: #10b981;">Rp ' + totalNetProfit.toLocaleString('id-ID') + '</div></div></div>';
     }
 
     // Rekap table
