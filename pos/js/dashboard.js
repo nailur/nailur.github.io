@@ -553,7 +553,7 @@ window.loadDashboard = async function() {
             const localDate = dateStr.toISOString().split('T')[0];
             
             if (!salesByDate[localDate]) {
-                salesByDate[localDate] = { count: 0, total: 0, discount: 0, tax: 0, cash: 0, fees: 0, methodNet: {} };
+                salesByDate[localDate] = { count: 0, total: 0, discount: 0, tax: 0, cash: 0, fees: 0, methodNet: {}, methodGross: {} };
             }
             const amt = Number(s.total_amount) || 0;
             salesByDate[localDate].count += 1;
@@ -589,6 +589,8 @@ window.loadDashboard = async function() {
                 salesByDate[localDate].methodNet[s.payment_method] = 0;
             }
             salesByDate[localDate].methodNet[s.payment_method] += netForThisTx;
+            if (!salesByDate[localDate].methodGross[s.payment_method]) salesByDate[localDate].methodGross[s.payment_method] = 0;
+            salesByDate[localDate].methodGross[s.payment_method] += amt;
             
             // Accumulate method fees globally for later use in table and excel
             window.clientMethodFees = window.clientMethodFees || {};
@@ -1514,12 +1516,12 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
         const missingPlatforms = [];
         
         ONLINE_PLATFORMS.forEach(platform => {
-            const omsetFromPOS = Math.round(salesByDate[date]?.methodNet?.[platform] || 0);
+            const omsetFromPOS = Math.round(salesByDate[date]?.methodGross?.[platform] || salesByDate[date]?.methodNet?.[platform] || 0);
             const wd = withdrawalMap[date]?.[platform];
             const omset = wd ? wd.omset : omsetFromPOS;
             const penarikan = wd ? wd.penarikan : 0;
-            const potongan = omset - penarikan;
-            const pct = omset > 0 ? ((potongan / omset) * 100).toFixed(1) : '0.0';
+            const potongan = wd ? (omset - penarikan) : 0;
+            const pct = (wd && omset > 0) ? ((potongan / omset) * 100).toFixed(1) : '0.0';
             
             if (omsetFromPOS > 0 && !wd) missingPlatforms.push(platform);
             if (omset > 0 || wd) dateHasData = true;
@@ -1529,8 +1531,8 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
             grandTotals.byPlatform[platform].potongan += potongan;
             
             colsHtml += '<td style="text-align:right;">' + (omset > 0 ? 'Rp ' + omset.toLocaleString('id-ID') : '-') + '</td>';
-            colsHtml += '<td style="text-align:right; color:#10b981;">' + (penarikan > 0 ? 'Rp ' + penarikan.toLocaleString('id-ID') : '-') + '</td>';
-            colsHtml += '<td style="text-align:right; color:var(--danger);">' + (potongan > 0 ? 'Rp ' + potongan.toLocaleString('id-ID') : '-') + '</td>';
+            colsHtml += '<td style="text-align:right;">' + (penarikan > 0 ? 'Rp ' + penarikan.toLocaleString('id-ID') : '-') + '</td>';
+            colsHtml += '<td style="text-align:right;">' + (potongan > 0 ? 'Rp ' + potongan.toLocaleString('id-ID') : '-') + '</td>';
             colsHtml += '<td style="text-align:right; font-size:0.75rem; color:var(--text-secondary);">' + (pct !== '0.0' ? pct + '%' : '-') + '</td>';
         });
         
@@ -1561,8 +1563,8 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
         const tot = grandTotals.byPlatform[platform];
         const pct = tot.omset > 0 ? ((tot.potongan / tot.omset) * 100).toFixed(1) : '0.0';
         html += '<td style="text-align:right;">Rp ' + tot.omset.toLocaleString('id-ID') + '</td>';
-        html += '<td style="text-align:right; color:#10b981;">Rp ' + tot.penarikan.toLocaleString('id-ID') + '</td>';
-        html += '<td style="text-align:right; color:var(--danger);">Rp ' + tot.potongan.toLocaleString('id-ID') + '</td>';
+        html += '<td style="text-align:right;">Rp ' + tot.penarikan.toLocaleString('id-ID') + '</td>';
+        html += '<td style="text-align:right;">Rp ' + tot.potongan.toLocaleString('id-ID') + '</td>';
         html += '<td style="text-align:right; font-size:0.75rem; color:var(--text-secondary);">' + (pct !== '0.0' ? pct + '%' : '-') + '</td>';
     });
     
@@ -1571,8 +1573,7 @@ window.renderPeraikanRekapTable = function(compDates, salesByDate, withdrawalMap
 };
 
 /**
- * Update reminder badge
- */
+ * Update reminder badge*/
 const modalPerarikan = document.getElementById('modal-penarikan');
 const btnOpenPerarikan = document.getElementById('btn-open-penarikan');
 const btnPeraikanLoad  = document.getElementById('btn-penarikan-load');
@@ -1934,12 +1935,12 @@ window.exportDashboardExcel = async function() {
 
     compDates.forEach(date => {
         ONLINE_PLATFORMS.forEach(platform => {
-            const omsetFromPOS = Math.round(salesByDate[date]?.methodNet?.[platform] || 0);
+            const omsetFromPOS = Math.round(salesByDate[date]?.methodGross?.[platform] || salesByDate[date]?.methodNet?.[platform] || 0);
             const wd = withdrawalMap[date]?.[platform];
             const omset     = wd ? wd.omset    : omsetFromPOS;
             const penarikan = wd ? wd.penarikan : 0;
-            const potongan  = omset - penarikan;
-            const pct = omset > 0 ? parseFloat(((potongan / omset) * 100).toFixed(2)) : 0;
+            const potongan  = wd ? (omset - penarikan) : 0;
+            const pct = (wd && omset > 0) ? parseFloat(((potongan / omset) * 100).toFixed(2)) : 0;
 
             if (omsetFromPOS === 0 && !wd) return;
 
@@ -1964,7 +1965,7 @@ window.exportDashboardExcel = async function() {
     ONLINE_PLATFORMS.forEach(platform => {
         const t = totals10[platform];
         if (t.omset === 0) return;
-        const pct = t.omset > 0 ? parseFloat(((t.potongan / t.omset) * 100).toFixed(2)) : 0;
+        const pct = (t.potongan > 0 && t.omset > 0) ? parseFloat(((t.potongan / t.omset) * 100).toFixed(2)) : 0;
         sheet10Rows.push({
             'Tanggal':         'TOTAL',
             'Platform':        platform,
