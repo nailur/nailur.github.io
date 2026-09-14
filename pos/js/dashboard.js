@@ -1,4 +1,4 @@
-﻿window.revenueChartInst = null;
+window.revenueChartInst = null;
 window.productChartInst = null;
 window.depositCompChartInst = null;
 window.methodNetChartInst = null;
@@ -801,27 +801,71 @@ window.loadDashboard = async function() {
     const profitCtx = document.getElementById('profitSharingChart');
     if (!profitCtx) return;
 
-    // Total Omset Bersih for the selected period
-    const totalNetRevenue = netTotalRevenueData.reduce((sum, val) => sum + val, 0);
+    // Hitung total dulu (konsisten dengan card Estimasi Laba Bersih)
+    // FIX: Pindahkan kalkulasi total ke sini agar basis bagi hasil = totalNetProfit
+    // (bukan netTotalRevenueData yang diakumulasi per-hari pakai Math.round → rounding error)
+    const totalGrossRevenue = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+    const totalFeesMDR = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.fees) || 0), 0);
+    const totalOpExp = Object.values(operationalExpensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
+    const totalStockExp = Object.values(stockExpensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
+    const totalNetProfit = Math.round(totalGrossRevenue - totalFeesMDR - totalOpExp - totalStockExp);
+
     const THRESHOLD = 3500000;
 
     let ownerShare = 0;
     let investorShare = 0;
+    let tahap1Base = 0;
+    let tahap2Base = 0;
 
-    if (totalNetRevenue > THRESHOLD) {
-        // Tahap 1: Up to Threshold
+    if (totalNetProfit > THRESHOLD) {
+        // Tahap 1: s.d. Threshold → 80% Owner / 20% Investor
+        tahap1Base = THRESHOLD;
         ownerShare += THRESHOLD * 0.8;
         investorShare += THRESHOLD * 0.2;
-        
-        // Tahap 2: Above Threshold
-        const remaining = totalNetRevenue - THRESHOLD;
-        ownerShare += remaining * 0.75;
-        investorShare += remaining * 0.25;
+
+        // Tahap 2: di atas Threshold → 75% Owner / 25% Investor
+        tahap2Base = totalNetProfit - THRESHOLD;
+        ownerShare += tahap2Base * 0.75;
+        investorShare += tahap2Base * 0.25;
     } else {
         // Tahap 1 only
-        ownerShare += totalNetRevenue * 0.8;
-        investorShare += totalNetRevenue * 0.2;
+        tahap1Base = Math.max(0, totalNetProfit);
+        ownerShare += tahap1Base * 0.8;
+        investorShare += tahap1Base * 0.2;
     }
+
+    const ownerShareRounded = Math.round(ownerShare);
+    const investorShareRounded = Math.round(investorShare);
+
+    // Susun teks breakdown untuk tooltip chart
+    const profitBreakdownLines = [
+        `─────────────────────────────`,
+        `Laba Bersih : Rp ${totalNetProfit.toLocaleString('id-ID')}`,
+        `  = Gross Rp ${totalGrossRevenue.toLocaleString('id-ID')}`,
+        `  - MDR/Fee  Rp ${totalFeesMDR.toLocaleString('id-ID')}`,
+        `  - Op. Exp  Rp ${totalOpExp.toLocaleString('id-ID')}`,
+        `  - Stock    Rp ${totalStockExp.toLocaleString('id-ID')}`,
+        `─────────────────────────────`,
+        `Bagi Hasil:`,
+        `  Tahap 1 (≤ Rp ${THRESHOLD.toLocaleString('id-ID')}): 80/20`,
+        `    Basis    : Rp ${tahap1Base.toLocaleString('id-ID')}`,
+        `    Owner    : Rp ${Math.round(tahap1Base * 0.8).toLocaleString('id-ID')}`,
+        `    Investor : Rp ${Math.round(tahap1Base * 0.2).toLocaleString('id-ID')}`,
+    ];
+    if (totalNetProfit > THRESHOLD) {
+        profitBreakdownLines.push(
+            `  Tahap 2 (sisa): 75/25`,
+            `    Basis    : Rp ${tahap2Base.toLocaleString('id-ID')}`,
+            `    Owner    : Rp ${Math.round(tahap2Base * 0.75).toLocaleString('id-ID')}`,
+            `    Investor : Rp ${Math.round(tahap2Base * 0.25).toLocaleString('id-ID')}`,
+        );
+    }
+    profitBreakdownLines.push(
+        `─────────────────────────────`,
+        `Owner Total  : Rp ${ownerShareRounded.toLocaleString('id-ID')}`,
+        `Investor Tot : Rp ${investorShareRounded.toLocaleString('id-ID')}`,
+        `Cek Total    : Rp ${(ownerShareRounded + investorShareRounded).toLocaleString('id-ID')}`,
+    );
 
     if (window.profitSharingChartInst) window.profitSharingChartInst.destroy();
     window.profitSharingChartInst = new Chart(profitCtx.getContext('2d'), {
@@ -829,7 +873,7 @@ window.loadDashboard = async function() {
         data: {
             labels: ['Bisnis Owner', 'Investor'],
             datasets: [{
-                data: [Math.round(ownerShare), Math.round(investorShare)],
+                data: [ownerShareRounded, investorShareRounded],
                 backgroundColor: ['#3b82f6', '#f59e0b'],
                 borderWidth: 0,
                 datalabels: {
@@ -856,20 +900,26 @@ window.loadDashboard = async function() {
                 },
                 tooltip: {
                     callbacks: {
+                        title: function(items) {
+                            return items[0].label;
+                        },
                         label: function(context) {
-                            return ` ${context.label}: Rp ${context.raw.toLocaleString('id-ID')}`;
+                            const val = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                            return ` Rp ${val.toLocaleString('id-ID')} (${pct}%)`;
+                        },
+                        afterBody: function() {
+                            return profitBreakdownLines;
                         }
-                    }
+                    },
+                    bodyFont: { family: 'monospace', size: 11 },
+                    padding: 12,
+                    boxPadding: 4
                 }
             }
         }
     });
-
-    const totalGrossRevenue = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.total) || 0), 0);
-    const totalFeesMDR = Object.values(salesByDate).reduce((sum, item) => sum + (Number(item.fees) || 0), 0);
-    const totalOpExp = Object.values(operationalExpensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
-    const totalStockExp = Object.values(stockExpensesByDate).reduce((sum, val) => sum + Number(val || 0), 0);
-    const totalNetProfit = Math.round(totalGrossRevenue - totalFeesMDR - totalOpExp - totalStockExp);
 
     // Render Estimasi Laba Bersih Card
     const netProfitCard = document.getElementById('net-profit-card');
