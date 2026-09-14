@@ -1898,17 +1898,67 @@ window.loadDashboard = async function() {
     const netProfitCard = document.getElementById('net-profit-card');
     if (netProfitCard) {
         const THRESHOLD = 3500000;
-        const totalNetRevenue = (data.netTotalRevenueData || []).reduce((s, v) => s + v, 0);
+
+        // FIX: gunakan totalNetProfit (basis = newTotalFeesMDR aktual dari platform_withdrawals),
+        // BUKAN netTotalRevenueData yang masih pakai fee estimasi dari transaksi
         let ownerShare = 0, investorShare = 0;
-        if (totalNetRevenue > THRESHOLD) {
+        let tahap1Base = 0, tahap2Base = 0;
+        if (totalNetProfit > THRESHOLD) {
+            tahap1Base = THRESHOLD;
             ownerShare += THRESHOLD * 0.8; investorShare += THRESHOLD * 0.2;
-            const remaining = totalNetRevenue - THRESHOLD;
-            ownerShare += remaining * 0.75; investorShare += remaining * 0.25;
+            tahap2Base = totalNetProfit - THRESHOLD;
+            ownerShare += tahap2Base * 0.75; investorShare += tahap2Base * 0.25;
         } else {
-            ownerShare += totalNetRevenue * 0.8; investorShare += totalNetRevenue * 0.2;
+            tahap1Base = Math.max(0, totalNetProfit);
+            ownerShare += tahap1Base * 0.8; investorShare += tahap1Base * 0.2;
         }
         summaryCards.ownerShare    = Math.round(ownerShare);
         summaryCards.investorShare = Math.round(investorShare);
+
+        // Update profitSharingChart dengan nilai yang sudah dikoreksi
+        if (window.profitSharingChartInst) {
+            const ownerR    = Math.round(ownerShare);
+            const investorR = Math.round(investorShare);
+
+            // Susun ulang breakdown tooltip
+            const breakdownLines = [
+                `─────────────────────────────`,
+                `Laba Bersih : Rp ${totalNetProfit.toLocaleString('id-ID')}`,
+                `  = Gross Rp ${totalGrossRevenue.toLocaleString('id-ID')}`,
+                `  - Platform Rp ${totalOnlineFees.toLocaleString('id-ID')}`,
+                `  - QRIS/Bank Rp ${qrisBankFees.toLocaleString('id-ID')}`,
+                `  - Op. Exp  Rp ${totalOpExp.toLocaleString('id-ID')}`,
+                `  - Stock    Rp ${totalStockExp.toLocaleString('id-ID')}`,
+                `─────────────────────────────`,
+                `Bagi Hasil:`,
+                `  Tahap 1 (≤ Rp ${THRESHOLD.toLocaleString('id-ID')}): 80/20`,
+                `    Basis    : Rp ${tahap1Base.toLocaleString('id-ID')}`,
+                `    Owner    : Rp ${Math.round(tahap1Base * 0.8).toLocaleString('id-ID')}`,
+                `    Investor : Rp ${Math.round(tahap1Base * 0.2).toLocaleString('id-ID')}`,
+            ];
+            if (totalNetProfit > THRESHOLD) {
+                breakdownLines.push(
+                    `  Tahap 2 (sisa): 75/25`,
+                    `    Basis    : Rp ${tahap2Base.toLocaleString('id-ID')}`,
+                    `    Owner    : Rp ${Math.round(tahap2Base * 0.75).toLocaleString('id-ID')}`,
+                    `    Investor : Rp ${Math.round(tahap2Base * 0.25).toLocaleString('id-ID')}`,
+                );
+            }
+            breakdownLines.push(
+                `─────────────────────────────`,
+                `Owner Total  : Rp ${ownerR.toLocaleString('id-ID')}`,
+                `Investor Tot : Rp ${investorR.toLocaleString('id-ID')}`,
+                `Cek Total    : Rp ${(ownerR + investorR).toLocaleString('id-ID')}`,
+            );
+
+            // Update data chart
+            window.profitSharingChartInst.data.datasets[0].data = [ownerR, investorR];
+
+            // Update tooltip afterBody dengan breakdown baru
+            window.profitSharingChartInst.options.plugins.tooltip.callbacks.afterBody = () => breakdownLines;
+
+            window.profitSharingChartInst.update();
+        }
 
         netProfitCard.innerHTML = '<div style="display: flex; flex-direction: column; gap: 12px; height: 100%; justify-content: center;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Total Pendapatan Kotor</span><span style="font-weight: 600; color: var(--text-main);">Rp ' + totalGrossRevenue.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Potongan Platform</span><span style="font-weight: 600; color: var(--danger);">- Rp ' + totalOnlineFees.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Fee QRIS & Bank Transfer</span><span style="font-weight: 600; color: var(--danger);">- Rp ' + qrisBankFees.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Operasional</span><span style="font-weight: 600; color: var(--danger);">- Rp ' + totalOpExp.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px;"><span style="color: var(--text-secondary); font-size: 0.95rem;">Pengeluaran Stock</span><span style="font-weight: 600; color: #f59e0b;">- Rp ' + totalStockExp.toLocaleString('id-ID') + '</span></div><div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 10px 12px; border-radius: 6px; margin-top: 4px;"><div><div style="font-weight: 700; color: #10b981; font-size: 1.05rem;">ESTIMASI LABA BERSIH</div><div style="font-size: 0.75rem; color: var(--text-muted);">Omset Bersih sebelum Bagi Hasil</div></div><div style="font-size: 1.35rem; font-weight: 800; color: #10b981;">Rp ' + totalNetProfit.toLocaleString('id-ID') + '</div></div></div>';
     }
