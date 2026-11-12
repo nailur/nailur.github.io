@@ -21,56 +21,96 @@ const fetchWithTimeout = async (url, ms = 15000) => {
         clearTimeout(timeout);
     }
 };
-async function fetchIdbullion() {
+
+async function fetchIdBullionAntam() {
+    const URL = 'https://idbullion.com/';
     try {
-        const targetUrl = "https://idbullion.com/api/gold";
-        const response = await fetch(targetUrl, {
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            },
-			signal: AbortSignal.timeout(15000)
+        const html = await fetchWithTimeout(URL);
+        if (!html) return [];
+
+        // Find the INITIAL_PRICES JSON string
+        const startMarker = "const INITIAL_PRICES = JSON.parse('";
+        const startIdx = html.indexOf(startMarker);
+        if (startIdx === -1) return [];
+        const afterStart = startIdx + startMarker.length;
+
+        // The JSON string is between the opening and closing single quotes
+        const openingQuoteIdx = afterStart;
+        const closingQuoteIdx = html.indexOf("'", openingQuoteIdx);
+        if (closingQuoteIdx === -1) return [];
+
+        // Extract the raw JSON string (no surrounding quotes)
+        const rawJson = html.slice(openingQuoteIdx, closingQuoteIdx);
+
+        // Decode escaped characters
+        const bs = String.fromCharCode(92);
+        const q22 = bs + 'u0022';
+        const q27 = bs + 'u0027';
+        const q2f = bs + 'u002f';
+        const qbs = bs + bs;
+        let decodedJson = rawJson
+            .split(q22).join('"')
+            .split(q27).join("'")
+            .split(q2f).join('/')
+            .split(qbs).join(bs);
+
+        // Trim whitespace
+        decodedJson = decodedJson.trim();
+
+        let data;
+        try {
+            data = JSON.parse(decodedJson);
+            if (!Array.isArray(data)) return [];
+        } catch (e) {
+            console.error('IDBullion parse error:', e);
+            return [];
+        }
+
+        // Filter for Antam physical items with IDR currency
+        const antamItems = data.filter(item => {
+            const vName = String(item.vendor && item.vendor.name || '');
+            const vType = String(item.vendor && item.vendor.type || '');
+            const currency = String(item.currency || '');
+            const pName = String(item.product && item.product.name || '');
+            return vName === 'Antam' && vType === 'physical' && currency === 'IDR' && pName.includes('Antam');
         });
-        const json = await response.json();
-		const data = Array.isArray(json) ? json : (json.data || []);
-        
-		// Filter type physical, currency IDR, and specific vendors directly here
-        return data.filter(item => {
-            const type = String(item.vendor?.type || '').toLowerCase();
-            const currency = String(item.currency || '').toUpperCase();
-            const brandName = String(item.product?.name || '');
-            const vendorName = String(item.vendor?.name || '');
 
-            if (type !== 'physical' || currency !== 'IDR') return false;
+        // Transform to IDBullion format
+        return antamItems.map(item => {
+            const prod = item.product || {};
+            const gram = parseFloat(prod.weight).toString();
+            const gramKey = gram.replace('.', '');
+            const jual = String(Math.round(parseFloat(item.buy_price || 0) * 100) / 100).replace(/[^0-9]/g, '');
+            const buyback = String(Math.round(parseFloat(item.buyback_price || 0) * 100) / 100).replace(/[^0-9]/g, '');
 
-            // Filter for ANTAM: only take from vendor ANTAM
-            if (brandName.toLowerCase().includes('antam')) {
-                if (!vendorName.toLowerCase().includes('antam')) return false;
-            }
-
-            // Filter for Lotus Archi: only take from vendor Lotus Archi
-            if (brandName.toLowerCase().includes('lotus archi')) {
-                if (!vendorName.toLowerCase().includes('lotus')) return false;
-            }
-
-            // Filter for Emas Kita: drop from IDBullion because we scrape the official web locally
-            if (brandName.toLowerCase().includes('emas kita')) {
-                return false; 
-            }
-
-            return true;
+            return {
+                buy_price: parseFloat(jual),
+                buyback_price: parseFloat(buyback),
+                currency: 'IDR',
+                price_date: new Date().toISOString(),
+                vendor: {
+                    id: 'idbullion_antam',
+                    name: 'Antam',
+                    type: 'physical'
+                },
+                product: {
+                    brand_id: 'brand_antam',
+                    name: 'Antam ' + gram + ' Gram',
+                    weight: parseFloat(gram)
+                }
+            };
         });
     } catch (e) {
-        console.error("IDBullion fetch error:", e);
+        console.error('IDBullion Antam fetch error:', e);
         return [];
     }
 }
-
 export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
 		const [idbullionData, galeriHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed ] = await Promise.all([
-			fetchIdbullion(),
+			fetchIdBullionAntam(),
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
