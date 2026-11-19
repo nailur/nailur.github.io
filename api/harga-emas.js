@@ -22,7 +22,7 @@ const fetchWithTimeout = async (url, ms = 15000) => {
     }
 };
 
-async function fetchIdBullionAntam() {
+async function fetchIdBullionBrands() {
     const URL = 'https://idbullion.com/';
     try {
         const html = await fetchWithTimeout(URL);
@@ -66,17 +66,8 @@ async function fetchIdBullionAntam() {
             return [];
         }
 
-        // Filter for Antam physical items with IDR currency
-        const antamItems = data.filter(item => {
-            const vName = String(item.vendor && item.vendor.name || '');
-            const vType = String(item.vendor && item.vendor.type || '');
-            const currency = String(item.currency || '');
-            const pName = String(item.product && item.product.name || '');
-            return vName === 'Antam' && vType === 'physical' && currency === 'IDR' && pName.includes('Antam');
-        });
-
-        // Transform to IDBullion format
-        return antamItems.map(item => {
+        // Helper to transform item to IDBullion format
+        const transformItem = (item, brandKey, vendorName, vendorId, brandId) => {
             const prod = item.product || {};
             const gram = parseFloat(prod.weight).toString();
             const gramKey = gram.replace('.', '');
@@ -89,19 +80,44 @@ async function fetchIdBullionAntam() {
                 currency: 'IDR',
                 price_date: new Date().toISOString(),
                 vendor: {
-                    id: 'idbullion_antam',
-                    name: 'Antam',
+                    id: vendorId,
+                    name: vendorName,
                     type: 'physical'
                 },
                 product: {
-                    brand_id: 'brand_antam',
-                    name: 'Antam ' + gram + ' Gram',
+                    brand_id: brandId,
+                    name: vendorName + ' ' + gram + ' Gram',
                     weight: parseFloat(gram)
                 }
             };
+        };
+
+        // Filter for Antam physical items with IDR currency (only from Antam store)
+        const antamItems = data.filter(item => {
+            const vName = String(item.vendor && item.vendor.name || '');
+            const vType = String(item.vendor && item.vendor.type || '');
+            const currency = String(item.currency || '');
+            const pName = String(item.product && item.product.name || '');
+            return vName === 'Antam' && vType === 'physical' && currency === 'IDR' && pName.includes('Antam');
         });
+
+        // Filter for Lotus Archi physical items with IDR currency (only from Lotus Archi store)
+        const lotusItems = data.filter(item => {
+            const vName = String(item.vendor && item.vendor.name || '');
+            const vType = String(item.vendor && item.vendor.type || '');
+            const currency = String(item.currency || '');
+            const pName = String(item.product && item.product.name || '');
+            return vName === 'Lotus Archi' && vType === 'physical' && currency === 'IDR' && pName.includes('Lotus Archi');
+        });
+
+        // Transform both arrays
+        const antamTransformed = antamItems.map(item => transformItem(item, 'antam', 'Antam', 'idbullion_antam', 'brand_antam'));
+        const lotusTransformed = lotusItems.map(item => transformItem(item, 'lotus', 'Lotus Archi', 'idbullion_lotus', 'brand_lotus'));
+
+        // Merge and return
+        return [...antamTransformed, ...lotusTransformed];
     } catch (e) {
-        console.error('IDBullion Antam fetch error:', e);
+        console.error('IDBullion brands fetch error:', e);
         return [];
     }
 }
@@ -110,7 +126,7 @@ export default async function handler(req, res) {
 
     try {
 		const [idbullionData, galeriHTML, emasKitaHTML, sampoernaHTML, lotusHTML, kingHalimHTML, ubsPagesFixed ] = await Promise.all([
-			fetchIdBullionAntam(),
+			fetchIdBullionBrands(),
             fetchWithTimeout("https://galeri24.co.id/harga-emas").catch(() => ""),
             fetchWithTimeout("https://emaskita.id/Harga_emas").catch(() => ""),
             fetchWithTimeout("https://sampoernagold.com/").catch(() => ""),
